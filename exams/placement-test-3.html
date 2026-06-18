@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta name="exam:title" content="优益思达入学测试 · 雅思全真模拟机考（第三卷）">
+  <meta name="exam:type" content="full">
+  <meta name="exam:category" content="">
+  <meta name="exam:duration" content="0">
+  <meta name="exam:description" content="入学定位测试：听力 + 阅读（客观自动批改）+ 写作 + 口语（自评）。交卷后给出四项综合估算总分 Band。">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优益思达入学测试 - 雅思全真模拟机考（第三卷）</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif; background: #f0f2f6; margin: 0; padding: 0 0 90px 0; color: #1e2a3a; line-height: 1.7; }
+  .header { background: linear-gradient(135deg, #261a47, #3a2f6a); color: white; padding: 12px 28px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 18px rgba(0,0,0,0.25); flex-wrap: wrap; gap: 10px; }
+  .header h1 { margin: 0; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .header h1 small { font-size: 13px; font-weight: 400; opacity: 0.8; }
+  .header h1 .brandtag { font-size: 11px; background: #6c5ce7; padding: 2px 9px; border-radius: 20px; font-weight: 600; letter-spacing: .5px; }
+  .header h1 .voltag { font-size: 11px; background: #1e8449; padding: 2px 9px; border-radius: 20px; font-weight: 600; letter-spacing: .5px; }
+  .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .fontsize-controls { display: flex; gap: 4px; }
+  .fontsize-controls button { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); width: 30px; height: 30px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .fontsize-controls button:hover { background: rgba(255,255,255,0.3); }
+  .timer { font-size: 20px; font-weight: 700; background: #1e8449; padding: 6px 20px; border-radius: 30px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); transition: background .4s; }
+  .timer.warn { background: #e67e22; }
+  .timer.danger { background: #c0392b; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+  .timer svg { width: 20px; height: 20px; fill: currentColor; }
+  .container { max-width: 1260px; margin: 24px auto; padding: 30px 36px; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,0.06); border-radius: 16px; }
+  .container.fs-sm { font-size: 14px; } .container.fs-lg { font-size: 17px; }
+  h2 { color: #261a47; border-bottom: 3px solid #ece8f4; padding-bottom: 12px; margin-top: 48px; font-size: 24px; font-weight: 600; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h2 .badge { font-size: 14px; background: #3a2f6a; color: #fff; padding: 0 14px; border-radius: 30px; font-weight: 500; }
+  h3 { color: #3a2f6a; margin-top: 32px; font-size: 19px; font-weight: 600; }
+  .instruction { background: #f3f0fb; padding: 14px 20px; border-left: 5px solid #3a2f6a; margin: 16px 0 22px 0; font-size: 14.5px; border-radius: 0 8px 8px 0; }
+  .audio-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px; background: #faf8ff; padding: 10px 16px; border-radius: 10px; border: 1px solid #e7e2f0; }
+  .audio-btn { background: #3a2f6a; color: white; border: none; padding: 8px 20px; font-size: 14px; border-radius: 30px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background 0.2s, transform 0.1s; box-shadow: 0 2px 6px rgba(58,47,106,0.25); }
+  .audio-btn:hover { background: #4a3f80; transform: translateY(-1px); }
+  .audio-btn.stop-btn { background: #c0392b; box-shadow: 0 2px 6px rgba(192,57,43,0.25); }
+  .audio-btn.stop-btn:hover { background: #a93226; }
+  .audio-btn.tool-btn { background: #6b7a8f; box-shadow: none; padding: 6px 14px; font-size: 13px; }
+  .audio-btn.tool-btn:hover { background: #54606e; }
+  .audio-status { font-size: 13px; color: #555; margin-left: 4px; }
+  .question-block { margin-bottom: 14px; padding: 12px 18px 12px 44px; background: #fcfbff; border-radius: 8px; border: 1px solid #ece8f4; font-size: 15px; position: relative; }
+  .question-block.flagged { border-color: #e67e22; background: #fff7ef; }
+  .flag-btn { position: absolute; left: 12px; top: 12px; width: 22px; height: 22px; border: none; background: transparent; cursor: pointer; font-size: 15px; color: #c0c9d4; padding: 0; line-height: 1; }
+  .flag-btn.on { color: #e67e22; }
+  .flag-btn:hover { color: #e67e22; }
+  .qnum { display: inline-block; min-width: 26px; font-weight: 700; color: #3a2f6a; }
+  .mcq-option { display: block; margin-bottom: 5px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+  .mcq-option:hover { background: #f1edfa; }
+  .mcq-option input[type="radio"] { margin-right: 10px; accent-color: #3a2f6a; }
+  input[type="text"], select { padding: 7px 12px; border: 1.5px solid #d4cee0; border-radius: 6px; font-size: 15px; background: #fff; transition: border-color 0.2s, box-shadow 0.2s; }
+  input[type="text"]:focus, select:focus { border-color: #3a2f6a; box-shadow: 0 0 0 3px rgba(58,47,106,0.12); outline: none; }
+  input[type="text"] { width: 200px; }
+  select { min-width: 140px; }
+  textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #d4cee0; border-radius: 8px; font-size: 15px; resize: vertical; box-sizing: border-box; font-family: inherit; min-height: 70px; }
+  textarea:focus { border-color: #3a2f6a; box-shadow: 0 0 0 3px rgba(58,47,106,0.10); outline: none; }
+  .word-counter { font-size: 12.5px; color: #6b7a8f; margin-top: 4px; }
+  .reading-section { display: flex; gap: 24px; margin: 6px 0 30px 0; border: 1px solid #e7e2f0; border-radius: 12px; overflow: hidden; background: #fff; }
+  .reading-text { flex: 1; height: 560px; overflow-y: auto; padding: 24px 28px; background: #fcfbff; border-right: 1px solid #e7e2f0; font-size: 15px; line-height: 1.8; }
+  .reading-questions { flex: 1; height: 560px; overflow-y: auto; padding: 24px 28px; background: #ffffff; }
+  .reading-toolbar { display: flex; gap: 10px; align-items: center; margin: 12px 0 0 0; }
+  .hl { background: #fff3b0; border-radius: 2px; }
+  .submit-btn { display: block; width: 100%; background: linear-gradient(135deg, #1e8449, #27ae60); color: white; border: none; padding: 16px 20px; font-size: 20px; border-radius: 12px; cursor: pointer; margin-top: 44px; font-weight: 700; transition: transform 0.15s, box-shadow 0.2s; box-shadow: 0 4px 14px rgba(39,174,96,0.3); }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(39,174,96,0.35); }
+  #resultsArea { display: none; }
+  .score-board { font-size: 26px; text-align: center; margin: 16px 0 28px 0; padding: 32px 20px; background: linear-gradient(135deg, #261a47, #3a2f6a); color: white; border-radius: 16px; }
+  .score-board .sub { font-size: 16px; opacity: .9; margin-top: 6px; }
+  .band-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 14px; margin: 18px 0 26px 0; }
+  .band-card { text-align: center; padding: 18px 12px; border-radius: 12px; background: #faf8ff; border: 1px solid #e7e2f0; }
+  .band-card .lbl { font-size: 13px; color: #6b7a8f; }
+  .band-card .val { font-size: 28px; font-weight: 800; color: #261a47; margin-top: 4px; }
+  .band-card .meta { font-size: 12px; color: #93a0b0; margin-top: 2px; }
+  .band-card.overall { background: linear-gradient(135deg,#261a47,#3a2f6a); }
+  .band-card.overall .lbl, .band-card.overall .meta { color: rgba(255,255,255,.8); }
+  .band-card.overall .val { color: #fff; }
+  .review-head { cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; background: #f3f0fb; padding: 10px 16px; border-radius: 8px; margin: 14px 0 6px 0; font-weight: 600; color: #3a2f6a; }
+  .result-item { margin: 8px 0; padding: 12px 18px; border-radius: 8px; border-left: 5px solid transparent; }
+  .result-item.correct { background: #e8f8ee; border-left-color: #27ae60; color: #145a32; }
+  .result-item.incorrect { background: #fdeaea; border-left-color: #e74c3c; color: #7b1a1a; }
+  .result-item .answer-detail { font-size: 14px; color: #444; margin-top: 3px; }
+  .result-item .explain { font-size: 13.5px; color: #3a4a5a; margin-top: 4px; background: rgba(255,255,255,.6); padding: 6px 10px; border-radius: 6px; }
+  .ability-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+  @media (max-width: 768px) { .ability-grid { grid-template-columns: 1fr; } }
+  .ability-card { background: #faf8ff; border-radius: 10px; padding: 16px 20px; border: 1px solid #e7e2f0; }
+  .ability-card h4 { margin: 0 0 10px 0; color: #261a47; }
+  .bar-container { margin: 6px 0; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 14px; }
+  .bar-track { background: #e7e2f0; border-radius: 10px; overflow: hidden; height: 20px; width: 100%; }
+  .bar-fill { height: 100%; border-radius: 10px; transition: width 0.8s ease; width: 0%; }
+  .bar-fill.low { background: linear-gradient(90deg, #e67e22, #e74c3c); }
+  .bar-fill.mid { background: linear-gradient(90deg, #f1c40f, #e67e22); }
+  .bar-fill.high { background: linear-gradient(90deg, #6c5ce7, #27ae60); }
+  .strength-weakness { display: flex; gap: 20px; flex-wrap: wrap; margin: 16px 0; }
+  .strength-weakness > div { flex: 1; min-width: 180px; padding: 14px 18px; border-radius: 10px; border: 1px solid #e7e2f0; }
+  .strength-weakness .strength { background: #e8f8ee; border-left: 5px solid #27ae60; }
+  .strength-weakness .weakness { background: #fdeaea; border-left: 5px solid #e74c3c; }
+  .strength-weakness ul { margin: 6px 0 0 18px; padding: 0; }
+  .strength-weakness li { margin-bottom: 4px; }
+  .advice-box { background: #fef9e7; border-left: 5px solid #f39c12; padding: 14px 20px; border-radius: 8px; margin: 16px 0; }
+  .advice-box h4 { margin: 0 0 8px 0; color: #b9770e; }
+  .advice-box ul { margin: 4px 0 0 18px; }
+  .insight-box { background: #f1edfb; border-left: 5px solid #6c5ce7; padding: 14px 20px; border-radius: 8px; margin: 16px 0; }
+  .insight-box h4 { margin: 0 0 8px 0; color: #4a3f80; }
+  .insight-box ul { margin: 4px 0 0 18px; }
+  .writing-pair { margin-bottom: 28px; padding: 16px 20px; background: #faf8ff; border-radius: 10px; border: 1px solid #e7e2f0; }
+  .writing-pair .user-answer { background: #fff; padding: 12px 16px; border-radius: 6px; border-left: 4px solid #3a2f6a; margin: 6px 0 10px 0; white-space: pre-wrap; }
+  .writing-pair .ref-answer { background: #eef6eb; padding: 12px 16px; border-radius: 6px; border-left: 4px solid #27ae60; margin: 6px 0 0 0; white-space: pre-wrap; }
+  .writing-pair .label { font-weight: 600; font-size: 14px; display: inline-block; margin-right: 12px; }
+  .writing-pair .label.user { color: #3a2f6a; }
+  .writing-pair .label.ref { color: #1e8449; }
+  .empty-writing { color: #999; font-style: italic; }
+  .auto-check { font-size: 13px; padding: 2px 10px; border-radius: 20px; font-weight: 600; }
+  .auto-check.ok { background: #e8f8ee; color: #1e8449; }
+  .auto-check.no { background: #fdeaea; color: #c0392b; }
+  .tag { display: inline-block; background: #e7e2f0; padding: 0 12px; border-radius: 30px; font-size: 13px; color: #3a2f6a; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .speaking-questions .cue-card { background: #f3f0fb; padding: 16px 20px; border-radius: 10px; border-left: 4px solid #3a2f6a; }
+  .rubric { margin: 14px 0; padding: 16px 20px; background: #fff; border: 1px solid #e7e2f0; border-radius: 10px; }
+  .rubric-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; flex-wrap: wrap; }
+  .rubric-row label { min-width: 160px; font-size: 14px; }
+  .rubric-row input[type=range] { flex: 1; min-width: 160px; accent-color: #3a2f6a; }
+  .rubric-row .rval { min-width: 38px; font-weight: 700; color: #3a2f6a; }
+  .rubric-result { font-size: 16px; font-weight: 700; color: #261a47; margin-top: 10px; }
+  .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #261a47; padding: 8px 14px; z-index: 999; box-shadow: 0 -4px 14px rgba(0,0,0,0.25); }
+  .nav-inner { display: flex; gap: 5px; overflow-x: auto; align-items: center; padding-bottom: 4px; }
+  .nav-group-label { color: #b3a6d4; font-size: 11px; font-weight: 700; padding: 0 6px; white-space: nowrap; }
+  .nav-divider { width: 1px; height: 22px; background: rgba(255,255,255,0.2); margin: 0 4px; flex: 0 0 auto; }
+  .nav-chip { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 6px; border: 1px solid #5a4f8a; background: transparent; color: #d3cae6; font-size: 12px; cursor: pointer; position: relative; transition: all .15s; }
+  .nav-chip:hover { transform: translateY(-2px); }
+  .nav-chip.answered { background: #6c5ce7; color: #fff; border-color: #6c5ce7; }
+  .nav-chip.flagged::after { content: ''; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; background: #e67e22; border-radius: 50%; border: 1px solid #261a47; }
+  .nav-progress { color: #d3cae6; font-size: 12px; white-space: nowrap; padding: 0 8px; }
+  .flash { animation: flashHL 1.4s ease; }
+  @keyframes flashHL { 0%{ box-shadow: 0 0 0 3px #6c5ce7; } 100%{ box-shadow: 0 0 0 0 transparent; } }
+  @media (max-width: 992px) { .reading-section { flex-direction: column; } .reading-text, .reading-questions { height: auto; max-height: 400px; border-right: none; } }
+  @media (max-width: 640px) { .container { padding: 16px 14px; margin: 12px 8px; } .header { padding: 10px 16px; } .header h1 { font-size: 16px; } .timer { font-size: 16px; } input[type="text"] { width: 100%; max-width: 260px; } }
+  .text-muted { color: #6b7a8f; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>📕 优益思达入学测试 <small>IELTS Mock Test</small> <span class="voltag">第三卷</span> <span class="brandtag">智能诊断</span></h1>
+  <div class="header-right">
+    <div class="fontsize-controls" title="字号调节">
+      <button onclick="changeFont('sm')">A-</button>
+      <button onclick="changeFont('md')">A</button>
+      <button onclick="changeFont('lg')">A+</button>
+    </div>
+    <div class="timer" id="timerDisplay">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      <span id="timerText">90:00</span>
+    </div>
+  </div>
+</header>
+
+<div class="container" id="testArea">
+
+  <!-- ===== 听力 ===== -->
+  <h2>🎧 一、听力部分 <span class="badge">Listening</span></h2>
+  <div class="instruction"><strong>📌 提示：</strong>点击播放按钮听音频后作答，注意题目字数限制。每段音频可重复播放。</div>
+
+  <h3>Part 1: Function Room Booking</h3>
+  <div class="audio-bar">
+    <button class="audio-btn" onclick="playAudio(1)">▶ 播放 Part 1</button>
+    <button class="audio-btn stop-btn" onclick="stopAudio()">⏹ 停止</button>
+    <span class="audio-status" id="audioStatus1">⚪ 就绪</span>
+  </div>
+  <div class="instruction">Questions 1–5: Write <strong>NO MORE THAN TWO WORDS AND/OR A NUMBER</strong>.</div>
+  <div class="question-block"><span class="qnum">1.</span> Day of the event: <input type="text" id="L_Q1" placeholder="填写答案"></div>
+  <div class="question-block"><span class="qnum">2.</span> Number of guests: <input type="text" id="L_Q2" placeholder="填写数字"></div>
+  <div class="question-block"><span class="qnum">3.</span> Room hire cost: £ <input type="text" id="L_Q3" placeholder="填写数字"></div>
+  <div class="question-block"><span class="qnum">4.</span> Surname: <input type="text" id="L_Q4" placeholder="填写姓氏"></div>
+  <div class="question-block"><span class="qnum">5.</span> Guests must bring their own <input type="text" id="L_Q5" placeholder="填写答案"></div>
+
+  <h3>Part 2: Greenfield Nature Reserve</h3>
+  <div class="audio-bar">
+    <button class="audio-btn" onclick="playAudio(2)">▶ 播放 Part 2</button>
+    <button class="audio-btn stop-btn" onclick="stopAudio()">⏹ 停止</button>
+    <span class="audio-status" id="audioStatus2">⚪ 就绪</span>
+  </div>
+  <div class="instruction">Questions 6–8: Choose <strong>A, B, or C</strong>.</div>
+  <div class="question-block" id="block_L_Q6"><p><strong>6. The visitor centre opens at:</strong></p>
+    <label class="mcq-option"><input type="radio" name="L_Q6" value="A"> A. 8 am</label>
+    <label class="mcq-option"><input type="radio" name="L_Q6" value="B"> B. 9 am</label>
+    <label class="mcq-option"><input type="radio" name="L_Q6" value="C"> C. 10 am</label>
+  </div>
+  <div class="question-block" id="block_L_Q7"><p><strong>7. Dogs are:</strong></p>
+    <label class="mcq-option"><input type="radio" name="L_Q7" value="A"> A. not allowed</label>
+    <label class="mcq-option"><input type="radio" name="L_Q7" value="B"> B. allowed on a lead</label>
+    <label class="mcq-option"><input type="radio" name="L_Q7" value="C"> C. allowed everywhere</label>
+  </div>
+  <div class="question-block" id="block_L_Q8"><p><strong>8. The best time to watch birds is:</strong></p>
+    <label class="mcq-option"><input type="radio" name="L_Q8" value="A"> A. early morning</label>
+    <label class="mcq-option"><input type="radio" name="L_Q8" value="B"> B. midday</label>
+    <label class="mcq-option"><input type="radio" name="L_Q8" value="C"> C. evening</label>
+  </div>
+  <div class="instruction">Questions 9–10: Match each feature to a location (A–D).<br><strong>A.</strong> By the entrance &nbsp; <strong>B.</strong> Near the lake &nbsp; <strong>C.</strong> On the hilltop &nbsp; <strong>D.</strong> In the woodland</div>
+  <div class="question-block"><span class="qnum">9.</span> Café: <select id="L_Q9"><option value="">— Select —</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div>
+  <div class="question-block"><span class="qnum">10.</span> Bird hide: <select id="L_Q10"><option value="">— Select —</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div>
+
+  <h3>Part 3: Experiment Design Tutorial</h3>
+  <div class="audio-bar">
+    <button class="audio-btn" onclick="playAudio(3)">▶ 播放 Part 3</button>
+    <button class="audio-btn stop-btn" onclick="stopAudio()">⏹ 停止</button>
+    <span class="audio-status" id="audioStatus3">⚪ 就绪</span>
+  </div>
+  <div class="instruction">Questions 11–15: Write <strong>NO MORE THAN TWO WORDS</strong>.</div>
+  <div class="question-block"><span class="qnum">11.</span> Investigate the effect of sleep on <input type="text" id="L_Q11" placeholder="填写答案"></div>
+  <div class="question-block"><span class="qnum">12.</span> Give participants a word <input type="text" id="L_Q12" placeholder="填写答案"> to memorise.</div>
+  <div class="question-block"><span class="qnum">13.</span> Must control other <input type="text" id="L_Q13" placeholder="填写答案"></div>
+  <div class="question-block"><span class="qnum">14.</span> Conduct the test in a <input type="text" id="L_Q14" placeholder="填写答案"></div>
+  <div class="question-block"><span class="qnum">15.</span> Display the results in a <input type="text" id="L_Q15" placeholder="填写答案"></div>
+
+  <h3>Part 4: School Open Day Planning</h3>
+  <div class="audio-bar">
+    <button class="audio-btn" onclick="playAudio(4)">▶ 播放 Part 4</button>
+    <button class="audio-btn stop-btn" onclick="stopAudio()">⏹ 停止</button>
+    <span class="audio-status" id="audioStatus4">⚪ 就绪</span>
+  </div>
+  <div class="instruction">Questions 16–20: <strong>Who wants to include each item on the Open Day?</strong><br>Choose <strong>A</strong> (Both agree), <strong>B</strong> (Only Ben), or <strong>C</strong> (Only Chloe).</div>
+  <div class="question-block"><span class="qnum">16.</span> Campus tour: <select id="L_Q16"><option value="">— Select —</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+  <div class="question-block"><span class="qnum">17.</span> Science demonstrations: <select id="L_Q17"><option value="">— Select —</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+  <div class="question-block"><span class="qnum">18.</span> Food stalls: <select id="L_Q18"><option value="">— Select —</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+  <div class="question-block"><span class="qnum">19.</span> Talent show: <select id="L_Q19"><option value="">— Select —</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+  <div class="question-block"><span class="qnum">20.</span> Photo booth: <select id="L_Q20"><option value="">— Select —</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+
+  <!-- ===== 阅读 ===== -->
+  <h2>📖 二、阅读部分 <span class="badge">Reading</span></h2>
+
+  <h3>Passage 1: Urban Green Spaces</h3>
+  <div class="reading-toolbar">
+    <button class="audio-btn tool-btn" onclick="highlightSel('rt1')">🖍 高亮所选</button>
+    <button class="audio-btn tool-btn" onclick="clearHighlights('rt1')">清除高亮</button>
+  </div>
+  <div class="reading-section">
+    <div class="reading-text" id="rt1"><p>Urban green spaces, such as parks and community gardens, provide significant benefits to city dwellers. Research suggests that regular access to greenery can lower stress levels and encourage physical activity. Trees also improve air quality by absorbing pollutants and releasing oxygen, while their shade helps to cool streets during heatwaves. In addition, green spaces can support local wildlife, offering habitats for birds and insects. However, maintaining these areas requires ongoing funding, and in densely built cities suitable land is often scarce and expensive. Despite these challenges, many urban planners now regard green spaces as an essential part of healthy, sustainable city design.</p></div>
+    <div class="reading-questions">
+      <div class="instruction">Questions 21–25: <strong>TRUE / FALSE / NOT GIVEN</strong></div>
+      <div class="question-block"><span class="qnum">21.</span> Green spaces can reduce people's stress. <select id="R_Q21"><option value="">— Select —</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div>
+      <div class="question-block"><span class="qnum">22.</span> Trees release pollutants into the air. <select id="R_Q22"><option value="">— Select —</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div>
+      <div class="question-block"><span class="qnum">23.</span> Community gardens are more popular than parks. <select id="R_Q23"><option value="">— Select —</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div>
+      <div class="question-block"><span class="qnum">24.</span> Green spaces provide homes for some animals. <select id="R_Q24"><option value="">— Select —</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div>
+      <div class="question-block"><span class="qnum">25.</span> Maintaining green spaces costs nothing. <select id="R_Q25"><option value="">— Select —</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></div>
+      <div class="instruction" style="margin-top:18px;">Questions 26–30: Complete the summary. Write <strong>NO MORE THAN TWO WORDS</strong>.</div>
+      <p>Urban green spaces can reduce <strong>26.</strong> <input type="text" id="R_Q26" style="width:120px;" placeholder="…"> and promote <strong>27.</strong> <input type="text" id="R_Q27" style="width:150px;" placeholder="…">. Trees clean the air by absorbing <strong>28.</strong> <input type="text" id="R_Q28" style="width:130px;" placeholder="…">, and their shade helps to <strong>29.</strong> <input type="text" id="R_Q29" style="width:110px;" placeholder="…"> the streets. A major difficulty is that suitable <strong>30.</strong> <input type="text" id="R_Q30" style="width:120px;" placeholder="…"> is scarce in crowded cities.</p>
+    </div>
+  </div>
+
+  <h3>Passage 2: The Four-Day Working Week</h3>
+  <div class="reading-toolbar">
+    <button class="audio-btn tool-btn" onclick="highlightSel('rt2')">🖍 高亮所选</button>
+    <button class="audio-btn tool-btn" onclick="clearHighlights('rt2')">清除高亮</button>
+  </div>
+  <div class="reading-section">
+    <div class="reading-text" id="rt2"><p><strong>(A)</strong> The four-day working week is an arrangement in which employees work four days instead of five, usually with no reduction in pay. Several companies, and even some governments, have run trials of the model in recent years to test whether it is workable.</p><p><strong>(B)</strong> Supporters point to a range of advantages. Trials have reported that staff feel less stressed and take fewer sick days. Many employees say they enjoy a better work-life balance, and some companies have noted that productivity stays the same or even rises.</p><p><strong>(C)</strong> Critics, however, raise concerns. They argue that the model may not suit industries such as healthcare or retail, where services are needed every day. There are also worries that workers may simply be forced to fit five days of tasks into four, increasing daily pressure.</p></div>
+    <div class="reading-questions">
+      <div class="instruction">Questions 31–33: Choose the correct heading for each paragraph.<br><strong>i.</strong> Arguments against the idea<br><strong>ii.</strong> Reported benefits<br><strong>iii.</strong> What the four-day week involves</div>
+      <div class="question-block"><span class="qnum">31.</span> Paragraph (A): <select id="R_Q31"><option value="">— Select —</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option></select></div>
+      <div class="question-block"><span class="qnum">32.</span> Paragraph (B): <select id="R_Q32"><option value="">— Select —</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option></select></div>
+      <div class="question-block"><span class="qnum">33.</span> Paragraph (C): <select id="R_Q33"><option value="">— Select —</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option></select></div>
+      <div class="instruction" style="margin-top:18px;">Questions 34–36: Multiple Choice.</div>
+      <div class="question-block" id="block_R_Q34"><p><strong>34. Under a four-day week, employees usually:</strong></p>
+        <label class="mcq-option"><input type="radio" name="R_Q34" value="A"> A. receive less pay</label>
+        <label class="mcq-option"><input type="radio" name="R_Q34" value="B"> B. keep the same pay</label>
+        <label class="mcq-option"><input type="radio" name="R_Q34" value="C"> C. work longer total hours</label>
+        <label class="mcq-option"><input type="radio" name="R_Q34" value="D"> D. work five shorter days</label>
+      </div>
+      <div class="question-block" id="block_R_Q35"><p><strong>35. According to trials, the four-day week has led to:</strong></p>
+        <label class="mcq-option"><input type="radio" name="R_Q35" value="A"> A. more sick days</label>
+        <label class="mcq-option"><input type="radio" name="R_Q35" value="B"> B. lower productivity in every case</label>
+        <label class="mcq-option"><input type="radio" name="R_Q35" value="C"> C. staff feeling less stressed</label>
+        <label class="mcq-option"><input type="radio" name="R_Q35" value="D"> D. longer working hours</label>
+      </div>
+      <div class="question-block" id="block_R_Q36"><p><strong>36. One concern raised by critics is that:</strong></p>
+        <label class="mcq-option"><input type="radio" name="R_Q36" value="A"> A. all companies will lose money</label>
+        <label class="mcq-option"><input type="radio" name="R_Q36" value="B"> B. the model may not suit every industry</label>
+        <label class="mcq-option"><input type="radio" name="R_Q36" value="C"> C. employees will refuse to work</label>
+        <label class="mcq-option"><input type="radio" name="R_Q36" value="D"> D. customers prefer five-day services</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 写作 ===== -->
+  <h2>✍️ 三、写作部分 <span class="badge">Writing</span></h2>
+  <div class="instruction"><strong>📌 提示：</strong>改错题提交后自动初判，翻译与议论文为主观题，提交后对照参考答案并用 rubric 自评。</div>
+
+  <h3>Module 1: 翻译 (Translation)</h3>
+  <div class="question-block"><p><strong>1.</strong> 近年来，越来越多的人开始关注气候变化。</p><textarea id="W_Q1" rows="2" placeholder="Write your translation..."></textarea></div>
+  <div class="question-block"><p><strong>2.</strong> 因此，许多城市采取措施来减少碳排放。</p><textarea id="W_Q2" rows="2" placeholder="Write your translation..."></textarea></div>
+  <div class="question-block"><p><strong>3.</strong> 然而，仅靠政府的努力是不够的。</p><textarea id="W_Q3" rows="2" placeholder="Write your translation..."></textarea></div>
+
+  <h3>Module 2: 改错 (Error Correction)</h3>
+  <div class="question-block"><p><strong>1.</strong> The informations he gave me was very useful.</p><input type="text" id="W_Q4" style="width:100%;" placeholder="Rewrite the correct sentence..."></div>
+  <div class="question-block"><p><strong>2.</strong> She has lived in London since five years.</p><input type="text" id="W_Q5" style="width:100%;" placeholder="Rewrite the correct sentence..."></div>
+  <div class="question-block"><p><strong>3.</strong> Neither of the two answers are correct.</p><input type="text" id="W_Q6" style="width:100%;" placeholder="Rewrite the correct sentence..."></div>
+  <div class="question-block"><p><strong>4.</strong> I look forward to hear from you.</p><input type="text" id="W_Q7" style="width:100%;" placeholder="Rewrite the correct sentence..."></div>
+  <div class="question-block"><p><strong>5.</strong> He is one of the most smartest students in the class.</p><input type="text" id="W_Q8" style="width:100%;" placeholder="Rewrite the correct sentence..."></div>
+
+  <h3>Module 3: 议论文 (Essay)</h3>
+  <div class="question-block"><p><strong>Topic:</strong> In many countries, the proportion of older people is increasing. Some think this will cause problems, while others believe it brings benefits. Discuss both views and give your own opinion. <em>(建议 ≥ 250 words)</em></p>
+    <textarea id="W_Q9" rows="12" placeholder="Write your essay here..." oninput="updateWordCount()"></textarea>
+    <div class="word-counter" id="wordCount">字数：0</div>
+  </div>
+
+  <!-- ===== 口语 ===== -->
+  <h2>🗣️ 四、口语部分 <span class="badge">Speaking</span></h2>
+  <div class="instruction"><strong>📌 提示：</strong>口语为面试题，需教师评估；提交后可用 rubric 自评。可使用下方计时器模拟真实作答节奏。</div>
+  <div class="speaking-questions question-block">
+    <p><strong>Part 1:</strong> Your hometown, your daily routine, and the food you enjoy.</p>
+    <p><strong>Part 2 (Cue Card):</strong> Describe a skill you would like to learn in the future. You should say: what the skill is, why you want to learn it, how you would learn it, and how it might help you.</p>
+    <p><strong>Part 3:</strong> The value of learning new skills as an adult; the role of technology in learning; whether some skills are becoming less important.</p>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="audio-btn" onclick="startSpeakingTimer()" id="spkBtn">⏱ Part 2 计时（准备 1 分钟 + 作答 2 分钟）</button>
+      <span class="audio-status" id="spkStatus">⚪ 就绪</span>
+    </div>
+  </div>
+
+  <button class="submit-btn" onclick="confirmSubmit()">📤 提交试卷 &amp; 查看智能诊断报告</button>
+</div>
+
+<!-- ===== 结果 ===== -->
+<div class="container" id="resultsArea">
+  <h2>📊 智能诊断报告（第三卷）</h2>
+  <div class="score-board">
+    <div id="scoreText">客观题得分: 0 / 0</div>
+    <div class="sub" id="accuracyText">准确率: 0%</div>
+    <div class="sub" id="timeText"></div>
+  </div>
+  <div class="band-cards" id="bandCards"></div>
+  <div class="ability-section"><h3>📈 能力指标 &amp; 个性化反馈</h3><div id="abilityContent"></div></div>
+  <div class="insight-section"><h3>🔍 错误模式诊断</h3><div id="insightContent"></div></div>
+  <div class="review-section"><h3>📝 逐题解析</h3><div id="feedbackList"></div></div>
+  <div class="writing-review"><h3>✍️ 写作 — 作答、自动初判 &amp; 参考答案</h3><div id="writingContent"></div></div>
+  <div class="rubric-section"><h3>🎯 写作 / 口语自评（拖动滑块估算分数）</h3><div id="rubricContent"></div></div>
+  <div class="instruction" style="margin-top:28px;"><strong>📌 温馨提示：</strong>客观题已自动批改；改错题为机器初判，请教师复核；翻译、议论文、口语请结合参考答案与 rubric 评估。</div>
+  <button class="submit-btn" style="background:#c0392b;box-shadow:0 4px 14px rgba(192,57,43,0.3);" onclick="location.reload()">🔄 重新测试</button>
+</div>
+
+<!-- 底部题号导航 -->
+<div class="nav-bar" id="navBar">
+  <div class="nav-inner" id="navInner"></div>
+</div>
+
+<script>
+const startTime = Date.now();
+const objectiveOrder = [];
+for (let i=1;i<=20;i++) objectiveOrder.push({ n:i, id:'L_Q'+i });
+for (let i=21;i<=36;i++) objectiveOrder.push({ n:i, id:'R_Q'+i });
+const flagged = new Set();
+
+// 1. 计时器
+let timeLeft = 90 * 60;
+let submitted = false;
+const timerText = document.getElementById('timerText');
+const timerDisplay = document.getElementById('timerDisplay');
+function renderTimer() {
+  const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+  timerText.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  timerDisplay.classList.remove('warn','danger');
+  if (timeLeft <= 300) timerDisplay.classList.add('danger');
+  else if (timeLeft <= 600) timerDisplay.classList.add('warn');
+}
+renderTimer();
+const timerInterval = setInterval(() => {
+  timeLeft--;
+  if (timeLeft <= 0) { timeLeft = 0; renderTimer(); clearInterval(timerInterval); if (!submitted) submitTest(); return; }
+  renderTimer();
+}, 1000);
+
+// 2. 字号 / 高亮 / 口语计时
+function changeFont(size) {
+  const c = document.getElementById('testArea');
+  c.classList.remove('fs-sm','fs-lg');
+  if (size === 'sm') c.classList.add('fs-sm');
+  else if (size === 'lg') c.classList.add('fs-lg');
+}
+function highlightSel(containerId) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const container = document.getElementById(containerId);
+  if (!container.contains(range.commonAncestorContainer)) return;
+  const span = document.createElement('span'); span.className = 'hl';
+  try { range.surroundContents(span); } catch (e) {}
+  sel.removeAllRanges();
+}
+function clearHighlights(containerId) {
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('span.hl').forEach(s => {
+    const parent = s.parentNode;
+    while (s.firstChild) parent.insertBefore(s.firstChild, s);
+    parent.removeChild(s); parent.normalize();
+  });
+}
+let spkTimerId = null;
+function startSpeakingTimer() {
+  if (spkTimerId) { clearInterval(spkTimerId); spkTimerId = null; }
+  const status = document.getElementById('spkStatus');
+  let phase = 'prep', t = 60;
+  status.textContent = '🟡 准备中… 60s';
+  spkTimerId = setInterval(() => {
+    t--;
+    if (t < 0) {
+      if (phase === 'prep') { phase = 'speak'; t = 120; status.textContent = '🟢 开始作答… 120s'; }
+      else { clearInterval(spkTimerId); spkTimerId = null; status.textContent = '✅ 作答时间结束'; }
+      return;
+    }
+    status.textContent = (phase === 'prep' ? '🟡 准备中… ' : '🟢 作答中… ') + t + 's';
+  }, 1000);
+}
+
+// 3. 智能语音系统
+let isSpeaking = false;
+function getGenderByName(name) {
+  const female = ['helen','anna','samantha','victoria','zira','mary','jane','sarah','emma','olivia','sophie','diane','chloe','laura','receptionist','librarian','guide'];
+  const male = ['john','tom','david','mark','alex','daniel','james','robert','michael','ben','reed','prof','professor'];
+  const lower = (name||'').toLowerCase();
+  if (female.some(f => lower.includes(f))) return 'female';
+  if (male.some(m => lower.includes(m))) return 'male';
+  return 'female';
+}
+function getVoices() {
+  return new Promise((resolve) => {
+    let voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) resolve(voices);
+    else window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices());
+  });
+}
+async function selectVoice(gender) {
+  const voices = await getVoices();
+  let c = [];
+  if (gender === 'female') c = voices.filter(v => /uk.*female|samantha|zira|victoria|female/i.test(v.name));
+  else c = voices.filter(v => /uk.*male|david|mark|alex|male/i.test(v.name));
+  if (c.length === 0) c = voices.filter(v => v.lang && v.lang.startsWith('en'));
+  return c.length > 0 ? c[0] : null;
+}
+async function speakDialogue(segments) {
+  if (isSpeaking) { stopAudio(); await new Promise(r => setTimeout(r, 100)); }
+  isSpeaking = true;
+  try {
+    for (const seg of segments) {
+      if (!isSpeaking) break;
+      const gender = seg.gender || getGenderByName(seg.name || '');
+      const voice = await selectVoice(gender);
+      const u = new SpeechSynthesisUtterance(seg.text);
+      u.lang = 'en-GB'; u.rate = 0.9; u.pitch = gender === 'female' ? 1.1 : 1.0; u.volume = 1;
+      if (voice) u.voice = voice;
+      await new Promise((resolve) => { u.onend = () => resolve(); u.onerror = () => resolve(); window.speechSynthesis.speak(u); });
+      await new Promise(r => setTimeout(r, 60));
+    }
+  } catch (e) { console.warn(e); } finally { isSpeaking = false; }
+}
+function stopAudio() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  isSpeaking = false;
+}
+const audioScripts = {
+  1: [
+    { name:'Receptionist', text:'Good morning, Maple Hall function room bookings.' },
+    { name:'Mark', text:"Hello, I'd like to book your function room for a birthday party." },
+    { name:'Receptionist', text:'Certainly. Which day were you thinking of?' },
+    { name:'Mark', text:"We're hoping for a Saturday, if one is free." },
+    { name:'Receptionist', text:'We have a Saturday available next month. How many guests are you expecting?' },
+    { name:'Mark', text:'There will be about fifty people.' },
+    { name:'Receptionist', text:'That fits the room well. The room hire cost is two hundred pounds for the evening.' },
+    { name:'Mark', text:"That's fine. Let me give you my details." },
+    { name:'Receptionist', text:'Could I take your surname?' },
+    { name:'Mark', text:"It's Mitchell. M-I-T-C-H-E-L-L." },
+    { name:'Receptionist', text:'Thank you. We provide tables and chairs, but guests must bring their own decorations.' }
+  ],
+  2: [
+    { name:'Guide', text:'Welcome to Greenfield Nature Reserve.' },
+    { name:'Guide', text:'Our visitor centre opens at nine each morning.' },
+    { name:'Guide', text:'Dogs are welcome, but they must be kept on a lead at all times.' },
+    { name:'Guide', text:'If you are keen on wildlife, the best time for birdwatching is early in the morning.' },
+    { name:'Guide', text:'For refreshments, the café is right by the entrance.' },
+    { name:'Guide', text:'And our bird hide, where you can watch waterfowl, is near the lake.' }
+  ],
+  3: [
+    { name:'Dr Wilson', text:'Daniel, what would you like to research for your project?' },
+    { name:'Daniel', text:"I'd like to investigate how sleep affects memory." },
+    { name:'Dr Wilson', text:'Interesting. How will you measure memory?' },
+    { name:'Daniel', text:"I'll give participants a word list to memorise and then test their recall." },
+    { name:'Dr Wilson', text:'Good. But remember, you must control other variables, such as caffeine and stress.' },
+    { name:'Daniel', text:"Right. I'll conduct the test in a laboratory to keep the conditions stable." },
+    { name:'Dr Wilson', text:'And how will you present your results?' },
+    { name:'Daniel', text:"I think I'll display the results in a graph, so the trends are clear." }
+  ],
+  4: [
+    { name:'Ben', text:'Chloe, for the Open Day, I think we should offer a campus tour for visitors.' },
+    { name:'Chloe', text:"Yes, that's essential. Let's definitely include it." },
+    { name:'Ben', text:'How about some science demonstrations in the labs?' },
+    { name:'Chloe', text:"Hmm, that might be risky with young children around. Let's leave it out." },
+    { name:'Chloe', text:"But I'd love to have some food stalls outside." },
+    { name:'Ben', text:"Food stalls? That sounds like a lot of organising. I'd rather not." },
+    { name:'Ben', text:'What about a talent show in the main hall?' },
+    { name:'Chloe', text:'Brilliant idea — everyone enjoys that.' },
+    { name:'Chloe', text:'Oh, and we could set up a photo booth for families.' },
+    { name:'Ben', text:"I don't think we have space for that, sorry." }
+  ]
+};
+function playAudio(part) {
+  const statusEl = document.getElementById('audioStatus'+part);
+  stopAudio();
+  setTimeout(() => {
+    if (statusEl) statusEl.textContent = '🔊 播放中...';
+    speakDialogue(audioScripts[part]).then(() => { if (statusEl) statusEl.textContent = '✅ 播放完成'; }).catch(() => { if (statusEl) statusEl.textContent = '⚠️ 播放出错'; });
+  }, 80);
+}
+window.addEventListener('load', () => { getVoices().then(()=>{}); });
+
+// 4. 答案库 + 解析
+const answerKey = {
+  L_Q1:['saturday'], L_Q2:['50'], L_Q3:['200'], L_Q4:['mitchell'], L_Q5:['decorations','decoration'],
+  L_Q6:['B'], L_Q7:['B'], L_Q8:['A'], L_Q9:['A'], L_Q10:['B'],
+  L_Q11:['memory'], L_Q12:['list'], L_Q13:['variables','variable'],
+  L_Q14:['laboratory','lab'], L_Q15:['graph'],
+  L_Q16:['A'], L_Q17:['B'], L_Q18:['C'], L_Q19:['A'], L_Q20:['C'],
+  R_Q21:['TRUE'], R_Q22:['FALSE'], R_Q23:['NOT GIVEN'], R_Q24:['TRUE'], R_Q25:['FALSE'],
+  R_Q26:['stress'], R_Q27:['physical activity','exercise'],
+  R_Q28:['pollutants','pollution'], R_Q29:['cool'], R_Q30:['land'],
+  R_Q31:['iii'], R_Q32:['ii'], R_Q33:['i'],
+  R_Q34:['B'], R_Q35:['C'], R_Q36:['B']
+};
+const explanations = {
+  L_Q1:'"We\'re hoping for a Saturday" → Saturday。',
+  L_Q2:'"There will be about fifty people" → 50。',
+  L_Q3:'"The room hire cost is two hundred pounds" → 200。',
+  L_Q4:'"It\'s Mitchell. M-I-T-C-H-E-L-L." → Mitchell。',
+  L_Q5:'"guests must bring their own decorations" → decorations。',
+  L_Q6:'"Our visitor centre opens at nine each morning" → B (9 am)。',
+  L_Q7:'"Dogs ... must be kept on a lead" → B (on a lead)。',
+  L_Q8:'"the best time for birdwatching is early in the morning" → A。',
+  L_Q9:'"the café is right by the entrance" → A。',
+  L_Q10:'"our bird hide ... is near the lake" → B。',
+  L_Q11:'"investigate how sleep affects memory" → memory。',
+  L_Q12:'"give participants a word list to memorise" → list。',
+  L_Q13:'"you must control other variables" → variables。',
+  L_Q14:'"conduct the test in a laboratory" → laboratory。',
+  L_Q15:'"display the results in a graph" → graph。',
+  L_Q16:'Ben 提议校园参观，Chloe "essential ... include it"。两人都同意 → A。',
+  L_Q17:'Ben 提议科学演示，Chloe 认为对小孩有风险、应去掉。仅 Ben → B。',
+  L_Q18:'Chloe 提议室外美食摊，Ben 觉得太费事、宁可不做。仅 Chloe → C。',
+  L_Q19:'Ben 提议才艺表演，Chloe "Brilliant idea"。两人 → A。',
+  L_Q20:'Chloe 提议拍照亭，Ben 认为没空间。仅 Chloe → C。',
+  R_Q21:'"regular access to greenery can lower stress levels" → TRUE。',
+  R_Q22:'树木"absorbing pollutants and releasing oxygen"，是吸收污染物、释放氧气，并非释放污染物 → FALSE。',
+  R_Q23:'未将社区花园与公园作受欢迎程度比较 → NOT GIVEN。',
+  R_Q24:'"offering habitats for birds and insects" → TRUE。',
+  R_Q25:'"maintaining these areas requires ongoing funding"，并非免费 → FALSE。',
+  R_Q26:'"lower stress levels" → stress。',
+  R_Q27:'"encourage physical activity" → physical activity。',
+  R_Q28:'"improve air quality by absorbing pollutants" → pollutants。',
+  R_Q29:'"their shade helps to cool streets" → cool。',
+  R_Q30:'"suitable land is often scarce and expensive" → land。',
+  R_Q31:'A 段说明四天工作制是什么 → iii (What the four-day week involves)。',
+  R_Q32:'B 段列举好处（压力小、病假少、效率持平或上升）→ ii (Reported benefits)。',
+  R_Q33:'C 段提出反对意见与担忧 → i (Arguments against the idea)。',
+  R_Q34:'"work four days instead of five, usually with no reduction in pay" → B (同等薪水)。',
+  R_Q35:'"staff feel less stressed and take fewer sick days" → C。',
+  R_Q36:'"the model may not suit industries such as healthcare or retail" → B。'
+};
+const writingRef = {
+  W_Q1:'In recent years, more and more people have begun to pay attention to climate change.',
+  W_Q2:'As a result, many cities have taken measures to reduce carbon emissions.',
+  W_Q3:'However, the efforts of governments alone are not enough.',
+  W_Q4:'The information he gave me was very useful.',
+  W_Q5:'She has lived in London for five years.',
+  W_Q6:'Neither of the two answers is correct.',
+  W_Q7:'I look forward to hearing from you.',
+  W_Q8:'He is one of the smartest students in the class.',
+  W_Q9:'Populations are ageing rapidly in many parts of the world, and views on this trend differ. Some people worry that a larger elderly population will place a heavy burden on healthcare systems and pensions, and that there will be fewer workers to support them. Others argue that older people contribute valuable experience, often continue to work or volunteer, and help to care for younger family members. In my opinion, an ageing society does present real challenges, but with good planning — such as flexible retirement and investment in healthcare — these can be managed while society still benefits from older people\'s contributions.'
+};
+const correctionChecks = {
+  W_Q4: v => /the\s+information\b/i.test(v) && !/informations/i.test(v),
+  W_Q5: v => /for\s+five\s+years/i.test(v) && !/since\s+five\s+years/i.test(v),
+  W_Q6: v => /answers\s+is\s+correct/i.test(v) && !/answers\s+are/i.test(v),
+  W_Q7: v => /forward\s+to\s+hearing/i.test(v) && !/forward\s+to\s+hear\b/i.test(v),
+  W_Q8: v => /one\s+of\s+the\s+smartest/i.test(v) && !/most\s+smartest/i.test(v)
+};
+
+// 5. 工具
+function norm(s) {
+  return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,'');
+}
+function getRadioValue(name) { const radios = document.getElementsByName(name); for (let r of radios) if (r.checked) return r.value; return ''; }
+function readAnswer(qId) {
+  const el = document.getElementById(qId);
+  if (el) { if (el.tagName === 'SELECT') return el.value; return el.value.trim(); }
+  if (document.getElementsByName(qId).length > 0) return getRadioValue(qId);
+  return '';
+}
+function isAnswerCorrect(qId, userAns) { if (!userAns) return false; return answerKey[qId].map(norm).includes(norm(userAns)); }
+
+// 6. 底部导航 + Flag
+function getAnchor(qId) { return document.getElementById(qId) || document.getElementById('block_'+qId); }
+function toggleFlag(qId) {
+  if (flagged.has(qId)) flagged.delete(qId); else flagged.add(qId);
+  const anchor = getAnchor(qId);
+  const block = anchor ? anchor.closest('.question-block') : null;
+  if (block) block.classList.toggle('flagged', flagged.has(qId));
+  const fb = document.querySelector('.flag-btn[data-q="'+qId+'"]');
+  if (fb) fb.classList.toggle('on', flagged.has(qId));
+  refreshNav();
+}
+function jumpTo(qId) {
+  const anchor = getAnchor(qId);
+  if (!anchor) return;
+  anchor.scrollIntoView({ behavior:'smooth', block:'center' });
+  const block = anchor.closest('.question-block') || anchor;
+  block.classList.remove('flash'); void block.offsetWidth; block.classList.add('flash');
+}
+function buildNav() {
+  const inner = document.getElementById('navInner');
+  inner.innerHTML = '';
+  const lLabel = document.createElement('span'); lLabel.className='nav-group-label'; lLabel.textContent='听力'; inner.appendChild(lLabel);
+  objectiveOrder.forEach((q) => {
+    if (q.n === 21) {
+      const div = document.createElement('span'); div.className='nav-divider'; inner.appendChild(div);
+      const rLabel = document.createElement('span'); rLabel.className='nav-group-label'; rLabel.textContent='阅读'; inner.appendChild(rLabel);
+    }
+    const chip = document.createElement('button');
+    chip.className='nav-chip'; chip.textContent=q.n; chip.dataset.q=q.id; chip.onclick = () => jumpTo(q.id);
+    inner.appendChild(chip);
+  });
+  const prog = document.createElement('span'); prog.className='nav-progress'; prog.id='navProgress'; inner.appendChild(prog);
+}
+function refreshNav() {
+  let answered = 0;
+  objectiveOrder.forEach(q => {
+    const chip = document.querySelector('.nav-chip[data-q="'+q.id+'"]');
+    if (!chip) return;
+    const has = readAnswer(q.id) !== '';
+    chip.classList.toggle('answered', has);
+    chip.classList.toggle('flagged', flagged.has(q.id));
+    if (has) answered++;
+  });
+  const prog = document.getElementById('navProgress');
+  if (prog) prog.textContent = '已答 ' + answered + '/' + objectiveOrder.length;
+}
+function injectFlags() {
+  objectiveOrder.forEach(q => {
+    const anchor = getAnchor(q.id);
+    if (!anchor) return;
+    const block = anchor.closest('.question-block');
+    const host = block || anchor.parentNode;
+    if (host.querySelector('.flag-btn[data-q="'+q.id+'"]')) return;
+    const btn = document.createElement('button');
+    btn.className='flag-btn'; btn.dataset.q=q.id; btn.title='标记/取消标记此题以便复查'; btn.innerHTML='⚑';
+    btn.onclick = (e) => { e.preventDefault(); toggleFlag(q.id); };
+    if (block) block.insertBefore(btn, block.firstChild);
+  });
+}
+
+// 7. 字数 / 提交确认
+function updateWordCount() {
+  const v = (document.getElementById('W_Q9').value || '').trim();
+  const n = v ? v.split(/\s+/).length : 0;
+  document.getElementById('wordCount').textContent = '字数：' + n;
+}
+function confirmSubmit() {
+  let answered = 0;
+  objectiveOrder.forEach(q => { if (readAnswer(q.id) !== '') answered++; });
+  const unanswered = objectiveOrder.length - answered;
+  let msg = '客观题已作答 ' + answered + '/' + objectiveOrder.length + ' 题。';
+  if (unanswered > 0) msg += '\n还有 ' + unanswered + ' 题未作答。';
+  if (flagged.size > 0) msg += '\n有 ' + flagged.size + ' 题被标记待复查。';
+  msg += '\n\n确定提交并查看诊断报告吗？';
+  if (window.confirm(msg)) submitTest();
+}
+
+// 8. 评分 & 诊断报告
+function estimateBand(pct) {
+  if (pct >= 92) return '8.0+';
+  if (pct >= 85) return '7.5';
+  if (pct >= 78) return '7.0';
+  if (pct >= 68) return '6.5';
+  if (pct >= 58) return '6.0';
+  if (pct >= 48) return '5.5';
+  if (pct >= 38) return '5.0';
+  if (pct >= 28) return '4.5';
+  return '4.0 或以下';
+}
+function bandToNum(b) { return parseFloat(b) || 4.0; }
+
+function submitTest() {
+  if (submitted) return;
+  submitted = true;
+  stopAudio(); clearInterval(timerInterval);
+  if (spkTimerId) clearInterval(spkTimerId);
+
+  const scoreMap = {}; let correct = 0;
+  const total = Object.keys(answerKey).length;
+  for (const qId in answerKey) {
+    const userAns = readAnswer(qId);
+    const ok = isAnswerCorrect(qId, userAns);
+    scoreMap[qId] = ok; if (ok) correct++;
+  }
+
+  const listeningIds = objectiveOrder.filter(q=>q.id.startsWith('L_')).map(q=>q.id);
+  const readingIds = objectiveOrder.filter(q=>q.id.startsWith('R_')).map(q=>q.id);
+  let lc=0, rc=0;
+  listeningIds.forEach(id=>{ if(scoreMap[id]) lc++; });
+  readingIds.forEach(id=>{ if(scoreMap[id]) rc++; });
+  const lPct = Math.round(lc/listeningIds.length*100);
+  const rPct = Math.round(rc/readingIds.length*100);
+  const overall = Math.round(correct/total*100);
+  const lBand = estimateBand(lPct), rBand = estimateBand(rPct), oBand = estimateBand(overall);
+  const elapsedMin = Math.max(1, Math.round((Date.now()-startTime)/60000));
+
+  const groupDef = {
+    '听力-填空(细节)': { ids:['L_Q1','L_Q2','L_Q3','L_Q4','L_Q5','L_Q11','L_Q12','L_Q13','L_Q14','L_Q15'] },
+    '听力-单选': { ids:['L_Q6','L_Q7','L_Q8'] },
+    '听力-匹配': { ids:['L_Q9','L_Q10'] },
+    '听力-观点(多人)': { ids:['L_Q16','L_Q17','L_Q18','L_Q19','L_Q20'] },
+    '阅读-判断(TFNG)': { ids:['R_Q21','R_Q22','R_Q23','R_Q24','R_Q25'] },
+    '阅读-摘要填空': { ids:['R_Q26','R_Q27','R_Q28','R_Q29','R_Q30'] },
+    '阅读-标题匹配': { ids:['R_Q31','R_Q32','R_Q33'] },
+    '阅读-单选': { ids:['R_Q34','R_Q35','R_Q36'] }
+  };
+  const groupResults = {};
+  for (const [g, def] of Object.entries(groupDef)) {
+    let c=0; def.ids.forEach(id=>{ if(scoreMap[id]) c++; });
+    groupResults[g] = { correct:c, total:def.ids.length, percent:Math.round(c/def.ids.length*100) };
+  }
+
+  document.getElementById('bandCards').innerHTML = `
+    <div class="band-card"><div class="lbl">🎧 听力</div><div class="val">${lBand}</div><div class="meta">${lc}/${listeningIds.length} 正确</div></div>
+    <div class="band-card"><div class="lbl">📖 阅读</div><div class="val">${rBand}</div><div class="meta">${rc}/${readingIds.length} 正确</div></div>
+    <div class="band-card overall"><div class="lbl">📊 客观综合</div><div class="val">${oBand}</div><div class="meta">${correct}/${total}（${overall}%）</div></div>`;
+
+  let barHTML = '';
+  for (const [g,res] of Object.entries(groupResults)) {
+    const p = res.percent; let cls = p<50?'low':(p<70?'mid':'high');
+    barHTML += `<div class="bar-container"><div class="bar-label"><span>${g}</span><span>${p}% (${res.correct}/${res.total})</span></div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${p}%;"></div></div></div>`;
+  }
+  const sorted = Object.entries(groupResults).sort((a,b)=>b[1].percent-a[1].percent);
+  const strengths = sorted.filter(x=>x[1].percent>=70).slice(0,3).map(x=>x[0]);
+  const weaknesses = sorted.filter(x=>x[1].percent<60).slice(-3).map(x=>x[0]);
+  const adviceMap = {
+    '听力-填空(细节)':'强化数字、拼写与速记，多练 Section 1 与 4，听前预测词性与字数。',
+    '听力-单选':'练习排除干扰项，警惕同义替换与转折词带来的答案改变。',
+    '听力-匹配':'练习边听边定位，把选项提前读熟、转成关键词。',
+    '听力-观点(多人)':'区分不同说话人的态度，关注"同意/反对/让步"信号词。',
+    '阅读-判断(TFNG)':'吃透 FALSE 与 NOT GIVEN 的边界：原文有相反信息才是 FALSE，无信息才是 NOT GIVEN。',
+    '阅读-摘要填空':'回原文同义定位，严格遵守字数限制并注意词性与单复数。',
+    '阅读-标题匹配':'抓段落主旨句（常在首尾），区分主旨与细节。',
+    '阅读-单选':'定位题干关键词，逐项排除，警惕"绝对化"干扰项。'
+  };
+  const strengthItems = strengths.map(s=>`<li><strong>${s}</strong>（${groupResults[s].percent}%）</li>`).join('') || '<li>暂无 70% 以上的稳定优势</li>';
+  const weaknessItems = weaknesses.map(w=>`<li><strong>${w}</strong>（${groupResults[w].percent}%）</li>`).join('') || '<li>各题型均较均衡，无明显短板</li>';
+  let adviceList = weaknesses.map(w=>`<li><strong>${w}</strong>：${adviceMap[w]||'针对性练习。'}</li>`).join('');
+  if (!adviceList) adviceList = '<li>基础扎实，建议进入限时套题训练，冲刺更高 band。</li>';
+  let extra = '';
+  if (lPct < rPct - 10) extra = '<li><strong>听力明显弱于阅读</strong>：增加精听与跟读，熟悉英式语速与连读。</li>';
+  else if (rPct < lPct - 10) extra = '<li><strong>阅读明显弱于听力</strong>：扩大学术词汇，练习长难句拆解与限时定位。</li>';
+
+  document.getElementById('abilityContent').innerHTML = `
+    <div style="margin-bottom:8px;"><span style="font-size:15px;">🎧 听力 ${lPct}% &nbsp;|&nbsp; 📖 阅读 ${rPct}% &nbsp;|&nbsp; ⏱ 用时约 ${elapsedMin} 分钟</span></div>
+    <div class="ability-grid">
+      <div class="ability-card"><h4>📊 各题型正确率</h4>${barHTML}</div>
+      <div class="ability-card">
+        <h4>📌 优势 / 待提升</h4>
+        <div class="strength-weakness">
+          <div class="strength"><strong>✅ 优势题型</strong><ul>${strengthItems}</ul></div>
+          <div class="weakness"><strong>⚠️ 待提升题型</strong><ul>${weaknessItems}</ul></div>
+        </div>
+        <div class="advice-box"><h4>💡 学习建议</h4><ul>${adviceList}${extra}</ul>
+          <p style="margin:8px 0 0 0;font-size:14px;">建议结合剑桥真题分题型专项突破，并做好限时管理。</p></div>
+      </div>
+    </div>`;
+
+  const insights = [];
+  const tfng = groupResults['阅读-判断(TFNG)'];
+  if (tfng.percent < 60) insights.push('判断题（TRUE/FALSE/NOT GIVEN）正确率偏低，往往是把"无信息(NOT GIVEN)"误判成 FALSE，或反之——需明确两者边界。');
+  const fillIds = ['L_Q1','L_Q2','L_Q3','L_Q4','L_Q5','L_Q11','L_Q12','L_Q13','L_Q14','L_Q15','R_Q26','R_Q27','R_Q28','R_Q29','R_Q30'];
+  const selIds = objectiveOrder.map(q=>q.id).filter(id=>!fillIds.includes(id));
+  const fillCorrect = fillIds.filter(id=>scoreMap[id]).length, selCorrect = selIds.filter(id=>scoreMap[id]).length;
+  const fillP = Math.round(fillCorrect/fillIds.length*100), selP = Math.round(selCorrect/selIds.length*100);
+  if (fillP < selP - 15) insights.push('填空类（' + fillP + '%）明显弱于选择类（' + selP + '%）：多因拼写、字数限制或同义替换没抓住——填空前先预测词性，写后检查拼写与字数。');
+  else if (selP < fillP - 15) insights.push('选择类（' + selP + '%）弱于填空类（' + fillP + '%）：通常是被干扰项误导——养成"先排除明显错误项"的习惯。');
+  const opinion = groupResults['听力-观点(多人)'];
+  if (opinion.percent < 60) insights.push('多人对话的观点题正确率偏低：注意辨别每位说话人对同一事项是"支持/反对/折中"。');
+  if (elapsedMin < 30) insights.push('整卷用时较短（约 ' + elapsedMin + ' 分钟）：留意是否作答过快导致失分，正式考试中应充分利用时间复核。');
+  if (insights.length === 0) insights.push('未发现集中的错误模式，整体表现均衡，可进入更高难度的限时套题训练。');
+  document.getElementById('insightContent').innerHTML = `<div class="insight-box"><h4>🔍 系统观察到</h4><ul>${insights.map(i=>`<li>${i}</li>`).join('')}</ul></div>`;
+
+  function reviewGroup(title, ids) {
+    let rows = '';
+    ids.forEach(qId => {
+      const ok = scoreMap[qId]; const ua = readAnswer(qId);
+      const display = ua === '' ? '（未作答）' : ua;
+      const num = qId.replace('L_Q','').replace('R_Q','');
+      rows += `<div class="result-item ${ok?'correct':'incorrect'}">
+        <div><strong>Q${num}</strong> ${ok?'✅':'❌'} 你的答案：${display}</div>
+        ${!ok?`<div class="answer-detail">📖 正确答案：<strong>${answerKey[qId].join(' / ')}</strong></div>`:''}
+        <div class="explain">💬 ${explanations[qId]||''}</div></div>`;
+    });
+    const gc = ids.filter(id=>scoreMap[id]).length;
+    return `<div class="review-head" onclick="this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='none'?'block':'none')"><span>${title}</span><span>${gc}/${ids.length} ▾</span></div><div>${rows}</div>`;
+  }
+  document.getElementById('feedbackList').innerHTML = reviewGroup('🎧 听力 Listening', listeningIds) + reviewGroup('📖 阅读 Reading', readingIds);
+
+  const writingIds = ['W_Q1','W_Q2','W_Q3','W_Q4','W_Q5','W_Q6','W_Q7','W_Q8','W_Q9'];
+  const writingLabels = { W_Q1:'翻译 ①',W_Q2:'翻译 ②',W_Q3:'翻译 ③',W_Q4:'改错 ①',W_Q5:'改错 ②',W_Q6:'改错 ③',W_Q7:'改错 ④',W_Q8:'改错 ⑤',W_Q9:'议论文' };
+  let writingHTML = ''; let correctionScore = 0;
+  for (const wid of writingIds) {
+    const el = document.getElementById(wid);
+    const userAns = el ? el.value.trim() : '';
+    const refAns = writingRef[wid] || '（无参考答案）';
+    const label = writingLabels[wid];
+    let autoTag = '';
+    if (correctionChecks[wid]) {
+      const pass = userAns && correctionChecks[wid](userAns);
+      if (pass) correctionScore++;
+      autoTag = `<span class="auto-check ${pass?'ok':'no'}">${pass?'✓ 初判正确':'✗ 仍有问题'}</span>`;
+    } else { autoTag = '<span class="tag">主观题</span>'; }
+    let extraInfo = '';
+    if (wid === 'W_Q9') {
+      const wc = userAns ? userAns.split(/\s+/).length : 0;
+      let note = wc === 0 ? '未作答' : (wc < 150 ? '字数偏少，雅思 Task 2 建议 ≥ 250 词' : (wc < 250 ? '接近但未达 250 词，注意展开论证' : '字数达标'));
+      extraInfo = `<div class="word-counter">字数：${wc}（${note}）</div>`;
+    }
+    writingHTML += `<div class="writing-pair">
+      <div class="flex-between"><span><strong>${label}</strong></span>${autoTag}</div>
+      <div><span class="label user">✏️ 你的作答：</span><div class="user-answer">${userAns===''?'<span class="empty-writing">（未作答）</span>':userAns.replace(/</g,'&lt;')}</div>${extraInfo}</div>
+      <div><span class="label ref">📖 参考答案：</span><div class="ref-answer">${refAns}</div></div></div>`;
+  }
+  writingHTML = `<div class="insight-box" style="margin-top:0;"><h4>🧮 改错题自动初判</h4><p style="margin:0;">5 题中初判正确 <strong>${correctionScore}/5</strong>（机器启发式判断，最终以教师复核为准）。</p></div>` + writingHTML;
+  document.getElementById('writingContent').innerHTML = writingHTML;
+
+  document.getElementById('rubricContent').innerHTML = `
+    <div class="rubric">
+      <h4 style="margin-top:0;">✍️ 写作自评（对照参考答案给自己打分）</h4>
+      <div class="rubric-row"><label>任务回应 Task Response</label><input type="range" min="4" max="9" step="0.5" value="6" oninput="calcRubric()" id="w_tr"><span class="rval" id="w_tr_v">6</span></div>
+      <div class="rubric-row"><label>连贯衔接 Coherence</label><input type="range" min="4" max="9" step="0.5" value="6" oninput="calcRubric()" id="w_cc"><span class="rval" id="w_cc_v">6</span></div>
+      <div class="rubric-row"><label>词汇 Lexical Resource</label><input type="range" min="4" max="9" step="0.5" value="6" oninput="calcRubric()" id="w_lr"><span class="rval" id="w_lr_v">6</span></div>
+      <div class="rubric-row"><label>语法 Grammar</label><input type="range" min="4" max="9" step="0.5" value="6" oninput="calcRubric()" id="w_gr"><span class="rval" id="w_gr_v">6</span></div>
+      <div class="rubric-result">📝 写作自评估分：<span id="writingBand">6.0</span></div>
+    </div>
+    <div class="rubric">
+      <h4 style="margin-top:0;">🗣️ 口语自评（或由教师评分）</h4>
+      <div class="rubric-row"><label>流利度 Fluency</label><input type="range" min="4" max="9" step="0.5" value="6" oninput="calcRubric()" id="s_fl"><span class="rval" id="s_fl_v">6</span></div>
+      <div class="rubric-row"><label>词汇 Lexical Resource</label><input type="range" min="4" max="9" step="0.5" value="6" oninput="calcRubric()" id="s_lr"><span class="rval" id="s_lr_v">6</span></div>
+      <div class="rubric-row"><label>语法 Grammar</label><input type="range" min="4" max="9" step="0.5" value="6" oninput="calcRubric()" id="s_gr"><span class="rval" id="s_gr_v">6</span></div>
+      <div class="rubric-row"><label>发音 Pronunciation</label><input type="range" min="4" max="9" step="0.5" value="6" oninput="calcRubric()" id="s_pr"><span class="rval" id="s_pr_v">6</span></div>
+      <div class="rubric-result">🗣️ 口语自评估分：<span id="speakingBand">6.0</span></div>
+    </div>
+    <div class="rubric" style="background:#f3f0fb;">
+      <div class="rubric-result" style="font-size:18px;">🎓 四项综合估算总分（听力/阅读为客观，写作/口语为自评）：<span id="finalBand">—</span></div>
+      <p class="text-muted" style="margin:6px 0 0 0;">说明：综合分 = (听力 + 阅读 + 写作自评 + 口语自评) / 4，四舍五入到 0.5。仅供入学定位参考。</p>
+    </div>`;
+
+  window._bands = { l: bandToNum(lBand), r: bandToNum(rBand) };
+  calcRubric();
+
+  document.getElementById('testArea').style.display = 'none';
+  document.getElementById('navBar').style.display = 'none';
+  document.getElementById('resultsArea').style.display = 'block';
+  document.getElementById('scoreText').textContent = `客观题得分: ${correct} / ${total}`;
+  document.getElementById('accuracyText').textContent = `准确率: ${overall}%`;
+  document.getElementById('timeText').textContent = `用时约 ${elapsedMin} 分钟`;
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function avg(arr) { return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function roundHalf(x) { return Math.round(x*2)/2; }
+function calcRubric() {
+  ['w_tr','w_cc','w_lr','w_gr','s_fl','s_lr','s_gr','s_pr'].forEach(id=>{ const el=document.getElementById(id); if(el) document.getElementById(id+'_v').textContent=el.value; });
+  const w = roundHalf(avg(['w_tr','w_cc','w_lr','w_gr'].map(id=>parseFloat(document.getElementById(id).value))));
+  const s = roundHalf(avg(['s_fl','s_lr','s_gr','s_pr'].map(id=>parseFloat(document.getElementById(id).value))));
+  document.getElementById('writingBand').textContent = w.toFixed(1);
+  document.getElementById('speakingBand').textContent = s.toFixed(1);
+  const b = window._bands || { l:4, r:4 };
+  document.getElementById('finalBand').textContent = roundHalf(avg([b.l, b.r, w, s])).toFixed(1);
+}
+
+// 9. 初始化
+window.addEventListener('DOMContentLoaded', () => {
+  injectFlags(); buildNav(); refreshNav();
+  document.getElementById('testArea').addEventListener('input', refreshNav);
+  document.getElementById('testArea').addEventListener('change', refreshNav);
+});
+
+window.playAudio = playAudio; window.stopAudio = stopAudio; window.submitTest = submitTest;
+window.confirmSubmit = confirmSubmit; window.changeFont = changeFont;
+window.highlightSel = highlightSel; window.clearHighlights = clearHighlights;
+window.startSpeakingTimer = startSpeakingTimer; window.updateWordCount = updateWordCount;
+window.toggleFlag = toggleFlag; window.calcRubric = calcRubric;
+</script>
+
+<!-- ===== YYSD 成绩同步（由考试中心自动添加，不改动原批改逻辑） ===== -->
+<script>
+(function(){
+  function report(){
+    var fb = document.getElementById('finalBand');
+    if(!fb) return;
+    var band = parseFloat(fb.textContent);
+    if(isNaN(band)) return;
+    var st = (document.getElementById('scoreText')||{}).textContent || '';
+    var m = st.match(/(\d+)\s*\/\s*(\d+)/);
+    try {
+      window.parent.postMessage({ type:'yysd:score',
+        score: m?+m[1]:null, total: m?+m[2]:null, band: band }, '*');
+    } catch(e){}
+  }
+  var fb = document.getElementById('finalBand');
+  if(fb){
+    new MutationObserver(report).observe(fb, {childList:true, subtree:true, characterData:true});
+  }
+})();
+</script>
+
+</body>
+</html>
