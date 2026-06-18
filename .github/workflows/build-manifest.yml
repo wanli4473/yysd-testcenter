@@ -1,0 +1,49 @@
+name: Rebuild exam list
+
+# Whenever an exam HTML file is added, changed, or removed in the exams/
+# folder, regenerate exams/manifest.json automatically and commit it back.
+# This lets the admin add exams just by uploading files — no code needed.
+
+on:
+  push:
+    paths:
+      - "exams/**"
+      - "scripts/build_manifest.py"
+      - ".github/workflows/build-manifest.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-manifest
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so "added" dates resolve correctly
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Rebuild manifest
+        run: python scripts/build_manifest.py
+
+      - name: Commit updated manifest
+        run: |
+          git config user.name  "yysd-bot"
+          git config user.email "actions@github.com"
+          if git diff --quiet -- exams/manifest.json; then
+            echo "manifest.json unchanged — nothing to commit."
+          else
+            git add exams/manifest.json
+            git commit -m "chore: rebuild exam manifest [skip ci]"
+            git push
+          fi

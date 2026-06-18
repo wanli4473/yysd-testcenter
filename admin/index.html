@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 · 优益思达雅思考试中心</title>
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a href="../index.html" class="brand">
+        <span class="brand__mark">YS</span>
+        <span class="brand__name">
+          <b>优益思达雅思考试中心</b>
+          <span>管理后台 · Admin</span>
+        </span>
+      </a>
+      <nav class="nav">
+        <a href="../index.html">返回前台</a>
+        <a href="../results.html">成绩</a>
+        <a href="index.html" class="is-active">管理后台</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container section">
+    <div class="section__head">
+      <div>
+        <h2>上传新的模考试卷</h2>
+        <p>无需编程。准备好试卷 HTML，按下面三步操作即可上线。</p>
+      </div>
+    </div>
+
+    <!-- ============ STEP-BY-STEP GUIDE ============ -->
+    <div class="panel">
+      <h3>📥 上传流程（全程在网页点击，无需命令行）</h3>
+      <p class="sub">下面的「①整理试卷」工具会帮你给试卷打好标签，让它出现在正确的科目分类下。</p>
+      <ol class="steps">
+        <li><b>整理试卷（可选但推荐）：</b>把试卷 HTML 拖到下方工具区，填写标题/科目/时长，点击「生成并下载」。下载到的新文件已经带好标签。</li>
+        <li><b>上传到 GitHub：</b>打开你的仓库页面，进入 <code>exams</code> 文件夹 → 点 <code>Add file</code> → <code>Upload files</code> → 把试卷 HTML 拖进去 → 点 <code>Commit changes</code>。</li>
+        <li><b>自动上线：</b>上传后系统会自动重建模考列表（约 1 分钟）。刷新前台首页即可看到新试卷，<b>无需任何其他操作</b>。</li>
+      </ol>
+      <p class="note">删除试卷同理：在 GitHub 的 <code class="inline">exams</code> 文件夹里删除对应 HTML 文件，列表会自动更新。</p>
+    </div>
+
+    <!-- ============ METADATA TAGGER TOOL ============ -->
+    <div class="panel">
+      <h3>① 整理试卷（打标签工具）</h3>
+      <p class="sub">在你的浏览器本地运行，不会上传任何文件。处理完直接下载到本机。</p>
+
+      <div class="dropzone" id="dropzone">
+        <div style="font-size:30px;margin-bottom:8px">📄</div>
+        <b>点击选择</b> 或把试卷 HTML 文件拖到这里
+        <input type="file" id="file-input" accept=".html,.htm" hidden>
+        <div class="hint" id="file-name" style="margin-top:8px"></div>
+      </div>
+
+      <div id="meta-form" style="display:none;margin-top:22px">
+        <div class="field">
+          <label>试卷标题（显示给学生）</label>
+          <input id="m-title" placeholder="例如：学术类阅读模考 1">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="field">
+            <label>科目</label>
+            <select id="m-type">
+              <option value="reading">阅读 Reading</option>
+              <option value="listening">听力 Listening</option>
+              <option value="writing">写作 Writing</option>
+              <option value="speaking">口语 Speaking</option>
+              <option value="full">全套 Full Test</option>
+              <option value="other">其他练习</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>类别</label>
+            <select id="m-category">
+              <option value="academic">学术类 Academic (A)</option>
+              <option value="general">培训类 General (G)</option>
+              <option value="">不区分</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>建议时长（分钟，0 表示不限时）</label>
+          <input id="m-duration" type="number" min="0" value="60">
+        </div>
+        <div class="field">
+          <label>简介（可选，显示在卡片上）</label>
+          <textarea id="m-desc" rows="2" placeholder="例如：3 篇文章共 40 题，交卷自动批改。"></textarea>
+        </div>
+        <button class="btn btn--primary" id="generate">生成并下载已打标签的试卷 ↓</button>
+        <p class="hint" style="margin-top:10px">下载后，把这个新文件上传到仓库的 <code class="inline">exams</code> 文件夹即可（见上方第 2 步）。</p>
+      </div>
+    </div>
+
+    <!-- ============ MANUAL META REFERENCE ============ -->
+    <div class="panel">
+      <h3>② 进阶：手动给试卷加标签</h3>
+      <p class="sub">如果你想直接编辑 HTML，把下面这段粘到试卷 <code class="inline">&lt;head&gt;</code> 里，改成你的内容即可。系统会优先读取这些标签。</p>
+      <div class="codeblock">&lt;meta name="exam:title"    content="学术类阅读模考 1"&gt;
+&lt;meta name="exam:type"     content="reading"&gt;   &lt;!-- listening/reading/writing/speaking/full --&gt;
+&lt;meta name="exam:category" content="academic"&gt;  &lt;!-- academic / general --&gt;
+&lt;meta name="exam:duration" content="60"&gt;        &lt;!-- 分钟，0=不限时 --&gt;
+&lt;meta name="exam:description" content="3 篇文章共 40 题。"&gt;</div>
+      <p class="hint" style="margin-top:12px">不加也没关系——系统会根据文件名和网页标题自动猜测科目与标题。</p>
+    </div>
+
+    <!-- ============ OPTIONAL SCORE INTEGRATION ============ -->
+    <div class="panel">
+      <h3>③ 进阶：让成绩自动记录到「我的成绩」</h3>
+      <p class="sub">你的试卷自带批改功能即可正常使用。若希望学生分数自动同步到成绩页，在你的批改脚本算出分数后，加一行：</p>
+      <div class="codeblock">window.parent.postMessage(
+  { type: "yysd:score", score: 32, total: 40, band: 7 }, "*");</div>
+      <p class="hint" style="margin-top:12px">示范卷 <code class="inline">sample-academic-reading-1.html</code> 已内置该写法，可参考。</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <span>© <span id="year"></span> 优益思达雅思考试中心 · 管理后台</span>
+    </div>
+  </footer>
+
+  <script>
+  (function () {
+    var fileInput = document.getElementById("file-input");
+    var dropzone  = document.getElementById("dropzone");
+    var fileNameEl= document.getElementById("file-name");
+    var metaForm  = document.getElementById("meta-form");
+    var loadedText = "", loadedName = "";
+
+    function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+    function pickType(name){
+      var n = name.toLowerCase();
+      if (/listen|听力/.test(n)) return "listening";
+      if (/read|阅读/.test(n))   return "reading";
+      if (/writ|写作/.test(n))   return "writing";
+      if (/speak|口语/.test(n))  return "speaking";
+      if (/full|全套|全真/.test(n)) return "full";
+      return "reading";
+    }
+
+    function handleFile(file){
+      if (!file) return;
+      loadedName = file.name;
+      fileNameEl.textContent = "已选择：" + file.name;
+      var reader = new FileReader();
+      reader.onload = function(e){
+        loadedText = e.target.result;
+        // Pre-fill from existing <title> / filename
+        var m = loadedText.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+        var stem = file.name.replace(/\.html?$/i,"").replace(/[-_]+/g," ");
+        document.getElementById("m-title").value = (m ? m[1].trim() : stem) || stem;
+        document.getElementById("m-type").value = pickType(file.name + " " + (m?m[1]:""));
+        metaForm.style.display = "block";
+        metaForm.scrollIntoView({ behavior:"smooth", block:"nearest" });
+      };
+      reader.readAsText(file);
+    }
+
+    dropzone.addEventListener("click", function(){ fileInput.click(); });
+    fileInput.addEventListener("change", function(e){ handleFile(e.target.files[0]); });
+    ["dragover","dragenter"].forEach(function(ev){
+      dropzone.addEventListener(ev, function(e){ e.preventDefault(); dropzone.classList.add("is-over"); });
+    });
+    ["dragleave","drop"].forEach(function(ev){
+      dropzone.addEventListener(ev, function(e){ e.preventDefault(); dropzone.classList.remove("is-over"); });
+    });
+    dropzone.addEventListener("drop", function(e){ handleFile(e.dataTransfer.files[0]); });
+
+    document.getElementById("generate").addEventListener("click", function(){
+      if (!loadedText) { alert("请先选择一个试卷 HTML 文件。"); return; }
+      var title    = document.getElementById("m-title").value.trim();
+      var type     = document.getElementById("m-type").value;
+      var category = document.getElementById("m-category").value;
+      var duration = document.getElementById("m-duration").value || "0";
+      var desc     = document.getElementById("m-desc").value.trim();
+
+      var tags =
+        '\n  <meta name="exam:title" content="'+esc(title)+'">' +
+        '\n  <meta name="exam:type" content="'+esc(type)+'">' +
+        '\n  <meta name="exam:category" content="'+esc(category)+'">' +
+        '\n  <meta name="exam:duration" content="'+esc(duration)+'">' +
+        '\n  <meta name="exam:description" content="'+esc(desc)+'">\n';
+
+      // Remove any existing exam:* tags, then insert fresh ones after <head>
+      var out = loadedText.replace(/\s*<meta[^>]*name=["']exam:[^>]*>/gi, "");
+      if (/<head[^>]*>/i.test(out)) {
+        out = out.replace(/<head[^>]*>/i, function(h){ return h + tags; });
+      } else {
+        out = tags + out;   // no <head> — prepend
+      }
+
+      var blob = new Blob([out], { type:"text/html;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = loadedName.replace(/\.html?$/i,"") + ".html";
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+    });
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+  })();
+  </script>
+</body>
+</html>

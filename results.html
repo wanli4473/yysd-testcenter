@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的成绩 · 优益思达雅思考试中心</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a href="index.html" class="brand">
+        <span class="brand__mark">YS</span>
+        <span class="brand__name">
+          <b>优益思达雅思考试中心</b>
+          <span>YYSD IELTS Test Center</span>
+        </span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">模考中心</a>
+        <a href="results.html" class="is-active">我的成绩</a>
+        <a href="admin/index.html">管理后台</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container section">
+    <div class="section__head">
+      <div>
+        <h2>我的成绩</h2>
+        <p>记录保存在本浏览器中。完成模考并交卷后，成绩会自动出现在这里。</p>
+      </div>
+      <button class="btn btn--ghost btn--sm" id="clear-btn">清空记录</button>
+    </div>
+    <div id="results-area"></div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <span>© <span id="year"></span> 优益思达雅思考试中心 · YYSD IELTS Test Center</span>
+    </div>
+  </footer>
+
+  <script>
+  (function () {
+    var area = document.getElementById("results-area");
+    var TYPE = { listening:"听力", reading:"阅读", writing:"写作", speaking:"口语", full:"全套" };
+    function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+    function load(){ try{return JSON.parse(localStorage.getItem("yysd:results")||"{}");}catch(e){return{};} }
+
+    function render(){
+      var store = load();
+      var rows = Object.keys(store).map(function(k){return store[k];})
+        .sort(function(a,b){return String(b.date).localeCompare(String(a.date));});
+
+      if(!rows.length){
+        area.innerHTML = '<div class="state"><h3>还没有成绩记录</h3>' +
+          '<p>去完成一套模考吧，交卷后成绩会自动记录在这里。</p>' +
+          '<p style="margin-top:14px"><a class="btn btn--primary btn--sm" href="index.html">前往模考中心 →</a></p></div>';
+        return;
+      }
+
+      var html = '<div class="table-wrap"><table class="data"><thead><tr>' +
+        '<th>试卷</th><th>科目</th><th>得分</th><th>等级 (Band)</th><th>完成时间</th><th></th>' +
+        '</tr></thead><tbody>';
+      rows.forEach(function(r){
+        var score = (r.score!=null) ? (r.score + (r.total!=null ? " / "+r.total : "")) : "—";
+        var date = r.date ? new Date(r.date).toLocaleString("zh-CN") : "—";
+        html += '<tr>' +
+          '<td><b>'+esc(r.title)+'</b></td>' +
+          '<td>'+(TYPE[r.type]||"练习")+'</td>' +
+          '<td><span class="score-pill">'+esc(score)+'</span></td>' +
+          '<td>'+(r.band!=null?esc(r.band):"—")+'</td>' +
+          '<td>'+esc(date)+'</td>' +
+          '<td><a class="btn btn--ghost btn--sm" href="exam.html?id='+encodeURIComponent(r.id)+'">重做</a></td>' +
+          '</tr>';
+      });
+      html += '</tbody></table></div>';
+      area.innerHTML = html;
+    }
+
+    document.getElementById("clear-btn").addEventListener("click", function(){
+      if(confirm("确定清空全部成绩记录吗？此操作不可撤销。")){
+        localStorage.removeItem("yysd:results"); render();
+      }
+    });
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+    render();
+  })();
+  </script>
+</body>
+</html>
