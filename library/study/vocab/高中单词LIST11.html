@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>雅思单词 LIST 11 - 英式女声</title>
+    <style>
+        :root {
+            --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
+            --accent: #c8963e; --accent-light: #e8c97a; --text: #2d2d2d; --text-light: #5a5a5a;
+            --text-muted: #888; --border: #e0dcd5; --shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --shadow-hover: 0 6px 24px rgba(0,0,0,0.1); --shadow-card: 0 1px 4px rgba(0,0,0,0.04);
+            --radius: 12px; --radius-sm: 8px; --radius-xs: 6px; --transition: 0.22s ease;
+            --font-heading: 'Georgia', serif; --font-body: 'Inter', 'PingFang SC', sans-serif;
+            --font-ipa: 'Gentium Plus', serif; --success: #3a7d5a; --success-bg: #eaf5ee;
+            --error: #c0392b; --error-bg: #fdf0ee; --warning: #b8860b; --warning-bg: #fef9ee;
+            --tag-bg: #f0ede6; --history-bg: #f9f8f5;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh; line-height:1.6; -webkit-font-smoothing:antialiased; }
+        .header { background:var(--card-bg); border-bottom:1px solid var(--border); padding:0 24px; position:sticky; top:0; z-index:100; box-shadow:0 1px 3px rgba(0,0,0,0.04); backdrop-filter:blur(8px); }
+        .header-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:60px; gap:16px; }
+        .logo { display:flex; align-items:center; gap:10px; font-family:var(--font-heading); font-size:1.35rem; font-weight:700; color:var(--primary); }
+        .logo-icon { width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.1rem; }
+        .nav-tabs { display:flex; gap:4px; background:#f5f3ef; border-radius:28px; padding:3px; }
+        .nav-tab { padding:9px 20px; border-radius:26px; border:none; cursor:pointer; font-size:0.9rem; font-weight:600; transition:var(--transition); background:transparent; color:var(--text-light); font-family:var(--font-body); }
+        .nav-tab.active { background:#fff; color:var(--primary); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+        .nav-tab:hover:not(.active) { color:var(--primary); background:rgba(255,255,255,0.5); }
+        .word-count-badge { font-size:0.8rem; color:var(--text-muted); background:var(--tag-bg); padding:5px 12px; border-radius:20px; font-weight:500; }
+        .main-container { max-width:1200px; margin:0 auto; padding:24px 20px 40px; }
+        .learn-section, .test-section { display:none; }
+        .learn-section.active, .test-section.active { display:block; }
+        .learn-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:14px; }
+        .word-card { background:var(--card-bg); border-radius:var(--radius); padding:16px 18px; cursor:pointer; transition:var(--transition); border:1.5px solid transparent; box-shadow:var(--shadow-card); display:flex; flex-direction:column; gap:6px; user-select:none; }
+        .word-card:hover { box-shadow:var(--shadow-hover); border-color:#d5cec4; transform:translateY(-2px); }
+        .word-card.expanded { border-color:var(--primary-light); box-shadow:var(--shadow-hover); grid-column:1/-1; cursor:default; z-index:10; background:#fefefd; }
+        .word-card-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .word-headword { font-family:var(--font-heading); font-size:1.25rem; font-weight:700; color:var(--primary); }
+        .word-ipa { font-family:var(--font-ipa); font-size:0.85rem; color:var(--text-muted); }
+        .btn-play { width:34px; height:34px; border-radius:50%; border:none; cursor:pointer; background:#f0ede6; color:var(--primary); font-size:0.85rem; transition:var(--transition); display:flex; align-items:center; justify-content:center; }
+        .btn-play:hover { background:var(--primary); color:#fff; }
+        .btn-play.playing { background:var(--accent); color:#fff; animation:pulse-play 0.8s infinite; }
+        @keyframes pulse-play { 0%,100%{ box-shadow:0 0 0 0 rgba(200,150,62,0.5); } 50%{ box-shadow:0 0 0 14px rgba(200,150,62,0); } }
+        .word-pos { display:inline-block; font-size:0.75rem; font-weight:600; color:var(--accent); background:#fdf8f0; padding:3px 8px; border-radius:4px; }
+        .word-meaning { font-size:0.9rem; color:var(--text); font-weight:500; }
+        .word-detail { display:none; margin-top:8px; padding-top:10px; border-top:1px dashed var(--border); animation:fadeIn 0.25s ease; }
+        .word-card.expanded .word-detail { display:block; }
+        @keyframes fadeIn { from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:translateY(0); } }
+        .word-detail-row { font-size:0.85rem; margin-bottom:6px; color:var(--text-light); line-height:1.5; }
+        .word-detail-row strong { color:var(--primary); font-weight:600; }
+        .word-detail-example { background:#fafaf7; padding:8px 12px; border-radius:var(--radius-xs); color:#555; border-left:3px solid var(--accent-light); margin-top:4px; font-size:0.85rem; }
+        .card-collapse-hint { font-size:0.7rem; color:var(--text-muted); text-align:center; margin-top:4px; display:none; }
+        .word-card.expanded .card-collapse-hint { display:block; }
+        .test-setup { background:var(--card-bg); border-radius:var(--radius); padding:28px 24px; text-align:center; box-shadow:var(--shadow); max-width:520px; margin:0 auto; }
+        .test-setup h3 { font-family:var(--font-heading); font-size:1.3rem; color:var(--primary); margin-bottom:8px; }
+        .test-setup p { color:var(--text-light); margin-bottom:20px; font-size:0.9rem; }
+        .btn-start-test { padding:12px 36px; border-radius:26px; border:none; cursor:pointer; font-size:1rem; font-weight:700; background:var(--primary); color:#fff; transition:var(--transition); font-family:var(--font-body); }
+        .btn-start-test:hover { background:var(--primary-light); box-shadow:0 4px 16px rgba(44,62,107,0.3); transform:translateY(-1px); }
+        .test-active-area, .test-results { display:none; max-width:600px; margin:0 auto; background:var(--card-bg); border-radius:var(--radius); padding:28px 24px; box-shadow:var(--shadow); text-align:center; }
+        .test-active-area.visible, .test-results.visible { display:block; }
+        .test-progress { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; font-size:0.85rem; color:var(--text-muted); font-weight:500; }
+        .progress-bar-wrap { flex:1; height:6px; background:#e8e4dc; border-radius:3px; margin:0 12px; overflow:hidden; }
+        .progress-bar-fill { height:100%; background:var(--primary); border-radius:3px; transition:width 0.35s ease; }
+        .test-play-area { margin:20px 0; }
+        .btn-play-large { width:70px; height:70px; border-radius:50%; border:none; cursor:pointer; background:var(--primary); color:#fff; font-size:1.6rem; transition:var(--transition); box-shadow:0 4px 16px rgba(44,62,107,0.25); }
+        .btn-play-large:hover { background:var(--primary-light); transform:scale(1.05); }
+        .btn-play-large.playing { background:var(--accent); animation:pulse-play-large 0.8s infinite; }
+        @keyframes pulse-play-large { 0%,100%{ box-shadow:0 0 0 0 rgba(200,150,62,0.6); } 50%{ box-shadow:0 0 0 22px rgba(200,150,62,0); } }
+        .test-inputs { display:flex; flex-direction:column; gap:12px; margin:20px 0; text-align:left; }
+        .test-input-group label { display:block; font-size:0.85rem; font-weight:600; margin-bottom:4px; }
+        .test-input-group input { width:100%; padding:12px 14px; border-radius:var(--radius-sm); border:2px solid var(--border); font-size:1rem; transition:var(--transition); background:#fafaf8; }
+        .test-input-group input:focus { outline:none; border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(61,90,153,0.08); }
+        .correct-input { border-color:var(--success)!important; background:var(--success-bg)!important; }
+        .wrong-input { border-color:var(--error)!important; background:var(--error-bg)!important; }
+        .btn-submit { padding:12px 32px; border-radius:26px; border:none; cursor:pointer; font-size:1rem; font-weight:700; background:var(--primary); color:#fff; }
+        .btn-submit:disabled { opacity:0.5; cursor:not-allowed; }
+        .test-feedback { margin-top:16px; padding:14px 16px; border-radius:var(--radius-sm); font-size:0.9rem; display:none; animation:fadeIn 0.3s ease; text-align:left; line-height:1.7; }
+        .test-feedback.visible { display:block; }
+        .test-feedback.correct-all { background:var(--success-bg); border:1px solid #c3e0cd; color:#2d5a3d; }
+        .test-feedback.partial { background:var(--warning-bg); border:1px solid #f0d78c; color:#6b4f1a; }
+        .test-feedback.wrong-all { background:var(--error-bg); border:1px solid #f5c6cb; color:#6b2020; }
+        .btn-next { margin-top:12px; padding:10px 24px; border-radius:22px; border:2px solid var(--primary); cursor:pointer; font-size:0.9rem; font-weight:600; background:#fff; color:var(--primary); display:none; }
+        .btn-next.visible { display:inline-block; }
+        .btn-next:hover { background:var(--primary); color:#fff; }
+        .results-score { font-family:var(--font-heading); font-size:3.5rem; font-weight:700; color:var(--primary); }
+        .results-detail { font-size:0.9rem; color:var(--text-light); margin:8px 0 20px; }
+        .results-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:0.85rem; text-align:left; }
+        .results-table th, .results-table td { padding:8px 10px; border-bottom:1px solid var(--border); }
+        .results-table th { background:#fafaf7; color:var(--primary); }
+        .row-correct { background:#f9fdf9; } .row-wrong { background:#fefbfb; }
+        .btn-retry { margin-top:16px; padding:12px 28px; border-radius:26px; border:none; cursor:pointer; font-weight:700; background:var(--accent); color:#fff; }
+        .btn-back-setup { margin-left:10px; background:#fff; color:var(--primary); border:2px solid var(--primary); }
+        .history-section { margin-top:32px; background:var(--history-bg); border-radius:var(--radius); padding:20px; max-width:520px; margin-left:auto; margin-right:auto; text-align:left; box-shadow:var(--shadow-card); }
+        .history-title { font-family:var(--font-heading); font-size:1.1rem; color:var(--primary); margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+        .history-list { list-style:none; max-height:240px; overflow-y:auto; padding-right:4px; }
+        .history-list li { padding:10px 12px; background:#fff; border-radius:var(--radius-sm); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border:1px solid var(--border); }
+        .history-time { color:var(--text-muted); font-size:0.75rem; }
+        .history-score { font-weight:700; color:var(--primary); }
+        .history-empty { color:var(--text-muted); text-align:center; padding:16px; font-size:0.85rem; }
+        .btn-clear-history { background:none; border:none; color:#c0392b; font-size:0.75rem; cursor:pointer; text-decoration:underline; }
+        @media (max-width:768px) {
+            .learn-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+            .word-card { padding:12px 14px; }
+            .word-headword { font-size:1.1rem; }
+            .word-count-badge { display:none; }
+            .btn-play-large { width:56px; height:56px; font-size:1.3rem; }
+            .results-score { font-size:2.5rem; }
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="header-inner">
+        <div class="logo"><div class="logo-icon">📖</div><span>IELTS LIST 11</span></div>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" data-mode="learn">📚 学习模式</button>
+            <button class="nav-tab" data-mode="test">✅ 单词检测</button>
+        </nav>
+        <span class="word-count-badge">共 39 词</span>
+    </div>
+</header>
+<div class="main-container">
+    <section class="learn-section active" id="learnSection"><div class="learn-grid" id="learnGrid"></div></section>
+    <section class="test-section" id="testSection">
+        <div class="test-setup" id="testSetup">
+            <h3>📝 LIST 11 单词检测</h3>
+            <p>点击开始检测全部<strong>39个单词</strong>。<br>播放读音后填写拼写和含义。</p>
+            <button class="btn-start-test" id="btnStartTest">🎯 开始检测 (39题)</button>
+            <div class="history-section"><div class="history-title">📋 历史记录 <button class="btn-clear-history" id="btnClearHistory">清除记录</button></div><div id="historyContent"></div></div>
+        </div>
+        <div class="test-active-area" id="testActiveArea">
+            <div class="test-progress"><span id="testProgressLabel">第 1 / 39 题</span><div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBarFill" style="width:0%;"></div></div><span id="testScoreLabel">得分: 0</span></div>
+            <div class="test-play-area"><button class="btn-play-large" id="btnPlayTest">▶</button><p class="play-hint">点击按钮听单词读音</p></div>
+            <div class="test-inputs">
+                <div class="test-input-group"><label>🔤 英文拼写</label><input type="text" id="inputSpelling" placeholder="请输入英文拼写..." autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+                <div class="test-input-group"><label>🈶 中文含义</label><input type="text" id="inputMeaning" placeholder="请输入中文含义..." autocomplete="off"></div>
+            </div>
+            <button class="btn-submit" id="btnSubmit">✓ 提交答案</button>
+            <div class="test-feedback" id="testFeedback"></div>
+            <button class="btn-next" id="btnNext">下一题 →</button>
+        </div>
+        <div class="test-results" id="testResults">
+            <h3 style="font-family:var(--font-heading);color:var(--primary);">🏆 检测完成！</h3>
+            <div class="results-score" id="resultsScore">0</div><div class="results-detail" id="resultsDetail"></div>
+            <div style="overflow-x:auto;"><table class="results-table"><thead><tr><th>#</th><th>单词</th><th>你的拼写</th><th>你的含义</th><th>结果</th></tr></thead><tbody id="resultsTableBody"></tbody></table></div>
+            <button class="btn-retry" id="btnRetry">🔄 重新检测</button>
+            <button class="btn-retry btn-back-setup" id="btnBackToSetup">📋 返回</button>
+        </div>
+    </section>
+</div>
+<script>
+(function() {
+// ==================== LIST 11 单词数据 (39词) ====================
+const wordData = [
+  { id:1, word:'trust', ipa:'/trʌst/', pos:'n./v.', meaning:'信任；信赖', phrases:'trust in (信赖), mutual trust (互信), trust someone (信任某人)', example:'I trust you completely. (我完全信任你。)', acceptCN:['信任','信赖','相信'] },
+  { id:2, word:'height', ipa:'/haɪt/', pos:'n.', meaning:'高度；身高', phrases:'height of (…的高度), average height (平均身高), at a height of (在…高度)', example:'What is the height of the mountain? (这座山的高度是多少？)', acceptCN:['高度','身高','海拔'] },
+  { id:3, word:'forget', ipa:'/fəˈɡet/', pos:'v.', meaning:'忘记；遗忘', phrases:'forget about (忘记), never forget (永不忘), forget to do (忘记要做)', example:'Don\'t forget to lock the door. (别忘了锁门。)', acceptCN:['忘记','遗忘','忽略'] },
+  { id:4, word:'common', ipa:'/ˈkɒm.ən/', pos:'adj.', meaning:'常见的；共同的', phrases:'common sense (常识), in common (共同), common problem (常见问题)', example:'It is a common mistake. (这是个常见的错误。)', acceptCN:['常见','普通','共同'] },
+  { id:5, word:'broadcast', ipa:'/ˈbrɔːd.kɑːst/', pos:'v./n.', meaning:'广播；播送', phrases:'live broadcast (现场直播), broadcast news (新闻广播), radio broadcast (无线电广播)', example:'The concert will be broadcast live. (音乐会将会现场直播。)', acceptCN:['广播','播送','播放'] },
+  { id:6, word:'primary', ipa:'/ˈpraɪ.mər.i/', pos:'adj.', meaning:'主要的；初级的', phrases:'primary school (小学), primary color (原色), primary goal (主要目标)', example:'Our primary concern is safety. (我们首要关心的是安全。)', acceptCN:['主要','初级','首要'] },
+  { id:7, word:'stay', ipa:'/steɪ/', pos:'v./n.', meaning:'停留；保持', phrases:'stay up (熬夜), stay healthy (保持健康), stay at home (待在家)', example:'Stay calm in an emergency. (紧急情况下保持冷静。)', acceptCN:['停留','保持','逗留'] },
+  { id:8, word:'such', ipa:'/sʌtʃ/', pos:'det./pron.', meaning:'这样的；如此', phrases:'such as (例如), such that (如此…以致), no such (没有这样的)', example:'Such behavior is unacceptable. (这样的行为不可接受。)', acceptCN:['这样','如此','那么'] },
+  { id:9, word:'review', ipa:'/rɪˈvjuː/', pos:'n./v.', meaning:'复习；回顾', phrases:'review session (复习课), book review (书评), performance review (绩效评估)', example:'Let\'s review what we learned. (我们复习一下所学内容。)', acceptCN:['复习','回顾','评论'] },
+  { id:10, word:'regret', ipa:'/rɪˈɡret/', pos:'v./n.', meaning:'后悔；遗憾', phrases:'regret to say (遗憾地说), regret doing (后悔做了), deep regret (深感遗憾)', example:'I regret not taking the chance. (我后悔没有抓住机会。)', acceptCN:['后悔','遗憾','惋惜'] },
+  { id:11, word:'fresh', ipa:'/freʃ/', pos:'adj.', meaning:'新鲜的；清新的', phrases:'fresh air (新鲜空气), fresh fruit (新鲜水果), fresh start (新的开始)', example:'The bread is still fresh. (面包还是新鲜的。)', acceptCN:['新鲜','清新','新颖'] },
+  { id:12, word:'tradition', ipa:'/trəˈdɪʃ.ən/', pos:'n.', meaning:'传统；惯例', phrases:'cultural tradition (文化传统), family tradition (家庭传统), by tradition (按照传统)', example:'It\'s a tradition to give gifts. (送礼是一种传统。)', acceptCN:['传统','惯例','习俗'] },
+  { id:13, word:'moral', ipa:'/ˈmɒr.əl/', pos:'adj./n.', meaning:'道德的；寓意', phrases:'moral support (道义支持), moral values (道德价值观), moral of the story (故事寓意)', example:'He has high moral standards. (他有很高的道德标准。)', acceptCN:['道德','品行','寓意'] },
+  { id:14, word:'hopeless', ipa:'/ˈhəʊp.ləs/', pos:'adj.', meaning:'无望的；绝望的', phrases:'hopeless situation (绝望的境地), feel hopeless (感到绝望), hopeless romantic (无可救药的浪漫者)', example:'It seems hopeless to change his mind. (改变他的想法似乎无望。)', acceptCN:['无望','绝望','无救'] },
+  { id:15, word:'uniform', ipa:'/ˈjuː.nɪ.fɔːm/', pos:'n./adj.', meaning:'制服；一致的', phrases:'school uniform (校服), uniform standard (统一标准), in uniform (穿着制服)', example:'All students wear a uniform. (所有学生穿校服。)', acceptCN:['制服','统一','一致'] },
+  { id:16, word:'delighted', ipa:'/dɪˈlaɪ.tɪd/', pos:'adj.', meaning:'高兴的；愉快的', phrases:'delighted to (很高兴做), absolutely delighted (非常高兴), delighted with (对…满意)', example:'I\'m delighted to see you. (见到你很高兴。)', acceptCN:['高兴','愉快','欣喜'] },
+  { id:17, word:'forehead', ipa:'/ˈfɒr.ɪd/', pos:'n.', meaning:'额头', phrases:'high forehead (高额头), wrinkled forehead (皱纹额头), wipe forehead (擦额头)', example:'He wiped the sweat from his forehead. (他擦去额头上的汗水。)', acceptCN:['额头','前额'] },
+  { id:18, word:'could', ipa:'/kʊd/', pos:'modal v.', meaning:'能够；可以', phrases:'could do (能够做), could be (可能是), couldn\'t help (忍不住)', example:'Could you help me? (你能帮我吗？)', acceptCN:['能够','可以','可能'] },
+  { id:19, word:'base', ipa:'/beɪs/', pos:'n./v.', meaning:'基础；以…为基础', phrases:'base on (基于), military base (军事基地), base camp (大本营)', example:'The story is based on real events. (故事基于真实事件。)', acceptCN:['基础','基地','根据'] },
+  { id:20, word:'bleed', ipa:'/bliːd/', pos:'v.', meaning:'流血；出血', phrases:'bleed to death (流血致死), nose bleeds (流鼻血), bleed for (为…流血)', example:'His finger is bleeding. (他的手指在流血。)', acceptCN:['流血','出血','放血'] },
+  { id:21, word:'use', ipa:'/juːz/', pos:'v./n.', meaning:'使用；用途', phrases:'make use of (利用), use up (用完), daily use (日常使用)', example:'Can I use your phone? (我能用你的电话吗？)', acceptCN:['使用','利用','用途'] },
+  { id:22, word:'allow', ipa:'/əˈlaʊ/', pos:'v.', meaning:'允许；准许', phrases:'allow for (考虑到), allow to do (允许做), allow access (准许进入)', example:'Smoking is not allowed here. (此处禁止吸烟。)', acceptCN:['允许','准许','容许'] },
+  { id:23, word:'skillful', ipa:'/ˈskɪl.fəl/', pos:'adj.', meaning:'熟练的；灵巧的', phrases:'skillful at (擅长), skillful player (技术娴熟的选手), skillful handling (巧妙处理)', example:'She is skillful at painting. (她擅长绘画。)', acceptCN:['熟练','灵巧','技艺高超'] },
+  { id:24, word:'listen', ipa:'/ˈlɪs.ən/', pos:'v.', meaning:'听；倾听', phrases:'listen to (听), listen carefully (认真听), listen up (注意听)', example:'Listen to the teacher carefully. (认真听老师讲。)', acceptCN:['听','倾听','听从'] },
+  { id:25, word:'pleasant', ipa:'/ˈplez.ənt/', pos:'adj.', meaning:'令人愉快的；舒适的', phrases:'pleasant weather (宜人的天气), pleasant surprise (惊喜), pleasant smell (芳香)', example:'Have a pleasant day! (祝一天愉快！)', acceptCN:['愉快','舒适','宜人'] },
+  { id:26, word:'leather', ipa:'/ˈleð.ər/', pos:'n.', meaning:'皮革；皮制品', phrases:'leather jacket (皮夹克), leather shoes (皮鞋), genuine leather (真皮)', example:'The sofa is made of leather. (沙发是皮革制成的。)', acceptCN:['皮革','皮','皮革制品'] },
+  { id:27, word:'characteristic', ipa:'/ˌkær.ək.təˈrɪs.tɪk/', pos:'n./adj.', meaning:'特征；典型的', phrases:'distinguishing characteristic (显著特征), characteristic of (…的特征), physical characteristics (身体特征)', example:'Punctuality is his characteristic. (守时是他的特点。)', acceptCN:['特征','特性','典型'] },
+  { id:28, word:'shine', ipa:'/ʃaɪn/', pos:'v./n.', meaning:'照耀；发光', phrases:'shine brightly (明亮地照耀), shine shoes (擦鞋), rain or shine (不论天气如何)', example:'The sun is shining. (阳光普照。)', acceptCN:['照耀','发光','擦亮'] },
+  { id:29, word:'generation', ipa:'/ˌdʒen.əˈreɪ.ʃən/', pos:'n.', meaning:'一代人；产生', phrases:'younger generation (年轻一代), generation gap (代沟), electricity generation (发电)', example:'This tradition has passed for generations. (这个传统传承了几代人。)', acceptCN:['代','一代人','产生'] },
+  { id:30, word:'dusty', ipa:'/ˈdʌs.ti/', pos:'adj.', meaning:'布满灰尘的', phrases:'dusty road (尘土飞扬的路), get dusty (落满灰尘), dusty attic (积灰的阁楼)', example:'The old books are dusty. (旧书上满是灰尘。)', acceptCN:['布满灰尘','尘封','灰尘多'] },
+  { id:31, word:'permission', ipa:'/pəˈmɪʃ.ən/', pos:'n.', meaning:'允许；许可', phrases:'ask for permission (请求许可), without permission (未经许可), written permission (书面许可)', example:'You need permission to enter. (你需要许可才能进入。)', acceptCN:['允许','许可','批准'] },
+  { id:32, word:'turn', ipa:'/tɜːn/', pos:'v./n.', meaning:'转动；转变', phrases:'turn on (打开), turn off (关闭), in turn (依次), turn into (变成)', example:'Turn left at the corner. (在拐角处左转。)', acceptCN:['转动','转变','轮流'] },
+  { id:33, word:'enjoy', ipa:'/ɪnˈdʒɔɪ/', pos:'v.', meaning:'享受；喜爱', phrases:'enjoy oneself (玩得开心), enjoy doing (喜欢做), enjoy the view (欣赏风景)', example:'I enjoy reading novels. (我喜欢读小说。)', acceptCN:['享受','喜爱','欣赏'] },
+  { id:34, word:'nature', ipa:'/ˈneɪ.tʃər/', pos:'n.', meaning:'自然；天性', phrases:'human nature (人性), by nature (天生地), back to nature (回归自然)', example:'We should protect nature. (我们应该保护自然。)', acceptCN:['自然','天性','本质'] },
+  { id:35, word:'civilization', ipa:'/ˌsɪv.ə.laɪˈzeɪ.ʃən/', pos:'n.', meaning:'文明；文化', phrases:'ancient civilization (古代文明), modern civilization (现代文明), Chinese civilization (中华文明)', example:'The civilization of ancient Egypt was advanced. (古埃及文明很发达。)', acceptCN:['文明','文化','开化'] },
+  { id:36, word:'cheque', ipa:'/tʃek/', pos:'n.', meaning:'支票', phrases:'write a cheque (开支票), cash a cheque (兑现支票), blank cheque (空白支票)', example:'He paid by cheque. (他用支票付款。)', acceptCN:['支票','支票本'] },
+  { id:37, word:'bathe', ipa:'/beɪð/', pos:'v.', meaning:'洗澡；沐浴', phrases:'bathe in (沐浴于), bathe the wound (清洗伤口), go bathing (去游泳)', example:'You should bathe the wound twice a day. (你应该每天清洗伤口两次。)', acceptCN:['洗澡','沐浴','浸洗'] },
+  { id:38, word:'convenient', ipa:'/kənˈviː.ni.ənt/', pos:'adj.', meaning:'方便的；便利的', phrases:'convenient for (对…方便), convenient time (方便的时间), it is convenient (如果方便的话)', example:'It\'s convenient to travel by subway. (乘地铁很方便。)', acceptCN:['方便','便利','便捷'] },
+  { id:39, word:'glory', ipa:'/ˈɡlɔː.ri/', pos:'n.', meaning:'光荣；荣誉', phrases:'glory days (辉煌岁月), reflect glory (带来荣誉), path to glory (荣耀之路)', example:'He dreamt of winning glory for his country. (他梦想为国争光。)', acceptCN:['光荣','荣誉','辉煌'] }
+];
+
+const TOTAL_QUESTIONS = 39;
+const HISTORY_KEY = 'ielts_vocab_history_list11';
+
+// ==================== DOM 与语音初始化 ====================
+const navTabs = document.getElementById('navTabs');
+const learnSection = document.getElementById('learnSection');
+const testSection = document.getElementById('testSection');
+const learnGrid = document.getElementById('learnGrid');
+const testSetup = document.getElementById('testSetup');
+const testActiveArea = document.getElementById('testActiveArea');
+const testResults = document.getElementById('testResults');
+const btnStartTest = document.getElementById('btnStartTest');
+const btnPlayTest = document.getElementById('btnPlayTest');
+const btnSubmit = document.getElementById('btnSubmit');
+const btnNext = document.getElementById('btnNext');
+const btnRetry = document.getElementById('btnRetry');
+const btnBackToSetup = document.getElementById('btnBackToSetup');
+const btnClearHistory = document.getElementById('btnClearHistory');
+const inputSpelling = document.getElementById('inputSpelling');
+const inputMeaning = document.getElementById('inputMeaning');
+const testFeedback = document.getElementById('testFeedback');
+const testProgressLabel = document.getElementById('testProgressLabel');
+const testScoreLabel = document.getElementById('testScoreLabel');
+const progressBarFill = document.getElementById('progressBarFill');
+const resultsScore = document.getElementById('resultsScore');
+const resultsDetail = document.getElementById('resultsDetail');
+const resultsTableBody = document.getElementById('resultsTableBody');
+const historyContent = document.getElementById('historyContent');
+
+let synth = window.speechSynthesis;
+let britishFemaleVoice = null;
+
+async function loadVoices() {
+    if (!synth) return;
+    const getBestVoice = () => {
+        const voices = synth.getVoices();
+        const preferred = ['Google UK English Female','Microsoft Susan','Microsoft Hazel','Samantha','Fiona'];
+        for (const name of preferred) {
+            const found = voices.find(v => v.name === name && v.lang.startsWith('en'));
+            if (found) return found;
+        }
+        let voice = voices.find(v => v.lang.startsWith('en-GB') && (v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('woman')));
+        if (voice) return voice;
+        voice = voices.find(v => v.lang.startsWith('en-GB')) || voices.find(v => v.lang.startsWith('en-UK')) || voices.find(v => v.lang.startsWith('en'));
+        return voice || voices[0];
+    };
+    if (synth.getVoices().length > 0) {
+        britishFemaleVoice = getBestVoice();
+    } else {
+        await new Promise(resolve => {
+            const handler = () => {
+                britishFemaleVoice = getBestVoice();
+                synth.removeEventListener('voiceschanged', handler);
+                resolve();
+            };
+            synth.addEventListener('voiceschanged', handler);
+            setTimeout(() => {
+                if (!britishFemaleVoice) britishFemaleVoice = getBestVoice();
+                synth.removeEventListener('voiceschanged', handler);
+                resolve();
+            }, 2000);
+        });
+    }
+    console.log('🔊 选用语音:', britishFemaleVoice?.name);
+}
+
+function speakWord(word, callback) {
+    if (!synth) { if(callback) callback(); return; }
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    if (britishFemaleVoice) utterance.voice = britishFemaleVoice;
+    utterance.lang = 'en-GB';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    if (callback) { utterance.onend = callback; utterance.onerror = () => callback(); }
+    synth.speak(utterance);
+}
+
+loadVoices();
+
+// ==================== 历史记录 ====================
+function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch(e) { return []; } }
+function saveHistory(record) { const h = getHistory(); h.unshift(record); if(h.length>50) h.length=50; localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+function clearHistory() { if(confirm('确定要清除所有历史记录吗？')) { localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
+function renderHistory() {
+    const history = getHistory();
+    if(!history.length) { historyContent.innerHTML='<div class="history-empty">暂无检测记录</div>'; return; }
+    const list = document.createElement('ul'); list.className='history-list';
+    history.forEach(r => {
+        const li = document.createElement('li');
+        const t = new Date(r.timestamp);
+        const ts = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+        li.innerHTML = `<div><span class="history-score">${r.score} / ${r.total}</span><span style="margin-left:8px;color:${r.percent>=80?'#3a7d5a':r.percent>=60?'#b8860b':'#c0392b'};">${r.percent}%</span></div><div class="history-time">${ts}</div>`;
+        list.appendChild(li);
+    });
+    historyContent.innerHTML=''; historyContent.appendChild(list);
+}
+
+// ==================== 导航 ====================
+let currentMode = 'learn';
+navTabs.addEventListener('click', e => {
+    const tab = e.target.closest('.nav-tab'); if(!tab) return;
+    const mode = tab.dataset.mode; if(mode===currentMode) return;
+    currentMode = mode;
+    navTabs.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    if(mode==='learn'){ learnSection.classList.add('active'); testSection.classList.remove('active'); resetTestState(); }
+    else { learnSection.classList.remove('active'); testSection.classList.add('active'); showTestSetup(); renderHistory(); }
+    if(synth) synth.cancel();
+    document.querySelectorAll('.playing').forEach(el=>el.classList.remove('playing'));
+});
+function resetTestState(){
+    testSetup.style.display=''; testActiveArea.classList.remove('visible'); testResults.classList.remove('visible');
+    testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
+    btnNext.classList.remove('visible'); inputSpelling.value=''; inputMeaning.value='';
+    inputSpelling.className=''; inputMeaning.className=''; btnSubmit.disabled=false; btnSubmit.style.display='';
+    btnPlayTest.classList.remove('playing');
+}
+function showTestSetup(){ resetTestState(); testSetup.style.display=''; testActiveArea.classList.remove('visible'); testResults.classList.remove('visible'); }
+
+// ==================== 学习模式构建 ====================
+function buildLearnCards(){
+    learnGrid.innerHTML='';
+    wordData.forEach(w => {
+        const card = document.createElement('div'); card.className='word-card';
+        card.innerHTML = `
+            <div class="word-card-top"><div><span class="word-headword">${w.word}</span><span class="word-ipa"> ${w.ipa}</span></div><button class="btn-play btn-play-card" data-word="${w.word}">▶</button></div>
+            <div><span class="word-pos">${w.pos}</span> <span class="word-meaning">${w.meaning}</span></div>
+            <div class="word-detail"><div class="word-detail-row"><strong>📎 常见词组/句型：</strong>${w.phrases}</div><div class="word-detail-example">📖 ${w.example}</div></div>
+            <div class="card-collapse-hint">点击卡片收起详情 ▲</div>`;
+        card.addEventListener('click', function(e){
+            if(e.target.closest('.btn-play-card')) return;
+            const wasExpanded = card.classList.contains('expanded');
+            document.querySelectorAll('.word-card.expanded').forEach(c=>c.classList.remove('expanded'));
+            if(!wasExpanded){ card.classList.add('expanded'); card.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+        });
+        card.querySelector('.btn-play-card').addEventListener('click', function(e){
+            e.stopPropagation();
+            document.querySelectorAll('.btn-play.playing').forEach(b=>b.classList.remove('playing'));
+            this.classList.add('playing');
+            speakWord(w.word, ()=>this.classList.remove('playing'));
+        });
+        learnGrid.appendChild(card);
+    });
+}
+buildLearnCards();
+document.addEventListener('click', function(e){
+    if(currentMode!=='learn') return;
+    if(!e.target.closest('.word-card')) document.querySelectorAll('.word-card.expanded').forEach(c=>c.classList.remove('expanded'));
+});
+
+// ==================== 检测模式逻辑复用 ====================
+let testWords=[], testCurrentIndex=0, testScore=0, testResultsData=[], testSubmitted=false;
+function shuffleArray(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+btnStartTest.addEventListener('click', ()=>{
+    testWords = shuffleArray(wordData).slice(0, TOTAL_QUESTIONS);
+    testCurrentIndex=0; testScore=0; testResultsData=[]; testSubmitted=false;
+    testSetup.style.display='none'; testActiveArea.classList.add('visible'); testResults.classList.remove('visible');
+    testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
+    btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
+    inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
+    btnPlayTest.classList.remove('playing'); updateTestProgress(); setTimeout(()=>playCurrentWord(),400);
+});
+function updateTestProgress(){
+    testProgressLabel.textContent = `第 ${testCurrentIndex+1} / ${TOTAL_QUESTIONS} 题`;
+    testScoreLabel.textContent = `得分: ${testScore}`;
+    progressBarFill.style.width = Math.round((testCurrentIndex/TOTAL_QUESTIONS)*100)+'%';
+}
+function playCurrentWord(){ if(testCurrentIndex>=testWords.length) return; btnPlayTest.classList.add('playing'); speakWord(testWords[testCurrentIndex].word, ()=>btnPlayTest.classList.remove('playing')); }
+btnPlayTest.addEventListener('click', ()=>{ if(!testSubmitted) playCurrentWord(); });
+
+function submitAnswer(){
+    if(testSubmitted || testCurrentIndex>=testWords.length) return;
+    testSubmitted=true; btnSubmit.disabled=true;
+    const w = testWords[testCurrentIndex];
+    const userSpelling = inputSpelling.value.trim();
+    const userMeaning = inputMeaning.value.trim();
+    const spellingCorrect = userSpelling.toLowerCase() === w.word.toLowerCase();
+    let meaningCorrect = false;
+    if(userMeaning.length>0){
+        const userCN = userMeaning.replace(/\s+/g,'');
+        for(const accept of w.acceptCN){ if(userCN.includes(accept)||accept.includes(userCN)){ meaningCorrect=true; break; } }
+        if(!meaningCorrect){
+            const meaningClean = w.meaning.replace(/[；;，,、\s]/g,'');
+            if(userCN.includes(meaningClean.substring(0,Math.min(3,meaningClean.length)))||meaningClean.includes(userCN)) meaningCorrect=true;
+        }
+    }
+    inputSpelling.className = spellingCorrect ? 'correct-input' : 'wrong-input';
+    inputMeaning.className = meaningCorrect ? 'correct-input' : 'wrong-input';
+    const earned = (spellingCorrect&&meaningCorrect)?1:0;
+    if(earned) testScore++;
+    testFeedback.classList.add('visible');
+    if(spellingCorrect&&meaningCorrect){
+        testFeedback.classList.add('correct-all'); testFeedback.classList.remove('partial','wrong-all');
+        testFeedback.innerHTML = `✅ <strong>完全正确！</strong><br>${w.word} — ${w.meaning}`;
+    } else if(!spellingCorrect && !meaningCorrect){
+        testFeedback.classList.add('wrong-all'); testFeedback.classList.remove('correct-all','partial');
+        testFeedback.innerHTML = `❌ <strong>拼写和含义均不正确</strong><br>📝 正确拼写：<strong>${w.word}</strong>（你的：${userSpelling||'未填'}）<br>🈶 正确含义：<strong>${w.meaning}</strong>（你的：${userMeaning||'未填'}）`;
+    } else if(!spellingCorrect){
+        testFeedback.classList.add('partial'); testFeedback.classList.remove('correct-all','wrong-all');
+        testFeedback.innerHTML = `⚠️ <strong>含义正确，拼写有误</strong><br>📝 正确拼写：<strong>${w.word}</strong>（你的：${userSpelling||'未填'}）<br>🈶 含义：${w.meaning} ✅`;
+    } else {
+        testFeedback.classList.add('partial'); testFeedback.classList.remove('correct-all','wrong-all');
+        testFeedback.innerHTML = `⚠️ <strong>拼写正确，含义有误</strong><br>📝 ${w.word} ✅<br>🈶 正确含义：<strong>${w.meaning}</strong>（你的：${userMeaning||'未填'}）`;
+    }
+    testResultsData.push({ word:w.word, ipa:w.ipa, meaning:w.meaning, userSpelling, userMeaning, spellingCorrect, meaningCorrect, earned });
+    updateTestProgress();
+    btnNext.classList.add('visible'); btnSubmit.style.display='none';
+    testFeedback.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+btnSubmit.addEventListener('click', submitAnswer);
+inputMeaning.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!testSubmitted) submitAnswer(); });
+inputSpelling.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!testSubmitted) inputMeaning.focus(); });
+btnNext.addEventListener('click', ()=>{
+    testCurrentIndex++; testSubmitted=false;
+    if(testCurrentIndex>=testWords.length){ showFinalResults(); return; }
+    inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
+    testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
+    btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
+    updateTestProgress(); setTimeout(()=>playCurrentWord(),300); inputSpelling.focus();
+});
+function showFinalResults(){
+    testActiveArea.classList.remove('visible'); testResults.classList.add('visible');
+    const earnedTotal = testResultsData.reduce((s,r)=>s+r.earned,0);
+    const percent = Math.round((earnedTotal/TOTAL_QUESTIONS)*100);
+    resultsScore.textContent = `${earnedTotal} / ${TOTAL_QUESTIONS}`;
+    resultsDetail.textContent = `正确率 ${percent}% — ${percent>=80?'🎉 非常棒！':percent>=60?'👍 不错，继续加油！':'💪 需要更多练习，加油！'}`;
+    resultsTableBody.innerHTML='';
+    testResultsData.forEach((r,i)=>{
+        const tr = document.createElement('tr'); tr.className = r.earned ? 'row-correct' : 'row-wrong';
+        const icon = r.earned ? '✅' : (r.spellingCorrect||r.meaningCorrect?'⚠️':'❌');
+        tr.innerHTML = `<td>${i+1}</td><td><strong>${r.word}</strong> <span style="color:#888;font-size:0.8rem;">${r.ipa}</span><br><span style="font-size:0.8rem;">${r.meaning}</span></td><td style="color:${r.spellingCorrect?'#3a7d5a':'#c0392b'}">${r.userSpelling||'—'}</td><td style="color:${r.meaningCorrect?'#3a7d5a':'#c0392b'}">${r.userMeaning||'—'}</td><td>${icon}</td>`;
+        resultsTableBody.appendChild(tr);
+    });
+    saveHistory({ timestamp:Date.now(), score:earnedTotal, total:TOTAL_QUESTIONS, percent });
+    testResults.scrollIntoView({behavior:'smooth',block:'start'});
+}
+btnRetry.addEventListener('click', ()=>{
+    testResults.classList.remove('visible'); testActiveArea.classList.add('visible');
+    testWords = shuffleArray([...wordData]); testCurrentIndex=0; testScore=0; testResultsData=[]; testSubmitted=false;
+    inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
+    testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
+    btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
+    btnPlayTest.classList.remove('playing'); updateTestProgress(); setTimeout(()=>playCurrentWord(),400);
+});
+btnBackToSetup.addEventListener('click', ()=>{ showTestSetup(); testResults.classList.remove('visible'); renderHistory(); });
+btnClearHistory.addEventListener('click', clearHistory);
+document.addEventListener('keydown', function(e){
+    if(currentMode!=='test'||testResults.classList.contains('visible')) return;
+    if(testActiveArea.classList.contains('visible') && !testSubmitted){
+        if(e.key===' ' && document.activeElement!==inputSpelling && document.activeElement!==inputMeaning){ e.preventDefault(); playCurrentWord(); }
+    }
+});
+renderHistory();
+})();
+</script>
+</body>
+</html>
