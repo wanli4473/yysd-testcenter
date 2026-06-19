@@ -314,7 +314,81 @@ const TEST = {
       ]},
 
     /* ================= Reading Passage 2 ================= */
-    /* 等你发来 Passage 2（Driverless cars）原文＋题目＋答案后，按上面 Passage 1 的格式追加在这里。 */
+    { id:2,
+      passage:{
+        title:'Driverless cars',
+        byline:'You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.',
+        paras:[
+          `<span class="para-label">A</span>The automotive sector is well used to adapting to automation in manufacturing. The implementation of robotic car manufacture from the 1970s onwards led to significant cost savings and improvements in the reliability and flexibility of vehicle mass production. A new challenge to vehicle production is now on the horizon and, again, it comes from automation. However, this time it is not to do with the manufacturing process, but with the vehicles themselves.`,
+          `Research projects on vehicle automation are not new. Vehicles with limited self-driving capabilities have been around for more than 50 years, resulting in significant contributions towards driver assistance systems. But since Google announced in 2010 that it had been trialling self-driving cars on the streets of California, progress in this field has quickly gathered pace.`,
+          `<span class="para-label">B</span>There are many reasons why technology is advancing so fast. One frequently cited motive is safety; indeed, research at the UK's Transport Research Laboratory has demonstrated that more than 90 percent of road collisions involve human error as a contributory factor, and it is the primary cause in the vast majority. Automation may help to reduce the incidence of this.`,
+          `Another aim is to free the time people spend driving for other purposes. If the vehicle can do some or all of the driving, it may be possible to be productive, to socialise or simply to relax while automation systems have responsibility for safe control of the vehicle. If the vehicle can do the driving, those who are challenged by existing mobility models – such as older or disabled travellers – may be able to enjoy significantly greater travel autonomy.`,
+          `<span class="para-label">C</span>Beyond these direct benefits, we can consider the wider implications for transport and society, and how manufacturing processes might need to respond as a result. At present, the average car spends more than 90 percent of its life parked. Automation means that initiatives for car-sharing become much more viable, particularly in urban areas with significant travel demand. If a significant proportion of the population choose to use shared automated vehicles, mobility demand can be met by far fewer vehicles.`,
+          `<span class="para-label">D</span>The Massachusetts Institute of Technology investigated automated mobility in Singapore, finding that fewer than 30 percent of the vehicles currently used would be required if fully automated car sharing could be implemented. If this is the case, it might mean that we need to manufacture far fewer vehicles to meet demand.`,
+          `However, the number of trips being taken would probably increase, partly because empty vehicles would have to be moved from one customer to the next.`,
+          `Modelling work by the University of Michigan Transportation Research Institute suggests automated vehicles might reduce vehicle ownership by 43 percent, but that vehicles' average annual mileage would double as a result. As a consequence, each vehicle would be used more intensively, and might need replacing sooner. This faster rate of turnover may mean that vehicle production will not necessarily decrease.`,
+          `<span class="para-label">E</span>Automation may prompt other changes in vehicle manufacture. If we move to a model where consumers are tending not to own a single vehicle but to purchase access to a range of vehicles through a mobility provider, drivers will have the freedom to select one that best suits their needs for a particular journey, rather than making a compromise across all their requirements.`,
+          `Since, for most of the time, most of the seats in most cars are unoccupied, this may boost production of a smaller, more efficient range of vehicles that suit the needs of individuals. Specialised vehicles may then be available for exceptional journeys, such as going on a family camping trip or helping a son or daughter move to university.`,
+          `<span class="para-label">F</span>There are a number of hurdles to overcome in delivering automated vehicles to our roads. These include the technical difficulties in ensuring that the vehicle works reliably in the infinite range of traffic, weather and road situations it might encounter; the regulatory challenges in understanding how liability and enforcement might change when drivers are no longer essential for vehicle operation; and the societal changes that may be required for communities to trust and accept automated vehicles as being a valuable part of the mobility landscape.`,
+          `<span class="para-label">G</span>It's clear that there are many challenges that need to be addressed but, through robust and targeted research, these can most probably be conquered within the next 10 years. Mobility will change in such potentially significant ways and in association with so many other technological developments, such as telepresence and virtual reality, that it is hard to make concrete predictions about the future. However, one thing is certain: change is coming, and the need to be flexible in response to this will be vital for those involved in manufacturing the vehicles that will deliver future mobility.`
+        ]
+      },
+      groups:[
+        { kind:'match', title:'Questions 14–18', noBox:true,
+          instruction:'Reading Passage 2 has seven sections, A–G. Which section contains the following information? Write the correct letter, A–G, in the box next to each question. NB You may use any letter more than once.',
+          box:{A:'',B:'',C:'',D:'',E:'',F:'',G:''},
+          questions:[
+            {id:'Q14',no:14,q:'reference to the amount of time when a car is not in use',answer:['C'],explain:'C 段："the average car spends more than 90 percent of its life parked"（车辆 90% 以上的时间停着不用）。'},
+            {id:'Q15',no:15,q:'mention of several advantages of driverless vehicles for individual road-users',answer:['B'],explain:'B 段：列举了对个人出行者的多项好处——更安全、可在车上做其他事、老人或残障人士能更自主地出行。'},
+            {id:'Q16',no:16,q:'reference to the opportunity of choosing the most appropriate vehicle for each trip',answer:['E'],explain:'E 段："freedom to select one that best suits their needs for a particular journey"（可为某次出行挑选最合适的车）。'},
+            {id:'Q17',no:17,q:'an estimate of how long it will take to overcome a number of problems',answer:['G'],explain:'G 段："these can most probably be conquered within the next 10 years"（这些难题很可能在未来 10 年内被攻克）。'},
+            {id:'Q18',no:18,q:'a suggestion that the use of driverless cars may have no effect on the number of vehicles manufactured',answer:['D'],explain:'D 段："vehicle production will not necessarily decrease"（车辆产量未必会下降），即对制造数量可能没有影响。'},
+          ]},
+
+        { kind:'note', title:'Questions 19–22',
+          instruction:'Complete the summary below. Choose NO MORE THAN TWO WORDS from the passage for each answer.',
+          noteTitle:'The impact of driverless cars',
+          lines:[
+            {plain:true, html:`Figures from the Transport Research Laboratory indicate that most motor accidents are partly due to <Q n="19">, so the introduction of driverless vehicles will result in greater safety. In addition to the direct benefits of automation, it may bring other advantages. For example, schemes for <Q n="20"> will be more workable, especially in towns and cities, resulting in fewer cars on the road.`, q:'Q19'},
+            {plain:true, html:`According to the University of Michigan Transportation Research Institute, there could be a 43 percent drop in <Q n="21"> of cars. However, this would mean that the yearly <Q n="22"> of each car would, on average, be twice as high as it currently is. This would lead to a higher turnover of vehicles, and therefore no reduction in automotive manufacturing.`, q:'Q21'},
+          ],
+          questions:[
+            {id:'Q19',no:19,answer:['human error'],explain:'B 段："more than 90 percent of road collisions involve human error"。事故多与 human error（人为失误）有关。'},
+            {id:'Q20',no:20,answer:['car-sharing','car sharing'],explain:'C 段："initiatives for car-sharing become much more viable"。car-sharing（共享汽车）方案更可行。'},
+            {id:'Q21',no:21,answer:['ownership'],explain:'D 段："might reduce vehicle ownership by 43 percent"。下降 43% 的是车辆 ownership（拥有量）。'},
+            {id:'Q22',no:22,answer:['mileage'],explain:'D 段："vehicles\' average annual mileage would double"。每辆车的年 mileage（里程）会翻倍。'},
+          ]},
+
+        { kind:'multi', title:'Questions 23 and 24',
+          instruction:'Choose TWO letters, A–E. Which TWO benefits of automated vehicles does the writer mention?',
+          box:{
+            A:'Car travellers could enjoy considerable cost savings.',
+            B:'It would be easier to find parking spaces in urban areas.',
+            C:'Travellers could spend journeys doing something other than driving.',
+            D:'People who find driving physically difficult could travel independently.',
+            E:'A reduction in the number of cars would mean a reduction in pollution.'
+          },
+          groupId:'Q23_24', answerSet:['C','D'],
+          questions:[
+            {id:'Q23',no:23,explain:'选两项（顺序不限）：C（出行途中可做开车以外的事）与 D（行动不便者也能独立出行）。见 B 段。'},
+            {id:'Q24',no:24,explain:'同上，正确两项为 C 与 D，顺序不限。'},
+          ]},
+
+        { kind:'multi', title:'Questions 25 and 26',
+          instruction:'Choose TWO letters, A–E. Which TWO challenges to automated vehicle development does the writer mention?',
+          box:{
+            A:'making sure the general public has confidence in automated vehicles',
+            B:'managing the pace of transition from conventional to automated vehicles',
+            C:'deciding how to compensate professional drivers who become redundant',
+            D:'setting up the infrastructure to make roads suitable for automated vehicles',
+            E:'getting automated vehicles to adapt to various different driving conditions'
+          },
+          groupId:'Q25_26', answerSet:['A','E'],
+          questions:[
+            {id:'Q25',no:25,explain:'选两项（顺序不限）：A（让公众信任自动驾驶车）与 E（让车辆适应各种驾驶环境）。见 F 段。'},
+            {id:'Q26',no:26,explain:'同上，正确两项为 A 与 E，顺序不限。'},
+          ]},
+      ]},
 
     /* ================= Reading Passage 3 ================= */
     /* 等你发来 Passage 3（What is exploration?）原文＋题目＋答案后，同样追加在这里。 */
@@ -417,7 +491,7 @@ function groupHtml(g){
     }).join('');
   }
   else if(g.kind==='match'){
-    const box=`<div class="match-box"><div class="mb-h">${g.boxTitle||''}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const box=g.noBox ? '' : `<div class="match-box"><div class="mb-h">${g.boxTitle||''}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
     const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
     const qs=(g.subTitle?`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`:'')+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
     body=box+qs;
