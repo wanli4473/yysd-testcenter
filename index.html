@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>优益思达雅思考试中心 · 在线模考</title>
-  <meta name="description" content="优益思达雅思考试中心 —— 提供听力、阅读、写作雅思全真模考，自动批改，即时出分。">
+  <title>优益思达学习中心 · 英语在线学习与模考</title>
+  <meta name="description" content="优益思达学习中心 —— 雅思/PTE/托福模考、语法单词学习、分科练习题，一站式英语提分平台。">
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -16,12 +16,14 @@
       <a href="index.html" class="brand">
         <span class="brand__mark">YS</span>
         <span class="brand__name">
-          <b>优益思达雅思考试中心</b>
-          <span>YYSD IELTS Test Center</span>
+          <b>优益思达学习中心</b>
+          <span>YYSD Learning Center</span>
         </span>
       </a>
       <nav class="nav">
-        <a href="index.html" class="is-active">模考中心</a>
+        <a href="zone.html?zone=mock">模考区</a>
+        <a href="zone.html?zone=study">学习区</a>
+        <a href="zone.html?zone=practice">练习区</a>
         <a href="results.html">我的成绩</a>
         <a href="admin/index.html">管理后台</a>
       </nav>
@@ -31,83 +33,50 @@
   <!-- ===== Hero ===== -->
   <section class="hero">
     <div class="container hero__inner">
-      <h1>雅思全真模考，<span class="accent">即刻开考</span></h1>
-      <p>还原雅思官方考试界面与节奏，听力 · 阅读 · 写作全科覆盖，交卷自动批改、即时出分，帮助你精准定位提分空间。</p>
+      <h1>全方位英语学习，<span class="accent">一站提分</span></h1>
+      <p>雅思 · PTE · 托福全真模考，语法单词系统精讲，分科专项练习——从入门到冲刺，所有内容都在这里，交卷即时批改出分。</p>
       <div class="hero__actions">
-        <a href="#exam-list" class="btn btn--primary">开始模考 →</a>
+        <a href="#zones" class="btn btn--primary">开始学习 →</a>
         <a href="results.html" class="btn btn--ghost">查看我的成绩</a>
       </div>
       <div class="hero__stats">
-        <div class="stat"><b id="stat-total">—</b><span>套模考试卷</span></div>
+        <div class="stat"><b id="stat-total">—</b><span>套学习/模考材料</span></div>
         <div class="stat"><b id="stat-done">0</b><span>我已完成</span></div>
-        <div class="stat"><b>自动</b><span>交卷即出分</span></div>
+        <div class="stat"><b>3</b><span>大功能板块</span></div>
       </div>
     </div>
   </section>
 
-  <!-- ===== Exam list ===== -->
-  <main class="container section" id="exam-list">
+  <!-- ===== Zone portals ===== -->
+  <main class="container section" id="zones">
     <div class="section__head">
       <div>
-        <h2>模考列表</h2>
-        <p>选择一套试卷进入考场，建议在安静环境、计时条件下完成。</p>
+        <h2>选择学习板块</h2>
+        <p>三大板块覆盖模考、学习与练习，点击进入查看具体内容。</p>
       </div>
     </div>
-
-    <div class="filters" id="filters">
-      <button class="chip is-active" data-filter="all">全部</button>
-      <button class="chip" data-filter="listening">听力</button>
-      <button class="chip" data-filter="reading">阅读</button>
-      <button class="chip" data-filter="writing">写作</button>
-      <button class="chip" data-filter="speaking">口语</button>
-      <button class="chip" data-filter="full">全套</button>
-    </div>
-
-    <div id="exam-container">
-      <div class="state">
-        <div class="spinner"></div>
-        正在加载模考列表…
-      </div>
+    <div class="zone-portals" id="zone-portals">
+      <div class="state"><div class="spinner"></div>正在加载…</div>
     </div>
   </main>
 
-  <!-- ===== Features ===== -->
+  <!-- ===== Recent ===== -->
   <section class="section" style="background:var(--surface);border-top:1px solid var(--border);">
     <div class="container">
-      <div class="section__head"><div><h2>为什么选择我们</h2></div></div>
-      <div class="features">
-        <div class="feature">
-          <div class="ico">⏱️</div>
-          <h4>真实考试节奏</h4>
-          <p>计时考场、官方风格界面，提前适应正式考试的压力与时间分配。</p>
-        </div>
-        <div class="feature">
-          <div class="ico">✅</div>
-          <h4>交卷自动批改</h4>
-          <p>试卷自带自动判分，交卷即出成绩，无需等待人工评阅。</p>
-        </div>
-        <div class="feature">
-          <div class="ico">📊</div>
-          <h4>成绩持续追踪</h4>
-          <p>每次模考成绩自动记录在「我的成绩」，清晰看到进步曲线。</p>
-        </div>
-        <div class="feature">
-          <div class="ico">🔄</div>
-          <h4>题库持续更新</h4>
-          <p>管理员可随时上传新试卷，题库不断扩充，常练常新。</p>
-        </div>
-      </div>
+      <div class="section__head"><div><h2>最新上传</h2><p>老师最近添加的内容。</p></div></div>
+      <div id="recent"></div>
     </div>
   </section>
 
   <!-- ===== Footer ===== -->
   <footer class="site-footer">
     <div class="container site-footer__inner">
-      <span>© <span id="year"></span> 优益思达雅思考试中心 · YYSD IELTS Test Center</span>
-      <span>本网站为模拟练习用途，与英国文化教育协会 (British Council) 无官方关联。</span>
+      <span>© <span id="year"></span> 优益思达学习中心 · YYSD Learning Center</span>
+      <span>本网站为学习与练习用途。雅思 / PTE / 托福为各自商标持有方所有，与本中心无官方关联。</span>
     </div>
   </footer>
 
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/home.js"></script>
 </body>
 </html>

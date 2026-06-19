@@ -1,13 +1,13 @@
-name: Rebuild exam list
+name: Rebuild content list
 
-# Whenever an exam HTML file is added, changed, or removed in the exams/
-# folder, regenerate exams/manifest.json automatically and commit it back.
-# This lets the admin add exams just by uploading files — no code needed.
+# Whenever a content HTML file is added, changed, or removed in the library/
+# folder, regenerate library/manifest.json automatically and commit it back.
+# This lets the admin add content just by uploading files — no code needed.
 
 on:
   push:
     paths:
-      - "exams/**"
+      - "library/**"
       - "scripts/build_manifest.py"
       - ".github/workflows/build-manifest.yml"
   workflow_dispatch: {}
@@ -40,10 +40,10 @@ jobs:
         run: |
           git config user.name  "yysd-bot"
           git config user.email "actions@github.com"
-          if git diff --quiet -- exams/manifest.json; then
+          if git diff --quiet -- library/manifest.json; then
             echo "manifest.json unchanged — nothing to commit."
           else
-            git add exams/manifest.json
-            git commit -m "chore: rebuild exam manifest [skip ci]"
+            git add library/manifest.json
+            git commit -m "chore: rebuild content manifest [skip ci]"
             git push
           fi

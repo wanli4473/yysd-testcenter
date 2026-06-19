@@ -1,9 +1,19 @@
-# 优益思达雅思考试中心 · YYSD IELTS Test Center
+# 优益思达学习中心 · YYSD Learning Center
 
-一个**纯静态**的雅思在线模考网站。学生浏览试卷列表 → 进入考场答题 → 交卷自动批改出分；
-管理员只需把试卷 HTML **拖到 GitHub 网页上**即可上线，**全程无需编程、无需命令行**。
+一个**纯静态**的综合英语学习网站。学生浏览三大板块 → 进入模考/学习/练习内容 → 交卷自动批改出分；
+老师只需把 HTML 文件**拖到 GitHub 网页上**即可上线，**全程无需编程、无需命令行**。
 
-> 试卷本身自带自动批改功能（HTML 文件）。本网站负责：品牌外观、试卷列表、考场界面、计时、成绩记录。
+> 每份内容（模考卷 / 学习册 / 练习题）都是自带批改的 HTML 文件。本网站负责：品牌外观、板块分类、内容列表、考场/学习界面、计时、成绩记录。
+
+---
+
+## 🗂️ 三大板块
+
+| 板块 | 科目 |
+|------|------|
+| 🎯 **模考区** (mock) | 雅思 ielts · PTE pte · 托福 toefl |
+| 📚 **学习区** (study) | 语法 grammar · 单词 vocab |
+| ✏️ **练习区** (practice) | 雅思 ielts · PTE pte · 托福 toefl |
 
 ---
 
@@ -11,67 +21,67 @@
 
 | 路径 | 作用 |
 |------|------|
-| `index.html` | 学生首页 —— 模考列表（按科目筛选） |
-| `exam.html` | 考场页 —— 在带计时的界面中打开试卷 |
-| `results.html` | 我的成绩 —— 记录每次模考分数（存在浏览器本地） |
-| `admin/index.html` | 管理后台 —— 上传指引 + 试卷打标签工具 |
-| `exams/` | **所有试卷 HTML 放这里**（管理员上传的目录） |
-| `exams/manifest.json` | 试卷列表索引，**自动生成，请勿手改** |
-| `scripts/build_manifest.py` | 扫描 `exams/` 重建 `manifest.json` 的脚本 |
-| `.github/workflows/build-manifest.yml` | 上传试卷后自动重建列表的 GitHub Action |
-| `assets/` | 样式与脚本 |
+| `index.html` | 首页 —— 三大板块入口 + 最新上传 |
+| `zone.html?zone=mock` | 板块页 —— 按科目分组展示内容（mock/study/practice） |
+| `exam.html?id=…` | 内容查看器 —— 在带计时的界面中打开模考/学习/练习 |
+| `results.html` | 我的成绩 —— 记录每次得分（存浏览器本地） |
+| `admin/index.html` | 管理后台 —— 上传指引 + 打标签工具 |
+| `library/` | **所有内容 HTML 放这里**（老师上传的目录） |
+| `library/manifest.json` | 内容索引，**自动生成，请勿手改** |
+| `scripts/build_manifest.py` | 扫描 `library/` 重建索引的脚本 |
+| `.github/workflows/build-manifest.yml` | 上传后自动重建列表的 GitHub Action |
+| `assets/` | 样式与脚本（`config.js` 含板块/科目定义） |
 
 ---
 
-## 🚀 如何让网站上线（一次性设置）
+## 🚀 让网站上线（一次性设置）
 
-1. 把本项目推送到一个 GitHub 仓库（建议命名 `yysd-testcenter`）。
-2. 在仓库 **Settings → Pages** 中，把 **Source** 设为 `Deploy from a branch`，分支选 `main`、目录选 `/ (root)`，保存。
-3. 等待约 1 分钟，GitHub 会给出网址，形如
-   `https://<你的用户名>.github.io/yysd-testcenter/` —— 这就是发给学生的链接。
-
----
-
-## ➕ 如何上传一套新模考（日常操作 · 无需编程）
-
-1.（推荐）打开网站的 **管理后台** → 用「整理试卷」工具给试卷打好标签，下载新文件。
-2. 进入 GitHub 仓库的 **`exams` 文件夹** → `Add file` → `Upload files` → 拖入试卷 HTML → `Commit changes`。
-3. 完成！系统会**自动重建列表**（约 1 分钟），刷新首页即可看到新试卷。
-
-删除试卷：在 `exams` 文件夹删除对应 HTML 文件即可，列表自动更新。
+1. 把本项目推送到 GitHub 仓库。
+2. 仓库 **Settings → Pages** → Source 选 `Deploy from a branch`，分支 `main`、目录 `/ (root)`，保存。
+3. 约 1 分钟后得到网址 `https://<用户名>.github.io/<仓库名>/` —— 这就是发给学生的链接。
 
 ---
 
-## 🏷️ 试卷标签（可选）
+## ➕ 上传新内容（日常操作 · 无需编程）
 
-在试卷 HTML 的 `<head>` 中加入以下标签，可控制它在列表中的显示方式（不加则自动猜测）：
+1.（推荐）打开 **管理后台** → 用「整理内容」工具选好**板块 + 科目**、填标题，下载新文件。
+2. 进入 GitHub 仓库 **`library` 文件夹** → `Add file` → `Upload files` → 拖入 HTML → `Commit changes`。
+3. 完成！系统**自动重建列表**（约 1 分钟），刷新前台即可看到。
+
+删除内容：在 `library` 文件夹删除对应 HTML 文件即可，列表自动更新。
+
+---
+
+## 🏷️ 内容标签（可选）
+
+在 HTML 的 `<head>` 中加入以下标签控制归类与显示（不加则自动猜测）：
 
 ```html
-<meta name="exam:title"       content="学术类阅读模考 1">
-<meta name="exam:type"        content="reading">   <!-- listening/reading/writing/speaking/full -->
-<meta name="exam:category"    content="academic">  <!-- academic / general -->
-<meta name="exam:duration"    content="60">        <!-- 分钟，0=不限时 -->
+<meta name="exam:title"       content="雅思全真模考（第四卷）">
+<meta name="exam:zone"        content="mock">    <!-- mock / study / practice -->
+<meta name="exam:subject"     content="ielts">   <!-- 模考/练习: ielts pte toefl ｜ 学习: grammar vocab -->
+<meta name="exam:duration"    content="0">       <!-- 分钟，0=不限时 -->
 <meta name="exam:description" content="3 篇文章共 40 题。">
 ```
 
 ## 📊 成绩自动同步（可选）
 
-试卷批改算出分数后，加一行即可把分数同步到「我的成绩」页：
+批改算出分数后加一行，即可把分数同步到「我的成绩」：
 
 ```js
 window.parent.postMessage({ type: "yysd:score", score: 32, total: 40, band: 7 }, "*");
 ```
 
-参考内置示范卷 `exams/sample-academic-reading-1.html`。
+参考 `library/` 内的示范文件（语法、单词、阅读练习、入学模考）。
 
 ---
 
 ## 🧪 本地预览
 
-因为浏览器安全策略，**不要直接双击打开 `index.html`**，请用本地服务器：
+不要直接双击打开 `index.html`，请用本地服务器：
 
 ```bash
 cd "yysd test center"
 python3 -m http.server 8080
-# 然后浏览器访问 http://localhost:8080
+# 浏览器访问 http://localhost:8080
 ```

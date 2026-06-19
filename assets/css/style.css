@@ -25,6 +25,18 @@
   --c-speaking: #8b5cf6;
   --c-full: #c8102e;
 
+  /* Subject colours */
+  --c-ielts: #c8102e;
+  --c-pte: #2f6fed;
+  --c-toefl: #1e9e6a;
+  --c-grammar: #8b5cf6;
+  --c-vocab: #d9822b;
+
+  /* Zone accents */
+  --c-zone-mock: #c8102e;
+  --c-zone-study: #2f6fed;
+  --c-zone-practice: #d9822b;
+
   /* Effects */
   --radius: 14px;
   --radius-sm: 9px;
@@ -91,8 +103,8 @@ img { max-width: 100%; display: block; }
   box-shadow: var(--shadow-sm);
 }
 .brand__name { display: flex; flex-direction: column; line-height: 1.15; }
-.brand__name b { font-size: 16px; color: var(--brand-navy); }
-.brand__name span { font-size: 11px; color: var(--text-muted); font-weight: 500; letter-spacing: .5px; }
+.brand__name b { font-size: 16px; color: var(--brand-navy); white-space: nowrap; }
+.brand__name span { font-size: 11px; color: var(--text-muted); font-weight: 500; letter-spacing: .5px; white-space: nowrap; }
 
 .nav { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .nav a {
@@ -101,6 +113,7 @@ img { max-width: 100%; display: block; }
   font-size: 14px;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
   transition: background .15s, color .15s;
 }
 .nav a:hover { background: var(--bg); color: var(--text); }
@@ -205,6 +218,12 @@ img { max-width: 100%; display: block; }
 .badge--speaking  { background: var(--c-speaking); }
 .badge--full      { background: var(--c-full); }
 .badge--other     { background: var(--text-muted); }
+/* subject badges */
+.badge--ielts   { background: var(--c-ielts); }
+.badge--pte     { background: var(--c-pte); }
+.badge--toefl   { background: var(--c-toefl); }
+.badge--grammar { background: var(--c-grammar); }
+.badge--vocab   { background: var(--c-vocab); }
 
 .tag-cat {
   font-size: 12px; font-weight: 600;
@@ -250,6 +269,57 @@ img { max-width: 100%; display: block; }
 }
 .feature h4 { margin: 0 0 6px; font-size: 16px; color: var(--brand-navy); }
 .feature p { margin: 0; font-size: 13.5px; color: var(--text-muted); }
+
+/* ---------- Zone portals (landing) ----------------------------------- */
+.zone-portals { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.zone-portal {
+  position: relative; display: block; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 26px; box-shadow: var(--shadow-sm);
+  transition: transform .12s, box-shadow .15s, border-color .15s;
+}
+.zone-portal:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.zone-portal::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--zc, var(--brand-red)); }
+.zone-portal--mock     { --zc: var(--c-zone-mock); }
+.zone-portal--study    { --zc: var(--c-zone-study); }
+.zone-portal--practice { --zc: var(--c-zone-practice); }
+.zone-portal .zp-ico {
+  width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center;
+  font-size: 26px; margin-bottom: 16px;
+  background: color-mix(in srgb, var(--zc) 12%, white); color: var(--zc);
+}
+.zone-portal h3 { margin: 0 0 4px; font-size: 20px; color: var(--brand-navy); }
+.zone-portal .zp-en { font-size: 12px; color: var(--text-faint); letter-spacing: .5px; text-transform: uppercase; }
+.zone-portal p { margin: 12px 0 16px; font-size: 14px; color: var(--text-muted); }
+.zp-subjects { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+.zp-subject {
+  font-size: 12.5px; font-weight: 600; color: var(--text); padding: 5px 11px;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--bg);
+}
+.zp-subject b { color: var(--zc); margin-left: 4px; }
+.zone-portal .zp-foot { display: flex; align-items: center; justify-content: space-between; }
+.zone-portal .zp-count { font-size: 13px; color: var(--text-muted); }
+.zone-portal .zp-count b { color: var(--brand-navy); font-size: 17px; }
+.zone-portal .zp-go { font-size: 14px; font-weight: 700; color: var(--zc); }
+
+/* ---------- Zone page header ----------------------------------------- */
+.zone-head {
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #fbfcfe, var(--bg));
+}
+.zone-head__inner { padding: 36px 0 30px; }
+.zone-head .crumb { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+.zone-head .crumb a { color: var(--brand-red); font-weight: 600; }
+.zone-head h1 { margin: 0 0 6px; font-size: 30px; color: var(--brand-navy); display: flex; align-items: center; gap: 12px; }
+.zone-head h1 .zh-ico { font-size: 28px; }
+.zone-head p { margin: 0; color: var(--text-muted); font-size: 15px; }
+
+/* ---------- Subject group (zone page) -------------------------------- */
+.subject-group { margin-bottom: 38px; }
+.subject-group__head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.subject-group__head h2 { margin: 0; font-size: 19px; color: var(--brand-navy); }
+.subject-dot { width: 11px; height: 11px; border-radius: 50%; }
+.subject-group__head .cnt { font-size: 13px; color: var(--text-faint); font-weight: 600; }
 
 /* ---------- Footer ---------------------------------------------------- */
 .site-footer {
@@ -343,9 +413,28 @@ table.data tr:last-child td { border-bottom: 0; }
 .score-pill { display:inline-block; padding:3px 11px; border-radius:999px; font-weight:700; font-size:13px; background:rgba(30,158,106,.12); color:var(--c-reading); }
 
 /* ---------- Responsive ----------------------------------------------- */
-@media (max-width: 640px) {
-  .nav a { padding: 8px 10px; font-size: 13px; }
+@media (max-width: 820px) {
+  /* Header becomes a single row with a horizontally-scrollable nav */
+  .site-header__inner { gap: 10px; height: 60px; }
+  .brand { gap: 9px; }
+  .brand__mark { width: 34px; height: 34px; font-size: 15px; }
+  .brand__name b { font-size: 14px; }
   .brand__name span { display: none; }
+  .nav {
+    gap: 2px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    mask-image: linear-gradient(90deg, #000 88%, transparent);
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a { padding: 7px 10px; font-size: 13px; }
+}
+@media (max-width: 640px) {
   .hero__inner { padding: 38px 0 32px; }
+  .hero h1 { font-size: 27px; }
+  .zone-head h1 { font-size: 24px; }
   .viewer-bar .v-meta, .viewer-bar .v-sep { display: none; }
 }

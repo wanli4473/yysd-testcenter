@@ -3,23 +3,24 @@
 """
 build_manifest.py
 =================
-Scans the `exams/` folder for exam HTML files and regenerates
-`exams/manifest.json`, the index the website reads to show the exam list.
+Scans the `library/` folder for content HTML files (mock exams, study
+materials, practice sets) and regenerates `library/manifest.json`, the index
+the website reads to build the 模考区 / 学习区 / 练习区 sections.
 
-This runs automatically via GitHub Actions every time a file is added to or
-removed from the `exams/` folder, so the admin never has to edit JSON by hand.
+Runs automatically via GitHub Actions whenever a file changes in `library/`,
+so the admin never edits JSON by hand.
 
-How metadata is determined for each exam (in priority order):
-  1. <meta name="exam:title|type|category|duration|description" content="...">
-     tags embedded in the HTML file (recommended — added by the admin tool).
+Metadata per file (priority order):
+  1. <meta name="exam:title|zone|subject|duration|description" content="...">
+     embedded in the HTML (recommended — set by the admin upload tool).
   2. Fallbacks:
-       title       -> the <title> of the HTML, else a prettified filename
-       type        -> guessed from filename keywords, else "other"
-       category    -> guessed from filename keywords, else ""
-       duration    -> default per type (reading/listening 30-60, writing 60...)
-       added date  -> first git commit date of the file, else file mtime
+       title    -> <title> of the HTML, else a prettified filename
+       zone     -> guessed from filename/title keywords, else "mock"
+       subject  -> guessed from keywords, else first valid subject of the zone
+       duration -> declared value, else 0 (untimed)
+       added    -> first git commit date of the file, else file mtime
 
-No third-party dependencies — uses only the Python standard library.
+Standard library only — no third-party dependencies.
 """
 
 import json
@@ -31,27 +32,28 @@ from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-EXAMS_DIR = os.path.join(ROOT, "exams")
-MANIFEST = os.path.join(EXAMS_DIR, "manifest.json")
+LIB_DIR = os.path.join(ROOT, "library")
+MANIFEST = os.path.join(LIB_DIR, "manifest.json")
 
-VALID_TYPES = {"listening", "reading", "writing", "speaking", "full", "other"}
-
-# Default duration (minutes) when the exam does not declare one.
-DEFAULT_DURATION = {
-    "listening": 40, "reading": 60, "writing": 60,
-    "speaking": 15, "full": 165, "other": 0,
+# zone -> list of valid subjects (first = default for that zone)
+ZONE_SUBJECTS = {
+    "mock":     ["ielts", "pte", "toefl"],
+    "practice": ["ielts", "pte", "toefl"],
+    "study":    ["grammar", "vocab"],
 }
+VALID_ZONES = set(ZONE_SUBJECTS.keys())
 
-TYPE_KEYWORDS = [
-    ("listening", ["listening", "听力"]),
-    ("reading",   ["reading", "阅读"]),
-    ("writing",   ["writing", "写作"]),
-    ("speaking",  ["speaking", "口语"]),
-    ("full",      ["full", "complete", "全套", "全真", "套卷"]),
+ZONE_KEYWORDS = [
+    ("study",    ["study", "lesson", "grammar", "vocab", "语法", "单词", "词汇", "学习", "讲解", "精讲"]),
+    ("practice", ["practice", "exercise", "drill", "练习", "习题", "专项"]),
+    ("mock",     ["mock", "test", "full", "exam", "模考", "模拟", "全真", "套卷", "入学测试"]),
 ]
-CAT_KEYWORDS = [
-    ("academic", ["academic", "学术", "-a-", "_a_"]),
-    ("general",  ["general", "培训", "-g-", "_g_", "gt"]),
+SUBJECT_KEYWORDS = [
+    ("ielts",   ["ielts", "雅思"]),
+    ("pte",     ["pte"]),
+    ("toefl",   ["toefl", "托福"]),
+    ("grammar", ["grammar", "语法"]),
+    ("vocab",   ["vocab", "word", "单词", "词汇"]),
 ]
 
 
@@ -61,29 +63,21 @@ def read_text(path):
 
 
 def find_meta(html, name):
-    """Return content of <meta name="exam:NAME" content="..."> if present."""
-    pattern = re.compile(
-        r'<meta[^>]*name=["\']exam:%s["\'][^>]*content=["\']([^"\']*)["\']' % re.escape(name),
-        re.IGNORECASE,
-    )
-    m = pattern.search(html)
+    p1 = re.compile(r'<meta[^>]*name=["\']exam:%s["\'][^>]*content=["\']([^"\']*)["\']' % re.escape(name), re.I)
+    m = p1.search(html)
     if m:
         return m.group(1).strip()
-    # also support attribute order: content first, name second
-    pattern2 = re.compile(
-        r'<meta[^>]*content=["\']([^"\']*)["\'][^>]*name=["\']exam:%s["\']' % re.escape(name),
-        re.IGNORECASE,
-    )
-    m = pattern2.search(html)
+    p2 = re.compile(r'<meta[^>]*content=["\']([^"\']*)["\'][^>]*name=["\']exam:%s["\']' % re.escape(name), re.I)
+    m = p2.search(html)
     return m.group(1).strip() if m else None
 
 
 def find_title_tag(html):
-    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
     return re.sub(r"\s+", " ", m.group(1)).strip() if m else None
 
 
-def guess_from_keywords(haystack, table, default):
+def guess(haystack, table, default):
     low = haystack.lower()
     for value, words in table:
         for w in words:
@@ -93,9 +87,8 @@ def guess_from_keywords(haystack, table, default):
 
 
 def slugify(name):
-    s = name.lower()
-    s = re.sub(r"[^a-z0-9一-鿿]+", "-", s)
-    return s.strip("-") or "exam"
+    s = re.sub(r"[^a-z0-9一-鿿]+", "-", name.lower())
+    return s.strip("-") or "item"
 
 
 def git_added_date(path):
@@ -105,47 +98,45 @@ def git_added_date(path):
             cwd=ROOT, stderr=subprocess.DEVNULL,
         ).decode().strip()
         if out:
-            return out  # YYYY-MM-DD
+            return out
     except Exception:
         pass
-    ts = os.path.getmtime(path)
-    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+    return datetime.fromtimestamp(os.path.getmtime(path), tz=timezone.utc).strftime("%Y-%m-%d")
 
 
-def prettify(filename_stem):
-    return re.sub(r"[-_]+", " ", filename_stem).strip().title()
+def prettify(stem):
+    return re.sub(r"[-_]+", " ", stem).strip().title()
 
 
 def build_entry(filename):
-    path = os.path.join(EXAMS_DIR, filename)
+    path = os.path.join(LIB_DIR, filename)
     stem = os.path.splitext(filename)[0]
     html = read_text(path)
     hint = stem + " " + (find_title_tag(html) or "")
 
-    etype = (find_meta(html, "type") or "").lower()
-    if etype not in VALID_TYPES:
-        etype = guess_from_keywords(hint, TYPE_KEYWORDS, "other")
+    zone = (find_meta(html, "zone") or "").lower()
+    if zone not in VALID_ZONES:
+        zone = guess(hint, ZONE_KEYWORDS, "mock")
 
-    category = (find_meta(html, "category") or "").lower()
-    if category not in ("academic", "general", ""):
-        category = ""
-    if not category:
-        category = guess_from_keywords(hint, CAT_KEYWORDS, "")
+    subject = (find_meta(html, "subject") or "").lower()
+    if subject not in ZONE_SUBJECTS[zone]:
+        subject = guess(hint, SUBJECT_KEYWORDS, "")
+        if subject not in ZONE_SUBJECTS[zone]:
+            subject = ZONE_SUBJECTS[zone][0]
 
     title = find_meta(html, "title") or find_title_tag(html) or prettify(stem)
 
-    dur_raw = find_meta(html, "duration")
     try:
-        duration = int(dur_raw)
+        duration = int(find_meta(html, "duration"))
     except (TypeError, ValueError):
-        duration = DEFAULT_DURATION.get(etype, 0)
+        duration = 0
 
     return {
         "id": slugify(stem),
         "file": filename,
         "title": title,
-        "type": etype,
-        "category": category,
+        "zone": zone,
+        "subject": subject,
         "duration": duration,
         "description": find_meta(html, "description") or "",
         "added": git_added_date(path),
@@ -153,45 +144,42 @@ def build_entry(filename):
 
 
 def main():
-    if not os.path.isdir(EXAMS_DIR):
-        print("exams/ folder not found", file=sys.stderr)
+    if not os.path.isdir(LIB_DIR):
+        print("library/ folder not found", file=sys.stderr)
         sys.exit(1)
 
     files = sorted(
-        f for f in os.listdir(EXAMS_DIR)
+        f for f in os.listdir(LIB_DIR)
         if f.lower().endswith((".html", ".htm")) and not f.startswith(".")
     )
 
-    exams = []
-    seen_ids = set()
+    items, seen = [], set()
     for f in files:
         try:
-            entry = build_entry(f)
-        except Exception as e:
-            print("Skipping %s: %s" % (f, e), file=sys.stderr)
+            e = build_entry(f)
+        except Exception as ex:
+            print("Skipping %s: %s" % (f, ex), file=sys.stderr)
             continue
-        # ensure unique ids
-        base_id = entry["id"]
+        base = e["id"]
         n = 2
-        while entry["id"] in seen_ids:
-            entry["id"] = "%s-%d" % (base_id, n)
+        while e["id"] in seen:
+            e["id"] = "%s-%d" % (base, n)
             n += 1
-        seen_ids.add(entry["id"])
-        exams.append(entry)
+        seen.add(e["id"])
+        items.append(e)
 
     manifest = {
         "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "count": len(exams),
-        "exams": exams,
+        "count": len(items),
+        "items": items,
     }
-
     with open(MANIFEST, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
         f.write("\n")
 
-    print("Wrote %s with %d exam(s)." % (os.path.relpath(MANIFEST, ROOT), len(exams)))
-    for e in exams:
-        print("  - [%s] %s  (%s)" % (e["type"], e["title"], e["file"]))
+    print("Wrote %s with %d item(s)." % (os.path.relpath(MANIFEST, ROOT), len(items)))
+    for e in items:
+        print("  - [%s/%s] %s  (%s)" % (e["zone"], e["subject"], e["title"], e["file"]))
 
 
 if __name__ == "__main__":

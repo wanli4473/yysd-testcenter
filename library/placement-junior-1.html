@@ -2,10 +2,11 @@
 <html lang="zh-CN">
 <head>
   <meta name="exam:title" content="优益思达入学测试 · 初三毕业入学卷">
-  <meta name="exam:type" content="full">
-  <meta name="exam:category" content="academic">
-  <meta name="exam:duration" content="90">
-  <meta name="exam:description" content="">
+  <meta name="exam:zone" content="mock">
+  <meta name="exam:subject" content="ielts">
+  <meta name="exam:duration" content="0">
+  <meta name="exam:description" content="初三毕业级别入学定位卷：听力 + 阅读 + 写作 + 口语，自带 75 分钟计时与自动批改，交卷给出入学水平定位。">
+
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -673,5 +674,26 @@ function calcRubric(){
 window.addEventListener('DOMContentLoaded',()=>{ injectFlags(); buildNav(); refreshNav(); document.getElementById('testArea').addEventListener('input',refreshNav); document.getElementById('testArea').addEventListener('change',refreshNav); });
 window.playAudio=playAudio; window.stopAudio=stopAudio; window.submitTest=submitTest; window.confirmSubmit=confirmSubmit; window.changeFont=changeFont; window.highlightSel=highlightSel; window.clearHighlights=clearHighlights; window.startSpeakingTimer=startSpeakingTimer; window.updateWordCount=updateWordCount; window.toggleFlag=toggleFlag; window.calcRubric=calcRubric;
 </script>
+
+<!-- ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== -->
+<script>
+(function(){
+  function report(){
+    var st = document.getElementById('scoreText');
+    if(!st) return;
+    var m = (st.textContent||'').match(/(\d+)\s*\/\s*(\d+)/);
+    if(!m) return;
+    var fb = document.getElementById('finalBand');
+    var band = fb ? parseFloat(fb.textContent) : NaN;
+    try {
+      window.parent.postMessage({ type:'yysd:score',
+        score:+m[1], total:+m[2], band: isNaN(band)?null:band }, '*');
+    } catch(e){}
+  }
+  var st = document.getElementById('scoreText');
+  if(st){ new MutationObserver(report).observe(st, {childList:true,subtree:true,characterData:true}); }
+})();
+</script>
+
 </body>
 </html>
