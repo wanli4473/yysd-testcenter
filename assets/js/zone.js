@@ -47,7 +47,10 @@
     var html = "";
 
     groups.forEach(function (s) {
-      var items = allItems.filter(function (it) { return it.subject === s; });
+      var items = allItems.filter(function (it) { return it.subject === s; })
+        .sort(function (a, b) {
+          return String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
+        });
       var sub = Y.SUBJECT[s];
       html += '<div class="subject-group">' +
         '<div class="subject-group__head">' +
