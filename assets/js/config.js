@@ -18,12 +18,14 @@ window.YYSD = (function () {
 
   // ordered subjects per zone
   var ZONE_SUBJECTS = {
-    mock:     ["cambridge", "ielts", "pte", "toefl"],
+    mock:     ["cambridge-listening", "cambridge-reading", "ielts", "pte", "toefl"],
     study:    ["grammar", "vocab"],
     practice: ["ielts", "pte", "toefl"]
   };
 
   var SUBJECT = {
+    "cambridge-listening": { label: "剑桥听力", en: "Cambridge Listening", color: "var(--c-cambridge-listening)" },
+    "cambridge-reading":   { label: "剑桥阅读", en: "Cambridge Reading", color: "var(--c-cambridge-reading)" },
     cambridge: { label: "剑桥真题", en: "Cambridge", color: "var(--c-cambridge)" },
     ielts:   { label: "雅思", en: "IELTS", color: "var(--c-ielts)" },
     pte:     { label: "PTE",  en: "PTE",   color: "var(--c-pte)" },

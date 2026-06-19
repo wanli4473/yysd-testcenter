@@ -40,7 +40,7 @@ MANIFEST = os.path.join(LIB_DIR, "manifest.json")
 
 # zone -> list of valid subjects (first = default for that zone)
 ZONE_SUBJECTS = {
-    "mock":     ["cambridge", "ielts", "pte", "toefl"],
+    "mock":     ["cambridge-listening", "cambridge-reading", "ielts", "pte", "toefl"],
     "practice": ["ielts", "pte", "toefl"],
     "study":    ["grammar", "vocab"],
 }
@@ -52,6 +52,8 @@ ZONE_KEYWORDS = [
     ("mock",     ["mock", "test", "full", "exam", "模考", "模拟", "全真", "套卷", "入学测试"]),
 ]
 SUBJECT_KEYWORDS = [
+    ("cambridge-listening", ["剑桥听力", "cambridge listening", "剑听", "剑桥雅思 listening"]),
+    ("cambridge-reading",   ["剑桥阅读", "cambridge reading", "剑阅"]),
     ("cambridge", ["cambridge", "剑桥", "剑"]),
     ("ielts",   ["ielts", "雅思"]),
     ("pte",     ["pte"]),
