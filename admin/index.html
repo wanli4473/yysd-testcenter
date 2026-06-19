@@ -29,37 +29,35 @@
   <main class="container section">
     <div class="section__head">
       <div>
-        <h2>上传模考 / 学习册</h2>
-        <p>无需编程。准备好 HTML 内容，选择板块和科目，按下面三步操作即可上线。</p>
+        <h2>上传内容（按文件夹自动分类）</h2>
+        <p>想加哪类内容，就点对应分类的「上传」按钮，把 HTML 拖进去即可——系统按文件夹自动归类，无需填任何标签。</p>
       </div>
     </div>
 
-    <!-- ============ ZONE OVERVIEW ============ -->
+    <!-- ============ ONE-CLICK UPLOAD GRID ============ -->
     <div class="panel">
-      <h3>🗂️ 三大板块结构</h3>
-      <p class="sub">上传时为内容选定「板块 + 科目」，它就会自动出现在前台对应分类下。</p>
-      <ul class="steps" style="counter-reset:none">
-        <li style="padding-left:0"><b>🎯 模考区：</b>雅思模考 · PTE模考 · 托福模考</li>
-        <li style="padding-left:0"><b>📚 学习区：</b>语法学习 · 单词学习</li>
-        <li style="padding-left:0"><b>✏️ 练习区：</b>雅思练习题 · PTE练习题 · 托福练习题</li>
-      </ul>
+      <h3>📤 选择分类上传</h3>
+      <p class="sub">点击下方任一分类的「上传到这里」，会直接打开该文件夹的 GitHub 上传页面：拖入 HTML → 点绿色按钮 <code class="inline">Commit changes</code> → 约 1 分钟后自动上线。</p>
+      <div id="cat-area">
+        <div class="state"><div class="spinner"></div>正在加载分类…</div>
+      </div>
     </div>
 
-    <!-- ============ STEP-BY-STEP GUIDE ============ -->
+    <!-- ============ HOW IT WORKS ============ -->
     <div class="panel">
-      <h3>📥 上传流程（全程网页点击，无需命令行）</h3>
+      <h3>🔁 上传后会发生什么</h3>
       <ol class="steps">
-        <li><b>整理内容（推荐）：</b>把 HTML 文件拖到下方工具区，选好板块/科目并填写标题，点击「生成并下载」。下载到的新文件已带好标签。</li>
-        <li><b>上传到 GitHub：</b>打开仓库的 <code>library</code> 文件夹 → 点 <code>Add file</code> → <code>Upload files</code> → 拖入 HTML → 点 <code>Commit changes</code>。</li>
-        <li><b>自动上线：</b>上传后系统会自动重建内容列表（约 1 分钟），刷新前台即可看到，<b>无需任何其他操作</b>。</li>
+        <li><b>你上传文件</b>到某个分类文件夹（例如「单词」文件夹）。</li>
+        <li><b>系统自动识别</b>该文件夹对应的板块与科目，重建内容列表（约 1 分钟）。</li>
+        <li><b>学生刷新</b>前台即可在对应分类看到新内容，<b>你无需做任何其他操作</b>。</li>
       </ol>
-      <p class="note">删除内容同理：在 <code class="inline">library</code> 文件夹删除对应 HTML 文件，列表会自动更新。</p>
+      <p class="note">删除内容：进入对应分类文件夹，点开文件 → 右上角垃圾桶图标删除即可，列表会自动更新。</p>
     </div>
 
-    <!-- ============ METADATA TAGGER TOOL ============ -->
+    <!-- ============ OPTIONAL: PRETTIFY TITLE ============ -->
     <div class="panel">
-      <h3>① 整理内容（打标签工具）</h3>
-      <p class="sub">在你的浏览器本地运行，不会上传任何文件。处理完直接下载到本机。</p>
+      <h3>✨ 可选：给文件美化标题 / 简介</h3>
+      <p class="sub">分类已由文件夹决定，这一步不是必须的。若想自定义卡片上显示的标题、时长或简介，可用此工具处理后再上传。</p>
 
       <div class="dropzone" id="dropzone">
         <div style="font-size:30px;margin-bottom:8px">📄</div>
@@ -71,54 +69,28 @@
       <div id="meta-form" style="display:none;margin-top:22px">
         <div class="field">
           <label>标题（显示给学生）</label>
-          <input id="m-title" placeholder="例如：雅思全真模考（第四卷）">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-          <div class="field">
-            <label>板块</label>
-            <select id="m-zone">
-              <option value="mock">🎯 模考区</option>
-              <option value="study">📚 学习区</option>
-              <option value="practice">✏️ 练习区</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>科目</label>
-            <select id="m-subject"></select>
-          </div>
+          <input id="m-title" placeholder="例如：学术高频词 第二组">
         </div>
         <div class="field">
-          <label>建议时长（分钟，0 表示不限时；学习材料一般填 0）</label>
+          <label>建议时长（分钟，0 = 不限时；学习/单词类一般填 0）</label>
           <input id="m-duration" type="number" min="0" value="0">
         </div>
         <div class="field">
           <label>简介（可选，显示在卡片上）</label>
-          <textarea id="m-desc" rows="2" placeholder="例如：3 篇文章共 40 题，交卷自动批改。"></textarea>
+          <textarea id="m-desc" rows="2" placeholder="例如：50 个高频学术词，含例句与自测。"></textarea>
         </div>
-        <button class="btn btn--primary" id="generate">生成并下载已打标签的文件 ↓</button>
-        <p class="hint" style="margin-top:10px">下载后，把这个新文件上传到仓库的 <code class="inline">library</code> 文件夹即可（见上方第 2 步）。</p>
+        <button class="btn btn--primary" id="generate">生成并下载 ↓</button>
+        <p class="hint" style="margin-top:10px">下载后，把这个新文件上传到对应分类文件夹即可（见最上方「选择分类上传」）。</p>
       </div>
-    </div>
-
-    <!-- ============ MANUAL META REFERENCE ============ -->
-    <div class="panel">
-      <h3>② 进阶：手动给内容加标签</h3>
-      <p class="sub">直接编辑 HTML 时，把下面这段粘到 <code class="inline">&lt;head&gt;</code> 里改成你的内容即可。系统会优先读取这些标签。</p>
-      <div class="codeblock">&lt;meta name="exam:title"    content="雅思全真模考（第四卷）"&gt;
-&lt;meta name="exam:zone"     content="mock"&gt;     &lt;!-- mock 模考 / study 学习 / practice 练习 --&gt;
-&lt;meta name="exam:subject"  content="ielts"&gt;    &lt;!-- 模考/练习: ielts pte toefl ｜ 学习: grammar vocab --&gt;
-&lt;meta name="exam:duration" content="0"&gt;        &lt;!-- 分钟，0=不限时 --&gt;
-&lt;meta name="exam:description" content="3 篇文章共 40 题。"&gt;</div>
-      <p class="hint" style="margin-top:12px">不加也没关系——系统会根据文件名和网页标题自动猜测板块与科目。</p>
     </div>
 
     <!-- ============ OPTIONAL SCORE INTEGRATION ============ -->
     <div class="panel">
-      <h3>③ 进阶：让成绩自动记录到「我的成绩」</h3>
-      <p class="sub">你的内容自带批改即可正常使用。若希望分数自动同步，在算出分数后加一行：</p>
+      <h3>📊 进阶：让成绩自动记录到「我的成绩」</h3>
+      <p class="sub">内容自带批改即可正常使用。若希望分数自动同步，在算出分数后加一行：</p>
       <div class="codeblock">window.parent.postMessage(
   { type: "yysd:score", score: 32, total: 40, band: 7 }, "*");</div>
-      <p class="hint" style="margin-top:12px">示范文件（语法、单词、阅读练习）均已内置该写法，可参考 <code class="inline">library/</code> 目录。</p>
+      <p class="hint" style="margin-top:12px">示范文件（语法、单词、阅读、入学模考）均已内置该写法，可参考各分类文件夹。</p>
     </div>
   </main>
 
@@ -132,39 +104,58 @@
   <script>
   (function () {
     var Y = window.YYSD;
+    var REPO = "wanli4473/yysd-testcenter";   // GitHub 仓库
+    var BRANCH = "main";
+    var catArea = document.getElementById("cat-area");
+
+    function uploadUrl(zone, subject) {
+      return "https://github.com/" + REPO + "/upload/" + BRANCH + "/library/" + zone + "/" + subject;
+    }
+    function treeUrl(zone, subject) {
+      return "https://github.com/" + REPO + "/tree/" + BRANCH + "/library/" + zone + "/" + subject;
+    }
+
+    function renderCategories(counts) {
+      var html = "";
+      Y.ZONES.forEach(function (zone) {
+        var z = Y.ZONE[zone];
+        html += '<div class="cat-zone"><div class="cat-zone__head">' +
+          '<span style="font-size:20px">' + z.icon + '</span><h3>' + Y.esc(z.label) + '</h3></div>' +
+          '<div class="cat-grid">';
+        Y.subjectsOf(zone).forEach(function (s) {
+          var sub = Y.SUBJECT[s];
+          var n = (counts[zone + "/" + s] || 0);
+          html += '<div class="cat-card">' +
+            '<div class="cat-card__top">' +
+              '<span class="badge badge--' + s + '">' + Y.esc(sub.label) + '</span>' +
+              '<span class="cnt">' + n + ' 份</span>' +
+            '</div>' +
+            '<h4>' + Y.esc(sub.label) + Y.esc(z.label.replace("区", "")) + '</h4>' +
+            '<div class="path">library/' + zone + '/' + s + '</div>' +
+            '<div class="acts">' +
+              '<a class="btn btn--primary btn--sm" target="_blank" rel="noopener" href="' + uploadUrl(zone, s) + '">📤 上传到这里</a>' +
+              '<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="' + treeUrl(zone, s) + '">📂 查看</a>' +
+            '</div>' +
+          '</div>';
+        });
+        html += '</div></div>';
+      });
+      catArea.innerHTML = html;
+    }
+
+    // counts come from the live manifest (best-effort)
+    Y.load().then(function (items) {
+      var counts = {};
+      items.forEach(function (it) { var k = it.zone + "/" + it.subject; counts[k] = (counts[k] || 0) + 1; });
+      renderCategories(counts);
+    }).catch(function () { renderCategories({}); });
+
+    // ---- optional prettify tool ----
     var fileInput = document.getElementById("file-input");
     var dropzone  = document.getElementById("dropzone");
     var fileNameEl= document.getElementById("file-name");
     var metaForm  = document.getElementById("meta-form");
-    var zoneSel   = document.getElementById("m-zone");
-    var subjectSel= document.getElementById("m-subject");
     var loadedText = "", loadedName = "";
-
-    function esc(s){ return Y.esc(s); }
-
-    function fillSubjects() {
-      var subs = Y.subjectsOf(zoneSel.value);
-      subjectSel.innerHTML = subs.map(function (s) {
-        return '<option value="' + s + '">' + Y.esc(Y.SUBJECT[s].label) + ' ' + Y.SUBJECT[s].en + '</option>';
-      }).join("");
-    }
-    zoneSel.addEventListener("change", fillSubjects);
-    fillSubjects();
-
-    function guessZoneSubject(name) {
-      var n = name.toLowerCase();
-      var zone = "mock", subject;
-      if (/语法|grammar/.test(n)) { zone = "study"; subject = "grammar"; }
-      else if (/单词|词汇|vocab|word/.test(n)) { zone = "study"; subject = "vocab"; }
-      else if (/练习|习题|practice|exercise/.test(n)) { zone = "practice"; }
-      else if (/模考|模拟|全真|mock|test/.test(n)) { zone = "mock"; }
-      if (!subject) {
-        if (/pte/.test(n)) subject = "pte";
-        else if (/托福|toefl/.test(n)) subject = "toefl";
-        else if (/雅思|ielts/.test(n)) subject = "ielts";
-      }
-      return { zone: zone, subject: subject };
-    }
 
     function handleFile(file) {
       if (!file) return;
@@ -176,17 +167,11 @@
         var m = loadedText.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
         var stem = file.name.replace(/\.html?$/i, "").replace(/[-_]+/g, " ");
         document.getElementById("m-title").value = (m ? m[1].trim() : stem) || stem;
-
-        var g = guessZoneSubject(file.name + " " + (m ? m[1] : ""));
-        zoneSel.value = g.zone; fillSubjects();
-        if (g.subject && Y.subjectsOf(g.zone).indexOf(g.subject) !== -1) subjectSel.value = g.subject;
-
         metaForm.style.display = "block";
         metaForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
       };
       reader.readAsText(file);
     }
-
     dropzone.addEventListener("click", function () { fileInput.click(); });
     fileInput.addEventListener("change", function (e) { handleFile(e.target.files[0]); });
     ["dragover","dragenter"].forEach(function (ev) {
@@ -199,26 +184,16 @@
 
     document.getElementById("generate").addEventListener("click", function () {
       if (!loadedText) { alert("请先选择一个 HTML 文件。"); return; }
-      var title    = document.getElementById("m-title").value.trim();
-      var zone     = zoneSel.value;
-      var subject  = subjectSel.value;
+      var title = document.getElementById("m-title").value.trim();
       var duration = document.getElementById("m-duration").value || "0";
-      var desc     = document.getElementById("m-desc").value.trim();
-
+      var desc = document.getElementById("m-desc").value.trim();
       var tags =
-        '\n  <meta name="exam:title" content="' + esc(title) + '">' +
-        '\n  <meta name="exam:zone" content="' + esc(zone) + '">' +
-        '\n  <meta name="exam:subject" content="' + esc(subject) + '">' +
-        '\n  <meta name="exam:duration" content="' + esc(duration) + '">' +
-        '\n  <meta name="exam:description" content="' + esc(desc) + '">\n';
-
-      var out = loadedText.replace(/\s*<meta[^>]*name=["']exam:[^>]*>/gi, "");
-      if (/<head[^>]*>/i.test(out)) {
-        out = out.replace(/<head[^>]*>/i, function (h) { return h + tags; });
-      } else {
-        out = tags + out;
-      }
-
+        '\n  <meta name="exam:title" content="' + Y.esc(title) + '">' +
+        '\n  <meta name="exam:duration" content="' + Y.esc(duration) + '">' +
+        '\n  <meta name="exam:description" content="' + Y.esc(desc) + '">\n';
+      var out = loadedText.replace(/\s*<meta[^>]*name=["']exam:(title|duration|description)["'][^>]*>/gi, "");
+      if (/<head[^>]*>/i.test(out)) out = out.replace(/<head[^>]*>/i, function (h) { return h + tags; });
+      else out = tags + out;
       var blob = new Blob([out], { type: "text/html;charset=utf-8" });
       var a = document.createElement("a");
       a.href = URL.createObjectURL(blob);

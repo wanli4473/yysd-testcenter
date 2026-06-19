@@ -3,22 +3,25 @@
 """
 build_manifest.py
 =================
-Scans the `library/` folder for content HTML files (mock exams, study
-materials, practice sets) and regenerates `library/manifest.json`, the index
-the website reads to build the 模考区 / 学习区 / 练习区 sections.
+Recursively scans the `library/` folder for content HTML files (mock exams,
+study materials, practice sets) and regenerates `library/manifest.json`, the
+index the website reads to build the 模考区 / 学习区 / 练习区 sections.
 
 Runs automatically via GitHub Actions whenever a file changes in `library/`,
 so the admin never edits JSON by hand.
 
+CLASSIFICATION IS BY FOLDER. The folder a file lives in decides its category:
+    library/<zone>/<subject>/<file>.html
+e.g. library/study/vocab/xxx.html  ->  zone=study, subject=vocab
+The admin just drops a file into the matching folder — no tags required.
+
 Metadata per file (priority order):
-  1. <meta name="exam:title|zone|subject|duration|description" content="...">
-     embedded in the HTML (recommended — set by the admin upload tool).
-  2. Fallbacks:
-       title    -> <title> of the HTML, else a prettified filename
-       zone     -> guessed from filename/title keywords, else "mock"
-       subject  -> guessed from keywords, else first valid subject of the zone
-       duration -> declared value, else 0 (untimed)
-       added    -> first git commit date of the file, else file mtime
+  - zone / subject : the folder path (library/<zone>/<subject>/). If a file
+    sits loose in library/ root, fall back to <meta> tags / keyword guessing.
+  - title       -> <meta exam:title>, else <title>, else prettified filename
+  - duration    -> <meta exam:duration>, else 0 (untimed)
+  - description -> <meta exam:description>, else ""
+  - added       -> first git commit date of the file, else file mtime
 
 Standard library only — no third-party dependencies.
 """
@@ -108,21 +111,32 @@ def prettify(stem):
     return re.sub(r"[-_]+", " ", stem).strip().title()
 
 
-def build_entry(filename):
-    path = os.path.join(LIB_DIR, filename)
-    stem = os.path.splitext(filename)[0]
+def build_entry(relpath):
+    """relpath is the file path relative to library/, using '/' separators."""
+    path = os.path.join(LIB_DIR, relpath.replace("/", os.sep))
+    stem = os.path.splitext(os.path.basename(relpath))[0]
     html = read_text(path)
-    hint = stem + " " + (find_title_tag(html) or "")
+    parts = relpath.split("/")
+    hint = relpath + " " + (find_title_tag(html) or "")
 
-    zone = (find_meta(html, "zone") or "").lower()
+    # --- zone/subject from the folder path (primary) ---
+    zone = subject = None
+    if len(parts) >= 3 and parts[0] in VALID_ZONES:
+        zone = parts[0]
+        if parts[1] in ZONE_SUBJECTS[zone]:
+            subject = parts[1]
+
+    # fall back to meta / keyword guessing for loose files in library/ root
     if zone not in VALID_ZONES:
-        zone = guess(hint, ZONE_KEYWORDS, "mock")
-
-    subject = (find_meta(html, "subject") or "").lower()
+        zone = (find_meta(html, "zone") or "").lower()
+        if zone not in VALID_ZONES:
+            zone = guess(hint, ZONE_KEYWORDS, "mock")
     if subject not in ZONE_SUBJECTS[zone]:
-        subject = guess(hint, SUBJECT_KEYWORDS, "")
+        subject = (find_meta(html, "subject") or "").lower()
         if subject not in ZONE_SUBJECTS[zone]:
-            subject = ZONE_SUBJECTS[zone][0]
+            subject = guess(hint, SUBJECT_KEYWORDS, "")
+            if subject not in ZONE_SUBJECTS[zone]:
+                subject = ZONE_SUBJECTS[zone][0]
 
     title = find_meta(html, "title") or find_title_tag(html) or prettify(stem)
 
@@ -133,7 +147,7 @@ def build_entry(filename):
 
     return {
         "id": slugify(stem),
-        "file": filename,
+        "file": relpath,
         "title": title,
         "zone": zone,
         "subject": subject,
@@ -148,10 +162,15 @@ def main():
         print("library/ folder not found", file=sys.stderr)
         sys.exit(1)
 
-    files = sorted(
-        f for f in os.listdir(LIB_DIR)
-        if f.lower().endswith((".html", ".htm")) and not f.startswith(".")
-    )
+    # recursively collect every .html under library/ (any depth)
+    files = []
+    for root, dirs, names in os.walk(LIB_DIR):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        for n in names:
+            if n.lower().endswith((".html", ".htm")) and not n.startswith("."):
+                rel = os.path.relpath(os.path.join(root, n), LIB_DIR).replace(os.sep, "/")
+                files.append(rel)
+    files.sort()
 
     items, seen = [], set()
     for f in files:

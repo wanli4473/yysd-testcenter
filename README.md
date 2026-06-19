@@ -26,7 +26,7 @@
 | `exam.html?id=…` | 内容查看器 —— 在带计时的界面中打开模考/学习/练习 |
 | `results.html` | 我的成绩 —— 记录每次得分（存浏览器本地） |
 | `admin/index.html` | 管理后台 —— 上传指引 + 打标签工具 |
-| `library/` | **所有内容 HTML 放这里**（老师上传的目录） |
+| `library/<板块>/<科目>/` | **按文件夹分类存放内容**（见下） |
 | `library/manifest.json` | 内容索引，**自动生成，请勿手改** |
 | `scripts/build_manifest.py` | 扫描 `library/` 重建索引的脚本 |
 | `.github/workflows/build-manifest.yml` | 上传后自动重建列表的 GitHub Action |
@@ -42,27 +42,46 @@
 
 ---
 
+## 🗃️ 内容按文件夹分类（核心）
+
+`library/` 下按「板块/科目」分成文件夹，**文件放在哪个文件夹，就归到哪个分类**——无需任何标签：
+
+```
+library/
+├── mock/        🎯 模考区
+│   ├── ielts/     雅思模考
+│   ├── pte/       PTE模考
+│   └── toefl/     托福模考
+├── study/       📚 学习区
+│   ├── grammar/   语法学习
+│   └── vocab/     单词学习
+└── practice/    ✏️ 练习区
+    ├── ielts/     雅思练习
+    ├── pte/       PTE练习
+    └── toefl/     托福练习
+```
+
 ## ➕ 上传新内容（日常操作 · 无需编程）
 
-1.（推荐）打开 **管理后台** → 用「整理内容」工具选好**板块 + 科目**、填标题，下载新文件。
-2. 进入 GitHub 仓库 **`library` 文件夹** → `Add file` → `Upload files` → 拖入 HTML → `Commit changes`。
-3. 完成！系统**自动重建列表**（约 1 分钟），刷新前台即可看到。
+1. 打开 **管理后台** → 在「选择分类上传」中点对应分类的 **「📤 上传到这里」**（直接打开该文件夹的 GitHub 上传页）。
+2. 拖入 HTML → 点绿色 `Commit changes`。
+3. 完成！系统**自动重建列表**（约 1 分钟），刷新前台即可在对应分类看到。
 
-删除内容：在 `library` 文件夹删除对应 HTML 文件即可，列表自动更新。
+删除内容：进入对应文件夹，打开文件 → 右上角垃圾桶删除即可。
 
 ---
 
-## 🏷️ 内容标签（可选）
+## 🏷️ 内容标签（全部可选）
 
-在 HTML 的 `<head>` 中加入以下标签控制归类与显示（不加则自动猜测）：
+分类由**文件夹**决定，无需标签。若想自定义显示的标题/时长/简介，可在 `<head>` 加：
 
 ```html
-<meta name="exam:title"       content="雅思全真模考（第四卷）">
-<meta name="exam:zone"        content="mock">    <!-- mock / study / practice -->
-<meta name="exam:subject"     content="ielts">   <!-- 模考/练习: ielts pte toefl ｜ 学习: grammar vocab -->
+<meta name="exam:title"       content="学术高频词 第二组">
 <meta name="exam:duration"    content="0">       <!-- 分钟，0=不限时 -->
-<meta name="exam:description" content="3 篇文章共 40 题。">
+<meta name="exam:description" content="50 个高频学术词。">
 ```
+
+> 如把文件放在 `library/` 根目录（不推荐），可用 `exam:zone` / `exam:subject` 标签指定分类。
 
 ## 📊 成绩自动同步（可选）
 
