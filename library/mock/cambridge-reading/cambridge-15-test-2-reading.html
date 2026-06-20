@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优益思达 · 剑桥雅思15 Test 2 阅读</title>
+<meta name="exam:title" content="剑桥雅思15 · Test 2（阅读）">
+<meta name="exam:zone" content="mock">
+<meta name="exam:subject" content="cambridge-reading">
+<meta name="exam:duration" content="0">
+<meta name="exam:description" content="剑桥雅思15 Test 2 学术类阅读（官方真题）：3 篇文章共 40 题，可单篇练习或完整模考，自动批改、解析与雅思预估分。">
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:'Segoe UI','PingFang SC',Roboto,sans-serif; background:#f0f2f6; margin:0; color:#1e2a3a; line-height:1.7; padding:0 0 60px; }
+  .header { background:linear-gradient(135deg,#1e1b4b,#312e81); color:#fff; padding:12px 28px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 18px rgba(0,0,0,.25); flex-wrap:wrap; gap:10px; }
+  .header h1 { margin:0; font-size:19px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .header h1 .brandtag { font-size:11px; background:#6366f1; padding:2px 9px; border-radius:20px; font-weight:600; letter-spacing:.5px; }
+  .timer { font-size:18px; font-weight:700; background:#1e8449; padding:6px 18px; border-radius:30px; display:none; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); transition:background .4s; }
+  .timer.show { display:flex; }
+  .timer.warn { background:#e67e22; } .timer.danger { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+  .container { max-width:1180px; margin:24px auto; padding:0 24px; }
+
+  /* 封面 */
+  .cover-hero { display:flex; align-items:center; gap:24px; background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .cover-badge { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border-radius:14px; padding:18px 30px; text-align:center; min-width:180px; }
+  .cover-badge .lbl { font-size:12px; letter-spacing:2px; color:#4f46e5; font-weight:600; }
+  .cover-badge .num { font-size:54px; font-weight:800; color:#4338ca; line-height:1; margin-top:4px; }
+  .cover-hero h2 { margin:0; font-size:30px; color:#1e1b4b; }
+  .cover-hero .sub { color:#6b7a8f; margin-top:6px; font-size:14px; }
+  .paper-card-wrap { margin-top:24px; }
+  .paper-card { border-radius:16px; padding:30px 26px; text-align:center; border:2px solid; transition:transform .15s,box-shadow .2s; background:#eef2ff; border-color:#c7d2fe; cursor:pointer; }
+  .paper-card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.10); }
+  .paper-card .pc-icon { font-size:40px; }
+  .paper-card h3 { margin:10px 0 4px; font-size:24px; color:#3730a3; }
+  .paper-card .pc-meta { font-size:13px; color:#6b7a8f; }
+  .paper-card .pc-go { margin-top:18px; display:inline-block; padding:11px 30px; border-radius:30px; color:#fff; font-weight:600; font-size:15px; background:#4f46e5; }
+
+  /* 模式弹窗 */
+  .modal-mask { display:none; position:fixed; inset:0; background:rgba(10,20,40,.55); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; max-width:880px; width:100%; padding:28px 30px 34px; position:relative; max-height:92vh; overflow:auto; }
+  .modal h2 { margin:0 0 20px; font-size:24px; color:#111; }
+  .modal-close { position:absolute; right:20px; top:18px; border:none; background:none; font-size:24px; color:#8a96a5; cursor:pointer; }
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:680px){ .mode-grid{grid-template-columns:1fr;} }
+  .mode-box { border:1px solid #e2e8f0; border-radius:14px; padding:24px 22px; }
+  .mode-box .mb-ic { width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 12px; }
+  .mode-box.practice .mb-ic { background:#e0e7ff; } .mode-box.exam .mb-ic { background:#ffe8cf; }
+  .mode-box h3 { text-align:center; margin:0 0 6px; font-size:20px; }
+  .mode-box .mb-desc { text-align:center; color:#6b7a8f; font-size:13.5px; min-height:38px; }
+  .mode-box .mb-sub { font-weight:700; color:#3730a3; margin:14px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .mode-box .mb-sub button { background:#fff; border:1px solid #cdd7e2; border-radius:8px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .sec-check { display:flex; align-items:center; gap:10px; padding:8px 4px; font-size:15px; font-weight:600; color:#3730a3; cursor:pointer; }
+  .sec-check input { width:18px; height:18px; accent-color:#4338ca; }
+  .exam-list { list-style:none; padding:0; margin:10px 0 0; color:#445; font-size:14.5px; }
+  .exam-list li { padding:3px 0; }
+  .mode-start { width:100%; margin-top:18px; border:none; color:#fff; font-weight:700; font-size:16px; padding:13px; border-radius:10px; cursor:pointer; }
+  .mode-box.practice .mode-start { background:#4f46e5; } .mode-box.exam .mode-start { background:#e67e22; }
+
+  /* 答题区 */
+  #testArea { display:none; }
+  .test-topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#fff; border-radius:14px; padding:14px 22px; box-shadow:0 4px 18px rgba(0,0,0,.05); margin-bottom:18px; position:sticky; top:60px; z-index:600; }
+  .test-topbar .tt-title { font-size:19px; font-weight:700; color:#1e1b4b; }
+  .test-topbar .tt-mode { font-size:13px; background:#eef2ff; color:#3730a3; padding:3px 12px; border-radius:20px; font-weight:600; }
+  .btn-ghost { border:1px solid #cdd7e2; background:#fff; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; color:#33475b; }
+  .btn-ghost:hover { background:#f3f6fa; }
+
+  .section-banner { background:#eef2ff; border:1px solid #c7d2fe; border-radius:12px; padding:14px 20px; margin:26px 0 14px; }
+  .section-banner .sb-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .section-banner .sb-title { font-size:20px; font-weight:800; color:#3730a3; letter-spacing:.5px; }
+  .section-banner .sb-meta { font-size:13px; color:#5a6b8a; margin-top:6px; }
+
+  /* 阅读分栏：左文章 右题目 */
+  .reading-cols { display:flex; gap:24px; align-items:flex-start; }
+  .passage-pane { flex:1 1 50%; background:#fff; border:1px solid #e3e6ee; border-radius:12px; padding:22px 26px; position:sticky; top:130px; max-height:calc(100vh - 150px); overflow:auto; }
+  .passage-pane .pp-kicker { font-size:12px; letter-spacing:1.5px; color:#6366f1; font-weight:700; }
+  .passage-pane .ptitle { margin:6px 0 4px; font-size:21px; color:#1e1b4b; }
+  .passage-pane .pp-byline { font-style:italic; color:#6b7a8f; font-size:13.5px; margin-bottom:12px; }
+  .passage-pane p { margin:0 0 13px; font-size:15px; text-align:justify; }
+  .passage-pane .para-label { font-weight:800; color:#4338ca; margin-right:6px; }
+  .qcol { flex:1 1 50%; min-width:0; }
+  @media(max-width:900px){
+    .reading-cols { flex-direction:column; }
+    .passage-pane { position:static; max-height:none; width:100%; }
+    .test-topbar { position:static; }
+  }
+
+  .qgroup { background:#fff; border:1px solid #eaeef4; border-radius:12px; padding:22px 26px; margin-bottom:18px; }
+  .qgroup h4 { margin:0 0 6px; font-size:18px; color:#111; }
+  .instruction { font-style:italic; color:#445; font-size:14.5px; margin-bottom:14px; }
+  .note-box { border:1px solid #d8e0ea; border-radius:10px; padding:18px 22px; background:#fafbff; }
+  .note-title { text-align:center; font-weight:800; font-size:17px; margin-bottom:12px; color:#22303f; }
+  .note-h { font-weight:700; margin:12px 0 4px; }
+  .note-li { margin:6px 0 6px 4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .note-li .bull { color:#7a8aa0; }
+  .note-li.sub { margin-left:26px; } .note-li.sub2 { margin-left:48px; }
+  .qnum-badge { background:#e0e7ff; color:#3730a3; font-weight:700; min-width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; padding:0 6px; }
+  input[type=text]{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:15px; width:150px; }
+  input[type=text]:focus{ border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.14); outline:none; }
+  table.note-table { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.note-table th, table.note-table td { border:1px solid #d3dce6; padding:10px 12px; font-size:14.5px; vertical-align:top; text-align:left; }
+  table.note-table th { background:#eef2ff; }
+  .mcq { margin:6px 0 16px; }
+  .mcq .qtext { font-weight:600; margin-bottom:6px; display:flex; gap:8px; }
+  .mcq label { display:flex; gap:9px; align-items:flex-start; padding:6px 10px; border-radius:7px; cursor:pointer; }
+  .mcq label:hover { background:#eef2fa; }
+  .mcq input{ accent-color:#1e1b4b; margin-top:3px; }
+  .tfng-opts { display:flex; gap:10px; flex-wrap:wrap; }
+  .tfng-opts label { border:1px solid #dfe4ee; border-radius:8px; padding:6px 14px; }
+  select{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:14.5px; min-width:70px; }
+  select:focus{ border-color:#4f46e5; outline:none; }
+  .match-box { border:1px solid #d8e0ea; border-radius:10px; background:#f6f8ff; padding:14px 18px; margin-bottom:14px; }
+  .match-box .mb-h { text-align:center; font-weight:700; margin-bottom:8px; }
+  .match-box .mb-row { display:flex; gap:10px; padding:2px 0; }
+  .match-q { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .match-q .mq-txt { flex:1; }
+
+  .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+  .submit-btn:hover { transform:translateY(-2px); }
+
+  /* 结果 */
+  #resultArea { display:none; }
+  .res-card { background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .res-title { font-size:24px; font-weight:800; color:#1e1b4b; margin:4px 0 2px; }
+  .res-meta { color:#6b7a8f; font-size:13px; margin-bottom:20px; }
+  .res-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:680px){ .res-stats{grid-template-columns:1fr;} }
+  .stat-box { border-radius:14px; padding:26px 16px; text-align:center; }
+  .stat-box.s1 { background:#eef2ff; } .stat-box.s2 { background:#eefaf2; } .stat-box.s3 { background:#f5f3ff; }
+  .stat-box .big { font-size:40px; font-weight:800; line-height:1; }
+  .stat-box.s1 .big { color:#4f46e5; } .stat-box.s2 .big { color:#1e8449; } .stat-box.s3 .big { color:#5b3fd6; }
+  .stat-box .cap { color:#5a7184; margin-top:8px; font-size:14px; }
+  .stat-box .sub2 { color:#8a96a5; font-size:12px; margin-top:2px; }
+  .progress-wrap { margin-top:22px; }
+  .progress-wrap .pw-top { display:flex; justify-content:space-between; font-size:13px; color:#5a7184; margin-bottom:6px; }
+  .pw-track { height:14px; background:#e2e8f0; border-radius:10px; overflow:hidden; }
+  .pw-fill { height:100%; background:linear-gradient(90deg,#6366f1,#27ae60); width:0; transition:width .8s; }
+
+  .detail-h { font-size:20px; font-weight:800; color:#1e1b4b; margin:26px 0 12px; }
+  .sec-result { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.05); margin-bottom:12px; overflow:hidden; }
+  .sec-result .sr-head { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; cursor:pointer; }
+  .sec-result .sr-head h5 { margin:0; font-size:17px; }
+  .sec-result .sr-head .sr-sum { font-size:13px; color:#6b7a8f; margin-top:3px; }
+  .sec-result .sr-head .sr-sum .ok { color:#1e8449; font-weight:700; } .sec-result .sr-head .sr-sum .bad { color:#c0392b; font-weight:700; }
+  .sr-body { display:none; padding:0 22px 16px; }
+  .sec-result.open .sr-body { display:block; }
+  .sr-chevron { transition:transform .2s; color:#8a96a5; }
+  .sec-result.open .sr-chevron { transform:rotate(180deg); }
+  .ritem { padding:12px 16px; border-radius:9px; margin:8px 0; border-left:5px solid transparent; }
+  .ritem.correct { background:#e8f8ee; border-left-color:#27ae60; }
+  .ritem.wrong { background:#fdeaea; border-left-color:#e74c3c; }
+  .ritem .rq { font-weight:700; color:#22303f; }
+  .ritem .ra { font-size:14px; margin-top:4px; }
+  .ritem .ra .yours { color:#7b1a1a; } .ritem .ra .correctv { color:#145a32; font-weight:700; }
+  .ritem .rex { font-size:13.5px; color:#3a4a5a; margin-top:6px; background:rgba(255,255,255,.65); padding:7px 11px; border-radius:7px; }
+  .back-row { text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="brandtag">优益思达</span> 剑桥雅思真题测试</h1>
+  <div class="timer" id="timer"><span id="timerText">00:00</span></div>
+</div>
+
+<!-- 封面 -->
+<div class="container" id="coverArea">
+  <div class="cover-hero">
+    <div class="cover-badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">15</div></div>
+    <div>
+      <h2>剑桥雅思 15 · Test 2</h2>
+      <div class="sub">学术类阅读 · 官方真题 · 自动批改并给出雅思预估分。点击下方开始测试。</div>
+    </div>
+  </div>
+  <div class="paper-card-wrap">
+    <div class="paper-card" onclick="openMode()">
+      <div class="pc-icon">📖</div>
+      <h3>学术类阅读 (Academic Reading)</h3>
+      <div class="pc-meta" id="coverMeta">加载中…</div>
+      <div class="pc-go">开始测试 ›</div>
+    </div>
+  </div>
+</div>
+
+<!-- 模式弹窗 -->
+<div class="modal-mask" id="modeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeMode()">×</button>
+    <h2>选择模式</h2>
+    <div class="mode-grid">
+      <div class="mode-box practice">
+        <div class="mb-ic">📘</div>
+        <h3>练习模式</h3>
+        <div class="mb-desc">适合分篇突破，可只练某几篇文章，正向计时不施加压力。</div>
+        <div class="mb-sub"><span>选择练习文章：</span><button onclick="toggleAll()" id="toggleAllBtn">取消全选</button></div>
+        <div id="sectionChecks"></div>
+        <button class="mode-start" onclick="startTest('practice')">开始练习</button>
+      </div>
+      <div class="mode-box exam">
+        <div class="mb-ic">⏱️</div>
+        <h3>模考模式</h3>
+        <div class="mb-desc">完整模拟真实考试：所有文章一次完成，限时 60 分钟。</div>
+        <div class="mb-sub"><span>测试信息：</span></div>
+        <div style="color:#445;font-size:14.5px;" id="examInfo">完整测试（限时 60 分钟）</div>
+        <ul class="exam-list" id="examList"></ul>
+        <button class="mode-start" onclick="startTest('exam')">开始模考</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 答题区 -->
+<div class="container" id="testArea">
+  <div class="test-topbar">
+    <div><div class="tt-title" id="testTitle"></div><span class="tt-mode" id="testModeTag"></span></div>
+    <button class="btn-ghost" onclick="backToCover()">← 返回封面</button>
+  </div>
+  <div id="questionsHolder"></div>
+  <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+</div>
+
+<!-- 结果区 -->
+<div class="container" id="resultArea">
+  <div class="res-card">
+    <div style="font-size:14px;color:#4338ca;font-weight:700;">🏆 批改报告</div>
+    <div class="res-title" id="resTitle"></div>
+    <div class="res-meta" id="resMeta"></div>
+    <div class="res-stats">
+      <div class="stat-box s1"><div class="big" id="resCorrect">0/0</div><div class="cap">答对题数</div></div>
+      <div class="stat-box s2"><div class="big" id="resPct">0%</div><div class="cap">正确率</div></div>
+      <div class="stat-box s3"><div class="big" id="resBand">-</div><div class="cap">雅思预估分</div><div class="sub2" id="resLevel"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="pw-top"><span>总体进度</span><span id="resProgLbl">0 / 0</span></div>
+      <div class="pw-track"><div class="pw-fill" id="resProgFill"></div></div>
+    </div>
+    <div class="instruction" id="bandNote" style="margin-top:14px;font-style:normal;color:#8a96a5;font-size:12px;"></div>
+  </div>
+  <div class="detail-h">详细结果</div>
+  <div id="detailHolder"></div>
+  <div class="back-row"><button class="btn-ghost" onclick="backToCover()">返回封面</button></div>
+</div>
+
+<script>
+/* ============================================================
+   一、试卷数据 —— 剑桥雅思15 Test 1 学术类阅读（官方原题 + 官方答案）
+   说明：每篇文章为一个对象 {id, passage:{title,byline,paras[]}, groups:[...]}
+   再发来 Passage 2、3 时按相同格式追加进 passages 数组即可。
+   ============================================================ */
+const TEST = {
+  meta:{ volume:15, testNo:2 },
+  durationMin:60,
+  passages:[
+    /* ================= Reading Passage 1 ================= */
+    { id:1,
+      passage:{
+        title:'Could urban engineers learn from dance?',
+        byline:'You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.',
+        paras:[
+          `<span class="para-label">A</span>The way we travel around cities has a major impact on whether they are sustainable. Transportation is estimated to account for 30% of energy consumption in most of the world's most developed nations, so lowering the need for energy-using vehicles is essential for decreasing the environmental impact of mobility. But as more and more people move to cities, it is important to think about other kinds of sustainable travel too. The ways we travel affect our physical and mental health, our social lives, our access to work and culture, and the air we breathe. Engineers are tasked with changing how we travel round cities through urban design, but the engineering industry still works on the assumptions that led to the creation of the energy-consuming transport systems we have now: the emphasis placed solely on efficiency, speed, and quantitative data. We need radical changes, to make it healthier, more enjoyable, and less environmentally damaging to travel around cities.`,
+          `<span class="para-label">B</span>Dance might hold some of the answers. That is not to suggest everyone should dance their way to work, however healthy and happy it might make us, but rather that the techniques used by choreographers to experiment with and design movement in dance could provide engineers with tools to stimulate new ideas in city-making. Richard Sennett, an influential urbanist and sociologist who has transformed ideas about the way cities are made, argues that urban design has suffered from a separation between mind and body since the introduction of the architectural blueprint.`,
+          `<span class="para-label">C</span>Whereas medieval builders improvised and adapted construction through their intimate knowledge of materials and personal experience of the conditions on a site, building designs are now conceived and stored in media technologies that detach the designer from the physical and social realities they are creating. While the design practices created by these new technologies are essential for managing the technical complexity of the modern city, they have the drawback of simplifying reality in the process.`,
+          `<span class="para-label">D</span>To illustrate, Sennett discusses the Peachtree Center in Atlanta, USA, a development typical of the modernist approach to urban planning prevalent in the 1970s. Peachtree created a grid of streets and towers intended as a new pedestrian-friendly downtown for Atlanta. According to Sennett, this failed because its designers had invested too much faith in computer-aided design to tell them how it would operate. They failed to take into account that purpose-built street cafés could not operate in the hot sun without the protective awnings common in older buildings, and would need energy-consuming air conditioning instead, or that its giant car park would feel so unwelcoming that it would put people off getting out of their cars. What seems entirely predictable and controllable on screen has unexpected results when translated into reality.`,
+          `<span class="para-label">E</span>The same is true in transport engineering, which uses models to predict and shape the way people move through the city. Again, these models are necessary, but they are built on specific world views in which certain forms of efficiency and safety are considered and other experiences of the city ignored. Designs that seem logical in models appear counter-intuitive in the actual experience of their users. The guard rails that will be familiar to anyone who has attempted to cross a British road, for example, were an engineering solution to pedestrian safety based on models that prioritise the smooth flow of traffic. On wide major roads, they often guide pedestrians to specific crossing points and slow down their progress across the road by using staggered access points to divide the crossing into two – one for each carriageway. In doing so they make crossings feel longer, introducing psychological barriers greatly impacting those that are the least mobile, and encouraging others to make dangerous crossings to get around the guard rails. These barriers don't just make it harder to cross the road: they divide communities and decrease opportunities for healthy transport. As a result, many are now being removed, causing disruption, cost, and waste.`,
+          `<span class="para-label">F</span>If their designers had had the tools to think with their bodies – like dancers – and imagine how these barriers would feel, there might have been a better solution. In order to bring about fundamental changes to the ways we use our cities, engineering will need to develop a richer understanding of why people move in certain ways, and how this movement affects them. Choreography may not seem an obvious choice for tackling this problem. Yet it shares with engineering the aim of designing patterns of movement within limitations of space. It is an art form developed almost entirely by trying out ideas with the body, and gaining instant feedback on how the results feel. Choreographers have deep understanding of the psychological, aesthetic, and physical implications of different ways of moving.`,
+          `<span class="para-label">G</span>Observing the choreographer Wayne McGregor, cognitive scientist David Kirsh described how he 'thinks with the body'. Kirsh argues that by using the body to simulate outcomes, McGregor is able to imagine solutions that would not be possible using purely abstract thought. This kind of physical knowledge is valued in many areas of expertise, but currently has no place in formal engineering design processes. A suggested method for transport engineers is to improvise design solutions and get instant feedback about how they would work from their own experience of them, or model designs at full scale in the way choreographers experiment with groups of dancers. Above all, perhaps, they might learn to design for emotional as well as functional effects.`
+        ]
+      },
+      groups:[
+        { kind:'match', title:'Questions 1–6', noBox:true,
+          instruction:'Reading Passage 1 has seven paragraphs, A–G. Which paragraph contains the following information? Write the correct letter, A–G, in the box next to each question.',
+          box:{A:'',B:'',C:'',D:'',E:'',F:'',G:''},
+          questions:[
+            {id:'Q1',no:1,q:'reference to an appealing way of using dance that the writer is not proposing',answer:['B'],explain:'B 段：“That is not to suggest everyone should dance their way to work, however healthy and happy it might make us”——作者明确说这并非他所提倡的方式。答案 B。'},
+            {id:'Q2',no:2,q:'an example of a contrast between past and present approaches to building',answer:['C'],explain:'C 段：对比中世纪工匠的即兴营造与如今依赖媒介技术的设计。答案 C。'},
+            {id:'Q3',no:3,q:'mention of an objective of both dance and engineering',answer:['F'],explain:'F 段：“it shares with engineering the aim of designing patterns of movement within limitations of space”。答案 F。'},
+            {id:'Q4',no:4,q:'reference to an unforeseen problem arising from ignoring the climate',answer:['D'],explain:'D 段：Peachtree 的露天咖啡馆在烈日下无法运作（忽视气候），需耗能空调。答案 D。'},
+            {id:'Q5',no:5,q:'why some measures intended to help people are being reversed',answer:['E'],explain:'E 段：护栏分隔社区、阻碍健康出行，“many are now being removed”。答案 E。'},
+            {id:'Q6',no:6,q:'reference to how transport has an impact on human lives',answer:['A'],explain:'A 段：出行方式影响身心健康、社交、工作与文化等。答案 A。'},
+          ]},
+        { kind:'note', title:'Questions 7–13',
+          instruction:'Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.',
+          noteTitle:'Guard rails',
+          lines:[
+            {plain:true, html:`Guard rails were introduced on British roads to improve the <Q n="7"> of pedestrians, while ensuring that the movement of <Q n="8"> is not disrupted. Pedestrians are led to access points, and encouraged to cross one <Q n="9"> at a time.`, q:'Q7'},
+            {plain:true, html:`An unintended effect is to create psychological difficulties in crossing the road, particularly for less <Q n="10"> people. Another result is that some people cross the road in a <Q n="11"> way. The guard rails separate <Q n="12">, and make it more difficult to introduce forms of transport that are <Q n="13">.`, q:'Q11'},
+          ],
+          questions:[
+            {id:'Q7',no:7,answer:['safety'],explain:'E 段：“an engineering solution to pedestrian safety”。答案 safety。'},
+            {id:'Q8',no:8,answer:['traffic'],explain:'E 段：“the smooth flow of traffic”。答案 traffic。'},
+            {id:'Q9',no:9,answer:['carriageway'],explain:'E 段：“divide the crossing into two – one for each carriageway”。答案 carriageway。'},
+            {id:'Q10',no:10,answer:['mobile'],explain:'E 段：“those that are the least mobile”。答案 mobile。'},
+            {id:'Q11',no:11,answer:['dangerous'],explain:'E 段：“encouraging others to make dangerous crossings”。答案 dangerous。'},
+            {id:'Q12',no:12,answer:['communities'],explain:'E 段：“they divide communities”。答案 communities。'},
+            {id:'Q13',no:13,answer:['healthy'],explain:'E 段：“decrease opportunities for healthy transport”。答案 healthy。'},
+          ]},
+      ]},
+
+    /* ================= Reading Passage 2 ================= */
+    { id:2,
+      passage:{
+        title:'Should we try to bring extinct species back to life?',
+        byline:'You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.',
+        paras:[
+          `<span class="para-label">A</span>The passenger pigeon was a legendary species. Flying in vast numbers across North America, with potentially many millions within a single flock, their migration was once one of nature's great spectacles. Sadly, the passenger pigeon's existence came to an end on 1 September 1914, when the last living specimen died at Cincinnati Zoo. Geneticist Ben Novak is lead researcher on an ambitious project which now aims to bring the bird back to life through a process known as 'de-extinction'. The basic premise involves using cloning technology to turn the DNA of extinct animals into a fertilised embryo, which is carried by the nearest relative still in existence – in this case, the abundant band-tailed pigeon – before being born as a living, breathing animal. Passenger pigeons are one of the pioneering species in this field, but they are far from the only ones on which this cutting-edge technology is being trialled.`,
+          `<span class="para-label">B</span>In Australia, the thylacine, more commonly known as the Tasmanian tiger, is another extinct creature which genetic scientists are striving to bring back to life. 'There is no carnivore now in Tasmania that fills the niche which thylacines once occupied,' explains Michael Archer of the University of New South Wales. He points out that in the decades since the thylacine went extinct, there has been a spread in a 'dangerously debilitating' facial tumour syndrome which threatens the existence of the Tasmanian devils, the island's other notorious resident. Thylacines would have prevented this spread because they would have killed significant numbers of Tasmanian devils. 'If that contagious cancer had popped up previously, it would have burned out in whatever region it started. The return of thylacines to Tasmania could help to ensure that devils are never again subjected to risks of this kind.'`,
+          `<span class="para-label">C</span>If extinct species can be brought back to life, can humanity begin to correct the damage it has caused to the natural world over the past few millennia? 'The idea of de-extinction is that we can reverse this process, bringing species that no longer exist back to life,' says Beth Shapiro of University of California Santa Cruz's Genomics Institute. 'I don't think that we can do this. There is no way to bring back something that is 100 per cent identical to a species that went extinct a long time ago.' A more practical approach for long-extinct species is to take the DNA of existing species as a template, ready for the insertion of strands of extinct animal DNA to create something new; a hybrid, based on the living species, but which looks and/or acts like the animal which died out.`,
+          `<span class="para-label">D</span>This complicated process and questionable outcome begs the question: what is the actual point of this technology? 'For us, the goal has always been replacing the extinct species with a suitable replacement,' explains Novak. 'When it comes to breeding, band-tailed pigeons scatter and make maybe one or two nests per hectare, whereas passenger pigeons were very social and would make 10,000 or more nests in one hectare.' Since the disappearance of this key species, ecosystems in the eastern US have suffered, as the lack of disturbance caused by thousands of passenger pigeons wrecking trees and branches means there has been minimal need for regrowth. This has left forests stagnant and therefore unwelcoming to the plants and animals which evolved to help regenerate the forest after a disturbance. According to Novak, a hybridised band-tailed pigeon, with the added nesting habits of a passenger pigeon, could, in theory, re-establish that forest disturbance, thereby creating a habitat necessary for a great many other native species to thrive.`,
+          `<span class="para-label">E</span>Another popular candidate for this technology is the woolly mammoth. George Church, professor at Harvard Medical School and leader of the Woolly Mammoth Revival Project, has been focusing on cold resistance, the main way in which the extinct woolly mammoth and its nearest living relative, the Asian elephant, differ. By pinpointing which genetic traits made it possible for mammoths to survive the icy climate of the tundra, the project's goal is to return mammoths, or a mammoth-like species, to the area. 'My highest priority would be preserving the endangered Asian elephant,' says Church, 'expanding their range to the huge ecosystem of the tundra. Necessary adaptations would include smaller ears, thicker hair, and extra insulating fat, all for the purpose of reducing heat loss in the tundra, and all traits found in the now extinct woolly mammoth.' This repopulation of the tundra and boreal forests of Eurasia and North America with large mammals could also be a useful factor in reducing carbon emissions – elephants punch holes through snow and knock down trees, which encourages grass growth. This grass growth would reduce temperatures, and mitigate emissions from melting permafrost.`,
+          `<span class="para-label">F</span>While the prospect of bringing extinct animals back to life might capture imaginations, it is, of course, far easier to try to save an existing species which is merely threatened with extinction. 'Many of the technologies that people have in mind when they think about de-extinction can be used as a form of "genetic rescue",' explains Shapiro. She prefers to focus the debate on how this emerging technology could be used to fully understand why various species went extinct in the first place, and therefore how we could use it to make genetic modifications which could prevent mass extinctions in the future. 'I would also say there's an incredible moral hazard to not do anything at all,' she continues. 'We know that what we are doing today is not enough, and we have to be willing to take some calculated and measured risks.'`
+        ]
+      },
+      groups:[
+        { kind:'match', title:'Questions 14–17', noBox:true,
+          instruction:'Reading Passage 2 has six paragraphs, A–F. Which paragraph contains the following information? Write the correct letter, A–F, in the box next to each question. NB You may use any letter more than once.',
+          box:{A:'',B:'',C:'',D:'',E:'',F:''},
+          questions:[
+            {id:'Q14',no:14,q:'a reference to how further disappearance of multiple species could be avoided',answer:['F'],explain:'F 段：Shapiro 主张研究物种灭绝原因，从而进行基因改造以“prevent mass extinctions in the future”。答案 F。'},
+            {id:'Q15',no:15,q:'explanation of a way of reproducing an extinct animal using the DNA of only that species',answer:['A'],explain:'A 段：用克隆技术把灭绝动物的 DNA 变成受精胚胎，由近亲代孕。答案 A。'},
+            {id:'Q16',no:16,q:'reference to a habitat which has suffered following the extinction of a species',answer:['D'],explain:'D 段：旅鸽消失后美国东部生态系统受损、森林停滞。答案 D。'},
+            {id:'Q17',no:17,q:'mention of the exact point at which a particular species became extinct',answer:['A'],explain:'A 段：旅鸽“came to an end on 1 September 1914”，给出确切时间点。答案 A。'},
+          ]},
+        { kind:'note', title:'Questions 18–22',
+          instruction:'Complete the summary below. Choose NO MORE THAN TWO WORDS from the passage for each answer.',
+          noteTitle:'The woolly mammoth revival project',
+          lines:[
+            {plain:true, html:`Professor George Church and his team are trying to identify the <Q n="18"> which enabled mammoths to live in the tundra. The findings could help preserve the mammoth's close relative, the endangered Asian elephant.`, q:'Q18'},
+            {plain:true, html:`According to Church, introducing Asian elephants to the tundra would involve certain physical adaptations to minimise <Q n="19">. To survive in the tundra, the species would need to have the mammoth-like features of thicker hair, <Q n="20"> of a reduced size and more <Q n="21">.`, q:'Q19'},
+            {plain:true, html:`Repopulating the tundra with mammoths or Asian elephant/mammoth hybrids would also have an impact on the environment, which could help to reduce temperatures and decrease <Q n="22">.`, q:'Q22'},
+          ],
+          questions:[
+            {id:'Q18',no:18,answer:['genetic traits'],explain:'E 段：“pinpointing which genetic traits made it possible for mammoths to survive”。答案 genetic traits。'},
+            {id:'Q19',no:19,answer:['heat loss'],explain:'E 段：“for the purpose of reducing heat loss in the tundra”。答案 heat loss。'},
+            {id:'Q20',no:20,answer:['ears'],explain:'E 段：“smaller ears”——耳朵尺寸变小。答案 ears。'},
+            {id:'Q21',no:21,answer:['insulating fat','fat'],explain:'E 段：“extra insulating fat”——更多隔热脂肪。答案 (insulating) fat。'},
+            {id:'Q22',no:22,answer:['carbon emissions','emissions'],explain:'E 段：“reducing carbon emissions”。答案 (carbon) emissions。'},
+          ]},
+        { kind:'match', title:'Questions 23–26',
+          instruction:'Look at the following statements (Questions 23–26) and the list of people below. Match each statement with the correct person, A, B or C. NB You may use any letter more than once.',
+          boxTitle:'List of People',
+          box:{A:'Ben Novak',B:'Michael Archer',C:'Beth Shapiro'},
+          questions:[
+            {id:'Q23',no:23,q:'Reintroducing an extinct species to its original habitat could improve the health of a particular species living there.',answer:['B'],explain:'B 段：Michael Archer 认为让袋狼重返塔斯马尼亚可保护袋獾免于面部肿瘤病的威胁。答案 B。'},
+            {id:'Q24',no:24,q:"It is important to concentrate on the causes of an animal's extinction.",answer:['C'],explain:'F 段：Beth Shapiro 主张聚焦“why various species went extinct in the first place”。答案 C。'},
+            {id:'Q25',no:25,q:'A species brought back from extinction could have an important beneficial impact on the vegetation of its habitat.',answer:['A'],explain:'D 段：Ben Novak 认为带筑巢习性的杂交鸽可重建森林扰动、利于植被再生。答案 A。'},
+            {id:'Q26',no:26,q:'Our current efforts at preserving biodiversity are insufficient.',answer:['C'],explain:'F 段：Shapiro：“what we are doing today is not enough”。答案 C。'},
+          ]},
+      ]},
+
+    /* ================= Reading Passage 3 ================= */
+    { id:3,
+      passage:{
+        title:'Having a laugh',
+        byline:'You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below. The findings of psychological scientists reveal the importance of humour.',
+        paras:[
+          `Humans start developing a sense of humour as early as six weeks old, when babies begin to laugh and smile in response to stimuli. Laughter is universal across all human cultures and even exists in some form in rats, chimps, and bonobos. Like other human emotions and expressions, laughter and humour provide psychological scientists with rich resources for studying human psychology, ranging from the development of language to the neuroscience of social perception.`,
+          `Theories focusing on the evolution of laughter point to it as an important adaptation for social communication. Take, for example, the recorded laughter in TV comedy shows. Back in 1950, US sound engineer Charley Douglass hated dealing with the unpredictable laughter of live audiences, so started recording his own 'laugh tracks'. These were intended to help people at home feel like they were in a social situation, such as a crowded theatre. Douglass even recorded various types of laughter, as well as mixtures of laughter from men, women, and children. In doing so, he picked up on a quality of laughter that is now interesting researchers: a simple 'haha' communicates a remarkable amount of socially relevant information.`,
+          `In one study conducted in 2016, samples of laughter from pairs of English-speaking students were recorded at the University of California, Santa Cruz. A team made up of more than 30 psychological scientists, anthropologists, and biologists then played these recordings to listeners from 24 diverse societies, from indigenous tribes in New Guinea to city-dwellers in India and Europe. Participants were asked whether they thought the people laughing were friends or strangers. On average, the results were remarkably consistent: worldwide, people's guesses were correct approximately 60% of the time.`,
+          `Researchers have also found that different types of laughter serve as codes to complex human social hierarchies. A team led by Christopher Oveis from the University of California, San Diego, found that high-status individuals had different laughs from low-status individuals, and that strangers' judgements of an individual's social status were influenced by the dominant or submissive quality of their laughter. In their study, 48 male college students were randomly assigned to groups of four, with each group composed of two low-status members, who had just joined their college fraternity group, and two high-status members, older students who had been active in the fraternity for at least two years. Laughter was recorded as each student took a turn at being teased by the others, involving the use of mildly insulting nicknames. Analysis revealed that, as expected, high-status individuals produced more dominant laughs and fewer submissive laughs relative to the low-status individuals. Meanwhile, low-status individuals were more likely to change their laughter based on their position of power; that is, the newcomers produced more dominant laughs when they were in the 'powerful' role of teasers. Dominant laughter was higher in pitch, louder, and more variable in tone than submissive laughter.`,
+          `A random group of volunteers then listened to an equal number of dominant and submissive laughs from both the high- and low-status individuals, and were asked to estimate the social status of the laugher. In line with predictions, laughers producing dominant laughs were perceived to be significantly higher in status than laughers producing submissive laughs. 'This was particularly true for low-status individuals, who were rated as significantly higher in status when displaying a dominant versus submissive laugh,' Oveis and colleagues note. 'Thus, by strategically displaying more dominant laughter when the context allows, low-status individuals may achieve higher status in the eyes of others.' However, high-status individuals were rated as high-status whether they produced their natural dominant laugh or tried to do a submissive one.`,
+          `Another study, conducted by David Cheng and Lu Wang of Australian National University, was based on the hypothesis that humour might provide a respite from tedious situations in the workplace. This 'mental break' might facilitate the replenishment of mental resources. To test this theory, the researchers recruited 74 business students, ostensibly for an experiment on perception. First, the students performed a tedious task in which they had to cross out every instance of the letter 'e' over two pages of text. The students then were randomly assigned to watch a video clip eliciting either humour, contentment, or neutral feelings. Some watched a clip of the BBC comedy Mr Bean, others a relaxing scene with dolphins swimming in the ocean, and others a factual video about the management profession.`,
+          `The students then completed a task requiring persistence in which they were asked to guess the potential performance of employees based on provided profiles, and were told that making 10 correct assessments in a row would lead to a win. However, the software was programmed such that it was nearly impossible to achieve 10 consecutive correct answers. Participants were allowed to quit the task at any point. Students who had watched the Mr Bean video ended up spending significantly more time working on the task, making twice as many predictions as the other two groups.`,
+          `Cheng and Wang then replicated these results in a second study, during which they had participants complete long multiplication questions by hand. Again, participants who watched the humorous video spent significantly more time working on this tedious task and completed more questions correctly than did the students in either of the other groups.`,
+          `'Although humour has been found to help relieve stress and facilitate social relationships, the traditional view of task performance implies that individuals should avoid things such as humour that may distract them from the accomplishment of task goals,' Cheng and Wang conclude. 'We suggest that humour is not only enjoyable but more importantly, energising.'`
+        ]
+      },
+      groups:[
+        { kind:'mcq', title:'Questions 27–31',
+          instruction:'Choose the correct letter, A, B, C or D.',
+          questions:[
+            {id:'Q27',no:27,q:'When referring to laughter in the first paragraph, the writer emphasises',options:{A:'its impact on language.',B:'its function in human culture.',C:'its value to scientific research.',D:'its universality in animal societies.'},answer:['C'],explain:'第1段：笑“provide psychological scientists with rich resources for studying human psychology”，强调其科研价值。答案 C。'},
+            {id:'Q28',no:28,q:'What does the writer suggest about Charley Douglass?',options:{A:'He understood the importance of enjoying humour in a group setting.',B:'He believed that TV viewers at home needed to be told when to laugh.',C:'He wanted his shows to appeal to audiences across the social spectrum.',D:'He preferred shows where audiences were present in the recording studio.'},answer:['A'],explain:'第2段：笑轨是为让在家观众“feel like they were in a social situation, such as a crowded theatre”，说明他懂群体环境中笑的重要。答案 A。'},
+            {id:'Q29',no:29,q:'What makes the Santa Cruz study particularly significant?',options:{A:'the various different types of laughter that were studied',B:'the similar results produced by a wide range of cultures',C:'the number of different academic disciplines involved',D:'the many kinds of people whose laughter was recorded'},answer:['B'],explain:'第3段：来自 24 个不同社会的听众判断结果“remarkably consistent”，约 60% 准确，跨文化结果相似。答案 B。'},
+            {id:'Q30',no:30,q:'Which of the following happened in the San Diego study?',options:{A:'Some participants became very upset.',B:'Participants exchanged roles.',C:'Participants who had not met before became friends.',D:'Some participants were unable to laugh.'},answer:['B'],explain:'第4段：每人轮流被取笑，低地位的新人在“powerful 取笑者”角色时会变化笑声，即角色互换。答案 B。'},
+            {id:'Q31',no:31,q:'In the fifth paragraph, what did the results of the San Diego study suggest?',options:{A:'It is clear whether a dominant laugh is produced by a high- or low-status person.',B:'Low-status individuals in a position of power will still produce submissive laughs.',C:'The submissive laughs of low- and high-status individuals are surprisingly similar.',D:'High-status individuals can always be identified by their way of laughing.'},answer:['D'],explain:'第5段：高地位者无论发出主导笑还是顺从笑都被判为高地位——总能被识别。答案 D。'},
+          ]},
+        { kind:'wbank', title:'Questions 32–36',
+          instruction:'Complete the summary using the list of words, A–H, below. Write the correct letter, A–H, in the box next to each question.',
+          noteTitle:'The benefits of humour',
+          box:{A:'laughter',B:'relaxing',C:'boring',D:'anxiety',E:'stimulating',F:'emotion',G:'enjoyment',H:'amusing'},
+          boxCols:2,
+          lines:[
+            {html:`In one study at Australian National University, randomly chosen groups of participants were shown one of three videos, each designed to generate a different kind of <Q n="32">. When all participants were then given a deliberately frustrating task to do, it was found that those who had watched the <Q n="33"> video persisted with the task for longer and tried harder to accomplish the task than either of the other two groups.`},
+            {html:`A second study in which participants were asked to perform a particularly <Q n="34"> task produced similar results. According to researchers David Cheng and Lu Wang, these findings suggest that humour not only reduces <Q n="35"> and helps build social connections but it may also have a <Q n="36"> effect on the body and mind.`},
+          ],
+          questions:[
+            {id:'Q32',no:32,answer:['F'],explain:'“a different kind of ___”，三段视频引发不同的情绪 → F（emotion）。'},
+            {id:'Q33',no:33,answer:['H'],explain:'看了搞笑（Mr Bean）视频的人坚持更久 → H（amusing）视频。'},
+            {id:'Q34',no:34,answer:['C'],explain:'第二项研究让被试做枯燥的长乘法 → C（boring）任务。'},
+            {id:'Q35',no:35,answer:['D'],explain:'幽默“help relieve stress”，可减少焦虑 → D（anxiety）。'},
+            {id:'Q36',no:36,answer:['E'],explain:'结论：幽默“more importantly, energising” → E（stimulating）提振作用。'},
+          ]},
+        { kind:'tfng', title:'Questions 37–40', variant:'yn',
+          instruction:'Do the following statements agree with the claims of the writer in Reading Passage 3? Choose YES if the statement agrees with the claims of the writer, NO if the statement contradicts the claims of the writer, or NOT GIVEN if it is impossible to say what the writer thinks about this.',
+          questions:[
+            {id:'Q37',no:37,q:'Participants in the Santa Cruz study were more accurate at identifying the laughs of friends than those of strangers.',answer:['NOT GIVEN'],explain:'第3段只说总体约 60% 准确，未区分识别朋友与陌生人的准确率。答案 NOT GIVEN。'},
+            {id:'Q38',no:38,q:'The researchers in the San Diego study were correct in their predictions regarding the behaviour of the high-status individuals.',answer:['YES'],explain:'第4段：“as expected, high-status individuals produced more dominant laughs”——与预测一致。答案 YES。'},
+            {id:'Q39',no:39,q:'The participants in the Australian National University study were given a fixed amount of time to complete the task focusing on employee profiles.',answer:['NO'],explain:'第7段：“Participants were allowed to quit the task at any point”——并非固定时间。答案 NO。'},
+            {id:'Q40',no:40,q:"Cheng and Wang's conclusions were in line with established notions regarding task performance.",answer:['NO'],explain:'末段：传统观点认为应避免幽默以免分心，而他们的结论与之相反。答案 NO。'},
+          ]},
+      ]},
+  ]
+};
+
+/* 官方 学术类阅读 原始分(0-40) → 雅思分 对照表 */
+const BAND_TABLE = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0],[4,2.5],[0,2.0]];
+const LEVEL_LABEL = [[8.5,'Expert / Very good user'],[7.0,'Good user'],[6.0,'Competent user'],[5.0,'Modest user'],[4.0,'Limited user'],[0,'Basic user']];
+function lookupBand(correct,total){ const scaled = total===40?correct:Math.round(correct/Math.max(1,total)*40); for(const [m,b] of BAND_TABLE) if(scaled>=m) return b; return 2.0; }
+function levelLabel(b){ for(const [m,l] of LEVEL_LABEL) if(b>=m) return l; return ''; }
+
+/* ============================================================
+   二、引擎
+   ============================================================ */
+let currentPaper=[], selectedSections=[], mode='practice', startTime=0, timerInterval=null, submitted=false;
+const allQs = sec => sec.groups.flatMap(g=>g.questions);
+const totalQs = () => TEST.passages.reduce((n,p)=>n+allQs(p).length,0);
+
+/* 封面信息 */
+(function initCover(){
+  document.getElementById('coverMeta').textContent = `${TEST.passages.length} 篇文章 · 共 ${totalQs()} 题`;
+})();
+
+/* 模式弹窗 */
+function openMode(){
+  document.getElementById('sectionChecks').innerHTML =
+    TEST.passages.map(p=>`<label class="sec-check"><input type="checkbox" class="secbox" value="${p.id}" checked> Passage ${p.id}（${allQs(p).length} 题）</label>`).join('');
+  document.getElementById('examList').innerHTML = TEST.passages.map(p=>`<li>• Passage ${p.id}</li>`).join('');
+  document.getElementById('toggleAllBtn').textContent='取消全选';
+  document.getElementById('modeModal').classList.add('show');
+}
+function closeMode(){ document.getElementById('modeModal').classList.remove('show'); }
+function toggleAll(){ const b=[...document.querySelectorAll('.secbox')]; const off=b.some(x=>!x.checked); b.forEach(x=>x.checked=off); document.getElementById('toggleAllBtn').textContent=off?'取消全选':'全选'; }
+
+function startTest(m){
+  mode=m;
+  if(m==='practice'){ const ids=[...document.querySelectorAll('.secbox:checked')].map(b=>+b.value); if(!ids.length){ alert('请至少选择一篇文章。'); return; } selectedSections=ids; }
+  else selectedSections=TEST.passages.map(p=>p.id);
+  currentPaper=TEST.passages.filter(p=>selectedSections.includes(p.id));
+  closeMode(); submitted=false;
+  document.getElementById('coverArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('testArea').style.display='block';
+  renderPaper(); setupTimer();
+  window.scrollTo(0,0);
+}
+
+function renderPaper(){
+  document.getElementById('testTitle').textContent=`剑桥雅思15 · Test 2 — 阅读`;
+  document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
+  document.getElementById('questionsHolder').innerHTML = currentPaper.map(passageHtml).join('');
+}
+function passageHtml(p){
+  const pp=p.passage;
+  const article = `<div class="passage-pane">
+      <div class="pp-kicker">READING PASSAGE ${p.id}</div>
+      <h3 class="ptitle">${pp.title}</h3>
+      ${pp.byline?`<div class="pp-byline">${pp.byline}</div>`:''}
+      ${pp.paras.map(t=>`<p>${t}</p>`).join('')}
+    </div>`;
+  const qs = `<div class="qcol">${p.groups.map(groupHtml).join('')}</div>`;
+  return `<div class="section-banner" id="anchor_${p.id}">
+      <div class="sb-top"><span class="sb-title">Passage ${p.id}</span></div>
+      <div class="sb-meta">建议用时约 20 分钟 · 本篇共 ${allQs(p).length} 题</div>
+    </div><div class="reading-cols">${article}${qs}</div>`;
+}
+function expandQ(html){ // 把 <Q n="x"> 占位替换成 编号徽标 + 输入框
+  return (html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><input type="text" id="Q${n}" autocomplete="off">`);
+}
+function groupHtml(g){
+  let body='';
+  if(g.kind==='note'){
+    body=`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
+      g.lines.map(l=>{
+        if(l.h) return `<div class="note-h">${l.h}</div>`;
+        if(l.plain) return `<div class="note-li${l.sub?' sub':''}">${expandQ(l.html)}</div>`;
+        if(l.html==null) return '';
+        const cls='note-li'+(l.sub2?' sub2':(l.sub?' sub':''));
+        const mark=l.dash?'–':(l.bullet?'•':'');
+        return `<div class="${cls}"><span class="bull">${mark}</span> ${expandQ(l.html)}</div>`;
+      }).join('')+`</div>`;
+  }
+  else if(g.kind==='table'){
+    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const rows=g.rows.map(r=>`<tr>${r.map(cell=>`<td>${expandQ(cell)}</td>`).join('')}</tr>`).join('');
+    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+  }
+  else if(g.kind==='tfng'){
+    const opts = g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN'];
+    body=g.questions.map(q=>{
+      const radios=opts.map(v=>`<label><input type="radio" name="${q.id}" value="${v}"> <span>${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div><div class="tfng-opts">${radios}</div></div>`;
+    }).join('');
+  }
+  else if(g.kind==='mcq'){
+    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
+      const opts=Object.entries(q.options).map(([k,v])=>`<label><input type="radio" name="${q.id}" value="${k}"> <span><strong>${k}</strong> &nbsp;${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div>${opts}</div>`;
+    }).join('');
+  }
+  else if(g.kind==='match'){
+    const box=g.noBox ? '' : `<div class="match-box"><div class="mb-h">${g.boxTitle||''}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
+    const qs=(g.subTitle?`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`:'')+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='multi'){
+    const box=`<div class="match-box">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=k=>`<select id="${k}"><option value="">—</option>${Object.keys(g.box).map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">选择一项（本组合计选出正确的几项，顺序不限）</span>${sel(q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='wbank'){
+    // 选词填空：词库 A–H + 文中下拉
+    const cols=g.boxCols||2;
+    const box=`<div class="match-box wbank-box" style="columns:${cols};">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const letters=Object.keys(g.box);
+    const expand=html=>(html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><select id="Q${n}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`);
+    const para=(g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:'')+g.lines.map(l=>`<div class="note-li plain" style="display:block;">${expand(l.html)}</div>`).join('');
+    body=box+`<div class="note-box">${para}</div>`;
+  }
+  return `<div class="qgroup"><h4>${g.title}</h4><div class="instruction">${g.instruction}</div>${body}</div>`;
+}
+
+/* 计时器 */
+function setupTimer(){
+  startTime=Date.now(); const t=document.getElementById('timer'); t.classList.add('show'); clearInterval(timerInterval);
+  if(mode==='exam'){ const total=TEST.durationMin*60;
+    timerInterval=setInterval(()=>{ const left=total-Math.floor((Date.now()-startTime)/1000);
+      if(left<=0){ clearInterval(timerInterval); document.getElementById('timerText').textContent='00:00'; alert('时间到，自动提交。'); submitTest(); return; }
+      t.classList.toggle('warn',left<=600&&left>120); t.classList.toggle('danger',left<=120);
+      document.getElementById('timerText').textContent=fmt(left); },500);
+  } else timerInterval=setInterval(()=>{ document.getElementById('timerText').textContent=fmt(Math.floor((Date.now()-startTime)/1000)); },500);
+}
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+/* 批改 */
+function norm(s){ return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,''); }
+function readAns(q){ const el=document.getElementById(q.id); if(el) return (el.tagName==='SELECT')?el.value:el.value.trim();
+  const r=document.getElementsByName(q.id); for(const x of r) if(x.checked) return x.value; return ''; }
+
+function confirmSubmit(){
+  let answered=0,total=0;
+  currentPaper.forEach(s=>allQs(s).forEach(q=>{ total++; if(readAns(q)!=='') answered++; }));
+  if(window.confirm(`已作答 ${answered}/${total} 题。\n确定提交并查看批改报告吗？`)) submitTest();
+}
+function submitTest(){
+  if(submitted) return; submitted=true;
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+
+  /* 先处理 multi 配对题（顺序不限、不重复计分） */
+  const pairCorrect={};
+  currentPaper.forEach(s=>s.groups.forEach(g=>{
+    if(g.kind==='multi'){ const set=g.answerSet.slice(); g.questions.forEach(q=>{ const ua=(readAns(q)||'').toUpperCase(); const i=set.indexOf(ua); if(ua&&i>-1){ pairCorrect[q.id]=true; set.splice(i,1);} else pairCorrect[q.id]=false; }); }
+  }));
+
+  let correct=0,total=0; const detail=[];
+  currentPaper.forEach(s=>{
+    let sc=0; const items=[];
+    s.groups.forEach(g=>g.questions.forEach(q=>{
+      const ua=readAns(q); let ok;
+      if(g.kind==='multi') ok=!!pairCorrect[q.id];
+      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      total++; if(ok){correct++;sc++;}
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+    }));
+    detail.push({s,sc,total:allQs(s).length,items});
+  });
+
+  const pct=total?Math.round(correct/total*100):0;
+  const band=lookupBand(correct,total);
+  const elapsed=Math.max(1,Math.round((Date.now()-startTime)/1000));
+
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resTitle').textContent='剑桥雅思15 · Test 2 — 阅读';
+  document.getElementById('resMeta').textContent=`${mode==='practice'?'练习模式':'模考模式'} · 用时 ${fmt(elapsed)} · 完成时间 ${new Date().toLocaleString('zh-CN')}`;
+  document.getElementById('resCorrect').textContent=`${correct}/${total}`;
+  document.getElementById('resPct').textContent=pct+'%';
+  document.getElementById('resBand').textContent=band.toFixed(1);
+  document.getElementById('resLevel').textContent='水平：'+levelLabel(band);
+  document.getElementById('resProgLbl').textContent=`${correct} / ${total}`;
+  setTimeout(()=>document.getElementById('resProgFill').style.width=pct+'%',60);
+  document.getElementById('bandNote').textContent = total===40
+    ? '雅思分按官方学术类阅读 40 题原始分对照表换算。'
+    : `本次仅测 ${total} 题，预估分按比例折算至 40 题后套用官方对照表；做完整 3 篇文章时为精确换算。`;
+
+  document.getElementById('detailHolder').innerHTML=detail.map((d,i)=>{
+    const sp=d.total?Math.round(d.sc/d.total*100):0;
+    const rows=d.items.map(it=>{
+      const cls=it.ok?'correct':'wrong';
+      const yours=it.ua?`你的答案：<span class="yours">${it.ua}</span>　`:`<span class="yours">未作答</span>　`;
+      return `<div class="ritem ${cls}"><div class="rq">${it.ok?'✔':'✘'} 第 ${it.q.no} 题</div>
+        <div class="ra">${it.ok?'<span class="correctv">回答正确</span>':yours+'正确答案：<span class="correctv">'+it.ans.join(' / ')+'</span>'}</div>
+        <div class="rex">💡 ${it.q.explain||''}</div></div>`;
+    }).join('');
+    return `<div class="sec-result${i===0?' open':''}"><div class="sr-head" onclick="this.parentNode.classList.toggle('open')">
+        <div><h5>Passage ${d.s.id}</h5><div class="sr-sum"><span class="${sp>=60?'ok':'bad'}">${d.sc} / ${d.total} 题正确　${sp}%</span></div></div>
+        <div class="sr-chevron">▾</div></div><div class="sr-body">${rows}</div></div>`;
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+function backToCover(){
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('coverArea').style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== */
+(function(){
+  function report(){
+    var rc=document.getElementById('resCorrect'); if(!rc) return;
+    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m) return;
+    var bandEl=document.getElementById('resBand'); var band=bandEl?parseFloat(bandEl.textContent):NaN;
+    try{ window.parent.postMessage({type:'yysd:score', score:+m[1], total:+m[2], band:isNaN(band)?null:band}, '*'); }catch(e){}
+  }
+  var rc=document.getElementById('resCorrect');
+  if(rc){ new MutationObserver(report).observe(rc,{childList:true,subtree:true,characterData:true}); }
+})();
+</script>
+</body>
+</html>
