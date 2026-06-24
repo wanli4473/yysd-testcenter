@@ -154,39 +154,58 @@ window.YYSD = (function () {
   }
 
   // Summarise cambridge items into [{vol, listening, reading, total}], newest volume first.
+  // Pull the test number out of a title like "… · Test 1（听力）".
+  function camTestNo(item) {
+    var m = String((item && item.title) || "").match(/Test\s*0*(\d+)/i);
+    return m ? m[1] : "";
+  }
+
   function camVolumes(items) {
     var map = {};
     (items || []).forEach(function (it) {
       if (!isCambridge(it.subject)) return;
       var v = camVolume(it); if (!v) return;
-      if (!map[v]) map[v] = { vol: v, listening: 0, reading: 0, writing: 0, total: 0 };
+      if (!map[v]) map[v] = { vol: v, listening: 0, reading: 0, writing: 0, total: 0, _tests: {} };
       if (it.subject === "cambridge-reading") map[v].reading++;
       else if (it.subject === "cambridge-writing") map[v].writing++;
       else map[v].listening++;
       map[v].total++;
+      var t = camTestNo(it); if (t) map[v]._tests[t] = 1;
     });
     return Object.keys(map)
       .sort(function (a, b) { return Number(b) - Number(a); })
-      .map(function (k) { return map[k]; });
+      .map(function (k) { var o = map[k]; o.tests = Object.keys(o._tests).length || o.total; delete o._tests; return o; });
   }
 
-  // A single "series" card for one Cambridge volume → opens cambridge.html?vol=N
+  // Tag a volume by recency (cosmetic, like the mockup's 最新/进阶/基础).
+  function camVolTag(vol) {
+    var n = Number(vol);
+    if (n >= 19) return { t: "最新", c: "new" };
+    if (n >= 13) return { t: "进阶", c: "mid" };
+    return { t: "基础", c: "base" };
+  }
+
+  // One volume card (clean VOL.NN style) → opens cambridge.html?vol=N
   function camVolumeCardHTML(v, prefix) {
+    var tag = camVolTag(v.vol);
+    var skills = '' +
+      (v.listening ? '<span class="vc-skill" title="听力">🎧</span>' : '') +
+      (v.reading ? '<span class="vc-skill" title="阅读">📖</span>' : '') +
+      (v.writing ? '<span class="vc-skill" title="写作">✍️</span>' : '');
     return '' +
-      '<a class="exam-card exam-card--series" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
-        '<div class="exam-card__top">' +
-          '<span class="badge badge--cambridge">剑桥真题</span>' +
-          '<span class="tag-cat">模考区</span>' +
+      '<a class="vol-card" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
+        '<div class="vol-card__top">' +
+          '<span class="vol-card__vol">VOL.' + esc(v.vol) + '</span>' +
+          '<span class="vol-card__tag vol-card__tag--' + tag.c + '">' + tag.t + '</span>' +
         '</div>' +
-        '<h3>剑桥雅思 ' + esc(v.vol) + '</h3>' +
-        '<p>官方真题套卷：听力、学术类阅读与写作，点击进入查看本册全部测试。</p>' +
-        '<div class="exam-card__meta">' +
-          '<span>🎧 听力 ' + v.listening + ' 套</span>' +
-          '<span>📖 阅读 ' + v.reading + ' 套</span>' +
-          (v.writing ? '<span>✍️ 写作 ' + v.writing + ' 套</span>' : '') +
+        '<div class="vol-card__body">' +
+          '<span class="vol-card__ico">📖</span>' +
+          '<div><h3>剑桥雅思 ' + esc(v.vol) + '</h3>' +
+          '<div class="vol-card__cnt">包含 ' + v.tests + ' 套</div></div>' +
         '</div>' +
-        '<div class="exam-card__foot">' +
-          '<span class="btn btn--primary btn--sm" style="pointer-events:none">查看全部 →</span>' +
+        '<div class="vol-card__foot">' +
+          '<span class="vol-card__skills">' + skills + '</span>' +
+          '<span class="vol-card__go">开始练习 ›</span>' +
         '</div>' +
       '</a>';
   }
@@ -206,7 +225,7 @@ window.YYSD = (function () {
     NAV: NAV, navOf: navOf,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
     fileHref: fileHref, cardHTML: cardHTML, countsBySubject: countsBySubject,
-    isCambridge: isCambridge, camVolume: camVolume, camVolumes: camVolumes,
+    isCambridge: isCambridge, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,
     camVolumeCardHTML: camVolumeCardHTML
   };
 })();

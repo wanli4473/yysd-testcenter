@@ -102,9 +102,14 @@
       '<h2>' + Y.esc(cat.label) + '</h2></div>';
 
     var body;
-    if (cat.children) {
+    if (cat.key === "ielts") {
+      // 雅思真题 = clean Cambridge volume-card grid (听力/阅读/写作 live inside each volume)
+      var vols = Y.camVolumes(allItems);
+      body = vols.length
+        ? '<div class="vol-grid">' + vols.map(function (v) { return Y.camVolumeCardHTML(v, ""); }).join("") + '</div>'
+        : '<div class="soon-box">暂无剑桥真题，老师上传后会显示在这里。</div>';
+    } else if (cat.children) {
       var blocks = [];
-      if (cat.subject && countOf(cat.subject) > 0) blocks.push(leafBlockHTML("全真模考", cat.subject));
       cat.children.forEach(function (ch) { blocks.push(leafBlockHTML(ch.label, ch.subject)); });
       body = '<div class="leaf-wrap">' + blocks.join("") + '</div>';
     } else {

@@ -1,6 +1,6 @@
 /* =========================================================================
-   cambridge.js — one Cambridge volume's tests (剑15 听力 + 阅读)
-   Opened from the 模考区 series card: cambridge.html?vol=15
+   cambridge.js — one Cambridge volume's tests, grouped by Test number, each
+   offering 听力 / 阅读 / 写作 panels. Opened from 模考区: cambridge.html?vol=20
    ========================================================================= */
 (function () {
   "use strict";
@@ -9,20 +9,26 @@
   var vol = (new URLSearchParams(location.search).get("vol") || "").trim();
   var contentEl = document.getElementById("content");
 
-  // header / breadcrumb
-  var label = "剑桥雅思 " + (vol || "");
-  document.title = label + " · 优益思达学习中心";
-  document.getElementById("vol-title").textContent = label;
-  document.getElementById("crumb-vol").textContent = label;
+  document.title = "剑桥雅思 " + vol + " · 优益思达国际课程中心";
   var navLink = document.querySelector('#nav a[data-zone="mock"]');
   if (navLink) navLink.classList.add("is-active");
   document.getElementById("year").textContent = new Date().getFullYear();
 
-  var GROUPS = [
-    { subject: "cambridge-listening" },
-    { subject: "cambridge-reading" },
-    { subject: "cambridge-writing" }
+  // listening blue, reading green, writing purple — order matters for display
+  var SKILLS = [
+    { subject: "cambridge-listening", cls: "listening", ico: "🎧", name: "听力", meta: "4 个部分 · 共 40 题" },
+    { subject: "cambridge-reading",   cls: "reading",   ico: "📖", name: "阅读", meta: "3 篇文章 · 共 40 题" },
+    { subject: "cambridge-writing",   cls: "writing",   ico: "✍️", name: "写作", meta: "Task 1 + Task 2 · 限时 60 分钟" }
   ];
+
+  function skillPanel(skill, item) {
+    return '<div class="skill-panel skill-panel--' + skill.cls + '">' +
+      '<div class="skill-panel__ico">' + skill.ico + '</div>' +
+      '<div class="skill-panel__name">' + skill.name + '</div>' +
+      '<div class="skill-panel__meta">' + skill.meta + '</div>' +
+      '<button class="skill-panel__btn" onclick="location.href=\'' + Y.fileHref(item, "") + '\'">开始测试</button>' +
+      '</div>';
+  }
 
   Y.load().then(function (items) {
     var cam = items.filter(function (it) {
@@ -35,26 +41,29 @@
       return;
     }
 
-    var html = "";
-    GROUPS.forEach(function (g) {
-      var its = cam.filter(function (it) { return it.subject === g.subject; })
-        .sort(function (a, b) {
-          return String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
-        });
-      if (!its.length) return;   // skip skills with no content in this volume
-      var sub = Y.SUBJECT[g.subject];
-      html += '<div class="subject-group">' +
-        '<div class="subject-group__head">' +
-          '<span class="subject-dot" style="background:' + sub.color + '"></span>' +
-          '<h2>' + Y.esc(sub.label) + '</h2>' +
-          '<span class="cnt">' + its.length + ' 份</span>' +
-        '</div>';
-      html += its.length
-        ? '<div class="exam-grid">' + its.map(function (it) { return Y.cardHTML(it, ""); }).join("") + '</div>'
-        : '<div class="state" style="padding:38px 20px"><p>本册该科目暂无内容。</p></div>';
-      html += '</div>';
+    // group by test number
+    var byTest = {};
+    cam.forEach(function (it) {
+      var t = Y.camTestNo(it) || "1";
+      (byTest[t] = byTest[t] || {})[it.subject] = it;
     });
-    contentEl.innerHTML = html;
+
+    var hero = '<div class="cam-hero">' +
+      '<div class="cam-hero__badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">' + Y.esc(vol) + '</div></div>' +
+      '<div><h1>剑桥雅思 ' + Y.esc(vol) + '</h1>' +
+      '<div class="meta">官方真题套卷 · 选择某一套的听力 / 阅读 / 写作开始测试</div></div>' +
+      '</div>';
+
+    var tests = Object.keys(byTest).sort(function (a, b) { return Number(a) - Number(b); });
+    var blocks = tests.map(function (t) {
+      var papers = byTest[t];
+      var panels = SKILLS.filter(function (s) { return papers[s.subject]; })
+        .map(function (s) { return skillPanel(s, papers[s.subject]); }).join("");
+      return '<div class="test-block"><h2>剑桥雅思' + Y.esc(vol) + ' · Test ' + Y.esc(t) + '</h2>' +
+        '<div class="skill-grid">' + panels + '</div></div>';
+    }).join("");
+
+    contentEl.innerHTML = hero + blocks;
   }).catch(function (err) {
     var msg = location.protocol === "file:"
       ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"

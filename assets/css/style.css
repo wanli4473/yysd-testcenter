@@ -457,6 +457,61 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
   background: var(--bg); border: 1px dashed var(--border-strong); border-radius: var(--radius-sm);
 }
 
+/* ---------- Cambridge volume cards (剑桥真题系列) ---------------------- */
+.vol-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
+.vol-card {
+  display: flex; flex-direction: column; gap: 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px 20px 16px; box-shadow: var(--shadow-sm);
+  transition: transform .2s var(--ease-out), box-shadow .2s var(--ease), border-color .2s var(--ease);
+}
+.vol-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: #c7d2fe; }
+.vol-card__top { display: flex; align-items: center; justify-content: space-between; }
+.vol-card__vol { font-size: 12px; font-weight: 800; letter-spacing: .8px; color: var(--text-faint); }
+.vol-card__tag { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+.vol-card__tag--new  { color: #1d4ed8; background: #dbeafe; }
+.vol-card__tag--mid  { color: #5b3fd6; background: #ede9fe; }
+.vol-card__tag--base { color: #5f6a7d; background: #eef1f5; }
+.vol-card__body { display: flex; align-items: center; gap: 14px; }
+.vol-card__ico { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; background: #eef2ff; flex-shrink: 0; }
+.vol-card__body h3 { margin: 0; font-size: 19px; color: var(--brand-navy); }
+.vol-card__cnt { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.vol-card__foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 13px; }
+.vol-card__skills { display: flex; gap: 4px; font-size: 15px; }
+.vol-card__skills .vc-skill { width: 26px; height: 26px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; border: 1px solid var(--border); }
+.vol-card__go { font-size: 14px; font-weight: 700; color: var(--brand-red); }
+.vol-card:hover .vol-card__go { color: #a00d24; }
+
+/* ---------- Cambridge volume detail (per-Test, skill panels) ---------- */
+.cam-hero {
+  display: flex; align-items: center; gap: 20px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 26px; box-shadow: var(--shadow-sm); margin-bottom: 22px;
+}
+.cam-hero__badge { background: #eef2ff; border-radius: 12px; padding: 14px 26px; text-align: center; min-width: 150px; }
+.cam-hero__badge .lbl { font-size: 11px; letter-spacing: 1.5px; color: #4f46e5; font-weight: 700; }
+.cam-hero__badge .num { font-size: 46px; font-weight: 800; color: #1e8449; line-height: 1; margin-top: 2px; }
+.cam-hero h1 { margin: 0; font-size: 26px; color: var(--brand-navy); }
+.cam-hero .meta { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+.test-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 26px; margin-bottom: 18px; box-shadow: var(--shadow-sm); }
+.test-block > h2 { margin: 0 0 16px; font-size: 19px; color: var(--brand-navy); }
+.skill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.skill-panel { border: 1.5px solid; border-radius: 14px; padding: 22px 20px; text-align: center; }
+.skill-panel--listening { background: #eff5ff; border-color: #cfe0f7; }
+.skill-panel--reading   { background: #eefaf2; border-color: #c4ecd4; }
+.skill-panel--writing   { background: #f3f1ff; border-color: #ddd6fe; }
+.skill-panel__ico { font-size: 26px; }
+.skill-panel__name { font-size: 18px; font-weight: 800; margin: 6px 0 4px; }
+.skill-panel--listening .skill-panel__name { color: #1b4f8a; }
+.skill-panel--reading   .skill-panel__name { color: #1e8449; }
+.skill-panel--writing   .skill-panel__name { color: #5b3fd6; }
+.skill-panel__meta { font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px; }
+.skill-panel__btn { display: block; width: 100%; border: none; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; }
+.skill-panel--listening .skill-panel__btn { background: #1d4ed8; }
+.skill-panel--reading   .skill-panel__btn { background: #1e8449; }
+.skill-panel--writing   .skill-panel__btn { background: #5b3fd6; }
+.skill-panel__btn:hover { filter: brightness(1.07); }
+@media (max-width: 640px) { .cam-hero { flex-direction: column; text-align: center; } }
+
 /* ---------- Footer ---------------------------------------------------- */
 .site-footer {
   border-top: 1px solid var(--border);
