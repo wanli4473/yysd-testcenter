@@ -101,9 +101,58 @@ window.YYSD = (function () {
       '</a>';
   }
 
+  // ---- Cambridge series grouping (模考区 shows one card per volume) ----
+  function isCambridge(subject) {
+    return subject === "cambridge-listening" || subject === "cambridge-reading";
+  }
+
+  // Pull the volume number (e.g. "15") out of a title like "剑桥雅思15 · Test 1（听力）".
+  function camVolume(item) {
+    var m = String((item && item.title) || "").match(/剑(?:桥雅思)?\s*0*(\d+)/);
+    return m ? m[1] : "";
+  }
+
+  // Summarise cambridge items into [{vol, listening, reading, total}], newest volume first.
+  function camVolumes(items) {
+    var map = {};
+    (items || []).forEach(function (it) {
+      if (!isCambridge(it.subject)) return;
+      var v = camVolume(it); if (!v) return;
+      if (!map[v]) map[v] = { vol: v, listening: 0, reading: 0, total: 0 };
+      if (it.subject === "cambridge-reading") map[v].reading++;
+      else map[v].listening++;
+      map[v].total++;
+    });
+    return Object.keys(map)
+      .sort(function (a, b) { return Number(b) - Number(a); })
+      .map(function (k) { return map[k]; });
+  }
+
+  // A single "series" card for one Cambridge volume → opens cambridge.html?vol=N
+  function camVolumeCardHTML(v, prefix) {
+    return '' +
+      '<a class="exam-card exam-card--series" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
+        '<div class="exam-card__top">' +
+          '<span class="badge badge--cambridge">剑桥真题</span>' +
+          '<span class="tag-cat">模考区</span>' +
+        '</div>' +
+        '<h3>剑桥雅思 ' + esc(v.vol) + '</h3>' +
+        '<p>官方真题套卷：听力与学术类阅读，点击进入查看本册全部测试。</p>' +
+        '<div class="exam-card__meta">' +
+          '<span>🎧 听力 ' + v.listening + ' 套</span>' +
+          '<span>📖 阅读 ' + v.reading + ' 套</span>' +
+        '</div>' +
+        '<div class="exam-card__foot">' +
+          '<span class="btn btn--primary btn--sm" style="pointer-events:none">查看全部 →</span>' +
+        '</div>' +
+      '</a>';
+  }
+
   return {
     ZONES: ZONES, ZONE: ZONE, ZONE_SUBJECTS: ZONE_SUBJECTS, SUBJECT: SUBJECT,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
-    fileHref: fileHref, cardHTML: cardHTML
+    fileHref: fileHref, cardHTML: cardHTML,
+    isCambridge: isCambridge, camVolume: camVolume, camVolumes: camVolumes,
+    camVolumeCardHTML: camVolumeCardHTML
   };
 })();

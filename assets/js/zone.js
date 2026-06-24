@@ -26,9 +26,19 @@
   var contentEl = document.getElementById("content");
   var allItems = [];
 
+  // Collapse the two cambridge subjects into a single "cambridge" series filter.
+  function displaySubjects() {
+    var out = [];
+    subjects.forEach(function (s) {
+      var key = Y.isCambridge(s) ? "cambridge" : s;
+      if (out.indexOf(key) < 0) out.push(key);
+    });
+    return out;
+  }
+
   function buildFilters() {
     var chips = ['<button class="chip is-active" data-s="all">全部</button>'];
-    subjects.forEach(function (s) {
+    displaySubjects().forEach(function (s) {
       chips.push('<button class="chip" data-s="' + s + '">' + Y.esc(Y.SUBJECT[s].label) + '</button>');
     });
     filtersEl.innerHTML = chips.join("");
@@ -42,28 +52,39 @@
     });
   }
 
+  function groupHTML(headLabel, color, count, unit, bodyHTML, emptyMsg) {
+    return '<div class="subject-group">' +
+      '<div class="subject-group__head">' +
+        '<span class="subject-dot" style="background:' + color + '"></span>' +
+        '<h2>' + Y.esc(headLabel) + '</h2>' +
+        '<span class="cnt">' + count + ' ' + unit + '</span>' +
+      '</div>' +
+      (count ? bodyHTML : '<div class="state" style="padding:38px 20px"><p>' + emptyMsg + '</p></div>') +
+      '</div>';
+  }
+
+  // 剑桥真题 collapses to one "series" card per volume → opens cambridge.html
+  function cambridgeGroupHTML() {
+    var vols = Y.camVolumes(allItems);
+    var grid = '<div class="exam-grid">' + vols.map(function (v) { return Y.camVolumeCardHTML(v, ""); }).join("") + '</div>';
+    return groupHTML(Y.SUBJECT.cambridge.label, Y.SUBJECT.cambridge.color, vols.length, "册",
+      grid, "暂无剑桥真题，老师上传后会显示在这里。");
+  }
+
   function render() {
-    var groups = activeSubject === "all" ? subjects : [activeSubject];
+    var groups = activeSubject === "all" ? displaySubjects() : [activeSubject];
     var html = "";
 
     groups.forEach(function (s) {
+      if (s === "cambridge") { html += cambridgeGroupHTML(); return; }
+
       var items = allItems.filter(function (it) { return it.subject === s; })
         .sort(function (a, b) {
           return String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
         });
       var sub = Y.SUBJECT[s];
-      html += '<div class="subject-group">' +
-        '<div class="subject-group__head">' +
-          '<span class="subject-dot" style="background:' + sub.color + '"></span>' +
-          '<h2>' + Y.esc(sub.label) + '</h2>' +
-          '<span class="cnt">' + items.length + ' 份</span>' +
-        '</div>';
-      if (items.length) {
-        html += '<div class="exam-grid">' + items.map(function (it) { return Y.cardHTML(it, ""); }).join("") + '</div>';
-      } else {
-        html += '<div class="state" style="padding:38px 20px"><p>该科目暂无内容，老师上传后会显示在这里。</p></div>';
-      }
-      html += '</div>';
+      var grid = '<div class="exam-grid">' + items.map(function (it) { return Y.cardHTML(it, ""); }).join("") + '</div>';
+      html += groupHTML(sub.label, sub.color, items.length, "份", grid, "该科目暂无内容，老师上传后会显示在这里。");
     });
     contentEl.innerHTML = html;
   }
