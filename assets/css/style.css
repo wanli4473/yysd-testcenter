@@ -380,6 +380,54 @@ img { max-width: 100%; display: block; }
 .zone-portal .zp-count b { color: var(--brand-navy); font-size: 17px; }
 .zone-portal .zp-go { font-size: 14px; font-weight: 700; color: var(--zc); }
 
+/* ---------- Homepage zone panels (course tree) ----------------------- */
+.zone-portals--tree { display: flex; flex-direction: column; gap: 22px; }
+.zpanel {
+  position: relative; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+.zpanel::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--zc, var(--brand-red)); }
+.zpanel--study    { --zc: var(--c-zone-study); }
+.zpanel--practice { --zc: var(--c-zone-practice); }
+.zpanel--mock     { --zc: var(--c-zone-mock); }
+.zpanel__head { display: flex; align-items: center; gap: 16px; padding: 22px 26px; border-bottom: 1px solid var(--border); }
+.zpanel__ico {
+  width: 50px; height: 50px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--zc) 13%, white); color: var(--zc);
+}
+.zpanel__title { flex: 1; min-width: 0; }
+.zpanel__title h3 { margin: 0; font-size: 21px; color: var(--brand-navy); }
+.zpanel__en { font-size: 12px; color: var(--text-faint); letter-spacing: .5px; text-transform: uppercase; font-weight: 600; }
+.zpanel__title p { margin: 3px 0 0; font-size: 13.5px; color: var(--text-muted); }
+.zpanel__enter { font-size: 14px; font-weight: 700; color: var(--zc); white-space: nowrap; }
+.zpanel__cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; padding: 22px 26px; }
+.navcat {
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; background: var(--bg);
+}
+.navcat__title { font-size: 14px; font-weight: 800; color: var(--brand-navy); margin-bottom: 10px; }
+.navcat__leaves { display: flex; flex-direction: column; gap: 7px; }
+.navcat--leaf { padding: 0; border: none; background: none; }
+.navcat--leaf .navleaf { border: 1px solid var(--border); background: var(--bg); padding: 13px 16px; }
+.navleaf {
+  display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-radius: 8px;
+  font-size: 14px; color: var(--text); background: var(--surface); border: 1px solid transparent;
+  transition: border-color .15s var(--ease), transform .15s var(--ease), background .15s var(--ease);
+}
+.navleaf .nl-label { flex: 1; font-weight: 600; }
+.navleaf .nl-n {
+  font-size: 12px; min-width: 22px; text-align: center; color: #fff; background: var(--zc, var(--brand-red));
+  border-radius: 999px; padding: 1px 8px; font-weight: 700;
+}
+.navleaf .nl-soon { font-size: 11.5px; color: var(--text-faint); border: 1px dashed var(--border-strong); border-radius: 999px; padding: 1px 8px; }
+a.navleaf { cursor: pointer; }
+a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translateX(2px); background: color-mix(in srgb, var(--zc) 6%, white); }
+.navleaf.is-empty { opacity: .72; }
+@media (max-width: 640px) {
+  .zpanel__head { flex-wrap: wrap; }
+  .zpanel__cats { grid-template-columns: 1fr; }
+}
+
 /* ---------- Zone page header ----------------------------------------- */
 .zone-head {
   border-bottom: 1px solid var(--border);
@@ -398,6 +446,16 @@ img { max-width: 100%; display: block; }
 .subject-group__head h2 { margin: 0; font-size: 19px; color: var(--brand-navy); }
 .subject-dot { width: 11px; height: 11px; border-radius: 50%; }
 .subject-group__head .cnt { font-size: 13px; color: var(--text-faint); font-weight: 600; }
+/* sub-skill blocks inside a category (e.g. 雅思真题 → 听力/阅读/口语/写作) */
+.leaf-wrap { display: flex; flex-direction: column; gap: 22px; }
+.leaf-block { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px; background: var(--surface); }
+.leaf-block__head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.leaf-block__head h4 { margin: 0; font-size: 16px; color: var(--brand-navy); }
+.leaf-block__head .cnt { font-size: 12.5px; color: var(--text-faint); font-weight: 600; }
+.soon-box {
+  text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 14px;
+  background: var(--bg); border: 1px dashed var(--border-strong); border-radius: var(--radius-sm);
+}
 
 /* ---------- Footer ---------------------------------------------------- */
 .site-footer {

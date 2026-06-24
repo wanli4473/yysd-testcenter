@@ -1,5 +1,6 @@
 /* =========================================================================
-   home.js — landing page: zone portals, recent items, stats
+   home.js — landing page: 学习区 / 练习区 / 模考区 portals (as a course tree),
+   recent items, stats. Mirrors the 优益思达国际课程中心 structure.
    ========================================================================= */
 (function () {
   "use strict";
@@ -7,46 +8,58 @@
   var portalsEl = document.getElementById("zone-portals");
   var recentEl = document.getElementById("recent");
 
-  function portalHTML(zone, items) {
+  function leafHTML(leaf, counts, zone) {
+    var n = counts[leaf.subject] || 0;
+    var inner = '<span class="nl-label">' + Y.esc(leaf.label) + '</span>' +
+      (n > 0 ? '<b class="nl-n">' + n + '</b>' : '<span class="nl-soon">即将上线</span>');
+    return n > 0
+      ? '<a class="navleaf" href="zone.html?zone=' + zone + '&s=' + encodeURIComponent(leaf.subject) + '">' + inner + '</a>'
+      : '<span class="navleaf is-empty">' + inner + '</span>';
+  }
+
+  function catHTML(cat, counts, zone) {
+    if (!cat.children) {
+      return '<div class="navcat navcat--leaf">' + leafHTML(cat, counts, zone) + '</div>';
+    }
+    var leaves = [];
+    if (cat.subject && (counts[cat.subject] || 0) > 0) {
+      leaves.push(leafHTML({ label: "全真模考", subject: cat.subject }, counts, zone));
+    }
+    cat.children.forEach(function (ch) { leaves.push(leafHTML(ch, counts, zone)); });
+    return '<div class="navcat">' +
+      '<div class="navcat__title">' + Y.esc(cat.label) + '</div>' +
+      '<div class="navcat__leaves">' + leaves.join("") + '</div>' +
+      '</div>';
+  }
+
+  function panelHTML(zone, items) {
     var z = Y.ZONE[zone];
-    var subjects = Y.subjectsOf(zone);
-    var bySubject = {};
-    items.forEach(function (it) { bySubject[it.subject] = (bySubject[it.subject] || 0) + 1; });
-
-    var chips = subjects.map(function (s) {
-      var sub = Y.SUBJECT[s];
-      return '<span class="zp-subject">' + Y.esc(sub.label) +
-             '<b>' + (bySubject[s] || 0) + '</b></span>';
-    }).join("");
-
+    var counts = Y.countsBySubject(items, zone);
+    var cats = Y.navOf(zone).map(function (c) { return catHTML(c, counts, zone); }).join("");
     return '' +
-      '<a class="zone-portal zone-portal--' + zone + '" href="zone.html?zone=' + zone + '">' +
-        '<div class="zp-ico">' + z.icon + '</div>' +
-        '<h3>' + Y.esc(z.label) + '</h3>' +
-        '<div class="zp-en">' + Y.esc(z.en) + '</div>' +
-        '<p>' + Y.esc(z.desc) + '</p>' +
-        '<div class="zp-subjects">' + chips + '</div>' +
-        '<div class="zp-foot">' +
-          '<span class="zp-count"><b>' + items.length + '</b> 份内容</span>' +
-          '<span class="zp-go">进入 →</span>' +
+      '<section class="zpanel zpanel--' + zone + '">' +
+        '<div class="zpanel__head">' +
+          '<span class="zpanel__ico">' + z.icon + '</span>' +
+          '<div class="zpanel__title">' +
+            '<h3>' + Y.esc(z.label) + ' <span class="zpanel__en">' + Y.esc(z.en) + '</span></h3>' +
+            '<p>' + Y.esc(z.desc) + '</p>' +
+          '</div>' +
+          '<a class="zpanel__enter" href="zone.html?zone=' + zone + '">进入 ' + Y.esc(z.label) + ' →</a>' +
         '</div>' +
-      '</a>';
+        '<div class="zpanel__cats">' + cats + '</div>' +
+      '</section>';
   }
 
   Y.load().then(function (items) {
-    // stats
     var st = document.getElementById("stat-total");
     if (st) st.textContent = items.length;
     var sd = document.getElementById("stat-done");
     if (sd) sd.textContent = Object.keys(Y.results()).length;
 
-    // portals
     portalsEl.innerHTML = Y.ZONES.map(function (zone) {
-      var inZone = items.filter(function (it) { return it.zone === zone; });
-      return portalHTML(zone, inZone);
+      return panelHTML(zone, items.filter(function (it) { return it.zone === zone; }));
     }).join("");
 
-    // recent (top 6)
     var recent = items.slice(0, 6);
     recentEl.innerHTML = recent.length
       ? '<div class="exam-grid">' + recent.map(function (it) { return Y.cardHTML(it, ""); }).join("") + '</div>'

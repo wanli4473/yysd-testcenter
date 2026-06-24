@@ -5,34 +5,74 @@
 window.YYSD = (function () {
   "use strict";
 
-  var ZONES = ["mock", "study", "practice"];
+  // Homepage display order: 学习区 → 练习区 → 模考区
+  var ZONES = ["study", "practice", "mock"];
 
   var ZONE = {
-    mock:     { label: "模考区", en: "Mock Tests", icon: "🎯",
-                desc: "全真模考，计时考场，交卷自动批改出分。" },
     study:    { label: "学习区", en: "Study", icon: "📚",
-                desc: "语法、单词系统精讲，边学边测，巩固基础。" },
+                desc: "语法、单词系统精讲，边学边测，打牢基础。" },
     practice: { label: "练习区", en: "Practice", icon: "✏️",
-                desc: "分科分类专项练习题，查漏补缺，针对提分。" }
+                desc: "长难句、听力精听等专项训练，针对性提分。" },
+    mock:     { label: "模考区", en: "Mock Tests", icon: "🎯",
+                desc: "雅思 / A-Level / AP / 托福 / SAT 全真真题，计时模考、自动批改。" }
   };
 
-  // ordered subjects per zone
+  // ordered subjects per zone (leaf keys used by the manifest / folder classification)
   var ZONE_SUBJECTS = {
-    mock:     ["cambridge-listening", "cambridge-reading", "ielts", "pte", "toefl"],
-    study:    ["grammar", "vocab"],
-    practice: ["ielts", "pte", "toefl"]
+    study:    ["grammar", "vocab", "vocab-cet4", "vocab-special"],
+    practice: ["changnanju", "jingting", "ielts"],
+    mock:     ["cambridge-listening", "cambridge-reading", "ielts",
+               "ielts-speaking", "ielts-writing", "alevel", "ap", "toefl", "sat"]
   };
 
   var SUBJECT = {
-    "cambridge-listening": { label: "剑桥听力", en: "Cambridge Listening", color: "var(--c-cambridge-listening)" },
-    "cambridge-reading":   { label: "剑桥阅读", en: "Cambridge Reading", color: "var(--c-cambridge-reading)" },
+    "cambridge-listening": { label: "听力", en: "Listening", color: "var(--c-cambridge-listening)" },
+    "cambridge-reading":   { label: "阅读", en: "Reading", color: "var(--c-cambridge-reading)" },
+    "ielts-speaking":      { label: "口语", en: "Speaking", color: "var(--c-ielts)" },
+    "ielts-writing":       { label: "写作", en: "Writing", color: "var(--c-ielts)" },
     cambridge: { label: "剑桥真题", en: "Cambridge", color: "var(--c-cambridge)" },
-    ielts:   { label: "雅思", en: "IELTS", color: "var(--c-ielts)" },
-    pte:     { label: "PTE",  en: "PTE",   color: "var(--c-pte)" },
-    toefl:   { label: "托福", en: "TOEFL", color: "var(--c-toefl)" },
+    ielts:   { label: "雅思真题", en: "IELTS", color: "var(--c-ielts)" },
+    alevel:  { label: "A-Level 真题", en: "A-Level", color: "var(--c-pte)" },
+    ap:      { label: "AP 真题", en: "AP", color: "var(--c-toefl)" },
+    toefl:   { label: "托福真题", en: "TOEFL", color: "var(--c-toefl)" },
+    sat:     { label: "SAT 真题", en: "SAT", color: "var(--c-grammar)" },
     grammar: { label: "语法", en: "Grammar", color: "var(--c-grammar)" },
-    vocab:   { label: "单词", en: "Vocabulary", color: "var(--c-vocab)" }
+    vocab:   { label: "高中词汇", en: "Vocabulary", color: "var(--c-vocab)" },
+    "vocab-cet4":    { label: "四级词汇", en: "CET-4", color: "var(--c-vocab)" },
+    "vocab-special": { label: "专项词汇", en: "Topic Words", color: "var(--c-vocab)" },
+    changnanju: { label: "长难句", en: "Complex Sentences", color: "var(--c-zone-practice)" },
+    jingting:   { label: "听力精听", en: "Intensive Listening", color: "var(--c-zone-practice)" }
   };
+
+  // Display tree for homepage + zone pages (mirrors the course-centre diagram).
+  // Each leaf maps to a manifest `subject`; categories may have `children`.
+  var NAV = {
+    study: [
+      { key: "grammar", label: "语法", subject: "grammar" },
+      { key: "vocab", label: "单词", children: [
+        { label: "高中词汇", subject: "vocab" },
+        { label: "四级词汇", subject: "vocab-cet4" },
+        { label: "专项词汇", subject: "vocab-special" }
+      ] }
+    ],
+    practice: [
+      { key: "changnanju", label: "长难句", subject: "changnanju" },
+      { key: "jingting", label: "听力精听", subject: "jingting" }
+    ],
+    mock: [
+      { key: "ielts", label: "雅思真题", subject: "ielts", children: [
+        { label: "听力", subject: "cambridge-listening" },
+        { label: "阅读", subject: "cambridge-reading" },
+        { label: "口语", subject: "ielts-speaking" },
+        { label: "写作", subject: "ielts-writing" }
+      ] },
+      { key: "alevel", label: "A-Level 真题", subject: "alevel" },
+      { key: "ap", label: "AP 真题", subject: "ap" },
+      { key: "toefl", label: "托福真题", subject: "toefl" },
+      { key: "sat", label: "SAT 真题", subject: "sat" }
+    ]
+  };
+  function navOf(zone) { return NAV[zone] || []; }
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -148,10 +188,21 @@ window.YYSD = (function () {
       '</a>';
   }
 
+  // Count manifest items per subject (within an optional zone).
+  function countsBySubject(items, zone) {
+    var m = {};
+    (items || []).forEach(function (it) {
+      if (zone && it.zone !== zone) return;
+      m[it.subject] = (m[it.subject] || 0) + 1;
+    });
+    return m;
+  }
+
   return {
     ZONES: ZONES, ZONE: ZONE, ZONE_SUBJECTS: ZONE_SUBJECTS, SUBJECT: SUBJECT,
+    NAV: NAV, navOf: navOf,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
-    fileHref: fileHref, cardHTML: cardHTML,
+    fileHref: fileHref, cardHTML: cardHTML, countsBySubject: countsBySubject,
     isCambridge: isCambridge, camVolume: camVolume, camVolumes: camVolumes,
     camVolumeCardHTML: camVolumeCardHTML
   };
