@@ -20,7 +20,8 @@
 
   var GROUPS = [
     { subject: "cambridge-listening" },
-    { subject: "cambridge-reading" }
+    { subject: "cambridge-reading" },
+    { subject: "cambridge-writing" }
   ];
 
   Y.load().then(function (items) {
@@ -40,6 +41,7 @@
         .sort(function (a, b) {
           return String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
         });
+      if (!its.length) return;   // skip skills with no content in this volume
       var sub = Y.SUBJECT[g.subject];
       html += '<div class="subject-group">' +
         '<div class="subject-group__head">' +

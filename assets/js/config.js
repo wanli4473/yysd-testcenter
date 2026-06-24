@@ -28,6 +28,7 @@ window.YYSD = (function () {
   var SUBJECT = {
     "cambridge-listening": { label: "听力", en: "Listening", color: "var(--c-cambridge-listening)" },
     "cambridge-reading":   { label: "阅读", en: "Reading", color: "var(--c-cambridge-reading)" },
+    "cambridge-writing":   { label: "写作", en: "Writing", color: "var(--c-cambridge-reading)" },
     "ielts-speaking":      { label: "口语", en: "Speaking", color: "var(--c-ielts)" },
     "ielts-writing":       { label: "写作", en: "Writing", color: "var(--c-ielts)" },
     cambridge: { label: "剑桥真题", en: "Cambridge", color: "var(--c-cambridge)" },
@@ -64,7 +65,7 @@ window.YYSD = (function () {
         { label: "听力", subject: "cambridge-listening" },
         { label: "阅读", subject: "cambridge-reading" },
         { label: "口语", subject: "ielts-speaking" },
-        { label: "写作", subject: "ielts-writing" }
+        { label: "写作", subject: "cambridge-writing" }
       ] },
       { key: "alevel", label: "A-Level 真题", subject: "alevel" },
       { key: "ap", label: "AP 真题", subject: "ap" },
@@ -143,7 +144,7 @@ window.YYSD = (function () {
 
   // ---- Cambridge series grouping (模考区 shows one card per volume) ----
   function isCambridge(subject) {
-    return subject === "cambridge-listening" || subject === "cambridge-reading";
+    return subject === "cambridge-listening" || subject === "cambridge-reading" || subject === "cambridge-writing";
   }
 
   // Pull the volume number (e.g. "15") out of a title like "剑桥雅思15 · Test 1（听力）".
@@ -158,8 +159,9 @@ window.YYSD = (function () {
     (items || []).forEach(function (it) {
       if (!isCambridge(it.subject)) return;
       var v = camVolume(it); if (!v) return;
-      if (!map[v]) map[v] = { vol: v, listening: 0, reading: 0, total: 0 };
+      if (!map[v]) map[v] = { vol: v, listening: 0, reading: 0, writing: 0, total: 0 };
       if (it.subject === "cambridge-reading") map[v].reading++;
+      else if (it.subject === "cambridge-writing") map[v].writing++;
       else map[v].listening++;
       map[v].total++;
     });
@@ -177,10 +179,11 @@ window.YYSD = (function () {
           '<span class="tag-cat">模考区</span>' +
         '</div>' +
         '<h3>剑桥雅思 ' + esc(v.vol) + '</h3>' +
-        '<p>官方真题套卷：听力与学术类阅读，点击进入查看本册全部测试。</p>' +
+        '<p>官方真题套卷：听力、学术类阅读与写作，点击进入查看本册全部测试。</p>' +
         '<div class="exam-card__meta">' +
           '<span>🎧 听力 ' + v.listening + ' 套</span>' +
           '<span>📖 阅读 ' + v.reading + ' 套</span>' +
+          (v.writing ? '<span>✍️ 写作 ' + v.writing + ' 套</span>' : '') +
         '</div>' +
         '<div class="exam-card__foot">' +
           '<span class="btn btn--primary btn--sm" style="pointer-events:none">查看全部 →</span>' +
