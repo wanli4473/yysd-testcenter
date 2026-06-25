@@ -175,11 +175,146 @@ const TEST = {
   task1: {
     prompt: `You should spend about 20 minutes on this task.<br><br>The diagram below shows how a biofuel called ethanol is produced.<br><br>Summarise the information by selecting and reporting the main features, and make comparisons where relevant.<br><strong>Write at least 150 words.</strong>`,
     charts: [
-      { caption: 'How the biofuel ethanol is produced', image: 'ielts19_test3_ethanol.png' }
+      { caption: 'Biofuel production: how ethanol is made', svg:`<svg viewBox="0 0 720 660" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif;display:block;margin:0 auto;background:white;">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <text x="360" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">Biofuel production: how ethanol is made</text>
+
+  <!-- big outer cycle ring (carbon cycle) -->
+  <circle cx="360" cy="370" r="285" fill="none" stroke="#e3e8ee" stroke-width="2"/>
+
+  <!-- ============ TOP: Energy + plants ============ -->
+  <text x="150" y="76" text-anchor="middle" font-size="12" fill="#333">Energy</text>
+  <text x="150" y="90" text-anchor="middle" font-size="11" fill="#555">(sunlight + carbon dioxide)</text>
+  <line x1="178" y1="100" x2="205" y2="130" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+  <!-- tree icon -->
+  <g transform="translate(150,150)">
+    <ellipse cx="0" cy="-6" rx="20" ry="24" fill="#cfe0cf" stroke="#6f936f" stroke-width="1.2"/>
+    <rect x="-3" y="14" width="6" height="16" fill="#9c7a4d"/>
+  </g>
+  <text x="150" y="200" text-anchor="middle" font-size="12" fill="#333">Plants and</text>
+  <text x="150" y="214" text-anchor="middle" font-size="12" fill="#333">trees grow</text>
+
+  <!-- step 1->2 arrow to harvesting -->
+  <line x1="200" y1="175" x2="278" y2="180" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- Harvesting (tractor) -->
+  <g transform="translate(320,150)">
+    <rect x="-22" y="0" width="40" height="18" rx="3" fill="#dde6ef" stroke="#6b7a8f" stroke-width="1.2"/>
+    <circle cx="-12" cy="22" r="9" fill="#9aa7b4" stroke="#5a6a7a" stroke-width="1"/>
+    <circle cx="12" cy="22" r="13" fill="#9aa7b4" stroke="#5a6a7a" stroke-width="1"/>
+  </g>
+  <text x="335" y="135" text-anchor="middle" font-size="12" fill="#333">Harvesting</text>
+
+  <!-- arrow harvesting -> pre-processing (right side, going down) -->
+  <line x1="400" y1="170" x2="500" y2="205" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- CO2 labels on the right outer ring -->
+  <text x="600" y="180" text-anchor="middle" font-size="12" fill="#555">Carbon</text>
+  <text x="600" y="194" text-anchor="middle" font-size="12" fill="#555">Dioxide</text>
+  <text x="638" y="370" text-anchor="middle" font-size="12" fill="#555">Carbon</text>
+  <text x="638" y="384" text-anchor="middle" font-size="12" fill="#555">Dioxide</text>
+
+  <!-- Pre-processing (chopped material) -->
+  <g transform="translate(545,250)">
+    <rect x="-26" y="-16" width="52" height="32" rx="2" fill="#eef2f6" stroke="#6b7a8f" stroke-width="1.2"/>
+    <circle cx="-12" cy="-2" r="3" fill="#b9c4d0"/><circle cx="0" cy="6" r="3" fill="#b9c4d0"/><circle cx="12" cy="-4" r="3" fill="#b9c4d0"/>
+  </g>
+  <text x="545" y="295" text-anchor="middle" font-size="12" fill="#333">Pre-processing</text>
+
+  <!-- arrow pre-processing -> cellulose (leftwards) -->
+  <line x1="495" y1="300" x2="430" y2="320" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- Cellulose (fibres) -->
+  <g transform="translate(390,330)">
+    <path d="M-22,-8 q11,-8 22,0 q11,8 22,0" fill="none" stroke="#8a96a5" stroke-width="2"/>
+    <path d="M-22,2 q11,-8 22,0 q11,8 22,0" fill="none" stroke="#8a96a5" stroke-width="2"/>
+  </g>
+  <text x="390" y="365" text-anchor="middle" font-size="12" fill="#333">Cellulose</text>
+
+  <!-- arrow cellulose -> processing (leftwards) -->
+  <line x1="345" y1="335" x2="262" y2="320" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- Processing (factory/lab) -->
+  <g transform="translate(195,300)">
+    <circle cx="0" cy="0" r="40" fill="#eef2f6" stroke="#9aa7b4" stroke-width="1.2"/>
+    <rect x="-22" y="-18" width="10" height="30" fill="#c3cdd8"/>
+    <rect x="-8" y="-24" width="10" height="36" fill="#c3cdd8"/>
+    <path d="M8,-14 l12,0 l-2,26 l-8,0 Z" fill="none" stroke="#6b7a8f" stroke-width="1.4"/>
+  </g>
+  <text x="195" y="362" text-anchor="middle" font-size="12" fill="#333">Processing</text>
+
+  <!-- arrow processing -> sugars (down) -->
+  <line x1="190" y1="345" x2="175" y2="420" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- Sugars (hexagon molecule) -->
+  <g transform="translate(165,460)">
+    <polygon points="0,-20 17,-10 17,10 0,20 -17,10 -17,-10" fill="none" stroke="#7a8aa0" stroke-width="1.6"/>
+    <circle cx="0" cy="-20" r="3" fill="#7a8aa0"/><circle cx="17" cy="-10" r="3" fill="#7a8aa0"/><circle cx="17" cy="10" r="3" fill="#7a8aa0"/>
+    <circle cx="0" cy="20" r="3" fill="#7a8aa0"/><circle cx="-17" cy="10" r="3" fill="#7a8aa0"/><circle cx="-17" cy="-10" r="3" fill="#7a8aa0"/>
+  </g>
+  <text x="165" y="505" text-anchor="middle" font-size="12" fill="#333">Sugars</text>
+
+  <!-- arrow sugars -> microbes (down/right) -->
+  <line x1="190" y1="520" x2="270" y2="560" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- Microbes added -->
+  <g transform="translate(310,575)">
+    <circle cx="0" cy="0" r="30" fill="#eef2f6" stroke="#9aa7b4" stroke-width="1.2"/>
+    <ellipse cx="-8" cy="-4" rx="7" ry="4" fill="none" stroke="#6b7a8f" stroke-width="1.2"/>
+    <ellipse cx="8" cy="6" rx="7" ry="4" fill="none" stroke="#6b7a8f" stroke-width="1.2"/>
+    <ellipse cx="6" cy="-8" rx="5" ry="3" fill="none" stroke="#6b7a8f" stroke-width="1.2"/>
+  </g>
+  <text x="310" y="625" text-anchor="middle" font-size="12" fill="#333">Microbes added</text>
+
+  <!-- arrow microbes -> ethanol (up) -->
+  <line x1="345" y1="560" x2="360" y2="500" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- ETHANOL (center) -->
+  <text x="370" y="470" text-anchor="middle" font-size="22" font-weight="bold" fill="#1b4f8a">Ethanol</text>
+
+  <!-- arrows ethanol -> vehicles -->
+  <line x1="430" y1="462" x2="500" y2="455" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="420" y1="485" x2="495" y2="520" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="400" y1="495" x2="455" y2="575" stroke="#555" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- car -->
+  <g transform="translate(530,450)">
+    <rect x="-22" y="-4" width="44" height="14" rx="4" fill="#dde6ef" stroke="#6b7a8f" stroke-width="1.2"/>
+    <path d="M-12,-4 q6,-10 18,0" fill="#dde6ef" stroke="#6b7a8f" stroke-width="1.2"/>
+    <circle cx="-12" cy="11" r="5" fill="#8a96a5"/><circle cx="12" cy="11" r="5" fill="#8a96a5"/>
+  </g>
+  <!-- truck -->
+  <g transform="translate(530,520)">
+    <rect x="-24" y="-8" width="30" height="18" fill="#dde6ef" stroke="#6b7a8f" stroke-width="1.2"/>
+    <rect x="6" y="-2" width="14" height="12" fill="#dde6ef" stroke="#6b7a8f" stroke-width="1.2"/>
+    <circle cx="-14" cy="12" r="5" fill="#8a96a5"/><circle cx="12" cy="12" r="5" fill="#8a96a5"/>
+  </g>
+  <!-- plane -->
+  <g transform="translate(500,590)">
+    <path d="M-24,0 L18,-3 L24,0 L18,3 Z" fill="#dde6ef" stroke="#6b7a8f" stroke-width="1.2"/>
+    <path d="M-6,0 l-8,-12 l4,0 l12,10 Z" fill="#cfd8e2"/>
+    <path d="M-6,0 l-8,12 l4,0 l12,-10 Z" fill="#cfd8e2"/>
+  </g>
+
+  <!-- CO2 emitted from vehicles (right) -->
+  <text x="615" y="455" text-anchor="middle" font-size="11" fill="#555">Carbon Dioxide</text>
+  <text x="615" y="525" text-anchor="middle" font-size="11" fill="#555">Carbon Dioxide</text>
+  <text x="600" y="595" text-anchor="middle" font-size="11" fill="#555">Carbon Dioxide</text>
+  <line x1="558" y1="450" x2="582" y2="450" stroke="#888" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="558" y1="520" x2="582" y2="520" stroke="#888" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="528" y1="588" x2="558" y2="590" stroke="#888" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- big return arrow on the right (CO2 reabsorbed by plants) -->
+  <path d="M655,470 Q690,320 600,180 Q540,95 420,80" fill="none" stroke="#cdd7e2" stroke-width="14" stroke-linecap="round" marker-end="url(#ar)"/>
+</svg>` }
     ]
   },
   task2: {
-    prompt: `You should spend about 40 minutes on this task.<br><br><strong>Topic:</strong> The working week should be shorter and workers should have a longer weekend.<br><br>Do you agree or disagree?<br><br>Give reasons for your answer and include any relevant examples from your own knowledge or experience.<br><strong>Write at least 250 words.</strong><br><br><em style="color:#9a6a1a;">〔注：你提供的 Test 3 资料里 Task 2 题目与 Test 2 完全相同，疑为资料抄录重复。请对书核实 Test 3 的真实 Task 2 题目；若不同请发我更正。〕</em>`
+    prompt: `You should spend about 40 minutes on this task.<br><br><strong>Topic:</strong> It is important for everyone, including young people, to save money for their future.<br><br>To what extent do you agree or disagree with this statement?<br><br>Give reasons for your answer and include any relevant examples from your own knowledge or experience.<br><strong>Write at least 250 words.</strong>`
   }
 };
 
