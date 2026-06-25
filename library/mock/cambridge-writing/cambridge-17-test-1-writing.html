@@ -175,7 +175,109 @@ const TEST = {
   task1: {
     prompt: `You should spend about 20 minutes on this task.<br><br>The maps below show an industrial area in the town of Norbiton, and planned future development of the site.<br><br>Summarise the information by selecting and reporting the main features, and make comparisons where relevant.<br><strong>Write at least 150 words.</strong>`,
     charts: [
-      { caption: 'Norbiton industrial area: now and planned development', image: 'ielts17_test1_norbiton.png' }
+      { caption: 'Norbiton industrial area now', svg:`<svg viewBox="0 0 620 380" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif;display:block;margin:0 auto;background:white;">
+  <defs>
+    <pattern id="fac" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="white"/><line x1="0" y1="0" x2="0" y2="8" stroke="#555" stroke-width="2.5"/>
+    </pattern>
+  </defs>
+  <!-- compass -->
+  <g transform="translate(560,55)" stroke="#333" stroke-width="1.2">
+    <line x1="0" y1="-14" x2="0" y2="14"/><line x1="-14" y1="0" x2="14" y2="0"/>
+    <polygon points="0,-14 -3,-8 3,-8" fill="#333"/>
+    <text x="-3" y="-17" font-size="9" stroke="none" fill="#333">N</text>
+    <text x="17" y="3" font-size="9" stroke="none" fill="#333">E</text>
+    <text x="-25" y="3" font-size="9" stroke="none" fill="#333">W</text>
+    <text x="-3" y="25" font-size="9" stroke="none" fill="#333">S</text>
+  </g>
+  <!-- River -->
+  <path d="M30,70 Q160,55 300,80 Q430,100 590,85 L590,100 Q430,118 300,98 Q160,73 30,88 Z" fill="#cfcfcf" stroke="#9a9a9a" stroke-width="1"/>
+  <text x="220" y="88" font-size="11" fill="#444">River</text>
+  <text x="320" y="58" font-size="12" font-weight="bold" fill="#333">Farmland</text>
+  <!-- Town + dashed boundary -->
+  <text x="40" y="210" font-size="12" font-weight="bold" fill="#333">Town</text>
+  <line x1="120" y1="120" x2="120" y2="330" stroke="#555" stroke-width="1.5" stroke-dasharray="3,6"/>
+  <!-- Bottom main road (double line) -->
+  <line x1="100" y1="332" x2="590" y2="332" stroke="#333" stroke-width="1.5"/>
+  <line x1="100" y1="340" x2="590" y2="340" stroke="#333" stroke-width="1.5"/>
+  <!-- Roundabout -->
+  <circle cx="265" cy="218" r="30" fill="none" stroke="#333" stroke-width="2.5"/>
+  <!-- road north from roundabout -->
+  <line x1="265" y1="188" x2="265" y2="150" stroke="#333" stroke-width="2.5"/>
+  <!-- road south to bottom -->
+  <line x1="265" y1="248" x2="265" y2="332" stroke="#333" stroke-width="2.5"/>
+  <!-- east road (two parallel = a street with factories) -->
+  <line x1="295" y1="210" x2="560" y2="210" stroke="#333" stroke-width="2"/>
+  <line x1="295" y1="226" x2="540" y2="226" stroke="#333" stroke-width="2"/>
+  <!-- Factories (hatched) -->
+  <rect x="240" y="135" width="55" height="15" fill="url(#fac)" stroke="#555" stroke-width="1"/>
+  <rect x="185" y="150" width="50" height="15" fill="url(#fac)" stroke="#555" stroke-width="1" transform="rotate(-40 210 157)"/>
+  <rect x="190" y="205" width="48" height="15" fill="url(#fac)" stroke="#555" stroke-width="1" transform="rotate(40 214 212)"/>
+  <rect x="360" y="190" width="55" height="15" fill="url(#fac)" stroke="#555" stroke-width="1"/>
+  <rect x="445" y="190" width="55" height="15" fill="url(#fac)" stroke="#555" stroke-width="1"/>
+  <rect x="360" y="232" width="55" height="15" fill="url(#fac)" stroke="#555" stroke-width="1"/>
+  <rect x="445" y="232" width="55" height="15" fill="url(#fac)" stroke="#555" stroke-width="1"/>
+  <rect x="535" y="210" width="55" height="15" fill="url(#fac)" stroke="#555" stroke-width="1"/>
+  <!-- legend -->
+  <rect x="90" y="352" width="40" height="15" fill="url(#fac)" stroke="#555" stroke-width="1"/>
+  <text x="138" y="364" font-size="12" fill="#333">= Factory</text>
+</svg>` },
+      { caption: 'Planned future development', svg:`<svg viewBox="0 0 620 420" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif;display:block;margin:0 auto;background:white;">
+  <defs>
+    <pattern id="hou" width="7" height="7" patternUnits="userSpaceOnUse">
+      <rect width="7" height="7" fill="white"/><path d="M0,0 l7,7 M7,0 l-7,7" stroke="#555" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <!-- River -->
+  <path d="M30,95 Q160,80 300,105 Q430,125 590,110 L590,125 Q430,143 300,123 Q160,98 30,113 Z" fill="#cfcfcf" stroke="#9a9a9a" stroke-width="1"/>
+  <text x="215" y="113" font-size="11" fill="#444">River</text>
+  <text x="420" y="92" font-size="12" font-weight="bold" fill="#333">Farmland</text>
+  <!-- Town + dashed boundary -->
+  <text x="40" y="235" font-size="12" font-weight="bold" fill="#333">Town</text>
+  <line x1="120" y1="150" x2="120" y2="360" stroke="#555" stroke-width="1.5" stroke-dasharray="3,6"/>
+  <!-- Bottom main road -->
+  <line x1="100" y1="362" x2="590" y2="362" stroke="#333" stroke-width="1.5"/>
+  <line x1="100" y1="370" x2="590" y2="370" stroke="#333" stroke-width="1.5"/>
+  <!-- Central roundabout -->
+  <circle cx="280" cy="235" r="30" fill="none" stroke="#333" stroke-width="2.5"/>
+  <!-- north road with T-junction -->
+  <line x1="280" y1="205" x2="280" y2="95" stroke="#333" stroke-width="2.5"/>
+  <line x1="200" y1="95" x2="370" y2="95" stroke="#333" stroke-width="2.5"/>
+  <!-- south road to small roundabout -->
+  <line x1="280" y1="265" x2="280" y2="335" stroke="#333" stroke-width="2.5"/>
+  <!-- small roundabout on main road -->
+  <circle cx="280" cy="350" r="14" fill="none" stroke="#333" stroke-width="2"/>
+  <!-- east road -->
+  <line x1="310" y1="235" x2="560" y2="235" stroke="#333" stroke-width="2.5"/>
+  <!-- diagonal roads lower-left (Shops, Medical centre) -->
+  <line x1="258" y1="258" x2="190" y2="320" stroke="#333" stroke-width="2"/>
+  <line x1="295" y1="262" x2="330" y2="330" stroke="#333" stroke-width="2"/>
+  <!-- diagonal road upper-left (housing) -->
+  <line x1="258" y1="218" x2="195" y2="175" stroke="#333" stroke-width="2"/>
+  <!-- Housing blocks (cross-hatch) -->
+  <rect x="225" y="80" width="110" height="14" fill="url(#hou)" stroke="#555" stroke-width="1"/>
+  <rect x="275" y="150" width="14" height="50" fill="url(#hou)" stroke="#555" stroke-width="1"/>
+  <rect x="170" y="165" width="55" height="15" fill="url(#hou)" stroke="#555" stroke-width="1" transform="rotate(-40 197 172)"/>
+  <rect x="205" y="195" width="50" height="14" fill="url(#hou)" stroke="#555" stroke-width="1" transform="rotate(-40 230 202)"/>
+  <rect x="330" y="262" width="60" height="14" fill="url(#hou)" stroke="#555" stroke-width="1"/>
+  <rect x="415" y="262" width="60" height="14" fill="url(#hou)" stroke="#555" stroke-width="1"/>
+  <rect x="345" y="300" width="130" height="14" fill="url(#hou)" stroke="#555" stroke-width="1"/>
+  <!-- Shops (rotated label box) -->
+  <rect x="200" y="278" width="60" height="20" fill="white" stroke="#333" stroke-width="1.2" transform="rotate(-42 230 288)"/>
+  <text x="230" y="292" font-size="11" fill="#333" text-anchor="middle" transform="rotate(-42 230 288)">Shops</text>
+  <!-- Medical centre -->
+  <rect x="305" y="300" width="60" height="22" fill="white" stroke="#333" stroke-width="1.2" transform="rotate(58 335 311)"/>
+  <text x="335" y="312" font-size="9.5" fill="#333" text-anchor="middle" transform="rotate(58 335 311)">Medical centre</text>
+  <!-- Playground -->
+  <rect x="395" y="200" width="95" height="48" fill="white" stroke="#333" stroke-width="1.2"/>
+  <text x="442" y="228" font-size="11" fill="#333" text-anchor="middle">Playground</text>
+  <!-- School (notched box on right) -->
+  <path d="M520,255 h55 v75 h-35 v-25 h-20 z" fill="white" stroke="#333" stroke-width="1.2"/>
+  <text x="548" y="298" font-size="11" fill="#333" text-anchor="middle" transform="rotate(90 548 298)">School</text>
+  <!-- legend -->
+  <rect x="90" y="390" width="40" height="15" fill="url(#hou)" stroke="#555" stroke-width="1"/>
+  <text x="138" y="402" font-size="12" fill="#333">= Housing</text>
+</svg>` }
     ]
   },
   task2: {
