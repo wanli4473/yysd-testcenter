@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优益思达 · 剑桥雅思16 Test 3 阅读</title>
+<meta name="exam:title" content="剑桥雅思16 · Test 3（阅读）">
+<meta name="exam:zone" content="mock">
+<meta name="exam:subject" content="cambridge-reading">
+<meta name="exam:duration" content="0">
+<meta name="exam:description" content="剑桥雅思19 Test 1 学术类阅读（官方真题）：3 篇文章共 40 题（网球拍进化 / 地中海古代海盗 / 虚假信息），可单篇练习或完整模考，自动批改、解析与雅思预估分。">
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:'Segoe UI','PingFang SC',Roboto,sans-serif; background:#f0f2f6; margin:0; color:#1e2a3a; line-height:1.7; padding:0 0 60px; }
+  .header { background:linear-gradient(135deg,#1e1b4b,#312e81); color:#fff; padding:12px 28px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 18px rgba(0,0,0,.25); flex-wrap:wrap; gap:10px; }
+  .header h1 { margin:0; font-size:19px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .header h1 .brandtag { font-size:11px; background:#6366f1; padding:2px 9px; border-radius:20px; font-weight:600; letter-spacing:.5px; }
+  .timer { font-size:18px; font-weight:700; background:#1e8449; padding:6px 18px; border-radius:30px; display:none; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); transition:background .4s; }
+  .timer.show { display:flex; }
+  .timer.warn { background:#e67e22; } .timer.danger { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+  .container { max-width:1180px; margin:24px auto; padding:0 24px; }
+
+  /* 封面 */
+  .cover-hero { display:flex; align-items:center; gap:24px; background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .cover-badge { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border-radius:14px; padding:18px 30px; text-align:center; min-width:180px; }
+  .cover-badge .lbl { font-size:12px; letter-spacing:2px; color:#4f46e5; font-weight:600; }
+  .cover-badge .num { font-size:54px; font-weight:800; color:#4338ca; line-height:1; margin-top:4px; }
+  .cover-hero h2 { margin:0; font-size:30px; color:#1e1b4b; }
+  .cover-hero .sub { color:#6b7a8f; margin-top:6px; font-size:14px; }
+  .paper-card-wrap { margin-top:24px; }
+  .paper-card { border-radius:16px; padding:30px 26px; text-align:center; border:2px solid; transition:transform .15s,box-shadow .2s; background:#eef2ff; border-color:#c7d2fe; cursor:pointer; }
+  .paper-card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.10); }
+  .paper-card .pc-icon { font-size:40px; }
+  .paper-card h3 { margin:10px 0 4px; font-size:24px; color:#3730a3; }
+  .paper-card .pc-meta { font-size:13px; color:#6b7a8f; }
+  .paper-card .pc-go { margin-top:18px; display:inline-block; padding:11px 30px; border-radius:30px; color:#fff; font-weight:600; font-size:15px; background:#4f46e5; }
+
+  /* 模式弹窗 */
+  .modal-mask { display:none; position:fixed; inset:0; background:rgba(10,20,40,.55); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; max-width:880px; width:100%; padding:28px 30px 34px; position:relative; max-height:92vh; overflow:auto; }
+  .modal h2 { margin:0 0 20px; font-size:24px; color:#111; }
+  .modal-close { position:absolute; right:20px; top:18px; border:none; background:none; font-size:24px; color:#8a96a5; cursor:pointer; }
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:680px){ .mode-grid{grid-template-columns:1fr;} }
+  .mode-box { border:1px solid #e2e8f0; border-radius:14px; padding:24px 22px; }
+  .mode-box .mb-ic { width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 12px; }
+  .mode-box.practice .mb-ic { background:#e0e7ff; } .mode-box.exam .mb-ic { background:#ffe8cf; }
+  .mode-box h3 { text-align:center; margin:0 0 6px; font-size:20px; }
+  .mode-box .mb-desc { text-align:center; color:#6b7a8f; font-size:13.5px; min-height:38px; }
+  .mode-box .mb-sub { font-weight:700; color:#3730a3; margin:14px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .mode-box .mb-sub button { background:#fff; border:1px solid #cdd7e2; border-radius:8px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .sec-check { display:flex; align-items:center; gap:10px; padding:8px 4px; font-size:15px; font-weight:600; color:#3730a3; cursor:pointer; }
+  .sec-check input { width:18px; height:18px; accent-color:#4338ca; }
+  .exam-list { list-style:none; padding:0; margin:10px 0 0; color:#445; font-size:14.5px; }
+  .exam-list li { padding:3px 0; }
+  .mode-start { width:100%; margin-top:18px; border:none; color:#fff; font-weight:700; font-size:16px; padding:13px; border-radius:10px; cursor:pointer; }
+  .mode-box.practice .mode-start { background:#4f46e5; } .mode-box.exam .mode-start { background:#e67e22; }
+
+  /* 答题区 */
+  #testArea { display:none; }
+  .test-topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#fff; border-radius:14px; padding:14px 22px; box-shadow:0 4px 18px rgba(0,0,0,.05); margin-bottom:18px; position:sticky; top:60px; z-index:600; }
+  .test-topbar .tt-title { font-size:19px; font-weight:700; color:#1e1b4b; }
+  .test-topbar .tt-mode { font-size:13px; background:#eef2ff; color:#3730a3; padding:3px 12px; border-radius:20px; font-weight:600; }
+  .btn-ghost { border:1px solid #cdd7e2; background:#fff; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; color:#33475b; }
+  .btn-ghost:hover { background:#f3f6fa; }
+
+  .section-banner { background:#eef2ff; border:1px solid #c7d2fe; border-radius:12px; padding:14px 20px; margin:26px 0 14px; }
+  .section-banner .sb-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .section-banner .sb-title { font-size:20px; font-weight:800; color:#3730a3; letter-spacing:.5px; }
+  .section-banner .sb-meta { font-size:13px; color:#5a6b8a; margin-top:6px; }
+
+  /* 阅读分栏：左文章 右题目 */
+  .reading-cols { display:flex; gap:24px; align-items:flex-start; }
+  .passage-pane { flex:1 1 50%; background:#fff; border:1px solid #e3e6ee; border-radius:12px; padding:22px 26px; position:sticky; top:130px; max-height:calc(100vh - 150px); overflow:auto; }
+  .passage-pane .pp-kicker { font-size:12px; letter-spacing:1.5px; color:#6366f1; font-weight:700; }
+  .passage-pane .ptitle { margin:6px 0 4px; font-size:21px; color:#1e1b4b; }
+  .passage-pane .pp-byline { font-style:italic; color:#6b7a8f; font-size:13.5px; margin-bottom:12px; }
+  .passage-pane p { margin:0 0 13px; font-size:15px; text-align:justify; }
+  .passage-pane .para-label { font-weight:800; color:#4338ca; margin-right:6px; }
+  .qcol { flex:1 1 50%; min-width:0; }
+  @media(max-width:900px){
+    .reading-cols { flex-direction:column; }
+    .passage-pane { position:static; max-height:none; width:100%; }
+    .test-topbar { position:static; }
+  }
+
+  .qgroup { background:#fff; border:1px solid #eaeef4; border-radius:12px; padding:22px 26px; margin-bottom:18px; }
+  .qgroup h4 { margin:0 0 6px; font-size:18px; color:#111; }
+  .instruction { font-style:italic; color:#445; font-size:14.5px; margin-bottom:14px; }
+  .note-box { border:1px solid #d8e0ea; border-radius:10px; padding:18px 22px; background:#fafbff; }
+  .note-title { text-align:center; font-weight:800; font-size:17px; margin-bottom:12px; color:#22303f; }
+  .note-h { font-weight:700; margin:12px 0 4px; }
+  .note-li { margin:6px 0 6px 4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .note-li .bull { color:#7a8aa0; }
+  .note-li.sub { margin-left:26px; } .note-li.sub2 { margin-left:48px; }
+  .qnum-badge { background:#e0e7ff; color:#3730a3; font-weight:700; min-width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; padding:0 6px; }
+  input[type=text]{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:15px; width:150px; }
+  input[type=text]:focus{ border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.14); outline:none; }
+  table.note-table { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.note-table th, table.note-table td { border:1px solid #d3dce6; padding:10px 12px; font-size:14.5px; vertical-align:top; text-align:left; }
+  table.note-table th { background:#eef2ff; }
+  .mcq { margin:6px 0 16px; }
+  .mcq .qtext { font-weight:600; margin-bottom:6px; display:flex; gap:8px; }
+  .mcq label { display:flex; gap:9px; align-items:flex-start; padding:6px 10px; border-radius:7px; cursor:pointer; }
+  .mcq label:hover { background:#eef2fa; }
+  .mcq input{ accent-color:#1e1b4b; margin-top:3px; }
+  .tfng-opts { display:flex; gap:10px; flex-wrap:wrap; }
+  .tfng-opts label { border:1px solid #dfe4ee; border-radius:8px; padding:6px 14px; }
+  select{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:14.5px; min-width:70px; }
+  select:focus{ border-color:#4f46e5; outline:none; }
+  .match-box { border:1px solid #d8e0ea; border-radius:10px; background:#f6f8ff; padding:14px 18px; margin-bottom:14px; }
+  .match-box .mb-h { text-align:center; font-weight:700; margin-bottom:8px; }
+  .match-box .mb-row { display:flex; gap:10px; padding:2px 0; }
+  .match-q { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .match-q .mq-txt { flex:1; }
+
+  .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+  .submit-btn:hover { transform:translateY(-2px); }
+
+  /* 结果 */
+  #resultArea { display:none; }
+  .res-card { background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .res-title { font-size:24px; font-weight:800; color:#1e1b4b; margin:4px 0 2px; }
+  .res-meta { color:#6b7a8f; font-size:13px; margin-bottom:20px; }
+  .res-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:680px){ .res-stats{grid-template-columns:1fr;} }
+  .stat-box { border-radius:14px; padding:26px 16px; text-align:center; }
+  .stat-box.s1 { background:#eef2ff; } .stat-box.s2 { background:#eefaf2; } .stat-box.s3 { background:#f5f3ff; }
+  .stat-box .big { font-size:40px; font-weight:800; line-height:1; }
+  .stat-box.s1 .big { color:#4f46e5; } .stat-box.s2 .big { color:#1e8449; } .stat-box.s3 .big { color:#5b3fd6; }
+  .stat-box .cap { color:#5a7184; margin-top:8px; font-size:14px; }
+  .stat-box .sub2 { color:#8a96a5; font-size:12px; margin-top:2px; }
+  .progress-wrap { margin-top:22px; }
+  .progress-wrap .pw-top { display:flex; justify-content:space-between; font-size:13px; color:#5a7184; margin-bottom:6px; }
+  .pw-track { height:14px; background:#e2e8f0; border-radius:10px; overflow:hidden; }
+  .pw-fill { height:100%; background:linear-gradient(90deg,#6366f1,#27ae60); width:0; transition:width .8s; }
+
+  .detail-h { font-size:20px; font-weight:800; color:#1e1b4b; margin:26px 0 12px; }
+  .sec-result { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.05); margin-bottom:12px; overflow:hidden; }
+  .sec-result .sr-head { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; cursor:pointer; }
+  .sec-result .sr-head h5 { margin:0; font-size:17px; }
+  .sec-result .sr-head .sr-sum { font-size:13px; color:#6b7a8f; margin-top:3px; }
+  .sec-result .sr-head .sr-sum .ok { color:#1e8449; font-weight:700; } .sec-result .sr-head .sr-sum .bad { color:#c0392b; font-weight:700; }
+  .sr-body { display:none; padding:0 22px 16px; }
+  .sec-result.open .sr-body { display:block; }
+  .sr-chevron { transition:transform .2s; color:#8a96a5; }
+  .sec-result.open .sr-chevron { transform:rotate(180deg); }
+  .ritem { padding:12px 16px; border-radius:9px; margin:8px 0; border-left:5px solid transparent; }
+  .ritem.correct { background:#e8f8ee; border-left-color:#27ae60; }
+  .ritem.wrong { background:#fdeaea; border-left-color:#e74c3c; }
+  .ritem .rq { font-weight:700; color:#22303f; }
+  .ritem .ra { font-size:14px; margin-top:4px; }
+  .ritem .ra .yours { color:#7b1a1a; } .ritem .ra .correctv { color:#145a32; font-weight:700; }
+  .ritem .rex { font-size:13.5px; color:#3a4a5a; margin-top:6px; background:rgba(255,255,255,.65); padding:7px 11px; border-radius:7px; }
+  .back-row { text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="brandtag">优益思达</span> 剑桥雅思真题测试</h1>
+  <div class="timer" id="timer"><span id="timerText">00:00</span></div>
+</div>
+
+<!-- 封面 -->
+<div class="container" id="coverArea">
+  <div class="cover-hero">
+    <div class="cover-badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">16</div></div>
+    <div>
+      <h2>剑桥雅思 16 · Test 3</h2>
+      <div class="sub">学术类阅读 · 官方真题 · 自动批改并给出雅思预估分。点击下方开始测试。</div>
+    </div>
+  </div>
+  <div class="paper-card-wrap">
+    <div class="paper-card" onclick="openMode()">
+      <div class="pc-icon">📖</div>
+      <h3>学术类阅读 (Academic Reading)</h3>
+      <div class="pc-meta" id="coverMeta">加载中…</div>
+      <div class="pc-go">开始测试 ›</div>
+    </div>
+  </div>
+</div>
+
+<!-- 模式弹窗 -->
+<div class="modal-mask" id="modeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeMode()">×</button>
+    <h2>选择模式</h2>
+    <div class="mode-grid">
+      <div class="mode-box practice">
+        <div class="mb-ic">📘</div>
+        <h3>练习模式</h3>
+        <div class="mb-desc">适合分篇突破，可只练某几篇文章，正向计时不施加压力。</div>
+        <div class="mb-sub"><span>选择练习文章：</span><button onclick="toggleAll()" id="toggleAllBtn">取消全选</button></div>
+        <div id="sectionChecks"></div>
+        <button class="mode-start" onclick="startTest('practice')">开始练习</button>
+      </div>
+      <div class="mode-box exam">
+        <div class="mb-ic">⏱️</div>
+        <h3>模考模式</h3>
+        <div class="mb-desc">完整模拟真实考试：所有文章一次完成，限时 60 分钟。</div>
+        <div class="mb-sub"><span>测试信息：</span></div>
+        <div style="color:#445;font-size:14.5px;" id="examInfo">完整测试（限时 60 分钟）</div>
+        <ul class="exam-list" id="examList"></ul>
+        <button class="mode-start" onclick="startTest('exam')">开始模考</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 答题区 -->
+<div class="container" id="testArea">
+  <div class="test-topbar">
+    <div><div class="tt-title" id="testTitle"></div><span class="tt-mode" id="testModeTag"></span></div>
+    <button class="btn-ghost" onclick="backToCover()">← 返回封面</button>
+  </div>
+  <div id="questionsHolder"></div>
+  <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+</div>
+
+<!-- 结果区 -->
+<div class="container" id="resultArea">
+  <div class="res-card">
+    <div style="font-size:14px;color:#4338ca;font-weight:700;">🏆 批改报告</div>
+    <div class="res-title" id="resTitle"></div>
+    <div class="res-meta" id="resMeta"></div>
+    <div class="res-stats">
+      <div class="stat-box s1"><div class="big" id="resCorrect">0/0</div><div class="cap">答对题数</div></div>
+      <div class="stat-box s2"><div class="big" id="resPct">0%</div><div class="cap">正确率</div></div>
+      <div class="stat-box s3"><div class="big" id="resBand">-</div><div class="cap">雅思预估分</div><div class="sub2" id="resLevel"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="pw-top"><span>总体进度</span><span id="resProgLbl">0 / 0</span></div>
+      <div class="pw-track"><div class="pw-fill" id="resProgFill"></div></div>
+    </div>
+    <div class="instruction" id="bandNote" style="margin-top:14px;font-style:normal;color:#8a96a5;font-size:12px;"></div>
+  </div>
+  <div class="detail-h">详细结果</div>
+  <div id="detailHolder"></div>
+  <div class="back-row"><button class="btn-ghost" onclick="backToCover()">返回封面</button></div>
+</div>
+
+<script>
+/* ============================================================
+   一、试卷数据 —— 剑桥雅思20 Test 4 学术类阅读（官方原题 + 官方答案）
+   说明：每篇文章为一个对象 {id, passage:{title,byline,paras[]}, groups:[...]}
+   再发来 Passage 2、3 时按相同格式追加进 passages 数组即可。
+   ============================================================ */
+const TEST = {
+  meta:{ volume:16, testNo:3 },
+  durationMin:60,
+  passages:[
+    { id:1,
+      passage:{
+        title:'Roman shipbuilding and navigation',
+        byline:'You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.',
+        paras:[
+          `Shipbuilding today is based on science and ships are built using computers and sophisticated tools. Shipbuilding in ancient Rome, however, was more of an art relying on estimation, inherited techniques and personal experience. The Romans were not traditionally sailors but mostly land-based people, who learned to build ships from the people that they conquered, namely the Greeks and the Egyptians.`,
+          `There are a few surviving written documents that give descriptions and representations of ancient Roman ships, including the sails and rigging. Excavated vessels also provide some clues about ancient shipbuilding techniques. Studies of these have taught us that ancient Roman shipbuilders built the outer hull first, then proceeded with the frame and the rest of the ship. Planks used to build the outer hull were initially sewn together. Starting from the 6th century BCE, they were fixed using a method called mortise and tenon, whereby one plank locked into another without the need for stitching. Then in the first centuries of the current era, Mediterranean shipbuilders shifted to another shipbuilding method, still in use today, which consisted of building the frame first and then proceeding with the hull and the other components of the ship. This method was more systematic and dramatically shortened ship construction times. The ancient Romans built large merchant ships and warships whose size and technology were unequalled until the 16th century CE.`,
+          `Warships were built to be lightweight and very speedy. They had to be able to sail near the coast, which is why they had no ballast or excess load and were built with a long, narrow hull. They did not sink when damaged and often would lie crippled on the sea's surface following naval battles. They had a bronze battering ram, which was used to pierce the timber hulls or break the oars of enemy vessels. Warships used both wind (sails) and human power (oarsmen) and were therefore very fast. Eventually, Rome's navy became the largest and most powerful in the Mediterranean, and the Romans had control over what they therefore called Mare Nostrum meaning 'our sea'.`,
+          `There were many kinds of warship. The 'trireme' was the dominant warship from the 7th to 4th century BCE. It had rowers in the top, middle and lower levels, and approximately 50 rowers in each bank. The rowers at the bottom had the most uncomfortable position as they were under the other rowers and were exposed to the water entering through the oar-holes. It is worth noting that contrary to popular perception, rowers were not slaves but mostly Roman citizens enrolled in the military. The trireme was superseded by larger ships with even more rowers.`,
+          `Merchant ships were built to transport lots of cargo over long distances and at a reasonable cost. They had a wider hull, double planking and a solid interior for added stability. Unlike warships, their V-shaped hull was deep underwater, meaning that they could not sail too close to the coast. They usually had two huge side rudders located off the stern and controlled by a small tiller bar connected to a system of cables. They had from one to three masts with large square sails and a small triangular sail at the bow. Just like warships, merchant ships used oarsmen, but coordinating the hundreds of rowers in both types of ship was not an easy task. In order to assist them, music would be played on an instrument, and oars would then keep time with this.`,
+          `The cargo on merchant ships included raw materials (e.g. iron bars, copper, marble and granite), and agricultural products (e.g. grain from Egypt's Nile valley). During the Empire, Rome was a huge city by ancient standards of about one million inhabitants. Goods from all over the world would come to the city through the port of Pozzuoli situated west of the bay of Naples in Italy and through the gigantic port of Ostia situated at the mouth of the Tiber River. Large merchant ships would approach the destination port and, just like today, be intercepted by a number of towboats that would drag them to the quay.`,
+          `The time of travel along the many sailing routes could vary widely. Navigation in ancient Rome did not rely on sophisticated instruments such as compasses but on experience, local knowledge and observation of natural phenomena. In conditions of good visibility, seamen in the Mediterranean often had the mainland or islands in sight, which greatly facilitated navigation. They sailed by noting their position relative to a succession of recognisable landmarks. When weather conditions were not good or where land was no longer visible, Roman mariners estimated directions from the pole star or, with less accuracy, from the Sun at noon. They also estimated directions relative to the wind and swell. Overall, shipping in ancient Roman times resembled shipping today with large vessels regularly crossing the seas and bringing supplies from their Empire.`
+        ]
+      },
+      groups:[
+        { kind:'tfng', title:'Questions 1–5',
+          instruction:'Do the following statements agree with the information given in Reading Passage 1? Choose TRUE, FALSE, or NOT GIVEN.',
+          questions:[
+            {id:'Q1',no:1,q:`The Romans' shipbuilding skills were passed on to the Greeks and the Egyptians.`,answer:['FALSE'],explain:`第1段：罗马人向希腊和埃及人学习造船，方向相反。 FALSE。`},
+            {id:'Q2',no:2,q:`Skilled craftsmen were needed for the mortise and tenon method of fixing planks.`,answer:['NOT GIVEN'],explain:`第2段介绍了该技术，但未说是否需要熟练工匠。 NOT GIVEN。`},
+            {id:'Q3',no:3,q:`The later practice used by Mediterranean shipbuilders involved building the hull before the frame.`,answer:['FALSE'],explain:`第2段：后来的方法是先建造骨架（frame），再建造船体（hull）。题干相反。 FALSE。`},
+            {id:'Q4',no:4,q:`The Romans called the Mediterranean Sea Mare Nostrum because they dominated its use.`,answer:['TRUE'],explain:`第3段："Romans had control over… Mare Nostrum"。 TRUE。`},
+            {id:'Q5',no:5,q:`Most rowers on ships were people from the Roman army.`,answer:['TRUE'],explain:`第4段：桨手"mostly Roman citizens enrolled in the military"（军事公民）。 TRUE。`},
+          ]},
+        { kind:'note', title:'Questions 6–13',
+          instruction:'Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.',
+          noteTitle:'Warships and merchant ships',
+          lines:[
+            {plain:true, html:`Warships were designed so that they were <Q n="6"> and moved quickly. They often remained afloat after battles and were able to sail close to land as they lacked any additional weight. A battering ram made of <Q n="7"> was included in the design for attacking and damaging the timber and oars of enemy ships. Warships, such as the 'trireme', had rowers on three different <Q n="8">.`},
+            {plain:true, html:`Unlike warships, merchant ships had a broad <Q n="9"> that lay far below the surface of the sea. Merchant ships were steered through the water with the help of large rudders and a tiller bar. They had both square and <Q n="10"> sails. On merchant ships and warships, <Q n="11"> was used to ensure rowers moved their oars in and out of the water at the same time.`},
+            {plain:true, html:`Quantities of agricultural goods such as <Q n="12"> were transported by merchant ships to two main ports in Italy. The ships were pulled to the shore by <Q n="13">.`},
+          ],
+          questions:[
+            {id:'Q6',no:6,answer:['lightweight'],explain:`第3段：战船轻便 lightweight 而快速。答案：lightweight。`},
+            {id:'Q7',no:7,answer:['bronze'],explain:`第3段：青铜 bronze 冲角。答案：bronze。`},
+            {id:'Q8',no:8,answer:['levels'],explain:`第4段：三层 levels 桨手。答案：levels。`},
+            {id:'Q9',no:9,answer:['hull'],explain:`第5段：船体（hull）深入水面以下。答案：hull。`},
+            {id:'Q10',no:10,answer:['triangular'],explain:`第5段：三角形 triangular 帆。答案：triangular。`},
+            {id:'Q11',no:11,answer:['music'],explain:`第5段：演奏音乐 music 来协调划桨。答案：music。`},
+            {id:'Q12',no:12,answer:['grain'],explain:`第6段：粮食 grain（来自埃及尼罗河谷）。答案：grain。`},
+            {id:'Q13',no:13,answer:['towboats'],explain:`第6段：由拖船 towboats 拖至码头。答案：towboats。`},
+          ]},
+      ]},
+    { id:2,
+      passage:{
+        title:`Climate change reveals ancient artefacts in Norway's glaciers`,
+        byline:'You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.',
+        paras:[
+          `<span class="para-label">A</span>Well above the treeline in Norway's highest mountains, ancient fields of ice are shrinking as Earth's climate warms. As the ice has vanished, it has been giving up the treasures it has preserved in cold storage for the last 6,000 years – items such as ancient arrows and skis from Viking Age traders. And those artefacts have provided archaeologists with some surprising insights into how ancient Norwegians made their livings.`,
+          `<span class="para-label">B</span>Organic materials like textiles and hides are relatively rare finds at archaeological sites. This is because unless they're protected from the microorganisms that cause decay, they tend not to last long. Extreme cold is one reliable way to keep artefacts relatively fresh for a few thousand years, but once thawed out, these materials experience degradation relatively swiftly. With climate change shrinking ice cover around the world, glacial archaeologists need to race the clock to find newly revealed artefacts, preserve them, and study them. If something fragile dries and is windblown it might very soon be lost to science, or an arrow might be exposed and then covered again by the next snow and remain well-preserved. The unpredictability means that glacial archaeologists have to be systematic in their approach to fieldwork.`,
+          `<span class="para-label">C</span>Over a nine-year period, a team of archaeologists, which included Lars Pilø of Oppland County Council, Norway, and James Barrett of the McDonald Institute for Archaeological Research, surveyed patches of ice in Oppland, an area of south-central Norway that is home to some of the country's highest mountains. Reindeer once congregated on these icy patches in the later summer months to escape biting insects, and from the late Stone Age, hunters followed. In addition, trade routes threaded through the mountain passes of Oppland, linking settlements in Norway to the rest of Europe. The slow but steady movement of glaciers tends to destroy anything at their bases, so the team focused on stationary patches of ice, mostly above 1,400 metres. That ice is found amid fields of frost-weathered boulders, fallen rocks, and exposed bedrock that for nine months of the year is buried beneath snow. 'Fieldwork is hard work – hiking with all our equipment, often camping on permafrost – but very rewarding. You're rescuing the archaeology, bringing the melting ice to wider attention, discovering a unique environmental history and really connecting with the natural environment,' says Barrett.`,
+          `<span class="para-label">D</span>At the edges of the contracting ice patches, archaeologists found more than 2,000 artefacts, which formed a material record that ran from 4,000 BCE to the beginnings of the Renaissance in the 14th century. Many of the artefacts are associated with hunting. Hunters would have easily misplaced arrows and they often discarded broken bows rather than take them all the way home. Other items could have been used by hunters traversing the high mountain passes of Oppland: all-purpose items like tools, skis, and horse tack.`,
+          `<span class="para-label">E</span>Barrett's team radiocarbon-dated 153 of the artefacts and compared those dates to the timing of major environmental changes in the region – such as periods of cooling or warming – and major social and economic shifts – such as the growth of farming settlements and the spread of international trade networks leading up to the Viking Age. They found that some periods had produced lots of artefacts, which indicates that people had been pretty active in the mountains during those times. But there were few or no signs of activity during other periods.`,
+          `<span class="para-label">F</span>What was surprising, according to Barrett, was the timing of these periods. Oppland's mountains present daunting terrain and in periods of extreme cold, glaciers could block the higher mountain passes and make travel in the upper reaches of the mountains extremely difficult. Archaeologists assumed people would stick to lower elevations during a time like the Late Antique Little Ice Age, a short period of deeper-than-usual cold from about 536–600 CE. But it turned out that hunters kept regularly venturing into the mountains even when the climate turned cold, based on the amount of stuff they had apparently dropped there. 'Remarkably, though, the finds from the ice may have continued through this period, perhaps suggesting that the importance of mountain hunting increased to supplement failing agricultural harvests in times of low temperatures,' says Barrett. A colder turn in the Scandinavian climate would likely have meant widespread crop failures, so more people would have depended on hunting to make up for those losses.`,
+          `<span class="para-label">G</span>Many of the artefacts Barrett's team recovered date from the beginning of the Viking Age, the 700s through to the 900s CE. Trade networks connecting Scandinavia with Europe and the Middle East were expanding around this time. Although we usually think of ships when we think of Scandinavian expansion, these recent discoveries show that plenty of goods travelled on overland routes, like the mountain passes of Oppland. And growing Norwegian towns, along with export markets, would have created a booming demand for hides to fight off the cold, as well as antlers to make useful things like combs. Business must have been good for hunters.`,
+          `<span class="para-label">H</span>Norway's mountains are probably still hiding a lot of history – and prehistory – in remote ice patches. When Barrett's team looked at the dates for their sample of 153 artefacts, they noticed a gap with almost no artefacts from about 3,800 to 2,200 BCE. In fact, archaeological finds from that period are rare all over Norway. The researchers say that could be because many of those artefacts have already disintegrated or are still frozen in the ice. That means archaeologists could be extracting some of those artefacts from retreating ice in years to come.`
+        ]
+      },
+      groups:[
+        { kind:'match', title:'Questions 14–19', noBox:true,
+          instruction:'Reading Passage 2 has eight sections, A–H. Which section contains the following information? Write the correct letter, A–H.',
+          box:{A:'',B:'',C:'',D:'',E:'',F:'',G:'',H:''},
+          questions:[
+            {id:'Q14',no:14,q:`an explanation for weapons being left behind in the mountains`,answer:['D'],explain:`D段：猎人容易丢失箭支，或将损坏的弓丢弃。 D。`},
+            {id:'Q15',no:15,q:`a reference to the physical difficulties involved in an archaeological expedition`,answer:['C'],explain:`C段：负重徒步、在永久冻土上露营等艰辛。 C。`},
+            {id:'Q16',no:16,q:`an explanation of why less food may have been available`,answer:['F'],explain:`F段：气候变冷导致农业歉收，食物减少。 F。`},
+            {id:'Q17',no:17,q:`a reference to the possibility of future archaeological discoveries`,answer:['H'],explain:`H段：未来随冰川退缩可能发现更多文物。 H。`},
+            {id:'Q18',no:18,q:`examples of items that would have been traded`,answer:['G'],explain:`G段：皮革和鹿角等贸易物品。 G。`},
+            {id:'Q19',no:19,q:`a reference to the pressure archaeologists are under to work quickly`,answer:['B'],explain:`B段：气候变化迫使考古学家与时间赛跑。 B。`},
+          ]},
+        { kind:'note', title:'Questions 20–22',
+          instruction:'Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.',
+          noteTitle:'Interesting finds at an archaeological site',
+          lines:[
+            {plain:true, html:`Organic materials such as animal skins and textiles are not discovered very often at archaeological sites. They have little protection against <Q n="20"> which means that they decay relatively quickly. But this is not always the case. If temperatures are low enough, fragile artefacts can be preserved for thousands of years. A team of archaeologists have been working in the mountains in Oppland in Norway to recover artefacts revealed by shrinking ice cover. In the past, there were trade routes through these mountains and <Q n="21"> gathered there in the summer months to avoid being attacked by <Q n="22"> on lower ground.`},
+          ],
+          questions:[
+            {id:'Q20',no:20,answer:['microorganisms','micro-organisms'],explain:`B段：无法防御导致腐烂的微生物 microorganisms。答案：microorganisms。`},
+            {id:'Q21',no:21,answer:['reindeer'],explain:`C段：驯鹿 reindeer 夏季聚集于此。答案：reindeer。`},
+            {id:'Q22',no:22,answer:['insects'],explain:`C段：躲避低地的昆虫 insects 叮咬。答案：insects。`},
+          ]},
+        { kind:'multi', title:'Questions 23 and 24',
+          instruction:"Choose TWO letters, A–E. Which TWO of the following statements does the writer make about the discoveries of Barrett's team?",
+          box:{A:`Artefacts found in the higher mountain passes were limited to skiing equipment.`,B:`Hunters went into the mountains even during periods of extreme cold.`,C:`The number of artefacts from certain time periods was relatively low.`,D:`Radiocarbon dating of artefacts produced some unreliable results.`,E:`More artefacts were found in Oppland than at any other mountain site.`},
+          groupId:'Q23_24', answerSet:['B','C'],
+          questions:[{id:'Q23',no:23,explain:`选两项（顺序不限）：B 与 C。`},{id:'Q24',no:24,explain:`同上，正确两项为 B 与 C。`}]},
+        { kind:'multi', title:'Questions 25 and 26',
+          instruction:'Choose TWO letters, A–E. Which TWO of the following statements does the writer make about the Viking Age?',
+          box:{A:`Hunters at this time benefited from an increased demand for goods.`,B:`The beginning of the period saw the greatest growth in the wealth of Vikings.`,C:`Vikings did not rely on ships alone to transport goods.`,D:`Norwegian towns at this time attracted traders from around the world.`,E:`Vikings were primarily interested in their trading links with the Middle East.`},
+          groupId:'Q25_26', answerSet:['A','C'],
+          questions:[{id:'Q25',no:25,explain:`选两项（顺序不限）：A 与 C。`},{id:'Q26',no:26,explain:`同上，正确两项为 A 与 C。`}]},
+      ]},
+    { id:3,
+      passage:{
+        title:`Plant 'thermometer' triggers springtime growth by measuring night-time heat`,
+        byline:`You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below. A photoreceptor molecule in plant cells has been found to have a second job as a thermometer after dark – allowing plants to read seasonal temperature changes.`,
+        paras:[
+          `<span class="para-label">A</span>An international team of scientists led by the University of Cambridge has discovered that the 'thermometer' molecule in plants enables them to develop according to seasonal temperature changes. Researchers have revealed that molecules called phytochromes – used by plants to detect light during the day – actually change their function in darkness to become cellular temperature gauges that measure the heat of the night. The new findings, published in the journal Science, show that phytochromes control genetic switches in response to temperature as well as light to dictate plant development.`,
+          `<span class="para-label">B</span>At night, these molecules change states, and the pace at which they change is 'directly proportional to temperature', say scientists, who compare phytochromes to mercury in a thermometer. The warmer it is, the faster the molecular change – stimulating plant growth.`,
+          `<span class="para-label">C</span>Farmers and gardeners have known for hundreds of years how responsive plants are to temperature: warm winters cause many trees and flowers to bud early, something humans have long used to predict weather and harvest times for the coming year. The latest research pinpoints for the first time a molecular mechanism in plants that reacts to temperature – often triggering the buds of spring we long to see at the end of winter.`,
+          `<span class="para-label">D</span>With weather and temperatures set to become ever more unpredictable due to climate change, researchers say the discovery that this light-sensing molecule also functions as the internal thermometer in plant cells could help us breed tougher crops. 'It is estimated that agricultural yields will need to double by 2050, but climate change is a major threat to achieving this. Key crops such as wheat and rice are sensitive to high temperatures. Thermal stress reduces crop yields by around 10% for every one degree increase in temperature,' says lead researcher Dr Philip Wigge from Cambridge's Sainsbury Laboratory. 'Discovering the molecules that allow plants to sense temperature has the potential to accelerate the breeding of crops resilient to thermal stress and climate change.'`,
+          `<span class="para-label">E</span>In their active state, phytochrome molecules bind themselves to DNA to restrict plant growth. During the day, sunlight activates the molecules, slowing down growth. If a plant finds itself in shade, phytochromes are quickly inactivated – enabling it to grow faster to find sunlight again. This is how plants compete to escape each other's shade. 'Light-driven changes to phytochrome activity occur very fast, in less than a second,' says Wigge. At night, however, it's a different story. Instead of a rapid deactivation following sundown, the molecules gradually change from their active to inactive state. This is called 'dark reversion'. 'Just as mercury rises in a thermometer, the rate at which phytochromes revert to their inactive state during the night is a direct measure of temperature,' says Wigge.`,
+          `<span class="para-label">F</span>'The lower the temperature, the slower the rate at which phytochromes revert to inactivity, so the molecules spend more time in their active, growth-suppressing state. This is why plants are slower to grow in winter. Warm temperatures accelerate dark reversion, so that phytochromes rapidly reach an inactive state and detach themselves from the plant's DNA – allowing genes to be expressed and plant growth to resume.' Wigge believes phytochrome thermo-sensing evolved at a later stage, and co-opted the biological network already used for light-based growth during the downtime of night.`,
+          `<span class="para-label">G</span>Some plants mainly use day length as an indicator of the season. Other species, such as daffodils, have considerable temperature sensitivity, and can flower months in advance during a warm winter. In fact, the discovery of the dual role of phytochromes provides the science behind a well-known rhyme long used to predict the coming season: 'oak before ash we'll have a splash, ash before oak we're in for a soak.' Wigge explains: 'Oak trees rely much more on temperature, likely using phytochromes as thermometers to dictate development, whereas ash trees rely on measuring day length to determine their seasonal timing. A warmer spring, and consequently a higher likeliness of a hot summer, will result in oak leafing before ash. A cold spring will see the opposite. As the British know only too well, a colder summer is likely to be a rain-soaked one.'`,
+          `<span class="para-label">H</span>The new findings are the culmination of twelve years of research involving scientists from Germany, Argentina and the US, as well as the Cambridge team. The work was done in a model system, using a mustard plant called Arabidopsis, but Wigge says the phytochrome genes necessary for temperature sensing are found in crop plants as well. 'Recent advances in plant genetics now mean that scientists are able to rapidly identify the genes controlling these processes in crop plants, and even alter their activity using precise molecular "scalpels",' adds Wigge. 'Cambridge is uniquely well-positioned to do this kind of research as we have outstanding collaborators nearby who work on more applied aspects of plant biology, and can help us transfer this new knowledge into the field.'`
+        ]
+      },
+      groups:[
+        { kind:'tfng', title:'Questions 27–32',
+          instruction:'Do the following statements agree with the information given in Reading Passage 3? Choose TRUE, FALSE, or NOT GIVEN.',
+          questions:[
+            {id:'Q27',no:27,q:`The Cambridge scientists' discovery of the 'thermometer molecule' caused surprise among other scientists.`,answer:['NOT GIVEN'],explain:`文中未提其他科学家的反应。 NOT GIVEN。`},
+            {id:'Q28',no:28,q:`The target for agricultural production by 2050 could be missed.`,answer:['TRUE'],explain:`D段：气候变化是"major threat"达到2050产量目标的威胁。 TRUE。`},
+            {id:'Q29',no:29,q:`Wheat and rice suffer from a rise in temperatures.`,answer:['TRUE'],explain:`D段：小麦和水稻对高温敏感。 TRUE。`},
+            {id:'Q30',no:30,q:`It may be possible to develop crops that require less water.`,answer:['NOT GIVEN'],explain:`文中讨论的是耐热而非耐旱作物。 NOT GIVEN。`},
+            {id:'Q31',no:31,q:`Plants grow faster in sunlight than in shade.`,answer:['FALSE'],explain:`E段：阳光会激活光敏素从而减慢生长；遮阴时才生长更快。 FALSE。`},
+            {id:'Q32',no:32,q:`Phytochromes change their state at the same speed day and night.`,answer:['FALSE'],explain:`E段：白天的光驱变化不到一秒；夜晚是"逐渐"变化——速度不同。 FALSE。`},
+          ]},
+        { kind:'match', title:'Questions 33–37', noBox:true,
+          instruction:'Reading Passage 3 has eight sections, A–H. Which section contains the following information?',
+          box:{A:'',B:'',C:'',D:'',E:'',F:'',G:'',H:''},
+          questions:[
+            {id:'Q33',no:33,q:`mention of specialists who can make use of the research findings`,answer:['H'],explain:`H段：提到可以将研究转化为应用的合作者。 H。`},
+            {id:'Q34',no:34,q:`a reference to a potential benefit of the research findings`,answer:['D'],explain:`D段：有助于培育耐热抗气候变化作物。 D。`},
+            {id:'Q35',no:35,q:`scientific support for a traditional saying`,answer:['G'],explain:`G段：用光敏素理论解释"橡树先于白蜡树"的民间谚语。 G。`},
+            {id:'Q36',no:36,q:`a reference to people traditionally making plans based on plant behaviour`,answer:['C'],explain:`C段：农民和园丁用植物的温度响应来预测天气和收获时间。 C。`},
+            {id:'Q37',no:37,q:`a reference to where the research has been reported`,answer:['A'],explain:`A段：发表于 Science 期刊。 A。`},
+          ]},
+        { kind:'note', title:'Questions 38–40',
+          instruction:'Complete the sentences below. Choose NO MORE THAN TWO WORDS from the passage for each answer.',
+          lines:[
+            {bullet:true, html:`Daffodils are likely to flower early in response to <Q n="38"> weather.`},
+            {bullet:true, html:`If ash trees come into leaf before oak trees, the weather in <Q n="39"> will probably be wet.`},
+            {bullet:true, html:`The research was carried out using a particular species of <Q n="40">`},
+          ],
+          questions:[
+            {id:'Q38',no:38,answer:['warm','warm winter'],explain:`G段：水仙花在温暖的冬天（warm winter）提前开花。答案：warm (winter)。`},
+            {id:'Q39',no:39,answer:['summer'],explain:`G段：白蜡先于橡树——夏天 summer 会多雨。答案：summer。`},
+            {id:'Q40',no:40,answer:['mustard plant','mustard'],explain:`H段：使用芥末植物 mustard plant（Arabidopsis）作为模型。答案：mustard plant(s)。`},
+          ]},
+      ]},
+  ]
+};
+
+
+/* 官方 学术类阅读 原始分(0-40) → 雅思分 对照表 */
+const BAND_TABLE = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0],[4,2.5],[0,2.0]];
+const LEVEL_LABEL = [[8.5,'Expert / Very good user'],[7.0,'Good user'],[6.0,'Competent user'],[5.0,'Modest user'],[4.0,'Limited user'],[0,'Basic user']];
+function lookupBand(correct,total){ const scaled = total===40?correct:Math.round(correct/Math.max(1,total)*40); for(const [m,b] of BAND_TABLE) if(scaled>=m) return b; return 2.0; }
+function levelLabel(b){ for(const [m,l] of LEVEL_LABEL) if(b>=m) return l; return ''; }
+
+/* ============================================================
+   二、引擎
+   ============================================================ */
+let currentPaper=[], selectedSections=[], mode='practice', startTime=0, timerInterval=null, submitted=false;
+const allQs = sec => sec.groups.flatMap(g=>g.questions);
+const totalQs = () => TEST.passages.reduce((n,p)=>n+allQs(p).length,0);
+
+/* 封面信息 */
+(function initCover(){
+  document.getElementById('coverMeta').textContent = `${TEST.passages.length} 篇文章 · 共 ${totalQs()} 题`;
+})();
+
+/* 模式弹窗 */
+function openMode(){
+  document.getElementById('sectionChecks').innerHTML =
+    TEST.passages.map(p=>`<label class="sec-check"><input type="checkbox" class="secbox" value="${p.id}" checked> Passage ${p.id}（${allQs(p).length} 题）</label>`).join('');
+  document.getElementById('examList').innerHTML = TEST.passages.map(p=>`<li>• Passage ${p.id}</li>`).join('');
+  document.getElementById('toggleAllBtn').textContent='取消全选';
+  document.getElementById('modeModal').classList.add('show');
+}
+function closeMode(){ document.getElementById('modeModal').classList.remove('show'); }
+function toggleAll(){ const b=[...document.querySelectorAll('.secbox')]; const off=b.some(x=>!x.checked); b.forEach(x=>x.checked=off); document.getElementById('toggleAllBtn').textContent=off?'取消全选':'全选'; }
+
+function startTest(m){
+  mode=m;
+  if(m==='practice'){ const ids=[...document.querySelectorAll('.secbox:checked')].map(b=>+b.value); if(!ids.length){ alert('请至少选择一篇文章。'); return; } selectedSections=ids; }
+  else selectedSections=TEST.passages.map(p=>p.id);
+  currentPaper=TEST.passages.filter(p=>selectedSections.includes(p.id));
+  closeMode(); submitted=false;
+  document.getElementById('coverArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('testArea').style.display='block';
+  renderPaper(); setupTimer();
+  window.scrollTo(0,0);
+}
+
+function renderPaper(){
+  document.getElementById('testTitle').textContent=`剑桥雅思16 · Test 3 — 阅读`;
+  document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
+  document.getElementById('questionsHolder').innerHTML = currentPaper.map(passageHtml).join('');
+}
+function passageHtml(p){
+  const pp=p.passage;
+  const article = `<div class="passage-pane">
+      <div class="pp-kicker">READING PASSAGE ${p.id}</div>
+      <h3 class="ptitle">${pp.title}</h3>
+      ${pp.byline?`<div class="pp-byline">${pp.byline}</div>`:''}
+      ${pp.paras.map(t=>`<p>${t}</p>`).join('')}
+    </div>`;
+  const qs = `<div class="qcol">${p.groups.map(groupHtml).join('')}</div>`;
+  return `<div class="section-banner" id="anchor_${p.id}">
+      <div class="sb-top"><span class="sb-title">Passage ${p.id}</span></div>
+      <div class="sb-meta">建议用时约 20 分钟 · 本篇共 ${allQs(p).length} 题</div>
+    </div><div class="reading-cols">${article}${qs}</div>`;
+}
+function expandQ(html){ // 把 <Q n="x"> 占位替换成 编号徽标 + 输入框
+  return (html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><input type="text" id="Q${n}" autocomplete="off">`);
+}
+function groupHtml(g){
+  let body='';
+  if(g.kind==='note'){
+    body=`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
+      g.lines.map(l=>{
+        if(l.h) return `<div class="note-h">${l.h}</div>`;
+        if(l.plain) return `<div class="note-li${l.sub?' sub':''}">${expandQ(l.html)}</div>`;
+        if(l.html==null) return '';
+        const cls='note-li'+(l.sub2?' sub2':(l.sub?' sub':''));
+        const mark=l.dash?'–':(l.bullet?'•':'');
+        return `<div class="${cls}"><span class="bull">${mark}</span> ${expandQ(l.html)}</div>`;
+      }).join('')+`</div>`;
+  }
+  else if(g.kind==='table'){
+    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const rows=g.rows.map(r=>`<tr>${r.map(cell=>`<td>${expandQ(cell)}</td>`).join('')}</tr>`).join('');
+    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+  }
+  else if(g.kind==='tfng'){
+    const opts = g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN'];
+    body=g.questions.map(q=>{
+      const radios=opts.map(v=>`<label><input type="radio" name="${q.id}" value="${v}"> <span>${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div><div class="tfng-opts">${radios}</div></div>`;
+    }).join('');
+  }
+  else if(g.kind==='mcq'){
+    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
+      const opts=Object.entries(q.options).map(([k,v])=>`<label><input type="radio" name="${q.id}" value="${k}"> <span><strong>${k}</strong> &nbsp;${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div>${opts}</div>`;
+    }).join('');
+  }
+  else if(g.kind==='match'){
+    const box=g.noBox ? '' : `<div class="match-box"><div class="mb-h">${g.boxTitle||''}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
+    const qs=(g.subTitle?`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`:'')+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='multi'){
+    const box=`<div class="match-box">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=k=>`<select id="${k}"><option value="">—</option>${Object.keys(g.box).map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">选择一项（本组合计选出正确的几项，顺序不限）</span>${sel(q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='wbank'){
+    // 选词填空：词库 A–H + 文中下拉
+    const cols=g.boxCols||2;
+    const box=`<div class="match-box wbank-box" style="columns:${cols};">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const letters=Object.keys(g.box);
+    const expand=html=>(html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><select id="Q${n}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`);
+    const para=(g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:'')+g.lines.map(l=>`<div class="note-li plain" style="display:block;">${expand(l.html)}</div>`).join('');
+    body=box+`<div class="note-box">${para}</div>`;
+  }
+  return `<div class="qgroup"><h4>${g.title}</h4><div class="instruction">${g.instruction}</div>${body}</div>`;
+}
+
+/* 计时器 */
+function setupTimer(){
+  startTime=Date.now(); const t=document.getElementById('timer'); t.classList.add('show'); clearInterval(timerInterval);
+  if(mode==='exam'){ const total=TEST.durationMin*60;
+    timerInterval=setInterval(()=>{ const left=total-Math.floor((Date.now()-startTime)/1000);
+      if(left<=0){ clearInterval(timerInterval); document.getElementById('timerText').textContent='00:00'; alert('时间到，自动提交。'); submitTest(); return; }
+      t.classList.toggle('warn',left<=600&&left>120); t.classList.toggle('danger',left<=120);
+      document.getElementById('timerText').textContent=fmt(left); },500);
+  } else timerInterval=setInterval(()=>{ document.getElementById('timerText').textContent=fmt(Math.floor((Date.now()-startTime)/1000)); },500);
+}
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+/* 批改 */
+function norm(s){ return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,''); }
+function readAns(q){ const el=document.getElementById(q.id); if(el) return (el.tagName==='SELECT')?el.value:el.value.trim();
+  const r=document.getElementsByName(q.id); for(const x of r) if(x.checked) return x.value; return ''; }
+
+function confirmSubmit(){
+  let answered=0,total=0;
+  currentPaper.forEach(s=>allQs(s).forEach(q=>{ total++; if(readAns(q)!=='') answered++; }));
+  if(window.confirm(`已作答 ${answered}/${total} 题。\n确定提交并查看批改报告吗？`)) submitTest();
+}
+function submitTest(){
+  if(submitted) return; submitted=true;
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+
+  /* 先处理 multi 配对题（顺序不限、不重复计分） */
+  const pairCorrect={};
+  currentPaper.forEach(s=>s.groups.forEach(g=>{
+    if(g.kind==='multi'){ const set=g.answerSet.slice(); g.questions.forEach(q=>{ const ua=(readAns(q)||'').toUpperCase(); const i=set.indexOf(ua); if(ua&&i>-1){ pairCorrect[q.id]=true; set.splice(i,1);} else pairCorrect[q.id]=false; }); }
+  }));
+
+  let correct=0,total=0; const detail=[];
+  currentPaper.forEach(s=>{
+    let sc=0; const items=[];
+    s.groups.forEach(g=>g.questions.forEach(q=>{
+      const ua=readAns(q); let ok;
+      if(g.kind==='multi') ok=!!pairCorrect[q.id];
+      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      total++; if(ok){correct++;sc++;}
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+    }));
+    detail.push({s,sc,total:allQs(s).length,items});
+  });
+
+  const pct=total?Math.round(correct/total*100):0;
+  const band=lookupBand(correct,total);
+  const elapsed=Math.max(1,Math.round((Date.now()-startTime)/1000));
+
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resTitle').textContent='剑桥雅思16 · Test 3 — 阅读';
+  document.getElementById('resMeta').textContent=`${mode==='practice'?'练习模式':'模考模式'} · 用时 ${fmt(elapsed)} · 完成时间 ${new Date().toLocaleString('zh-CN')}`;
+  document.getElementById('resCorrect').textContent=`${correct}/${total}`;
+  document.getElementById('resPct').textContent=pct+'%';
+  document.getElementById('resBand').textContent=band.toFixed(1);
+  document.getElementById('resLevel').textContent='水平：'+levelLabel(band);
+  document.getElementById('resProgLbl').textContent=`${correct} / ${total}`;
+  setTimeout(()=>document.getElementById('resProgFill').style.width=pct+'%',60);
+  document.getElementById('bandNote').textContent = total===40
+    ? '雅思分按官方学术类阅读 40 题原始分对照表换算。'
+    : `本次仅测 ${total} 题，预估分按比例折算至 40 题后套用官方对照表；做完整 3 篇文章时为精确换算。`;
+
+  document.getElementById('detailHolder').innerHTML=detail.map((d,i)=>{
+    const sp=d.total?Math.round(d.sc/d.total*100):0;
+    const rows=d.items.map(it=>{
+      const cls=it.ok?'correct':'wrong';
+      const yours=it.ua?`你的答案：<span class="yours">${it.ua}</span>　`:`<span class="yours">未作答</span>　`;
+      return `<div class="ritem ${cls}"><div class="rq">${it.ok?'✔':'✘'} 第 ${it.q.no} 题</div>
+        <div class="ra">${it.ok?'<span class="correctv">回答正确</span>':yours+'正确答案：<span class="correctv">'+it.ans.join(' / ')+'</span>'}</div>
+        <div class="rex">💡 ${it.q.explain||''}</div></div>`;
+    }).join('');
+    return `<div class="sec-result${i===0?' open':''}"><div class="sr-head" onclick="this.parentNode.classList.toggle('open')">
+        <div><h5>Passage ${d.s.id}</h5><div class="sr-sum"><span class="${sp>=60?'ok':'bad'}">${d.sc} / ${d.total} 题正确　${sp}%</span></div></div>
+        <div class="sr-chevron">▾</div></div><div class="sr-body">${rows}</div></div>`;
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+function backToCover(){
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('coverArea').style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== */
+(function(){
+  function report(){
+    var rc=document.getElementById('resCorrect'); if(!rc) return;
+    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m) return;
+    var bandEl=document.getElementById('resBand'); var band=bandEl?parseFloat(bandEl.textContent):NaN;
+    try{ window.parent.postMessage({type:'yysd:score', score:+m[1], total:+m[2], band:isNaN(band)?null:band}, '*'); }catch(e){}
+  }
+  var rc=document.getElementById('resCorrect');
+  if(rc){ new MutationObserver(report).observe(rc,{childList:true,subtree:true,characterData:true}); }
+})();
+</script>
+</body>
+</html>
