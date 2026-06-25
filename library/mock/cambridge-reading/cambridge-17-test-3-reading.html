@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优益思达 · 剑桥雅思17 Test 3 阅读</title>
+<meta name="exam:title" content="剑桥雅思17 · Test 3（阅读）">
+<meta name="exam:zone" content="mock">
+<meta name="exam:subject" content="cambridge-reading">
+<meta name="exam:duration" content="0">
+<meta name="exam:description" content="剑桥雅思19 Test 1 学术类阅读（官方真题）：3 篇文章共 40 题（网球拍进化 / 地中海古代海盗 / 虚假信息），可单篇练习或完整模考，自动批改、解析与雅思预估分。">
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:'Segoe UI','PingFang SC',Roboto,sans-serif; background:#f0f2f6; margin:0; color:#1e2a3a; line-height:1.7; padding:0 0 60px; }
+  .header { background:linear-gradient(135deg,#1e1b4b,#312e81); color:#fff; padding:12px 28px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 18px rgba(0,0,0,.25); flex-wrap:wrap; gap:10px; }
+  .header h1 { margin:0; font-size:19px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .header h1 .brandtag { font-size:11px; background:#6366f1; padding:2px 9px; border-radius:20px; font-weight:600; letter-spacing:.5px; }
+  .timer { font-size:18px; font-weight:700; background:#1e8449; padding:6px 18px; border-radius:30px; display:none; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); transition:background .4s; }
+  .timer.show { display:flex; }
+  .timer.warn { background:#e67e22; } .timer.danger { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+  .container { max-width:1180px; margin:24px auto; padding:0 24px; }
+
+  /* 封面 */
+  .cover-hero { display:flex; align-items:center; gap:24px; background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .cover-badge { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border-radius:14px; padding:18px 30px; text-align:center; min-width:180px; }
+  .cover-badge .lbl { font-size:12px; letter-spacing:2px; color:#4f46e5; font-weight:600; }
+  .cover-badge .num { font-size:54px; font-weight:800; color:#4338ca; line-height:1; margin-top:4px; }
+  .cover-hero h2 { margin:0; font-size:30px; color:#1e1b4b; }
+  .cover-hero .sub { color:#6b7a8f; margin-top:6px; font-size:14px; }
+  .paper-card-wrap { margin-top:24px; }
+  .paper-card { border-radius:16px; padding:30px 26px; text-align:center; border:2px solid; transition:transform .15s,box-shadow .2s; background:#eef2ff; border-color:#c7d2fe; cursor:pointer; }
+  .paper-card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.10); }
+  .paper-card .pc-icon { font-size:40px; }
+  .paper-card h3 { margin:10px 0 4px; font-size:24px; color:#3730a3; }
+  .paper-card .pc-meta { font-size:13px; color:#6b7a8f; }
+  .paper-card .pc-go { margin-top:18px; display:inline-block; padding:11px 30px; border-radius:30px; color:#fff; font-weight:600; font-size:15px; background:#4f46e5; }
+
+  /* 模式弹窗 */
+  .modal-mask { display:none; position:fixed; inset:0; background:rgba(10,20,40,.55); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; max-width:880px; width:100%; padding:28px 30px 34px; position:relative; max-height:92vh; overflow:auto; }
+  .modal h2 { margin:0 0 20px; font-size:24px; color:#111; }
+  .modal-close { position:absolute; right:20px; top:18px; border:none; background:none; font-size:24px; color:#8a96a5; cursor:pointer; }
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:680px){ .mode-grid{grid-template-columns:1fr;} }
+  .mode-box { border:1px solid #e2e8f0; border-radius:14px; padding:24px 22px; }
+  .mode-box .mb-ic { width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 12px; }
+  .mode-box.practice .mb-ic { background:#e0e7ff; } .mode-box.exam .mb-ic { background:#ffe8cf; }
+  .mode-box h3 { text-align:center; margin:0 0 6px; font-size:20px; }
+  .mode-box .mb-desc { text-align:center; color:#6b7a8f; font-size:13.5px; min-height:38px; }
+  .mode-box .mb-sub { font-weight:700; color:#3730a3; margin:14px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .mode-box .mb-sub button { background:#fff; border:1px solid #cdd7e2; border-radius:8px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .sec-check { display:flex; align-items:center; gap:10px; padding:8px 4px; font-size:15px; font-weight:600; color:#3730a3; cursor:pointer; }
+  .sec-check input { width:18px; height:18px; accent-color:#4338ca; }
+  .exam-list { list-style:none; padding:0; margin:10px 0 0; color:#445; font-size:14.5px; }
+  .exam-list li { padding:3px 0; }
+  .mode-start { width:100%; margin-top:18px; border:none; color:#fff; font-weight:700; font-size:16px; padding:13px; border-radius:10px; cursor:pointer; }
+  .mode-box.practice .mode-start { background:#4f46e5; } .mode-box.exam .mode-start { background:#e67e22; }
+
+  /* 答题区 */
+  #testArea { display:none; }
+  .test-topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#fff; border-radius:14px; padding:14px 22px; box-shadow:0 4px 18px rgba(0,0,0,.05); margin-bottom:18px; position:sticky; top:60px; z-index:600; }
+  .test-topbar .tt-title { font-size:19px; font-weight:700; color:#1e1b4b; }
+  .test-topbar .tt-mode { font-size:13px; background:#eef2ff; color:#3730a3; padding:3px 12px; border-radius:20px; font-weight:600; }
+  .btn-ghost { border:1px solid #cdd7e2; background:#fff; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; color:#33475b; }
+  .btn-ghost:hover { background:#f3f6fa; }
+
+  .section-banner { background:#eef2ff; border:1px solid #c7d2fe; border-radius:12px; padding:14px 20px; margin:26px 0 14px; }
+  .section-banner .sb-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .section-banner .sb-title { font-size:20px; font-weight:800; color:#3730a3; letter-spacing:.5px; }
+  .section-banner .sb-meta { font-size:13px; color:#5a6b8a; margin-top:6px; }
+
+  /* 阅读分栏：左文章 右题目 */
+  .reading-cols { display:flex; gap:24px; align-items:flex-start; }
+  .passage-pane { flex:1 1 50%; background:#fff; border:1px solid #e3e6ee; border-radius:12px; padding:22px 26px; position:sticky; top:130px; max-height:calc(100vh - 150px); overflow:auto; }
+  .passage-pane .pp-kicker { font-size:12px; letter-spacing:1.5px; color:#6366f1; font-weight:700; }
+  .passage-pane .ptitle { margin:6px 0 4px; font-size:21px; color:#1e1b4b; }
+  .passage-pane .pp-byline { font-style:italic; color:#6b7a8f; font-size:13.5px; margin-bottom:12px; }
+  .passage-pane p { margin:0 0 13px; font-size:15px; text-align:justify; }
+  .passage-pane .para-label { font-weight:800; color:#4338ca; margin-right:6px; }
+  .qcol { flex:1 1 50%; min-width:0; }
+  @media(max-width:900px){
+    .reading-cols { flex-direction:column; }
+    .passage-pane { position:static; max-height:none; width:100%; }
+    .test-topbar { position:static; }
+  }
+
+  .qgroup { background:#fff; border:1px solid #eaeef4; border-radius:12px; padding:22px 26px; margin-bottom:18px; }
+  .qgroup h4 { margin:0 0 6px; font-size:18px; color:#111; }
+  .instruction { font-style:italic; color:#445; font-size:14.5px; margin-bottom:14px; }
+  .note-box { border:1px solid #d8e0ea; border-radius:10px; padding:18px 22px; background:#fafbff; }
+  .note-title { text-align:center; font-weight:800; font-size:17px; margin-bottom:12px; color:#22303f; }
+  .note-h { font-weight:700; margin:12px 0 4px; }
+  .note-li { margin:6px 0 6px 4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .note-li .bull { color:#7a8aa0; }
+  .note-li.sub { margin-left:26px; } .note-li.sub2 { margin-left:48px; }
+  .qnum-badge { background:#e0e7ff; color:#3730a3; font-weight:700; min-width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; padding:0 6px; }
+  input[type=text]{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:15px; width:150px; }
+  input[type=text]:focus{ border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.14); outline:none; }
+  table.note-table { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.note-table th, table.note-table td { border:1px solid #d3dce6; padding:10px 12px; font-size:14.5px; vertical-align:top; text-align:left; }
+  table.note-table th { background:#eef2ff; }
+  .mcq { margin:6px 0 16px; }
+  .mcq .qtext { font-weight:600; margin-bottom:6px; display:flex; gap:8px; }
+  .mcq label { display:flex; gap:9px; align-items:flex-start; padding:6px 10px; border-radius:7px; cursor:pointer; }
+  .mcq label:hover { background:#eef2fa; }
+  .mcq input{ accent-color:#1e1b4b; margin-top:3px; }
+  .tfng-opts { display:flex; gap:10px; flex-wrap:wrap; }
+  .tfng-opts label { border:1px solid #dfe4ee; border-radius:8px; padding:6px 14px; }
+  select{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:14.5px; min-width:70px; }
+  select:focus{ border-color:#4f46e5; outline:none; }
+  .match-box { border:1px solid #d8e0ea; border-radius:10px; background:#f6f8ff; padding:14px 18px; margin-bottom:14px; }
+  .match-box .mb-h { text-align:center; font-weight:700; margin-bottom:8px; }
+  .match-box .mb-row { display:flex; gap:10px; padding:2px 0; }
+  .match-q { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .match-q .mq-txt { flex:1; }
+
+  .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+  .submit-btn:hover { transform:translateY(-2px); }
+
+  /* 结果 */
+  #resultArea { display:none; }
+  .res-card { background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .res-title { font-size:24px; font-weight:800; color:#1e1b4b; margin:4px 0 2px; }
+  .res-meta { color:#6b7a8f; font-size:13px; margin-bottom:20px; }
+  .res-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:680px){ .res-stats{grid-template-columns:1fr;} }
+  .stat-box { border-radius:14px; padding:26px 16px; text-align:center; }
+  .stat-box.s1 { background:#eef2ff; } .stat-box.s2 { background:#eefaf2; } .stat-box.s3 { background:#f5f3ff; }
+  .stat-box .big { font-size:40px; font-weight:800; line-height:1; }
+  .stat-box.s1 .big { color:#4f46e5; } .stat-box.s2 .big { color:#1e8449; } .stat-box.s3 .big { color:#5b3fd6; }
+  .stat-box .cap { color:#5a7184; margin-top:8px; font-size:14px; }
+  .stat-box .sub2 { color:#8a96a5; font-size:12px; margin-top:2px; }
+  .progress-wrap { margin-top:22px; }
+  .progress-wrap .pw-top { display:flex; justify-content:space-between; font-size:13px; color:#5a7184; margin-bottom:6px; }
+  .pw-track { height:14px; background:#e2e8f0; border-radius:10px; overflow:hidden; }
+  .pw-fill { height:100%; background:linear-gradient(90deg,#6366f1,#27ae60); width:0; transition:width .8s; }
+
+  .detail-h { font-size:20px; font-weight:800; color:#1e1b4b; margin:26px 0 12px; }
+  .sec-result { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.05); margin-bottom:12px; overflow:hidden; }
+  .sec-result .sr-head { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; cursor:pointer; }
+  .sec-result .sr-head h5 { margin:0; font-size:17px; }
+  .sec-result .sr-head .sr-sum { font-size:13px; color:#6b7a8f; margin-top:3px; }
+  .sec-result .sr-head .sr-sum .ok { color:#1e8449; font-weight:700; } .sec-result .sr-head .sr-sum .bad { color:#c0392b; font-weight:700; }
+  .sr-body { display:none; padding:0 22px 16px; }
+  .sec-result.open .sr-body { display:block; }
+  .sr-chevron { transition:transform .2s; color:#8a96a5; }
+  .sec-result.open .sr-chevron { transform:rotate(180deg); }
+  .ritem { padding:12px 16px; border-radius:9px; margin:8px 0; border-left:5px solid transparent; }
+  .ritem.correct { background:#e8f8ee; border-left-color:#27ae60; }
+  .ritem.wrong { background:#fdeaea; border-left-color:#e74c3c; }
+  .ritem .rq { font-weight:700; color:#22303f; }
+  .ritem .ra { font-size:14px; margin-top:4px; }
+  .ritem .ra .yours { color:#7b1a1a; } .ritem .ra .correctv { color:#145a32; font-weight:700; }
+  .ritem .rex { font-size:13.5px; color:#3a4a5a; margin-top:6px; background:rgba(255,255,255,.65); padding:7px 11px; border-radius:7px; }
+  .back-row { text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="brandtag">优益思达</span> 剑桥雅思真题测试</h1>
+  <div class="timer" id="timer"><span id="timerText">00:00</span></div>
+</div>
+
+<!-- 封面 -->
+<div class="container" id="coverArea">
+  <div class="cover-hero">
+    <div class="cover-badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">17</div></div>
+    <div>
+      <h2>剑桥雅思 17 · Test 3</h2>
+      <div class="sub">学术类阅读 · 官方真题 · 自动批改并给出雅思预估分。点击下方开始测试。</div>
+    </div>
+  </div>
+  <div class="paper-card-wrap">
+    <div class="paper-card" onclick="openMode()">
+      <div class="pc-icon">📖</div>
+      <h3>学术类阅读 (Academic Reading)</h3>
+      <div class="pc-meta" id="coverMeta">加载中…</div>
+      <div class="pc-go">开始测试 ›</div>
+    </div>
+  </div>
+</div>
+
+<!-- 模式弹窗 -->
+<div class="modal-mask" id="modeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeMode()">×</button>
+    <h2>选择模式</h2>
+    <div class="mode-grid">
+      <div class="mode-box practice">
+        <div class="mb-ic">📘</div>
+        <h3>练习模式</h3>
+        <div class="mb-desc">适合分篇突破，可只练某几篇文章，正向计时不施加压力。</div>
+        <div class="mb-sub"><span>选择练习文章：</span><button onclick="toggleAll()" id="toggleAllBtn">取消全选</button></div>
+        <div id="sectionChecks"></div>
+        <button class="mode-start" onclick="startTest('practice')">开始练习</button>
+      </div>
+      <div class="mode-box exam">
+        <div class="mb-ic">⏱️</div>
+        <h3>模考模式</h3>
+        <div class="mb-desc">完整模拟真实考试：所有文章一次完成，限时 60 分钟。</div>
+        <div class="mb-sub"><span>测试信息：</span></div>
+        <div style="color:#445;font-size:14.5px;" id="examInfo">完整测试（限时 60 分钟）</div>
+        <ul class="exam-list" id="examList"></ul>
+        <button class="mode-start" onclick="startTest('exam')">开始模考</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 答题区 -->
+<div class="container" id="testArea">
+  <div class="test-topbar">
+    <div><div class="tt-title" id="testTitle"></div><span class="tt-mode" id="testModeTag"></span></div>
+    <button class="btn-ghost" onclick="backToCover()">← 返回封面</button>
+  </div>
+  <div id="questionsHolder"></div>
+  <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+</div>
+
+<!-- 结果区 -->
+<div class="container" id="resultArea">
+  <div class="res-card">
+    <div style="font-size:14px;color:#4338ca;font-weight:700;">🏆 批改报告</div>
+    <div class="res-title" id="resTitle"></div>
+    <div class="res-meta" id="resMeta"></div>
+    <div class="res-stats">
+      <div class="stat-box s1"><div class="big" id="resCorrect">0/0</div><div class="cap">答对题数</div></div>
+      <div class="stat-box s2"><div class="big" id="resPct">0%</div><div class="cap">正确率</div></div>
+      <div class="stat-box s3"><div class="big" id="resBand">-</div><div class="cap">雅思预估分</div><div class="sub2" id="resLevel"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="pw-top"><span>总体进度</span><span id="resProgLbl">0 / 0</span></div>
+      <div class="pw-track"><div class="pw-fill" id="resProgFill"></div></div>
+    </div>
+    <div class="instruction" id="bandNote" style="margin-top:14px;font-style:normal;color:#8a96a5;font-size:12px;"></div>
+  </div>
+  <div class="detail-h">详细结果</div>
+  <div id="detailHolder"></div>
+  <div class="back-row"><button class="btn-ghost" onclick="backToCover()">返回封面</button></div>
+</div>
+
+<script>
+/* ============================================================
+   一、试卷数据 —— 剑桥雅思20 Test 4 学术类阅读（官方原题 + 官方答案）
+   说明：每篇文章为一个对象 {id, passage:{title,byline,paras[]}, groups:[...]}
+   再发来 Passage 2、3 时按相同格式追加进 passages 数组即可。
+   ============================================================ */
+const TEST = {
+  meta:{ volume:17, testNo:3 },
+  durationMin:60,
+  passages:[
+    { id:1,
+      passage:{
+        title:'The thylacine',
+        byline:'You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.',
+        paras:[
+          `The extinct thylacine, also known as the Tasmanian tiger, was a marsupial that bore a superficial resemblance to a dog. Its most distinguishing feature was the 13–19 dark brown stripes over its back, beginning at the rear of the body and extending onto the tail. The thylacine's average nose-to-tail length for adult males was 162.6 cm, compared to 153.7 cm for females.`,
+          `The thylacine appeared to occupy most types of terrain except dense rainforest, with open eucalyptus forest thought to be its prime habitat. In terms of feeding, it was exclusively carnivorous, and its stomach was muscular with an ability to distend so that it could eat large amounts of food at one time, probably an adaptation to compensate for long periods when hunting was unsuccessful and food scarce. The thylacine was not a fast runner and probably caught its prey by exhausting it during a long pursuit. During long-distance chases, thylacines were likely to have relied more on scent than any other sense. They emerged to hunt during the evening, night and early morning and tended to retreat to the hills and forest for shelter during the day. Despite the common name 'tiger', the thylacine had a shy, nervous temperament. Although mainly nocturnal, it was sighted moving during the day and some individuals were even recorded basking in the sun.`,
+          `The thylacine had an extended breeding season from winter to spring, with indications that some breeding took place throughout the year. The thylacine, like all marsupials, was tiny and hairless when born. Newborns crawled into the pouch on the belly of their mother, and attached themselves to one of the four teats, remaining there for up to three months. When old enough to leave the pouch, the young stayed in a lair such as a deep rocky cave, well-hidden nest or hollow log, whilst the mother hunted.`,
+          `Approximately 4,000 years ago, the thylacine was widespread throughout New Guinea and most of mainland Australia, as well as the island of Tasmania. The most recent, well-dated occurrence of a thylacine on the mainland is a carbon-dated fossil from Murray Cave in Western Australia, which is around 3,100 years old. Its extinction coincided closely with the arrival of wild dogs called dingoes in Australia and a similar predator in New Guinea. Dingoes never reached Tasmania, and most scientists see this as the main reason for the thylacine's survival there.`,
+          `The dramatic decline of the thylacine in Tasmania, which began in the 1830s and continued for a century, is generally attributed to the relentless efforts of sheep farmers and bounty hunters with shotguns. While this determined campaign undoubtedly played a large part, it is likely that various other factors also contributed to the decline and eventual extinction of the species. These include competition with wild dogs introduced by European settlers, loss of habitat along with the disappearance of prey species, and a distemper-like disease which may also have affected the thylacine.`,
+          `There was only one successful attempt to breed a thylacine in captivity, at Melbourne Zoo in 1899. This was despite the large numbers that went through some zoos, particularly London Zoo and Tasmania's Hobart Zoo. The famous naturalist John Gould foresaw the thylacine's demise when he published his Mammals of Australia between 1848 and 1863, writing, 'The numbers of this singular animal will speedily diminish, extermination will have its full sway, and it will then, like the wolf of England and Scotland, be recorded as an animal of the past.'`,
+          `However, there seems to have been little public pressure to preserve the thylacine, nor was much concern expressed by scientists at the decline of this species in the decades that followed. A notable exception was T.T. Flynn, Professor of Biology at the University of Tasmania. In 1914, he was sufficiently concerned about the scarcity of the thylacine to suggest that some should be captured and placed on a small island. But it was not until 1929, with the species on the very edge of extinction, that Tasmania's Animals and Birds Protection Board passed a motion protecting thylacines only for the month of December, which was thought to be their prime breeding season. The last known wild thylacine to be killed was shot by a farmer in the north-east of Tasmania in 1930, leaving just captive specimens. Official protection of the species by the Tasmanian government was introduced in July 1936, 59 days before the last known individual died in Hobart Zoo on 7th September, 1936.`,
+          `There have been numerous expeditions and searches for the thylacine over the years, none of which has produced definitive evidence that thylacines still exist. The species was declared extinct by the Tasmanian government in 1986.`
+        ]
+      },
+      groups:[
+        { kind:'note', title:'Questions 1–5',
+          instruction:'Complete the notes below. Choose ONE WORD ONLY from the passage for each answer.',
+          noteTitle:'The thylacine',
+          lines:[
+            {h:`Appearance and behaviour`},
+            {bullet:true, html:`looked rather like a dog`},
+            {bullet:true, html:`had a series of stripes along its body and tail`},
+            {bullet:true, html:`ate an entirely <Q n="1"> diet`},
+            {bullet:true, html:`probably depended mainly on <Q n="2"> when hunting`},
+            {bullet:true, html:`young spent first months of life inside its mother's <Q n="3">`},
+            {h:`Decline and extinction`},
+            {bullet:true, html:`last evidence in mainland Australia is a 3,100-year-old <Q n="4">`},
+            {bullet:true, html:`probably went extinct in mainland Australia due to animals known as dingoes`},
+            {bullet:true, html:`reduction in <Q n="5"> and available sources of food were partly responsible for decline in Tasmania`},
+          ],
+          questions:[
+            {id:'Q1',no:1,answer:['carnivorous'],explain:`第2段：完全肉食性 carnivorous。答案：carnivorous。`},
+            {id:'Q2',no:2,answer:['scent'],explain:`第2段：追猎时主要依赖嗅觉 scent。答案：scent。`},
+            {id:'Q3',no:3,answer:['pouch'],explain:`第3段：幼崽待在母亲的育儿袋 pouch 中。答案：pouch。`},
+            {id:'Q4',no:4,answer:['fossil'],explain:`第4段：碳测年化石 fossil。答案：fossil。`},
+            {id:'Q5',no:5,answer:['habitat'],explain:`第5段：栖息地 habitat 减少。答案：habitat。`},
+          ]},
+        { kind:'tfng', title:'Questions 6–13',
+          instruction:'Do the following statements agree with the information given in Reading Passage 1? Choose TRUE, FALSE, or NOT GIVEN.',
+          questions:[
+            {id:'Q6',no:6,q:`Significant numbers of thylacines were killed by humans from the 1830s onwards.`,answer:['TRUE'],explain:`第5段：从1830年代开始大量被猎杀。 TRUE。`},
+            {id:'Q7',no:7,q:`Several thylacines were born in zoos during the late 1800s.`,answer:['FALSE'],explain:`第6段：圈养繁殖只成功一次（1899年墨尔本动物园）。 FALSE。`},
+            {id:'Q8',no:8,q:`John Gould's prediction about the thylacine surprised some biologists.`,answer:['NOT GIVEN'],explain:`第6段提到 Gould 的预言，但未说是否令生物学家惊讶。 NOT GIVEN。`},
+            {id:'Q9',no:9,q:`In the early 1900s, many scientists became worried about the possible extinction of the thylacine.`,answer:['FALSE'],explain:`第7段：很少有科学家表达关切，T.T. Flynn 是个例外。 FALSE。`},
+            {id:'Q10',no:10,q:`T. T. Flynn's proposal to rehome captive thylacines on an island proved to be impractical.`,answer:['NOT GIVEN'],explain:`第7段记载了 Flynn 1914年的提议，但未提其是否可行。 NOT GIVEN。`},
+            {id:'Q11',no:11,q:`There were still reasonable numbers of thylacines in existence when a piece of legislation protecting the species during their breeding season was passed.`,answer:['FALSE'],explain:`第7段：1929年立法时该物种已"on the very edge of extinction"。 FALSE。`},
+            {id:'Q12',no:12,q:`From 1930 to 1936, the only known living thylacines were all in captivity.`,answer:['TRUE'],explain:`第7段：1930年最后一只野生袋狼被射杀，只剩圈养个体。 TRUE。`},
+            {id:'Q13',no:13,q:`Attempts to find living thylacines are now rarely made.`,answer:['NOT GIVEN'],explain:`第8段：有许多探险搜寻，但未说现在是否减少。 NOT GIVEN。`},
+          ]},
+      ]},
+    { id:2,
+      passage:{
+        title:'Palm oil',
+        byline:'You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below.',
+        paras:[
+          `<span class="para-label">A</span>Palm oil is an edible oil derived from the fruit of the African oil palm tree, and is currently the most consumed vegetable oil in the world. It's almost certainly in the soap we wash with in the morning, the sandwich we have for lunch, and the biscuits we snack on during the day. Why is palm oil so attractive for manufacturers? Primarily because its unique properties – such as remaining solid at room temperature – make it an ideal ingredient for long-term preservation, allowing many packaged foods on supermarket shelves to have 'best before' dates of months, even years, into the future.`,
+          `<span class="para-label">B</span>Many farmers have seized the opportunity to maximise the planting of oil palm trees. Between 1990 and 2012, the global land area devoted to growing oil palm trees grew from 6 to 17 million hectares, now accounting for around ten percent of total cropland in the entire world. From a mere two million tonnes of palm oil being produced annually globally 50 years ago, there are now around 60 million tonnes produced every single year, a figure looking likely to double or even triple by the middle of the century.`,
+          `<span class="para-label">C</span>However, there are multiple reasons why conservationists cite the rapid spread of oil palm plantations as a major concern. There are countless news stories of deforestation, habitat destruction and dwindling species populations, all as a direct result of land clearing to establish oil palm tree monoculture on an industrial scale, particularly in Malaysia and Indonesia. Endangered species – most famously the Sumatran orangutan, but also rhinos, elephants, tigers, and numerous other fauna – have suffered from the unstoppable spread of oil palm plantations.`,
+          `<span class="para-label">D</span>'Palm oil is surely one of the greatest threats to global biodiversity,' declares Dr Farnon Ellwood of the University of the West of England, Bristol. 'Palm oil is replacing rainforest, and rainforest is where all the species are. That's a problem.' This has led to some radical questions among environmentalists, such as whether consumers should try to boycott palm oil entirely. Meanwhile Bhavani Shankar, Professor at London's School of Oriental and African Studies, argues, 'It's easy to say that palm oil is the enemy and we should be against it. It makes for a more dramatic story, and it's very intuitive. But given the complexity of the argument, I think a much more nuanced story is closer to the truth.'`,
+          `<span class="para-label">E</span>One response to the boycott movement has been the argument for the vital role palm oil plays in lifting many millions of people in the developing world out of poverty. Is it desirable to have palm oil boycotted, replaced, eliminated from the global supply chain, given how many low-income people in developing countries depend on it for their livelihoods? How best to strike a utilitarian balance between these competing factors has become a serious bone of contention.`,
+          `<span class="para-label">F</span>Even the deforestation argument isn't as straightforward as it seems. Oil palm plantations produce at least four and potentially up to ten times more oil per hectare than soybean, rapeseed, sunflower or other competing oils. That immensely high yield – which is predominantly what makes it so profitable – is potentially also an ecological benefit. If ten times more palm oil can be produced from a patch of land than any competing oil, then ten times more land would need to be cleared in order to produce the same volume of oil from that competitor. As for the question of carbon emissions, the issue really depends on what oil palm trees are replacing. Crops vary in the degree to which they sequester carbon – in other words, the amount of carbon they capture from the atmosphere and store within the plant. The more carbon a plant sequesters, the more it reduces the effect of climate change. As Shankar explains: 'Palm oil production actually sequesters more carbon in some ways than other alternatives. [...] Of course, if you're cutting down virgin forest it's terrible – that's what's happening in Indonesia and Malaysia, it's been allowed to get out of hand. But if it's replacing rice, for example, it might actually sequester more carbon.'`,
+          `<span class="para-label">G</span>The industry is now regulated by a group called the Roundtable on Sustainable Palm Oil (RSPO), consisting of palm growers, retailers, product manufacturers, and other interested parties. Over the past decade or so, an agreement has gradually been reached regarding standards that producers of palm oil have to meet in order for their product to be regarded as officially 'sustainable'. The RSPO insists upon no virgin forest clearing, transparency and regular assessment of carbon stocks, among other criteria. Only once these requirements are fully satisfied is the oil allowed to be sold as certified sustainable palm oil (CSPO). Recent figures show that the RSPO now certifies around 12 million tonnes of palm oil annually, equivalent to roughly 21 percent of the world's total palm oil production.`,
+          `<span class="para-label">H</span>There is even hope that oil palm plantations might not need to be such sterile monocultures, or 'green deserts', as Ellwood describes them. New research at Ellwood's lab hints at one plant which might make all the difference. The bird's nest fern (Asplenium nidus) grows on trees in an epiphytic fashion (meaning it's dependent on the tree only for support, not for nutrients), and is native to many tropical regions, where as a keystone species it performs a vital ecological role. Ellwood believes that reintroducing the bird's nest fern into oil palm plantations could potentially allow these areas to recover their biodiversity, providing a home for all manner of species, from fungi and bacteria, to invertebrates such as insects, amphibians, reptiles and even mammals.`
+        ]
+      },
+      groups:[
+        { kind:'match', title:'Questions 14–20', noBox:true,
+          instruction:'Reading Passage 2 has eight sections, A–H. Which section contains the following information? Write the correct letter, A–H, in the box next to each question.',
+          box:{A:'',B:'',C:'',D:'',E:'',F:'',G:'',H:''},
+          questions:[
+            {id:'Q14',no:14,q:`examples of a range of potential environmental advantages of oil palm tree cultivation`,answer:['F'],explain:`F段：棕榈油单位产量高、可能固碳更多等生态优势。 F。`},
+            {id:'Q15',no:15,q:`description of an organisation which controls the environmental impact of palm oil production`,answer:['G'],explain:`G段：RSPO 监管机构。 G。`},
+            {id:'Q16',no:16,q:`examples of the widespread global use of palm oil`,answer:['A'],explain:`A段：早晨的皂、午餐三明治、零食饼干。 A。`},
+            {id:'Q17',no:17,q:`reference to a particular species which could benefit the ecosystem of oil palm plantations`,answer:['H'],explain:`H段：鸟巢蕨可恢复棕榈油种植园生物多样性。 H。`},
+            {id:'Q18',no:18,q:`figures illustrating the rapid expansion of the palm oil industry`,answer:['B'],explain:`B段：土地从6百万→17百万公顷，产量从200万→6000万吨。 B。`},
+            {id:'Q19',no:19,q:`an economic justification for not opposing the palm oil industry`,answer:['E'],explain:`E段：棕榈油对发展中国家数百万低收入者生计至关重要。 E。`},
+            {id:'Q20',no:20,q:`examples of creatures badly affected by the establishment of oil palm plantations`,answer:['C'],explain:`C段：苏门答腊猩猩、犀牛、大象、老虎等。 C。`},
+          ]},
+        { kind:'multi', title:'Questions 21 and 22',
+          instruction:'Choose TWO letters, A–E. Which TWO statements are made about the Roundtable on Sustainable Palm Oil (RSPO)?',
+          box:{A:`Its membership has grown steadily over the course of the last decade.`,B:`It demands that certified producers be open and honest about their practices.`,C:`It took several years to establish its set of criteria for sustainable palm oil certification.`,D:`Its regulations regarding sustainability are stricter than those governing other industries.`,E:`It was formed at the request of environmentalists concerned about the loss of virgin forests.`},
+          groupId:'Q21_22', answerSet:['B','C'],
+          questions:[
+            {id:'Q21',no:21,explain:`选两项（顺序不限）：B 与 C。 B：要求透明度；C：历经数年逐步达成标准。`},
+            {id:'Q22',no:22,explain:`同上，正确两项为 B 与 C。`},
+          ]},
+        { kind:'note', title:'Questions 23–26',
+          instruction:'Complete the sentences below. Choose NO MORE THAN TWO WORDS from the passage for each answer.',
+          lines:[
+            {bullet:true, html:`One advantage of palm oil for manufacturers is that it stays <Q n="23"> even when not refrigerated.`},
+            {bullet:true, html:`The <Q n="24"> is the best known of the animals suffering habitat loss as a result of the spread of oil palm plantations.`},
+            {bullet:true, html:`As one of its criteria for the certification of sustainable palm oil, the RSPO insists that growers check <Q n="25"> on a routine basis.`},
+            {bullet:true, html:`Ellwood and his researchers are looking into whether the bird's nest fern could restore <Q n="26"> in areas where oil palm trees are grown.`},
+          ],
+          questions:[
+            {id:'Q23',no:23,answer:['solid'],explain:`A段：室温下保持固态 solid。答案：solid。`},
+            {id:'Q24',no:24,answer:['Sumatran orangutan','orangutan','orang-utan'],explain:`C段：苏门答腊猩猩 Sumatran orangutan 最为知名。答案：(Sumatran) orangutan。`},
+            {id:'Q25',no:25,answer:['carbon stocks'],explain:`G段：定期评估碳储量 carbon stocks。答案：carbon stocks。`},
+            {id:'Q26',no:26,answer:['biodiversity'],explain:`H段：恢复生物多样性 biodiversity。答案：biodiversity。`},
+          ]},
+      ]},
+    { id:3,
+      passage:{
+        title:'Building the Skyline: The Birth and Growth of Manhattan\'s Skyscrapers',
+        byline:`You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below. Katharine L. Shester reviews a book by Jason Barr about the development of New York City.`,
+        paras:[
+          `In Building the Skyline, Jason Barr takes the reader through a detailed history of New York City. The book combines geology, history, economics, and a lot of data to explain why business clusters developed where they did and how the early decisions of workers and firms shaped the skyline we see today. Building the Skyline is organized into two distinct parts. The first is primarily historical and addresses New York's settlement and growth from 1609 to 1900; the second deals primarily with the 20th century and is a compilation of chapters commenting on different aspects of New York's urban development. The tone and organization of the book changes somewhat between the first and second parts, as the latter chapters incorporate aspects of Barr's related research papers.`,
+          `Barr begins chapter one by taking the reader on a 'helicopter time-machine' ride – giving a fascinating account of how the New York landscape in 1609 might have looked from the sky. He then moves on to a subterranean walking tour of the city, indicating the location of rock and water below the subsoil, before taking the reader back to the surface. His love of the city comes through as he describes various fun facts about the location of the New York residence of early 19th-century vice-president Aaron Burr as well as a number of legends about the city.`,
+          `Chapters two and three take the reader up to the Civil War (1861–1865), with chapter two focusing on the early development of land and the implementation of a grid system in 1811. Chapter three focuses on land use before the Civil War. Both chapters are informative and well researched and set the stage for the economic analysis that comes later in the book. I would have liked Barr to expand upon his claim that existing tenements prevented skyscrapers in certain neighborhoods because likely no skyscraper developer was interested in performing the necessary 'slum clearance'. Later in the book, Barr makes the claim that the depth of bedrock was not a limiting factor for developers, as foundation costs were a small fraction of the cost of development. At first glance, it is not obvious why slum clearance would be limiting, while more expensive foundations would not.`,
+          `Chapter four focuses on immigration and the location of neighborhoods and tenements in the late 19th century. Barr identifies four primary immigrant enclaves and analyzes their locations in terms of the amenities available in the area. Most of these enclaves were located on the least valuable land, between the industries located on the waterfront and the wealthy neighborhoods bordering Central Park.`,
+          `Part two of the book begins with a discussion of the economics of skyscraper height. In chapter five, Barr distinguishes between engineering height, economic height, and developer height where engineering height is the tallest building that can be safely made at a given time, economic height is the height that is most efficient from society's point of view, and developer height is the actual height chosen by the developer, who is attempting to maximize return on investment. Chapter five also has an interesting discussion of the technological advances that led to the construction of skyscrapers. For example, the introduction of iron and steel skeletal frames made thick, load-bearing walls unnecessary, expanding the usable square footage of buildings and increasing the use of windows and availability of natural light. Chapter six then presents data on building height throughout the 20th century and uses regression analysis to predict building construction. While less technical than the research paper on which the chapter is based, it is probably more technical than would be preferred by a general audience.`,
+          `Chapter seven tackles the 'bedrock myth', the assumption that the absence of bedrock close to the surface between Downtown and Midtown New York is the reason for skyscrapers not being built between the two urban centers. Rather, Barr argues that while deeper bedrock does increase foundation costs, these costs were neither prohibitively high nor were they large compared to the overall cost of building a skyscraper. What I enjoyed the most about this chapter was Barr's discussion of how foundations are actually built. He describes the use of caissons, which enable workers to dig down for considerable distances, often below the water table, until they reach bedrock. Barr's thorough technological history discusses not only how caissons work, but also the dangers involved. While this chapter references empirical research papers, it is a relatively easy read.`,
+          `Chapters eight and nine focus on the birth of Midtown and the building boom of the 1920s. Chapter eight contains lengthy discussions of urban economic theory that may serve as a distraction to readers primarily interested in New York. However, they would be well-suited for undergraduates learning about the economics of cities. In the next chapter, Barr considers two of the primary explanations for the building boom of the 1920s – the first being exuberance, and the second being financing. He uses data to assess the viability of these two explanations and finds that supply and demand factors explain much of the development of the 1920s; though it enabled the boom, cheap credit was not, he argues, the primary cause.`,
+          `In the final chapter (chapter 10), Barr discusses another of his empirical papers that estimates Manhattan land values from the mid-19th century to the present day. The data work that went into these estimations is particularly impressive. Toward the end of the chapter, Barr assesses whether skyscrapers are a cause or an effect of high land values. He finds that changes in land values predict future building height, but the reverse is not true. The book ends with an epilogue, in which Barr discusses the impact of climate change on the city and makes policy suggestions for New York going forward.`
+        ]
+      },
+      groups:[
+        { kind:'mcq', title:'Questions 27–31',
+          instruction:'Choose the correct letter, A, B, C or D.',
+          questions:[
+            {id:'Q27',no:27,q:`What point does Shester make about Barr's book in the first paragraph?`,options:{A:`It gives a highly original explanation for urban development.`,B:`Elements of Barr's research papers are incorporated throughout the book.`,C:`Other books that are available on the subject have taken a different approach.`,D:`It covers a range of factors that affected the development of New York.`},answer:['D'],explain:`第1段：书结合地质、历史、经济和大量数据来解释纽约发展。 D。`},
+            {id:'Q28',no:28,q:`How does Shester respond to the information in the book about tenements?`,options:{A:`She describes the reasons for Barr's interest.`,B:`She indicates a potential problem with Barr's analysis.`,C:`She compares Barr's conclusion with that of other writers.`,D:`She provides details about the sources Barr used for his research.`},answer:['B'],explain:`第3段：Shester 指出 Barr 关于贫民窟清理与地基成本的论述存在逻辑矛盾。 B。`},
+            {id:'Q29',no:29,q:`What does Shester say about chapter six of the book?`,options:{A:`It contains conflicting data.`,B:`It focuses too much on possible trends.`,C:`It is too specialised for most readers.`,D:`It draws on research that is out of date.`},answer:['C'],explain:`第5段：比普通读者希望的技术性更强。 C。`},
+            {id:'Q30',no:30,q:`What does Shester suggest about the chapters focusing on the 1920s building boom?`,options:{A:`The information should have been organised differently.`,B:`More facts are needed about the way construction was financed.`,C:`The explanation that is given for the building boom is unlikely.`,D:`Some parts will have limited appeal to certain people.`},answer:['D'],explain:`第7段：第八章对只对纽约感兴趣的读者可能是干扰。 D。`},
+            {id:'Q31',no:31,q:`What impresses Shester the most about the chapter on land values?`,options:{A:`the broad time period that is covered`,B:`the interesting questions that Barr asks`,C:`the nature of the research into the topic`,D:`the recommendations Barr makes for the future`},answer:['C'],explain:`第8段："The data work that went into these estimations is particularly impressive"。 C。`},
+          ]},
+        { kind:'tfng', title:'Questions 32–35',
+          variant:'yn',
+          instruction:'Do the following statements agree with the claims of the writer in Reading Passage 3? Write YES, NO, or NOT GIVEN.',
+          questions:[
+            {id:'Q32',no:32,q:`The description in the first chapter of how New York probably looked from the air in the early 1600s lacks interest.`,answer:['NO'],explain:`第2段：Shester 称其为"fascinating account"——与"缺乏趣味"矛盾。 NO。`},
+            {id:'Q33',no:33,q:`Chapters two and three prepare the reader well for material yet to come.`,answer:['YES'],explain:`第3段："set the stage for the economic analysis that comes later"。 YES。`},
+            {id:'Q34',no:34,q:`The biggest problem for many nineteenth-century New York immigrant neighbourhoods was a lack of amenities.`,answer:['NOT GIVEN'],explain:`第4段提到设施，但未说这是最大问题。 NOT GIVEN。`},
+            {id:'Q35',no:35,q:`In the nineteenth century, New York's immigrant neighbourhoods tended to concentrate around the harbour.`,answer:['NO'],explain:`第4段：聚居地在最廉价土地上，即码头工业区和中央公园豪华区之间，并非绕港口聚集。 NO。`},
+          ]},
+        { kind:'wbank', title:'Questions 36–40',
+          instruction:'Complete the summary using the list of phrases, A–J, below. Write the correct letter, A–J, in the boxes.',
+          noteTitle:'The bedrock myth',
+          box:{A:`development plans`,B:`deep excavations`,C:`great distance`,D:`excessive expense`,E:`impossible tasks`,F:`associated risks`,G:`water level`,H:`specific areas`,I:`total expenditure`,J:`construction guidelines`},
+          boxCols:2,
+          lines:[
+            {html:`In chapter seven, Barr indicates how the lack of bedrock close to the surface does not explain why skyscrapers are absent from <Q n="36">. He points out that although the cost of foundations increases when bedrock is deep below the surface, this cannot be regarded as <Q n="37">, especially when compared to <Q n="38">. A particularly enjoyable part of the chapter was Barr's account of how foundations are built. He describes not only how <Q n="39"> are made possible by the use of caissons, but he also discusses their <Q n="40">. The chapter is well researched but relatively easy to understand.`},
+          ],
+          questions:[
+            {id:'Q36',no:36,answer:['H'],explain:`答案：H（specific areas）——指市中心与中城之间的特定区域。`},
+            {id:'Q37',no:37,answer:['D'],explain:`答案：D（excessive expense）——基础成本并非过高费用。`},
+            {id:'Q38',no:38,answer:['I'],explain:`答案：I（total expenditure）——与摩天楼总体建设费用相比微不足道。`},
+            {id:'Q39',no:39,answer:['B'],explain:`答案：B（deep excavations）——沉箱使深挖成为可能。`},
+            {id:'Q40',no:40,answer:['F'],explain:`答案：F（associated risks）——讨论了相关风险（危险性）。`},
+          ]},
+      ]},
+  ]
+};
+
+
+/* 官方 学术类阅读 原始分(0-40) → 雅思分 对照表 */
+const BAND_TABLE = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0],[4,2.5],[0,2.0]];
+const LEVEL_LABEL = [[8.5,'Expert / Very good user'],[7.0,'Good user'],[6.0,'Competent user'],[5.0,'Modest user'],[4.0,'Limited user'],[0,'Basic user']];
+function lookupBand(correct,total){ const scaled = total===40?correct:Math.round(correct/Math.max(1,total)*40); for(const [m,b] of BAND_TABLE) if(scaled>=m) return b; return 2.0; }
+function levelLabel(b){ for(const [m,l] of LEVEL_LABEL) if(b>=m) return l; return ''; }
+
+/* ============================================================
+   二、引擎
+   ============================================================ */
+let currentPaper=[], selectedSections=[], mode='practice', startTime=0, timerInterval=null, submitted=false;
+const allQs = sec => sec.groups.flatMap(g=>g.questions);
+const totalQs = () => TEST.passages.reduce((n,p)=>n+allQs(p).length,0);
+
+/* 封面信息 */
+(function initCover(){
+  document.getElementById('coverMeta').textContent = `${TEST.passages.length} 篇文章 · 共 ${totalQs()} 题`;
+})();
+
+/* 模式弹窗 */
+function openMode(){
+  document.getElementById('sectionChecks').innerHTML =
+    TEST.passages.map(p=>`<label class="sec-check"><input type="checkbox" class="secbox" value="${p.id}" checked> Passage ${p.id}（${allQs(p).length} 题）</label>`).join('');
+  document.getElementById('examList').innerHTML = TEST.passages.map(p=>`<li>• Passage ${p.id}</li>`).join('');
+  document.getElementById('toggleAllBtn').textContent='取消全选';
+  document.getElementById('modeModal').classList.add('show');
+}
+function closeMode(){ document.getElementById('modeModal').classList.remove('show'); }
+function toggleAll(){ const b=[...document.querySelectorAll('.secbox')]; const off=b.some(x=>!x.checked); b.forEach(x=>x.checked=off); document.getElementById('toggleAllBtn').textContent=off?'取消全选':'全选'; }
+
+function startTest(m){
+  mode=m;
+  if(m==='practice'){ const ids=[...document.querySelectorAll('.secbox:checked')].map(b=>+b.value); if(!ids.length){ alert('请至少选择一篇文章。'); return; } selectedSections=ids; }
+  else selectedSections=TEST.passages.map(p=>p.id);
+  currentPaper=TEST.passages.filter(p=>selectedSections.includes(p.id));
+  closeMode(); submitted=false;
+  document.getElementById('coverArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('testArea').style.display='block';
+  renderPaper(); setupTimer();
+  window.scrollTo(0,0);
+}
+
+function renderPaper(){
+  document.getElementById('testTitle').textContent=`剑桥雅思17 · Test 3 — 阅读`;
+  document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
+  document.getElementById('questionsHolder').innerHTML = currentPaper.map(passageHtml).join('');
+}
+function passageHtml(p){
+  const pp=p.passage;
+  const article = `<div class="passage-pane">
+      <div class="pp-kicker">READING PASSAGE ${p.id}</div>
+      <h3 class="ptitle">${pp.title}</h3>
+      ${pp.byline?`<div class="pp-byline">${pp.byline}</div>`:''}
+      ${pp.paras.map(t=>`<p>${t}</p>`).join('')}
+    </div>`;
+  const qs = `<div class="qcol">${p.groups.map(groupHtml).join('')}</div>`;
+  return `<div class="section-banner" id="anchor_${p.id}">
+      <div class="sb-top"><span class="sb-title">Passage ${p.id}</span></div>
+      <div class="sb-meta">建议用时约 20 分钟 · 本篇共 ${allQs(p).length} 题</div>
+    </div><div class="reading-cols">${article}${qs}</div>`;
+}
+function expandQ(html){ // 把 <Q n="x"> 占位替换成 编号徽标 + 输入框
+  return (html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><input type="text" id="Q${n}" autocomplete="off">`);
+}
+function groupHtml(g){
+  let body='';
+  if(g.kind==='note'){
+    body=`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
+      g.lines.map(l=>{
+        if(l.h) return `<div class="note-h">${l.h}</div>`;
+        if(l.plain) return `<div class="note-li${l.sub?' sub':''}">${expandQ(l.html)}</div>`;
+        if(l.html==null) return '';
+        const cls='note-li'+(l.sub2?' sub2':(l.sub?' sub':''));
+        const mark=l.dash?'–':(l.bullet?'•':'');
+        return `<div class="${cls}"><span class="bull">${mark}</span> ${expandQ(l.html)}</div>`;
+      }).join('')+`</div>`;
+  }
+  else if(g.kind==='table'){
+    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const rows=g.rows.map(r=>`<tr>${r.map(cell=>`<td>${expandQ(cell)}</td>`).join('')}</tr>`).join('');
+    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+  }
+  else if(g.kind==='tfng'){
+    const opts = g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN'];
+    body=g.questions.map(q=>{
+      const radios=opts.map(v=>`<label><input type="radio" name="${q.id}" value="${v}"> <span>${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div><div class="tfng-opts">${radios}</div></div>`;
+    }).join('');
+  }
+  else if(g.kind==='mcq'){
+    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
+      const opts=Object.entries(q.options).map(([k,v])=>`<label><input type="radio" name="${q.id}" value="${k}"> <span><strong>${k}</strong> &nbsp;${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div>${opts}</div>`;
+    }).join('');
+  }
+  else if(g.kind==='match'){
+    const box=g.noBox ? '' : `<div class="match-box"><div class="mb-h">${g.boxTitle||''}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
+    const qs=(g.subTitle?`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`:'')+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='multi'){
+    const box=`<div class="match-box">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=k=>`<select id="${k}"><option value="">—</option>${Object.keys(g.box).map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">选择一项（本组合计选出正确的几项，顺序不限）</span>${sel(q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='wbank'){
+    // 选词填空：词库 A–H + 文中下拉
+    const cols=g.boxCols||2;
+    const box=`<div class="match-box wbank-box" style="columns:${cols};">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const letters=Object.keys(g.box);
+    const expand=html=>(html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><select id="Q${n}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`);
+    const para=(g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:'')+g.lines.map(l=>`<div class="note-li plain" style="display:block;">${expand(l.html)}</div>`).join('');
+    body=box+`<div class="note-box">${para}</div>`;
+  }
+  return `<div class="qgroup"><h4>${g.title}</h4><div class="instruction">${g.instruction}</div>${body}</div>`;
+}
+
+/* 计时器 */
+function setupTimer(){
+  startTime=Date.now(); const t=document.getElementById('timer'); t.classList.add('show'); clearInterval(timerInterval);
+  if(mode==='exam'){ const total=TEST.durationMin*60;
+    timerInterval=setInterval(()=>{ const left=total-Math.floor((Date.now()-startTime)/1000);
+      if(left<=0){ clearInterval(timerInterval); document.getElementById('timerText').textContent='00:00'; alert('时间到，自动提交。'); submitTest(); return; }
+      t.classList.toggle('warn',left<=600&&left>120); t.classList.toggle('danger',left<=120);
+      document.getElementById('timerText').textContent=fmt(left); },500);
+  } else timerInterval=setInterval(()=>{ document.getElementById('timerText').textContent=fmt(Math.floor((Date.now()-startTime)/1000)); },500);
+}
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+/* 批改 */
+function norm(s){ return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,''); }
+function readAns(q){ const el=document.getElementById(q.id); if(el) return (el.tagName==='SELECT')?el.value:el.value.trim();
+  const r=document.getElementsByName(q.id); for(const x of r) if(x.checked) return x.value; return ''; }
+
+function confirmSubmit(){
+  let answered=0,total=0;
+  currentPaper.forEach(s=>allQs(s).forEach(q=>{ total++; if(readAns(q)!=='') answered++; }));
+  if(window.confirm(`已作答 ${answered}/${total} 题。\n确定提交并查看批改报告吗？`)) submitTest();
+}
+function submitTest(){
+  if(submitted) return; submitted=true;
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+
+  /* 先处理 multi 配对题（顺序不限、不重复计分） */
+  const pairCorrect={};
+  currentPaper.forEach(s=>s.groups.forEach(g=>{
+    if(g.kind==='multi'){ const set=g.answerSet.slice(); g.questions.forEach(q=>{ const ua=(readAns(q)||'').toUpperCase(); const i=set.indexOf(ua); if(ua&&i>-1){ pairCorrect[q.id]=true; set.splice(i,1);} else pairCorrect[q.id]=false; }); }
+  }));
+
+  let correct=0,total=0; const detail=[];
+  currentPaper.forEach(s=>{
+    let sc=0; const items=[];
+    s.groups.forEach(g=>g.questions.forEach(q=>{
+      const ua=readAns(q); let ok;
+      if(g.kind==='multi') ok=!!pairCorrect[q.id];
+      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      total++; if(ok){correct++;sc++;}
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+    }));
+    detail.push({s,sc,total:allQs(s).length,items});
+  });
+
+  const pct=total?Math.round(correct/total*100):0;
+  const band=lookupBand(correct,total);
+  const elapsed=Math.max(1,Math.round((Date.now()-startTime)/1000));
+
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resTitle').textContent='剑桥雅思17 · Test 3 — 阅读';
+  document.getElementById('resMeta').textContent=`${mode==='practice'?'练习模式':'模考模式'} · 用时 ${fmt(elapsed)} · 完成时间 ${new Date().toLocaleString('zh-CN')}`;
+  document.getElementById('resCorrect').textContent=`${correct}/${total}`;
+  document.getElementById('resPct').textContent=pct+'%';
+  document.getElementById('resBand').textContent=band.toFixed(1);
+  document.getElementById('resLevel').textContent='水平：'+levelLabel(band);
+  document.getElementById('resProgLbl').textContent=`${correct} / ${total}`;
+  setTimeout(()=>document.getElementById('resProgFill').style.width=pct+'%',60);
+  document.getElementById('bandNote').textContent = total===40
+    ? '雅思分按官方学术类阅读 40 题原始分对照表换算。'
+    : `本次仅测 ${total} 题，预估分按比例折算至 40 题后套用官方对照表；做完整 3 篇文章时为精确换算。`;
+
+  document.getElementById('detailHolder').innerHTML=detail.map((d,i)=>{
+    const sp=d.total?Math.round(d.sc/d.total*100):0;
+    const rows=d.items.map(it=>{
+      const cls=it.ok?'correct':'wrong';
+      const yours=it.ua?`你的答案：<span class="yours">${it.ua}</span>　`:`<span class="yours">未作答</span>　`;
+      return `<div class="ritem ${cls}"><div class="rq">${it.ok?'✔':'✘'} 第 ${it.q.no} 题</div>
+        <div class="ra">${it.ok?'<span class="correctv">回答正确</span>':yours+'正确答案：<span class="correctv">'+it.ans.join(' / ')+'</span>'}</div>
+        <div class="rex">💡 ${it.q.explain||''}</div></div>`;
+    }).join('');
+    return `<div class="sec-result${i===0?' open':''}"><div class="sr-head" onclick="this.parentNode.classList.toggle('open')">
+        <div><h5>Passage ${d.s.id}</h5><div class="sr-sum"><span class="${sp>=60?'ok':'bad'}">${d.sc} / ${d.total} 题正确　${sp}%</span></div></div>
+        <div class="sr-chevron">▾</div></div><div class="sr-body">${rows}</div></div>`;
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+function backToCover(){
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('coverArea').style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== */
+(function(){
+  function report(){
+    var rc=document.getElementById('resCorrect'); if(!rc) return;
+    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m) return;
+    var bandEl=document.getElementById('resBand'); var band=bandEl?parseFloat(bandEl.textContent):NaN;
+    try{ window.parent.postMessage({type:'yysd:score', score:+m[1], total:+m[2], band:isNaN(band)?null:band}, '*'); }catch(e){}
+  }
+  var rc=document.getElementById('resCorrect');
+  if(rc){ new MutationObserver(report).observe(rc,{childList:true,subtree:true,characterData:true}); }
+})();
+</script>
+</body>
+</html>
