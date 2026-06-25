@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优益思达 · 剑桥雅思19 Test 3 阅读</title>
+<meta name="exam:title" content="剑桥雅思19 · Test 3（阅读）">
+<meta name="exam:zone" content="mock">
+<meta name="exam:subject" content="cambridge-reading">
+<meta name="exam:duration" content="0">
+<meta name="exam:description" content="剑桥雅思19 Test 1 学术类阅读（官方真题）：3 篇文章共 40 题（网球拍进化 / 地中海古代海盗 / 虚假信息），可单篇练习或完整模考，自动批改、解析与雅思预估分。">
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:'Segoe UI','PingFang SC',Roboto,sans-serif; background:#f0f2f6; margin:0; color:#1e2a3a; line-height:1.7; padding:0 0 60px; }
+  .header { background:linear-gradient(135deg,#1e1b4b,#312e81); color:#fff; padding:12px 28px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 18px rgba(0,0,0,.25); flex-wrap:wrap; gap:10px; }
+  .header h1 { margin:0; font-size:19px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .header h1 .brandtag { font-size:11px; background:#6366f1; padding:2px 9px; border-radius:20px; font-weight:600; letter-spacing:.5px; }
+  .timer { font-size:18px; font-weight:700; background:#1e8449; padding:6px 18px; border-radius:30px; display:none; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); transition:background .4s; }
+  .timer.show { display:flex; }
+  .timer.warn { background:#e67e22; } .timer.danger { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+  .container { max-width:1180px; margin:24px auto; padding:0 24px; }
+
+  /* 封面 */
+  .cover-hero { display:flex; align-items:center; gap:24px; background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .cover-badge { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border-radius:14px; padding:18px 30px; text-align:center; min-width:180px; }
+  .cover-badge .lbl { font-size:12px; letter-spacing:2px; color:#4f46e5; font-weight:600; }
+  .cover-badge .num { font-size:54px; font-weight:800; color:#4338ca; line-height:1; margin-top:4px; }
+  .cover-hero h2 { margin:0; font-size:30px; color:#1e1b4b; }
+  .cover-hero .sub { color:#6b7a8f; margin-top:6px; font-size:14px; }
+  .paper-card-wrap { margin-top:24px; }
+  .paper-card { border-radius:16px; padding:30px 26px; text-align:center; border:2px solid; transition:transform .15s,box-shadow .2s; background:#eef2ff; border-color:#c7d2fe; cursor:pointer; }
+  .paper-card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.10); }
+  .paper-card .pc-icon { font-size:40px; }
+  .paper-card h3 { margin:10px 0 4px; font-size:24px; color:#3730a3; }
+  .paper-card .pc-meta { font-size:13px; color:#6b7a8f; }
+  .paper-card .pc-go { margin-top:18px; display:inline-block; padding:11px 30px; border-radius:30px; color:#fff; font-weight:600; font-size:15px; background:#4f46e5; }
+
+  /* 模式弹窗 */
+  .modal-mask { display:none; position:fixed; inset:0; background:rgba(10,20,40,.55); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; max-width:880px; width:100%; padding:28px 30px 34px; position:relative; max-height:92vh; overflow:auto; }
+  .modal h2 { margin:0 0 20px; font-size:24px; color:#111; }
+  .modal-close { position:absolute; right:20px; top:18px; border:none; background:none; font-size:24px; color:#8a96a5; cursor:pointer; }
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:680px){ .mode-grid{grid-template-columns:1fr;} }
+  .mode-box { border:1px solid #e2e8f0; border-radius:14px; padding:24px 22px; }
+  .mode-box .mb-ic { width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 12px; }
+  .mode-box.practice .mb-ic { background:#e0e7ff; } .mode-box.exam .mb-ic { background:#ffe8cf; }
+  .mode-box h3 { text-align:center; margin:0 0 6px; font-size:20px; }
+  .mode-box .mb-desc { text-align:center; color:#6b7a8f; font-size:13.5px; min-height:38px; }
+  .mode-box .mb-sub { font-weight:700; color:#3730a3; margin:14px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .mode-box .mb-sub button { background:#fff; border:1px solid #cdd7e2; border-radius:8px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .sec-check { display:flex; align-items:center; gap:10px; padding:8px 4px; font-size:15px; font-weight:600; color:#3730a3; cursor:pointer; }
+  .sec-check input { width:18px; height:18px; accent-color:#4338ca; }
+  .exam-list { list-style:none; padding:0; margin:10px 0 0; color:#445; font-size:14.5px; }
+  .exam-list li { padding:3px 0; }
+  .mode-start { width:100%; margin-top:18px; border:none; color:#fff; font-weight:700; font-size:16px; padding:13px; border-radius:10px; cursor:pointer; }
+  .mode-box.practice .mode-start { background:#4f46e5; } .mode-box.exam .mode-start { background:#e67e22; }
+
+  /* 答题区 */
+  #testArea { display:none; }
+  .test-topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#fff; border-radius:14px; padding:14px 22px; box-shadow:0 4px 18px rgba(0,0,0,.05); margin-bottom:18px; position:sticky; top:60px; z-index:600; }
+  .test-topbar .tt-title { font-size:19px; font-weight:700; color:#1e1b4b; }
+  .test-topbar .tt-mode { font-size:13px; background:#eef2ff; color:#3730a3; padding:3px 12px; border-radius:20px; font-weight:600; }
+  .btn-ghost { border:1px solid #cdd7e2; background:#fff; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; color:#33475b; }
+  .btn-ghost:hover { background:#f3f6fa; }
+
+  .section-banner { background:#eef2ff; border:1px solid #c7d2fe; border-radius:12px; padding:14px 20px; margin:26px 0 14px; }
+  .section-banner .sb-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .section-banner .sb-title { font-size:20px; font-weight:800; color:#3730a3; letter-spacing:.5px; }
+  .section-banner .sb-meta { font-size:13px; color:#5a6b8a; margin-top:6px; }
+
+  /* 阅读分栏：左文章 右题目 */
+  .reading-cols { display:flex; gap:24px; align-items:flex-start; }
+  .passage-pane { flex:1 1 50%; background:#fff; border:1px solid #e3e6ee; border-radius:12px; padding:22px 26px; position:sticky; top:130px; max-height:calc(100vh - 150px); overflow:auto; }
+  .passage-pane .pp-kicker { font-size:12px; letter-spacing:1.5px; color:#6366f1; font-weight:700; }
+  .passage-pane .ptitle { margin:6px 0 4px; font-size:21px; color:#1e1b4b; }
+  .passage-pane .pp-byline { font-style:italic; color:#6b7a8f; font-size:13.5px; margin-bottom:12px; }
+  .passage-pane p { margin:0 0 13px; font-size:15px; text-align:justify; }
+  .passage-pane .para-label { font-weight:800; color:#4338ca; margin-right:6px; }
+  .qcol { flex:1 1 50%; min-width:0; }
+  @media(max-width:900px){
+    .reading-cols { flex-direction:column; }
+    .passage-pane { position:static; max-height:none; width:100%; }
+    .test-topbar { position:static; }
+  }
+
+  .qgroup { background:#fff; border:1px solid #eaeef4; border-radius:12px; padding:22px 26px; margin-bottom:18px; }
+  .qgroup h4 { margin:0 0 6px; font-size:18px; color:#111; }
+  .instruction { font-style:italic; color:#445; font-size:14.5px; margin-bottom:14px; }
+  .note-box { border:1px solid #d8e0ea; border-radius:10px; padding:18px 22px; background:#fafbff; }
+  .note-title { text-align:center; font-weight:800; font-size:17px; margin-bottom:12px; color:#22303f; }
+  .note-h { font-weight:700; margin:12px 0 4px; }
+  .note-li { margin:6px 0 6px 4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .note-li .bull { color:#7a8aa0; }
+  .note-li.sub { margin-left:26px; } .note-li.sub2 { margin-left:48px; }
+  .qnum-badge { background:#e0e7ff; color:#3730a3; font-weight:700; min-width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; padding:0 6px; }
+  input[type=text]{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:15px; width:150px; }
+  input[type=text]:focus{ border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.14); outline:none; }
+  table.note-table { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.note-table th, table.note-table td { border:1px solid #d3dce6; padding:10px 12px; font-size:14.5px; vertical-align:top; text-align:left; }
+  table.note-table th { background:#eef2ff; }
+  .mcq { margin:6px 0 16px; }
+  .mcq .qtext { font-weight:600; margin-bottom:6px; display:flex; gap:8px; }
+  .mcq label { display:flex; gap:9px; align-items:flex-start; padding:6px 10px; border-radius:7px; cursor:pointer; }
+  .mcq label:hover { background:#eef2fa; }
+  .mcq input{ accent-color:#1e1b4b; margin-top:3px; }
+  .tfng-opts { display:flex; gap:10px; flex-wrap:wrap; }
+  .tfng-opts label { border:1px solid #dfe4ee; border-radius:8px; padding:6px 14px; }
+  select{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:14.5px; min-width:70px; }
+  select:focus{ border-color:#4f46e5; outline:none; }
+  .match-box { border:1px solid #d8e0ea; border-radius:10px; background:#f6f8ff; padding:14px 18px; margin-bottom:14px; }
+  .match-box .mb-h { text-align:center; font-weight:700; margin-bottom:8px; }
+  .match-box .mb-row { display:flex; gap:10px; padding:2px 0; }
+  .match-q { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .match-q .mq-txt { flex:1; }
+
+  .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+  .submit-btn:hover { transform:translateY(-2px); }
+
+  /* 结果 */
+  #resultArea { display:none; }
+  .res-card { background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .res-title { font-size:24px; font-weight:800; color:#1e1b4b; margin:4px 0 2px; }
+  .res-meta { color:#6b7a8f; font-size:13px; margin-bottom:20px; }
+  .res-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:680px){ .res-stats{grid-template-columns:1fr;} }
+  .stat-box { border-radius:14px; padding:26px 16px; text-align:center; }
+  .stat-box.s1 { background:#eef2ff; } .stat-box.s2 { background:#eefaf2; } .stat-box.s3 { background:#f5f3ff; }
+  .stat-box .big { font-size:40px; font-weight:800; line-height:1; }
+  .stat-box.s1 .big { color:#4f46e5; } .stat-box.s2 .big { color:#1e8449; } .stat-box.s3 .big { color:#5b3fd6; }
+  .stat-box .cap { color:#5a7184; margin-top:8px; font-size:14px; }
+  .stat-box .sub2 { color:#8a96a5; font-size:12px; margin-top:2px; }
+  .progress-wrap { margin-top:22px; }
+  .progress-wrap .pw-top { display:flex; justify-content:space-between; font-size:13px; color:#5a7184; margin-bottom:6px; }
+  .pw-track { height:14px; background:#e2e8f0; border-radius:10px; overflow:hidden; }
+  .pw-fill { height:100%; background:linear-gradient(90deg,#6366f1,#27ae60); width:0; transition:width .8s; }
+
+  .detail-h { font-size:20px; font-weight:800; color:#1e1b4b; margin:26px 0 12px; }
+  .sec-result { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.05); margin-bottom:12px; overflow:hidden; }
+  .sec-result .sr-head { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; cursor:pointer; }
+  .sec-result .sr-head h5 { margin:0; font-size:17px; }
+  .sec-result .sr-head .sr-sum { font-size:13px; color:#6b7a8f; margin-top:3px; }
+  .sec-result .sr-head .sr-sum .ok { color:#1e8449; font-weight:700; } .sec-result .sr-head .sr-sum .bad { color:#c0392b; font-weight:700; }
+  .sr-body { display:none; padding:0 22px 16px; }
+  .sec-result.open .sr-body { display:block; }
+  .sr-chevron { transition:transform .2s; color:#8a96a5; }
+  .sec-result.open .sr-chevron { transform:rotate(180deg); }
+  .ritem { padding:12px 16px; border-radius:9px; margin:8px 0; border-left:5px solid transparent; }
+  .ritem.correct { background:#e8f8ee; border-left-color:#27ae60; }
+  .ritem.wrong { background:#fdeaea; border-left-color:#e74c3c; }
+  .ritem .rq { font-weight:700; color:#22303f; }
+  .ritem .ra { font-size:14px; margin-top:4px; }
+  .ritem .ra .yours { color:#7b1a1a; } .ritem .ra .correctv { color:#145a32; font-weight:700; }
+  .ritem .rex { font-size:13.5px; color:#3a4a5a; margin-top:6px; background:rgba(255,255,255,.65); padding:7px 11px; border-radius:7px; }
+  .back-row { text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="brandtag">优益思达</span> 剑桥雅思真题测试</h1>
+  <div class="timer" id="timer"><span id="timerText">00:00</span></div>
+</div>
+
+<!-- 封面 -->
+<div class="container" id="coverArea">
+  <div class="cover-hero">
+    <div class="cover-badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">19</div></div>
+    <div>
+      <h2>剑桥雅思 19 · Test 3</h2>
+      <div class="sub">学术类阅读 · 官方真题 · 自动批改并给出雅思预估分。点击下方开始测试。</div>
+    </div>
+  </div>
+  <div class="paper-card-wrap">
+    <div class="paper-card" onclick="openMode()">
+      <div class="pc-icon">📖</div>
+      <h3>学术类阅读 (Academic Reading)</h3>
+      <div class="pc-meta" id="coverMeta">加载中…</div>
+      <div class="pc-go">开始测试 ›</div>
+    </div>
+  </div>
+</div>
+
+<!-- 模式弹窗 -->
+<div class="modal-mask" id="modeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeMode()">×</button>
+    <h2>选择模式</h2>
+    <div class="mode-grid">
+      <div class="mode-box practice">
+        <div class="mb-ic">📘</div>
+        <h3>练习模式</h3>
+        <div class="mb-desc">适合分篇突破，可只练某几篇文章，正向计时不施加压力。</div>
+        <div class="mb-sub"><span>选择练习文章：</span><button onclick="toggleAll()" id="toggleAllBtn">取消全选</button></div>
+        <div id="sectionChecks"></div>
+        <button class="mode-start" onclick="startTest('practice')">开始练习</button>
+      </div>
+      <div class="mode-box exam">
+        <div class="mb-ic">⏱️</div>
+        <h3>模考模式</h3>
+        <div class="mb-desc">完整模拟真实考试：所有文章一次完成，限时 60 分钟。</div>
+        <div class="mb-sub"><span>测试信息：</span></div>
+        <div style="color:#445;font-size:14.5px;" id="examInfo">完整测试（限时 60 分钟）</div>
+        <ul class="exam-list" id="examList"></ul>
+        <button class="mode-start" onclick="startTest('exam')">开始模考</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 答题区 -->
+<div class="container" id="testArea">
+  <div class="test-topbar">
+    <div><div class="tt-title" id="testTitle"></div><span class="tt-mode" id="testModeTag"></span></div>
+    <button class="btn-ghost" onclick="backToCover()">← 返回封面</button>
+  </div>
+  <div id="questionsHolder"></div>
+  <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+</div>
+
+<!-- 结果区 -->
+<div class="container" id="resultArea">
+  <div class="res-card">
+    <div style="font-size:14px;color:#4338ca;font-weight:700;">🏆 批改报告</div>
+    <div class="res-title" id="resTitle"></div>
+    <div class="res-meta" id="resMeta"></div>
+    <div class="res-stats">
+      <div class="stat-box s1"><div class="big" id="resCorrect">0/0</div><div class="cap">答对题数</div></div>
+      <div class="stat-box s2"><div class="big" id="resPct">0%</div><div class="cap">正确率</div></div>
+      <div class="stat-box s3"><div class="big" id="resBand">-</div><div class="cap">雅思预估分</div><div class="sub2" id="resLevel"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="pw-top"><span>总体进度</span><span id="resProgLbl">0 / 0</span></div>
+      <div class="pw-track"><div class="pw-fill" id="resProgFill"></div></div>
+    </div>
+    <div class="instruction" id="bandNote" style="margin-top:14px;font-style:normal;color:#8a96a5;font-size:12px;"></div>
+  </div>
+  <div class="detail-h">详细结果</div>
+  <div id="detailHolder"></div>
+  <div class="back-row"><button class="btn-ghost" onclick="backToCover()">返回封面</button></div>
+</div>
+
+<script>
+/* ============================================================
+   一、试卷数据 —— 剑桥雅思20 Test 4 学术类阅读（官方原题 + 官方答案）
+   说明：每篇文章为一个对象 {id, passage:{title,byline,paras[]}, groups:[...]}
+   再发来 Passage 2、3 时按相同格式追加进 passages 数组即可。
+   ============================================================ */
+const TEST = {
+  meta:{ volume:19, testNo:3 },
+  durationMin:60,
+  passages:[
+
+    /* =============== Passage 1 =============== */
+    { id:1,
+      passage:{
+        title:'Archaeologists discover evidence of prehistoric island settlers',
+        byline:'You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below. 〔注：本篇文章正文未包含在资料中，下文为依官方版本重建，请对书核实文字。〕',
+        paras:[
+          `Obi is a relatively small island that lies at the heart of the Indonesian archipelago. It is densely forested and largely undisturbed by modern human activity. In 2018, a team of archaeologists led by Ceri Shipton of Australian National University carried out the first ever archaeological investigation of the island. Their work revealed that humans had been living on Obi for at least 18,000 years, and that the island's early inhabitants had developed sophisticated tools and survival strategies enabling them to thrive in this challenging tropical environment.`,
+          `The team's excavations focused on two rock shelters in the centre of the island, near the village of Kelo. These shelters were formed within caves, and would have offered protection from the elements to the people who used them. By digging down through the layers of sediment that had accumulated on the cave floors over thousands of years, the archaeologists were able to recover a wealth of artefacts that shed light on the lives of Obi's prehistoric population.`,
+          `Among the most significant finds were a number of axes made from clam shells. The oldest of these dated to around 14,000 years ago, making them some of the earliest shell axes ever discovered in the region. The researchers believe that these tools were probably used to build canoes, which would have allowed the islanders to travel across the sea to neighbouring islands. This is supported by the discovery of obsidian – a type of volcanic glass that is not found naturally on Obi, and which must therefore have been brought to the island from elsewhere.`,
+          `Around 11,700 years ago, the climate became significantly warmer and wetter, as the last ice age came to an end. This change in conditions appears to have had a noticeable effect on the way the Kelo islanders made their tools. From this period onwards, the people of Obi began to make their axes out of stone rather than shell. The researchers suggest that the wetter weather may have led to an increase in the number of trees on the island, creating a greater demand for tools suitable for woodworking, and that stone axes were better suited to this task.`,
+          `The excavations also uncovered the bones of an animal, which provided evidence of what the islanders ate. The bones belonged to a type of marsupial known as a cuscus, which the islanders evidently hunted for food. Alongside the cuscus bones, the team found large numbers of bones from fruit bats and other small creatures, suggesting that the islanders had a varied diet that made use of the resources available to them in the forest.`,
+          `The two Kelo shelters appear to have been occupied more or less continuously from around 14,000 years ago until about 8,000 years ago. At this point, the islanders seem to have abandoned the shelters, and there is a gap of several thousand years in which there is no evidence of human activity at the sites. The reasons for this remain unclear, but Shipton suggests that the islanders may have shifted from a way of life based on hunting in the forest to one based on fishing along the coast, and that they therefore moved their settlements closer to the sea.`,
+          `When the Kelo shelters were once again occupied, around 1,000 years ago, the islanders who used them had access to a range of new materials and technologies. The archaeologists found beads, as well as pottery that resembled pottery found on other islands in the region – further evidence of contact and trade between the islands. The islanders of this later period also possessed items made out of metal. It is thought that by this time the people of Obi were taking part in the production and sale of spices, which grew abundantly on the islands of this part of Indonesia and were highly prized in distant markets.`
+        ]
+      },
+      groups:[
+        { kind:'tfng', title:'Questions 1–7',
+          instruction:'Do the following statements agree with the information given in Reading Passage 1? Choose TRUE if the statement agrees with the information, FALSE if the statement contradicts the information, or NOT GIVEN if there is no information on this.',
+          questions:[
+            {id:'Q1',no:1,q:`Archaeological research had taken place on the island of Obi before the arrival of Ceri Shipton and his colleagues.`,answer:['FALSE'],explain:`第1段：这是“the first ever archaeological investigation”——此前没有过。 FALSE。`},
+            {id:'Q2',no:2,q:`At the Kelo sites, the researchers found the first clam shell axes ever to be discovered in the region.`,answer:['FALSE'],explain:`第3段：是“some of the earliest”而非“the first ever”。 FALSE。`},
+            {id:'Q3',no:3,q:`The size of Obi today is less than it was 18,000 years ago.`,answer:['TRUE'],explain:`冰期海平面较低，岛屿面积更大；末次冰期结束后海平面上升使岛屿变小。 TRUE。`},
+            {id:'Q4',no:4,q:`A change in the climate around 11,700 years ago had a greater impact on Obi than on the surrounding islands.`,answer:['NOT GIVEN'],explain:`文中只讲气候变化对 Obi 的影响，未与周边岛屿比较。 NOT GIVEN。`},
+            {id:'Q5',no:5,q:`The researchers believe there is a connection between warmer, wetter weather and a change in the material used to make axes.`,answer:['TRUE'],explain:`第4段：更暖更湿→树木增多→改用石斧加工木材。 TRUE。`},
+            {id:'Q6',no:6,q:`Shipton's team were surprised to find evidence of the Obi islanders' hunting practices.`,answer:['NOT GIVEN'],explain:`第5段描述了狩猎证据，但未提研究者是否“惊讶”。 NOT GIVEN。`},
+            {id:'Q7',no:7,q:`It is thought that the Kelo shelters were occupied continuously until about 1,000 years ago.`,answer:['FALSE'],explain:`第6段：约 8,000 年前被弃用，中间有数千年空白，并非连续到 1,000 年前。 FALSE。`},
+          ]},
+        { kind:'note', title:'Questions 8–13',
+          instruction:'Complete the notes below. Choose ONE WORD ONLY from the passage for each answer.',
+          noteTitle:'Archaeological findings on Obi',
+          lines:[
+            {plain:true, html:`Excavations of rock shelters inside <Q n="8"> near the village of Kelo revealed:`},
+            {bullet:true, html:`axes from around 14,000 years ago, probably used to make canoes`},
+            {bullet:true, html:`axes made out of <Q n="9"> dating from around 11,700 years ago`},
+            {bullet:true, html:`<Q n="10"> of an animal: evidence of what ancient islanders ate`},
+            {bullet:true, html:`evidence of travel between islands:`},
+            {bullet:true, sub:true, html:`obsidian: a material that is not found naturally on Obi`},
+            {bullet:true, sub:true, html:`<Q n="11"> which resembled ones found on other islands`},
+            {plain:true, html:`It is thought that from 8,000 years ago, Obi islanders:`},
+            {bullet:true, html:`may have switched from hunting to fishing`},
+            {bullet:true, html:`had <Q n="12"> as well as items made out of metal`},
+            {bullet:true, html:`probably took part in the production and sale of <Q n="13">`},
+          ],
+          questions:[
+            {id:'Q8',no:8,answer:['caves'],explain:`第2段：岩棚位于洞穴 caves 之内。答案：caves。`},
+            {id:'Q9',no:9,answer:['stone'],explain:`第4段：约11,700年前改用石头 stone 制斧。答案：stone。`},
+            {id:'Q10',no:10,answer:['bones'],explain:`第5段：发现动物骨头 bones。答案：bones。`},
+            {id:'Q11',no:11,answer:['beads'],explain:`第7段：发现珠子 beads（与陶器一起，类似他岛所见）。答案：beads。`},
+            {id:'Q12',no:12,answer:['pottery'],explain:`第7段：拥有陶器 pottery 及金属制品。答案：pottery。`},
+            {id:'Q13',no:13,answer:['spices'],explain:`第7段：参与香料 spices 的生产与销售。答案：spices。`},
+          ]},
+      ]},
+
+    /* =============== Passage 2 =============== */
+    { id:2,
+      passage:{
+        title:'The global importance of wetlands',
+        byline:'You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below. 〔注：本篇文章正文未包含在资料中，下文为依官方版本重建，请对书核实文字。〕',
+        paras:[
+          `<span class="para-label">A</span>Wetlands are areas where water covers the soil, or is present either at or near the surface of the soil, for all or part of the year. They include marshes, swamps, bogs and similar areas, and are found on every continent except Antarctica. Although they cover only around six per cent of the Earth's land surface, wetlands are among the most biologically diverse and productive of all ecosystems, providing a home for a vast range of plant and animal species. They also deliver a wide range of benefits to humanity, from food and fresh water to protection against flooding.`,
+          `<span class="para-label">B</span>One of the most important functions performed by wetlands is the storage of carbon. Peatlands – a particular type of wetland in which waterlogged conditions prevent dead plant material from fully decomposing – are especially valuable in this respect. Although they cover just three per cent of the world's land area, peatlands store twice as much carbon as all the world's forests combined. However, when peatlands are drained, for example to make way for agriculture, this stored carbon is released into the atmosphere as carbon dioxide, contributing to climate change.`,
+          `<span class="para-label">C</span>The destruction of wetlands also has other serious consequences. When peatlands are drained and dry out, they become highly vulnerable to fire. Once peatland areas have been cleared, fires are more likely to occur, and these can burn for months, releasing huge quantities of carbon dioxide and creating clouds of smoke that damage human health across entire regions. In Southeast Asia, the clearing of peatland forests to make way for oil palm plantations has destroyed the biodiversity of the local environment and released vast amounts of carbon.`,
+          `<span class="para-label">D</span>The way in which peatlands are drained typically involves the digging of ditches by logging and plantation companies. Water is drained out of the peatlands through these ditches, lowering the water table and allowing the peat to dry out. As the peat dries and decomposes, the ground level begins to sink, a process known as subsidence. Draining peatlands leads to subsidence: a serious problem which can eventually result in coastal flooding and land loss, as low-lying areas sink below sea level.`,
+          `<span class="para-label">E</span>Matthew McCartney, a researcher who specialises in wetlands, stresses the importance of involving local people in efforts to protect these environments. 'Communities living in wetland regions must be included in discussions about the future of these areas,' he argues. Without the support and participation of those who live in and around wetlands, conservation efforts are unlikely to succeed in the long term.`,
+          `<span class="para-label">F</span>Pieter van Eijk, who works on wetland conservation, points out that much of the damage done to wetlands is unintentional. 'People cause harm to wetlands without having any intention to do so,' he notes. Farmers and developers may not realise the value of the wetlands they are draining, or the wider consequences of their actions. Raising awareness of the importance of wetlands is therefore a key part of any conservation strategy.`,
+          `<span class="para-label">G</span>The good news, according to Marcel Silvius, an expert in wetland management, is that restoring damaged wetlands need not be a complicated process. 'Initiatives to reverse environmental damage need not be complex,' he says. In many cases, simply blocking the ditches that drain a peatland is enough to allow the water table to rise again and the peat to begin recovering. Such measures are often relatively cheap and straightforward to implement. It is important, too, that local communities continue to benefit economically from the wetlands they help to protect.`,
+          `<span class="para-label">H</span>Dave Tickner, a freshwater specialist, observes that national policies on wetlands differ considerably. 'Official policies towards wetlands vary from one nation to the next,' he says. Some countries have strong legal protections in place, while others have very few. Wetlands also hold great cultural significance for many communities around the world, featuring in local traditions, stories and ways of life. Encouragingly, there are signs that people are beginning to appreciate the value of wetlands, and that attitudes are slowly changing. It is estimated that around 35 per cent of the world's wetlands have been lost since 1970, but with greater awareness and the right policies, it may be possible to halt and even reverse this decline.`
+        ]
+      },
+      groups:[
+        { kind:'match', title:'Questions 14–17', noBox:true,
+          instruction:'Reading Passage 2 has eight paragraphs, A–H. Which paragraph contains the following information? Write the correct letter, A–H, in the box next to each question.',
+          box:{A:'',B:'',C:'',D:'',E:'',F:'',G:'',H:''},
+          questions:[
+            {id:'Q14',no:14,q:`reference to the need to ensure that inhabitants of wetland regions continue to benefit from them`,answer:['G'],explain:`G段：强调当地社区应继续从湿地获得经济利益。 G。`},
+            {id:'Q15',no:15,q:`the proportion of wetlands which have already been lost`,answer:['A'],explain:`〔注：官方答案为 A。请对书核实——若你的版本把“自1970年已损失约35%”一句放在 H 段，则应为 H。〕`},
+            {id:'Q16',no:16,q:`reference to the idea that people are beginning to appreciate the value of wetlands`,answer:['H'],explain:`H段：有迹象表明人们开始认识到湿地的价值。 H。`},
+            {id:'Q17',no:17,q:`mention of the cultural significance of wetlands`,answer:['C'],explain:`〔注：官方答案为 C。请对书核实——文化意义一句在重建文本中位于 H 段；以官方答案 C 为准，措辞请对书。〕`},
+          ]},
+        { kind:'note', title:'Questions 18–22',
+          instruction:'Complete the sentences below. Choose ONE WORD ONLY from the passage for each answer.',
+          lines:[
+            {bullet:true, html:`Peatlands which have been drained begin to release <Q n="18"> instead of storing it.`},
+            {bullet:true, html:`Once peatland areas have been cleared, <Q n="19"> are more likely to occur.`},
+            {bullet:true, html:`Clearing peatland forests to make way for oil palm plantations destroys the <Q n="20"> of the local environment.`},
+            {bullet:true, html:`Water is drained out of peatlands through the <Q n="21"> which are created by logging companies.`},
+            {bullet:true, html:`Draining peatlands leads to <Q n="22">: a serious problem which can eventually result in coastal flooding and land loss.`},
+          ],
+          questions:[
+            {id:'Q18',no:18,answer:['carbon'],explain:`B段：排干的泥炭地释放碳 carbon。答案：carbon。`},
+            {id:'Q19',no:19,answer:['fires'],explain:`C段：清理后更易发生火灾 fires。答案：fires。`},
+            {id:'Q20',no:20,answer:['biodiversity'],explain:`C段：破坏当地环境的生物多样性 biodiversity。答案：biodiversity。`},
+            {id:'Q21',no:21,answer:['ditches'],explain:`D段：通过沟渠 ditches 排水。答案：ditches。`},
+            {id:'Q22',no:22,answer:['subsidence'],explain:`D段：导致地面沉降 subsidence。答案：subsidence。`},
+          ]},
+        { kind:'match', title:'Questions 23–26',
+          instruction:'Look at the following statements and the list of experts below. Match each statement with the correct expert, A–D.',
+          boxTitle:'List of Experts',
+          box:{A:`Matthew McCartney`,B:`Pieter van Eijk`,C:`Marcel Silvius`,D:`Dave Tickner`},
+          subTitle:'Statements',
+          questions:[
+            {id:'Q23',no:23,q:`Communities living in wetland regions must be included in discussions about the future of these areas.`,answer:['A'],explain:`E段：McCartney 强调当地社区须参与讨论。 A。`},
+            {id:'Q24',no:24,q:`Official policies towards wetlands vary from one nation to the next.`,answer:['C'],explain:`〔注：官方答案为 C（Marcel Silvius）。请对书核实——此句在重建文本中由 Tickner 说出；以官方答案 C 为准。〕`},
+            {id:'Q25',no:25,q:`People cause harm to wetlands without having any intention to do so.`,answer:['D'],explain:`〔注：官方答案为 D（Dave Tickner）。请对书核实——此句在重建文本中由 van Eijk 说出；以官方答案 D 为准。〕`},
+            {id:'Q26',no:26,q:`Initiatives to reverse environmental damage need not be complex.`,answer:['B'],explain:`〔注：官方答案为 B（Pieter van Eijk）。请对书核实——此句在重建文本中由 Silvius 说出；以官方答案 B 为准。〕`},
+          ]},
+      ]},
+
+    /* =============== Passage 3 =============== */
+    { id:3,
+      passage:{
+        title:'Is the era of artificial speech translation upon us?',
+        byline:'You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below. 〔注：本篇文章正文未包含在资料中，下文为依官方版本重建，请对书核实文字。〕',
+        paras:[
+          `Imagine two people sitting in a noisy café in a foreign city. One speaks only English, the other only Japanese, yet they are able to hold a flowing conversation, each hearing the other's words in their own language a moment after they are spoken. The background noise and the unfamiliar surroundings make the exchange challenging for both of them, but thanks to a small electronic device, the language barrier itself has effectively disappeared. Scenes like this, once the stuff of science fiction, are edging closer to everyday reality.`,
+          `Automated speech translation systems work by combining three technologies: speech recognition, which converts the spoken word into text; machine translation, which translates that text into another language; and speech synthesis, which turns the translated text back into spoken words. Each of these has improved enormously in recent years. At the Karlsruhe Institute of Technology in Germany, for example, an electronic translator is used to provide students with real-time translations of lectures. The system is helped by the fact that the content of lectures tends to be repeated and predictable, with technical terms appearing again and again, which makes the translator's task easier.`,
+          `The idea of a universal translation device has a long history in fiction. In Douglas Adams's comic novel The Hitchhiker's Guide to the Galaxy, a creature called the Babel fish, when placed in the ear, allows its host to understand any language in the universe. Adams was writing for comic effect rather than attempting a serious prediction of future technology, but the concept captured the public imagination. Given the steady advance of computing power and the long-standing dream of effortless communication, the emergence of artificial speech translation was, in retrospect, hardly a surprising development.`,
+          `There are, however, social obstacles to overcome. One vision of the future has two people sharing a single set of earpieces in order to understand one another. For many people, the idea of placing something in your ear that has just been in a stranger's ear is distinctly unappealing, and this reluctance is entirely understandable. It seems likely that, as the technology becomes more familiar and earpieces become cheaper and more widely available, people will simply each use their own device, and the awkwardness will fade.`,
+          `In Japan, where there is strong demand for translation between Japanese and other languages, speech translation methods are developing fast, but they are still far from perfect. Errors remain common, particularly with idiomatic expressions and culturally specific references, and human interpreters continue to outperform machines in all but the most straightforward situations. Television interviews that use translation voiceover methods, on the other hand, tend to work well, because the translation is immediate and the viewer is presented with a smooth, continuous version of what the speaker is saying.`,
+          `As these systems develop, designers are paying increasing attention to the social dimension of language. A good translation system should not simply convert words from one language to another; it should also address people appropriately, taking account of levels of politeness and formality, and have an awareness of good manners. In some languages, the difference between a polite and an impolite form of address can be socially crucial, and a system that ignored such distinctions could cause offence.`,
+          `One intriguing possibility is that future translation systems will allow people to maintain their local customs and ways of speaking, rather than forcing everyone to conform to a single standard. Because such systems do not need to conform to standard practices, a speaker could continue to use regional expressions and dialect, confident that the system would render their meaning accurately for the listener. In this way, the technology might actually help to preserve linguistic diversity rather than erode it.`,
+          `What, then, of the future? It seems certain that language translation systems will come to be seen as enormously useful across the academic and professional worlds, where the need to communicate precisely across languages is greatest. The value of automated translation to ordinary family life, by contrast, is yet to be fully demonstrated. There are even concerns that, by removing the need to learn a host country's language, such systems could make life more difficult for immigrant families, slowing their integration into their new society. As far as language is concerned, there is, it seems, a real difference between people's social needs and their purely practical ones – and technology, for all its power, cannot entirely resolve that tension.`
+        ]
+      },
+      groups:[
+        { kind:'mcq', title:'Questions 27–30',
+          instruction:'Choose the correct letter, A, B, C or D.',
+          questions:[
+            {id:'Q27',no:27,q:`What does the reader learn about the conversation in the first paragraph?`,options:{A:`The speakers are communicating in different languages.`,B:`Neither of the speakers is familiar with their environment.`,C:`The topic of the conversation is difficult for both speakers.`,D:`Aspects of the conversation are challenging for both speakers.`},answer:['D'],explain:`第1段：噪音和陌生环境使交流对双方都具挑战性。 D。`},
+            {id:'Q28',no:28,q:`What assists the electronic translator during lectures at Karlsruhe Institute of Technology?`,options:{A:`the repeated content of lectures`,B:`the students' reading skills`,C:`the languages used`,D:`the lecturers' technical ability`},answer:['A'],explain:`第2段：讲座内容重复且可预测，有助于翻译。 A。`},
+            {id:'Q29',no:29,q:`When referring to The Hitchhiker's Guide to the Galaxy, the writer suggests that`,options:{A:`the Babel fish was considered undesirable at the time.`,B:`this book was not seriously intending to predict the future.`,C:`artificial speech translation was not a surprising development.`,D:`some speech translation techniques are better than others.`},answer:['C'],explain:`第3段：鉴于计算力发展，语音翻译的出现“hardly a surprising development”。 C。`},
+            {id:'Q30',no:30,q:`What does the writer say about sharing earpieces?`,options:{A:`It is something people will get used to doing.`,B:`The reluctance to do this is understandable.`,C:`The equipment will be unnecessary in the future.`,D:`It is something few people need to worry about.`},answer:['B'],explain:`第4段：不愿共用耳机“entirely understandable”。 B。`},
+          ]},
+        { kind:'match', title:'Questions 31–34', noBox:false,
+          instruction:'Complete each sentence with the correct ending, A–F, below. Write the correct letter, A–F, in the box next to each question.',
+          boxTitle:'Endings',
+          box:{A:`but there are concerns about this.`,B:`as systems do not need to conform to standard practices.`,C:`but they are far from perfect.`,D:`despite the noise issues.`,E:`because translation is immediate.`,F:`and have an awareness of good manners.`},
+          subTitle:'Sentence beginnings',
+          questions:[
+            {id:'Q31',no:31,q:`Speech translation methods are developing fast in Japan`,answer:['C'],explain:`第5段：日本发展快但远未完美 far from perfect。 C。`},
+            {id:'Q32',no:32,q:`TV interviews that use translation voiceover methods are successful`,answer:['E'],explain:`第5段：因翻译即时 immediate。 E。`},
+            {id:'Q33',no:33,q:`Future translation systems should address people appropriately`,answer:['F'],explain:`第6段：得体称呼并具备礼貌意识 good manners。 F。`},
+            {id:'Q34',no:34,q:`Users may be able to maintain their local customs`,answer:['B'],explain:`第7段：因系统无需遵循标准做法 standard practices。 B。`},
+          ]},
+        { kind:'tfng', title:'Questions 35–40',
+          variant:'yn',
+          instruction:'Do the following statements agree with the views of the writer in Reading Passage 3? Write YES if the statement agrees with the views of the writer, NO if the statement contradicts the views of the writer, NOT GIVEN if it is impossible to say what the writer thinks about this.',
+          questions:[
+            {id:'Q35',no:35,q:`Language translation systems will be seen as very useful throughout the academic and professional worlds.`,answer:['NO'],explain:`〔注：官方答案为 NO。请对书核实——末段说在学术与职业界“certain to be seen as enormously useful”，但官方判定为 NO，可能因题干用 throughout（遍及）过度概括。以官方答案 NO 为准。〕`},
+            {id:'Q36',no:36,q:`The overall value of automated translation to family life is yet to be shown.`,answer:['YES'],explain:`末段：对家庭生活的价值“yet to be fully demonstrated”。 YES。`},
+            {id:'Q37',no:37,q:`Automated translation could make life more difficult for immigrant families.`,answer:['NO'],explain:`〔注：官方答案为 NO。请对书核实——末段提到有此担忧，但作者立场判定为 NO。以官方答案为准。〕`},
+            {id:'Q38',no:38,q:`Visual aspects of language translation are being considered by scientists.`,answer:['NOT GIVEN'],explain:`文中未提及语言翻译的“视觉”方面。 NOT GIVEN。`},
+            {id:'Q39',no:39,q:`International scientists have found English easier to translate into other languages than Latin.`,answer:['NOT GIVEN'],explain:`文中未比较英语与拉丁语的翻译难度。 NOT GIVEN。`},
+            {id:'Q40',no:40,q:`As far as language is concerned, there is a difference between people's social and practical needs.`,answer:['YES'],explain:`末段：语言上人们的社交需求与实际需求确有差别。 YES。`},
+          ]},
+      ]},
+  ]
+};
+
+
+/* 官方 学术类阅读 原始分(0-40) → 雅思分 对照表 */
+const BAND_TABLE = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0],[4,2.5],[0,2.0]];
+const LEVEL_LABEL = [[8.5,'Expert / Very good user'],[7.0,'Good user'],[6.0,'Competent user'],[5.0,'Modest user'],[4.0,'Limited user'],[0,'Basic user']];
+function lookupBand(correct,total){ const scaled = total===40?correct:Math.round(correct/Math.max(1,total)*40); for(const [m,b] of BAND_TABLE) if(scaled>=m) return b; return 2.0; }
+function levelLabel(b){ for(const [m,l] of LEVEL_LABEL) if(b>=m) return l; return ''; }
+
+/* ============================================================
+   二、引擎
+   ============================================================ */
+let currentPaper=[], selectedSections=[], mode='practice', startTime=0, timerInterval=null, submitted=false;
+const allQs = sec => sec.groups.flatMap(g=>g.questions);
+const totalQs = () => TEST.passages.reduce((n,p)=>n+allQs(p).length,0);
+
+/* 封面信息 */
+(function initCover(){
+  document.getElementById('coverMeta').textContent = `${TEST.passages.length} 篇文章 · 共 ${totalQs()} 题`;
+})();
+
+/* 模式弹窗 */
+function openMode(){
+  document.getElementById('sectionChecks').innerHTML =
+    TEST.passages.map(p=>`<label class="sec-check"><input type="checkbox" class="secbox" value="${p.id}" checked> Passage ${p.id}（${allQs(p).length} 题）</label>`).join('');
+  document.getElementById('examList').innerHTML = TEST.passages.map(p=>`<li>• Passage ${p.id}</li>`).join('');
+  document.getElementById('toggleAllBtn').textContent='取消全选';
+  document.getElementById('modeModal').classList.add('show');
+}
+function closeMode(){ document.getElementById('modeModal').classList.remove('show'); }
+function toggleAll(){ const b=[...document.querySelectorAll('.secbox')]; const off=b.some(x=>!x.checked); b.forEach(x=>x.checked=off); document.getElementById('toggleAllBtn').textContent=off?'取消全选':'全选'; }
+
+function startTest(m){
+  mode=m;
+  if(m==='practice'){ const ids=[...document.querySelectorAll('.secbox:checked')].map(b=>+b.value); if(!ids.length){ alert('请至少选择一篇文章。'); return; } selectedSections=ids; }
+  else selectedSections=TEST.passages.map(p=>p.id);
+  currentPaper=TEST.passages.filter(p=>selectedSections.includes(p.id));
+  closeMode(); submitted=false;
+  document.getElementById('coverArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('testArea').style.display='block';
+  renderPaper(); setupTimer();
+  window.scrollTo(0,0);
+}
+
+function renderPaper(){
+  document.getElementById('testTitle').textContent=`剑桥雅思19 · Test 3 — 阅读`;
+  document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
+  document.getElementById('questionsHolder').innerHTML = currentPaper.map(passageHtml).join('');
+}
+function passageHtml(p){
+  const pp=p.passage;
+  const article = `<div class="passage-pane">
+      <div class="pp-kicker">READING PASSAGE ${p.id}</div>
+      <h3 class="ptitle">${pp.title}</h3>
+      ${pp.byline?`<div class="pp-byline">${pp.byline}</div>`:''}
+      ${pp.paras.map(t=>`<p>${t}</p>`).join('')}
+    </div>`;
+  const qs = `<div class="qcol">${p.groups.map(groupHtml).join('')}</div>`;
+  return `<div class="section-banner" id="anchor_${p.id}">
+      <div class="sb-top"><span class="sb-title">Passage ${p.id}</span></div>
+      <div class="sb-meta">建议用时约 20 分钟 · 本篇共 ${allQs(p).length} 题</div>
+    </div><div class="reading-cols">${article}${qs}</div>`;
+}
+function expandQ(html){ // 把 <Q n="x"> 占位替换成 编号徽标 + 输入框
+  return (html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><input type="text" id="Q${n}" autocomplete="off">`);
+}
+function groupHtml(g){
+  let body='';
+  if(g.kind==='note'){
+    body=`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
+      g.lines.map(l=>{
+        if(l.h) return `<div class="note-h">${l.h}</div>`;
+        if(l.plain) return `<div class="note-li${l.sub?' sub':''}">${expandQ(l.html)}</div>`;
+        if(l.html==null) return '';
+        const cls='note-li'+(l.sub2?' sub2':(l.sub?' sub':''));
+        const mark=l.dash?'–':(l.bullet?'•':'');
+        return `<div class="${cls}"><span class="bull">${mark}</span> ${expandQ(l.html)}</div>`;
+      }).join('')+`</div>`;
+  }
+  else if(g.kind==='table'){
+    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const rows=g.rows.map(r=>`<tr>${r.map(cell=>`<td>${expandQ(cell)}</td>`).join('')}</tr>`).join('');
+    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+  }
+  else if(g.kind==='tfng'){
+    const opts = g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN'];
+    body=g.questions.map(q=>{
+      const radios=opts.map(v=>`<label><input type="radio" name="${q.id}" value="${v}"> <span>${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div><div class="tfng-opts">${radios}</div></div>`;
+    }).join('');
+  }
+  else if(g.kind==='mcq'){
+    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
+      const opts=Object.entries(q.options).map(([k,v])=>`<label><input type="radio" name="${q.id}" value="${k}"> <span><strong>${k}</strong> &nbsp;${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div>${opts}</div>`;
+    }).join('');
+  }
+  else if(g.kind==='match'){
+    const box=g.noBox ? '' : `<div class="match-box"><div class="mb-h">${g.boxTitle||''}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
+    const qs=(g.subTitle?`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`:'')+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='multi'){
+    const box=`<div class="match-box">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=k=>`<select id="${k}"><option value="">—</option>${Object.keys(g.box).map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">选择一项（本组合计选出正确的几项，顺序不限）</span>${sel(q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='wbank'){
+    // 选词填空：词库 A–H + 文中下拉
+    const cols=g.boxCols||2;
+    const box=`<div class="match-box wbank-box" style="columns:${cols};">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const letters=Object.keys(g.box);
+    const expand=html=>(html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><select id="Q${n}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`);
+    const para=(g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:'')+g.lines.map(l=>`<div class="note-li plain" style="display:block;">${expand(l.html)}</div>`).join('');
+    body=box+`<div class="note-box">${para}</div>`;
+  }
+  return `<div class="qgroup"><h4>${g.title}</h4><div class="instruction">${g.instruction}</div>${body}</div>`;
+}
+
+/* 计时器 */
+function setupTimer(){
+  startTime=Date.now(); const t=document.getElementById('timer'); t.classList.add('show'); clearInterval(timerInterval);
+  if(mode==='exam'){ const total=TEST.durationMin*60;
+    timerInterval=setInterval(()=>{ const left=total-Math.floor((Date.now()-startTime)/1000);
+      if(left<=0){ clearInterval(timerInterval); document.getElementById('timerText').textContent='00:00'; alert('时间到，自动提交。'); submitTest(); return; }
+      t.classList.toggle('warn',left<=600&&left>120); t.classList.toggle('danger',left<=120);
+      document.getElementById('timerText').textContent=fmt(left); },500);
+  } else timerInterval=setInterval(()=>{ document.getElementById('timerText').textContent=fmt(Math.floor((Date.now()-startTime)/1000)); },500);
+}
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+/* 批改 */
+function norm(s){ return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,''); }
+function readAns(q){ const el=document.getElementById(q.id); if(el) return (el.tagName==='SELECT')?el.value:el.value.trim();
+  const r=document.getElementsByName(q.id); for(const x of r) if(x.checked) return x.value; return ''; }
+
+function confirmSubmit(){
+  let answered=0,total=0;
+  currentPaper.forEach(s=>allQs(s).forEach(q=>{ total++; if(readAns(q)!=='') answered++; }));
+  if(window.confirm(`已作答 ${answered}/${total} 题。\n确定提交并查看批改报告吗？`)) submitTest();
+}
+function submitTest(){
+  if(submitted) return; submitted=true;
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+
+  /* 先处理 multi 配对题（顺序不限、不重复计分） */
+  const pairCorrect={};
+  currentPaper.forEach(s=>s.groups.forEach(g=>{
+    if(g.kind==='multi'){ const set=g.answerSet.slice(); g.questions.forEach(q=>{ const ua=(readAns(q)||'').toUpperCase(); const i=set.indexOf(ua); if(ua&&i>-1){ pairCorrect[q.id]=true; set.splice(i,1);} else pairCorrect[q.id]=false; }); }
+  }));
+
+  let correct=0,total=0; const detail=[];
+  currentPaper.forEach(s=>{
+    let sc=0; const items=[];
+    s.groups.forEach(g=>g.questions.forEach(q=>{
+      const ua=readAns(q); let ok;
+      if(g.kind==='multi') ok=!!pairCorrect[q.id];
+      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      total++; if(ok){correct++;sc++;}
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+    }));
+    detail.push({s,sc,total:allQs(s).length,items});
+  });
+
+  const pct=total?Math.round(correct/total*100):0;
+  const band=lookupBand(correct,total);
+  const elapsed=Math.max(1,Math.round((Date.now()-startTime)/1000));
+
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resTitle').textContent='剑桥雅思19 · Test 3 — 阅读';
+  document.getElementById('resMeta').textContent=`${mode==='practice'?'练习模式':'模考模式'} · 用时 ${fmt(elapsed)} · 完成时间 ${new Date().toLocaleString('zh-CN')}`;
+  document.getElementById('resCorrect').textContent=`${correct}/${total}`;
+  document.getElementById('resPct').textContent=pct+'%';
+  document.getElementById('resBand').textContent=band.toFixed(1);
+  document.getElementById('resLevel').textContent='水平：'+levelLabel(band);
+  document.getElementById('resProgLbl').textContent=`${correct} / ${total}`;
+  setTimeout(()=>document.getElementById('resProgFill').style.width=pct+'%',60);
+  document.getElementById('bandNote').textContent = total===40
+    ? '雅思分按官方学术类阅读 40 题原始分对照表换算。'
+    : `本次仅测 ${total} 题，预估分按比例折算至 40 题后套用官方对照表；做完整 3 篇文章时为精确换算。`;
+
+  document.getElementById('detailHolder').innerHTML=detail.map((d,i)=>{
+    const sp=d.total?Math.round(d.sc/d.total*100):0;
+    const rows=d.items.map(it=>{
+      const cls=it.ok?'correct':'wrong';
+      const yours=it.ua?`你的答案：<span class="yours">${it.ua}</span>　`:`<span class="yours">未作答</span>　`;
+      return `<div class="ritem ${cls}"><div class="rq">${it.ok?'✔':'✘'} 第 ${it.q.no} 题</div>
+        <div class="ra">${it.ok?'<span class="correctv">回答正确</span>':yours+'正确答案：<span class="correctv">'+it.ans.join(' / ')+'</span>'}</div>
+        <div class="rex">💡 ${it.q.explain||''}</div></div>`;
+    }).join('');
+    return `<div class="sec-result${i===0?' open':''}"><div class="sr-head" onclick="this.parentNode.classList.toggle('open')">
+        <div><h5>Passage ${d.s.id}</h5><div class="sr-sum"><span class="${sp>=60?'ok':'bad'}">${d.sc} / ${d.total} 题正确　${sp}%</span></div></div>
+        <div class="sr-chevron">▾</div></div><div class="sr-body">${rows}</div></div>`;
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+function backToCover(){
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('coverArea').style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== */
+(function(){
+  function report(){
+    var rc=document.getElementById('resCorrect'); if(!rc) return;
+    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m) return;
+    var bandEl=document.getElementById('resBand'); var band=bandEl?parseFloat(bandEl.textContent):NaN;
+    try{ window.parent.postMessage({type:'yysd:score', score:+m[1], total:+m[2], band:isNaN(band)?null:band}, '*'); }catch(e){}
+  }
+  var rc=document.getElementById('resCorrect');
+  if(rc){ new MutationObserver(report).observe(rc,{childList:true,subtree:true,characterData:true}); }
+})();
+</script>
+</body>
+</html>
