@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优益思达 · 剑桥雅思16 Test 2 阅读</title>
+<meta name="exam:title" content="剑桥雅思16 · Test 2（阅读）">
+<meta name="exam:zone" content="mock">
+<meta name="exam:subject" content="cambridge-reading">
+<meta name="exam:duration" content="0">
+<meta name="exam:description" content="剑桥雅思16 Test 2 学术类阅读：乌芬顿白马、微生物与智慧决策，共40题，支持自动批改。">
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:'Segoe UI','PingFang SC',Roboto,sans-serif; background:#f0f2f6; margin:0; color:#1e2a3a; line-height:1.7; padding:0 0 60px; }
+  .header { background:linear-gradient(135deg,#1e1b4b,#312e81); color:#fff; padding:12px 28px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 18px rgba(0,0,0,.25); flex-wrap:wrap; gap:10px; }
+  .header h1 { margin:0; font-size:19px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .header h1 .brandtag { font-size:11px; background:#6366f1; padding:2px 9px; border-radius:20px; font-weight:600; letter-spacing:.5px; }
+  .timer { font-size:18px; font-weight:700; background:#1e8449; padding:6px 18px; border-radius:30px; display:none; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); transition:background .4s; }
+  .timer.show { display:flex; }
+  .timer.warn { background:#e67e22; } .timer.danger { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+  .container { max-width:1180px; margin:24px auto; padding:0 24px; }
+
+  /* 封面 */
+  .cover-hero { display:flex; align-items:center; gap:24px; background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .cover-badge { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border-radius:14px; padding:18px 30px; text-align:center; min-width:180px; }
+  .cover-badge .lbl { font-size:12px; letter-spacing:2px; color:#4f46e5; font-weight:600; }
+  .cover-badge .num { font-size:54px; font-weight:800; color:#4338ca; line-height:1; margin-top:4px; }
+  .cover-hero h2 { margin:0; font-size:30px; color:#1e1b4b; }
+  .cover-hero .sub { color:#6b7a8f; margin-top:6px; font-size:14px; }
+  .paper-card-wrap { margin-top:24px; }
+  .paper-card { border-radius:16px; padding:30px 26px; text-align:center; border:2px solid; transition:transform .15s,box-shadow .2s; background:#eef2ff; border-color:#c7d2fe; cursor:pointer; }
+  .paper-card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.10); }
+  .paper-card .pc-icon { font-size:40px; }
+  .paper-card h3 { margin:10px 0 4px; font-size:24px; color:#3730a3; }
+  .paper-card .pc-meta { font-size:13px; color:#6b7a8f; }
+  .paper-card .pc-go { margin-top:18px; display:inline-block; padding:11px 30px; border-radius:30px; color:#fff; font-weight:600; font-size:15px; background:#4f46e5; }
+
+  /* 模式弹窗 */
+  .modal-mask { display:none; position:fixed; inset:0; background:rgba(10,20,40,.55); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; max-width:880px; width:100%; padding:28px 30px 34px; position:relative; max-height:92vh; overflow:auto; }
+  .modal h2 { margin:0 0 20px; font-size:24px; color:#111; }
+  .modal-close { position:absolute; right:20px; top:18px; border:none; background:none; font-size:24px; color:#8a96a5; cursor:pointer; }
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:680px){ .mode-grid{grid-template-columns:1fr;} }
+  .mode-box { border:1px solid #e2e8f0; border-radius:14px; padding:24px 22px; }
+  .mode-box .mb-ic { width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 12px; }
+  .mode-box.practice .mb-ic { background:#e0e7ff; } .mode-box.exam .mb-ic { background:#ffe8cf; }
+  .mode-box h3 { text-align:center; margin:0 0 6px; font-size:20px; }
+  .mode-box .mb-desc { text-align:center; color:#6b7a8f; font-size:13.5px; min-height:38px; }
+  .mode-box .mb-sub { font-weight:700; color:#3730a3; margin:14px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .mode-box .mb-sub button { background:#fff; border:1px solid #cdd7e2; border-radius:8px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .sec-check { display:flex; align-items:center; gap:10px; padding:8px 4px; font-size:15px; font-weight:600; color:#3730a3; cursor:pointer; }
+  .sec-check input { width:18px; height:18px; accent-color:#4338ca; }
+  .exam-list { list-style:none; padding:0; margin:10px 0 0; color:#445; font-size:14.5px; }
+  .exam-list li { padding:3px 0; }
+  .mode-start { width:100%; margin-top:18px; border:none; color:#fff; font-weight:700; font-size:16px; padding:13px; border-radius:10px; cursor:pointer; }
+  .mode-box.practice .mode-start { background:#4f46e5; } .mode-box.exam .mode-start { background:#e67e22; }
+
+  /* 答题区 */
+  #testArea { display:none; }
+  .test-topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#fff; border-radius:14px; padding:14px 22px; box-shadow:0 4px 18px rgba(0,0,0,.05); margin-bottom:18px; position:sticky; top:60px; z-index:600; }
+  .test-topbar .tt-title { font-size:19px; font-weight:700; color:#1e1b4b; }
+  .test-topbar .tt-mode { font-size:13px; background:#eef2ff; color:#3730a3; padding:3px 12px; border-radius:20px; font-weight:600; }
+  .btn-ghost { border:1px solid #cdd7e2; background:#fff; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; color:#33475b; }
+  .btn-ghost:hover { background:#f3f6fa; }
+
+  .section-banner { background:#eef2ff; border:1px solid #c7d2fe; border-radius:12px; padding:14px 20px; margin:26px 0 14px; }
+  .section-banner .sb-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .section-banner .sb-title { font-size:20px; font-weight:800; color:#3730a3; letter-spacing:.5px; }
+  .section-banner .sb-meta { font-size:13px; color:#5a6b8a; margin-top:6px; }
+
+  /* 阅读分栏：左文章 右题目 */
+  .reading-cols { display:flex; gap:24px; align-items:flex-start; }
+  .passage-pane { flex:1 1 50%; background:#fff; border:1px solid #e3e6ee; border-radius:12px; padding:22px 26px; position:sticky; top:130px; max-height:calc(100vh - 150px); overflow:auto; }
+  .passage-pane .pp-kicker { font-size:12px; letter-spacing:1.5px; color:#6366f1; font-weight:700; }
+  .passage-pane .ptitle { margin:6px 0 4px; font-size:21px; color:#1e1b4b; }
+  .passage-pane .pp-byline { font-style:italic; color:#6b7a8f; font-size:13.5px; margin-bottom:12px; }
+  .passage-pane p { margin:0 0 13px; font-size:15px; text-align:justify; }
+  .passage-pane .para-label { font-weight:800; color:#4338ca; margin-right:6px; }
+  .qcol { flex:1 1 50%; min-width:0; }
+  @media(max-width:900px){
+    .reading-cols { flex-direction:column; }
+    .passage-pane { position:static; max-height:none; width:100%; }
+    .test-topbar { position:static; }
+  }
+
+  .qgroup { background:#fff; border:1px solid #eaeef4; border-radius:12px; padding:22px 26px; margin-bottom:18px; }
+  .qgroup h4 { margin:0 0 6px; font-size:18px; color:#111; }
+  .instruction { font-style:italic; color:#445; font-size:14.5px; margin-bottom:14px; }
+  .note-box { border:1px solid #d8e0ea; border-radius:10px; padding:18px 22px; background:#fafbff; }
+  .note-title { text-align:center; font-weight:800; font-size:17px; margin-bottom:12px; color:#22303f; }
+  .note-h { font-weight:700; margin:12px 0 4px; }
+  .note-li { margin:6px 0 6px 4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .note-li .bull { color:#7a8aa0; }
+  .note-li.sub { margin-left:26px; } .note-li.sub2 { margin-left:48px; }
+  .qnum-badge { background:#e0e7ff; color:#3730a3; font-weight:700; min-width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; padding:0 6px; }
+  input[type=text]{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:15px; width:150px; }
+  input[type=text]:focus{ border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.14); outline:none; }
+  table.note-table { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.note-table th, table.note-table td { border:1px solid #d3dce6; padding:10px 12px; font-size:14.5px; vertical-align:top; text-align:left; }
+  table.note-table th { background:#eef2ff; }
+  .mcq { margin:6px 0 16px; }
+  .mcq .qtext { font-weight:600; margin-bottom:6px; display:flex; gap:8px; }
+  .mcq label { display:flex; gap:9px; align-items:flex-start; padding:6px 10px; border-radius:7px; cursor:pointer; }
+  .mcq label:hover { background:#eef2fa; }
+  .mcq input{ accent-color:#1e1b4b; margin-top:3px; }
+  .tfng-opts { display:flex; gap:10px; flex-wrap:wrap; }
+  .tfng-opts label { border:1px solid #dfe4ee; border-radius:8px; padding:6px 14px; }
+  select{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:14.5px; min-width:70px; }
+  select:focus{ border-color:#4f46e5; outline:none; }
+  .match-box { border:1px solid #d8e0ea; border-radius:10px; background:#f6f8ff; padding:14px 18px; margin-bottom:14px; }
+  .match-box .mb-h { text-align:center; font-weight:700; margin-bottom:8px; }
+  .match-box .mb-row { display:flex; gap:10px; padding:2px 0; }
+  .match-q { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .match-q .mq-txt { flex:1; }
+
+  .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+  .submit-btn:hover { transform:translateY(-2px); }
+
+  /* 结果 */
+  #resultArea { display:none; }
+  .res-card { background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .res-title { font-size:24px; font-weight:800; color:#1e1b4b; margin:4px 0 2px; }
+  .res-meta { color:#6b7a8f; font-size:13px; margin-bottom:20px; }
+  .res-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:680px){ .res-stats{grid-template-columns:1fr;} }
+  .stat-box { border-radius:14px; padding:26px 16px; text-align:center; }
+  .stat-box.s1 { background:#eef2ff; } .stat-box.s2 { background:#eefaf2; } .stat-box.s3 { background:#f5f3ff; }
+  .stat-box .big { font-size:40px; font-weight:800; line-height:1; }
+  .stat-box.s1 .big { color:#4f46e5; } .stat-box.s2 .big { color:#1e8449; } .stat-box.s3 .big { color:#5b3fd6; }
+  .stat-box .cap { color:#5a7184; margin-top:8px; font-size:14px; }
+  .stat-box .sub2 { color:#8a96a5; font-size:12px; margin-top:2px; }
+  .progress-wrap { margin-top:22px; }
+  .progress-wrap .pw-top { display:flex; justify-content:space-between; font-size:13px; color:#5a7184; margin-bottom:6px; }
+  .pw-track { height:14px; background:#e2e8f0; border-radius:10px; overflow:hidden; }
+  .pw-fill { height:100%; background:linear-gradient(90deg,#6366f1,#27ae60); width:0; transition:width .8s; }
+
+  .detail-h { font-size:20px; font-weight:800; color:#1e1b4b; margin:26px 0 12px; }
+  .sec-result { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.05); margin-bottom:12px; overflow:hidden; }
+  .sec-result .sr-head { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; cursor:pointer; }
+  .sec-result .sr-head h5 { margin:0; font-size:17px; }
+  .sec-result .sr-head .sr-sum { font-size:13px; color:#6b7a8f; margin-top:3px; }
+  .sec-result .sr-head .sr-sum .ok { color:#1e8449; font-weight:700; } .sec-result .sr-head .sr-sum .bad { color:#c0392b; font-weight:700; }
+  .sr-body { display:none; padding:0 22px 16px; }
+  .sec-result.open .sr-body { display:block; }
+  .sr-chevron { transition:transform .2s; color:#8a96a5; }
+  .sec-result.open .sr-chevron { transform:rotate(180deg); }
+  .ritem { padding:12px 16px; border-radius:9px; margin:8px 0; border-left:5px solid transparent; }
+  .ritem.correct { background:#e8f8ee; border-left-color:#27ae60; }
+  .ritem.wrong { background:#fdeaea; border-left-color:#e74c3c; }
+  .ritem .rq { font-weight:700; color:#22303f; }
+  .ritem .ra { font-size:14px; margin-top:4px; }
+  .ritem .ra .yours { color:#7b1a1a; } .ritem .ra .correctv { color:#145a32; font-weight:700; }
+  .ritem .rex { font-size:13.5px; color:#3a4a5a; margin-top:6px; background:rgba(255,255,255,.65); padding:7px 11px; border-radius:7px; }
+  .back-row { text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="brandtag">优益思达</span> 剑桥雅思真题测试</h1>
+  <div class="timer" id="timer"><span id="timerText">00:00</span></div>
+</div>
+
+<!-- 封面 -->
+<div class="container" id="coverArea">
+  <div class="cover-hero">
+    <div class="cover-badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">16</div></div>
+    <div>
+      <h2>剑桥雅思 16 · Test 2</h2>
+      <div class="sub">学术类阅读 · 官方真题 · 自动批改并给出雅思预估分。点击下方开始测试。</div>
+    </div>
+  </div>
+  <div class="paper-card-wrap">
+    <div class="paper-card" onclick="openMode()">
+      <div class="pc-icon">📖</div>
+      <h3>学术类阅读 (Academic Reading)</h3>
+      <div class="pc-meta" id="coverMeta">加载中…</div>
+      <div class="pc-go">开始测试 ›</div>
+    </div>
+  </div>
+</div>
+
+<!-- 模式弹窗 -->
+<div class="modal-mask" id="modeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeMode()">×</button>
+    <h2>选择模式</h2>
+    <div class="mode-grid">
+      <div class="mode-box practice">
+        <div class="mb-ic">📘</div>
+        <h3>练习模式</h3>
+        <div class="mb-desc">适合分篇突破，可只练某几篇文章，正向计时不施加压力。</div>
+        <div class="mb-sub"><span>选择练习文章：</span><button onclick="toggleAll()" id="toggleAllBtn">取消全选</button></div>
+        <div id="sectionChecks"></div>
+        <button class="mode-start" onclick="startTest('practice')">开始练习</button>
+      </div>
+      <div class="mode-box exam">
+        <div class="mb-ic">⏱️</div>
+        <h3>模考模式</h3>
+        <div class="mb-desc">完整模拟真实考试：所有文章一次完成，限时 60 分钟。</div>
+        <div class="mb-sub"><span>测试信息：</span></div>
+        <div style="color:#445;font-size:14.5px;" id="examInfo">完整测试（限时 60 分钟）</div>
+        <ul class="exam-list" id="examList"></ul>
+        <button class="mode-start" onclick="startTest('exam')">开始模考</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 答题区 -->
+<div class="container" id="testArea">
+  <div class="test-topbar">
+    <div><div class="tt-title" id="testTitle"></div><span class="tt-mode" id="testModeTag"></span></div>
+    <button class="btn-ghost" onclick="backToCover()">← 返回封面</button>
+  </div>
+  <div id="questionsHolder"></div>
+  <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+</div>
+
+<!-- 结果区 -->
+<div class="container" id="resultArea">
+  <div class="res-card">
+    <div style="font-size:14px;color:#4338ca;font-weight:700;">🏆 批改报告</div>
+    <div class="res-title" id="resTitle"></div>
+    <div class="res-meta" id="resMeta"></div>
+    <div class="res-stats">
+      <div class="stat-box s1"><div class="big" id="resCorrect">0/0</div><div class="cap">答对题数</div></div>
+      <div class="stat-box s2"><div class="big" id="resPct">0%</div><div class="cap">正确率</div></div>
+      <div class="stat-box s3"><div class="big" id="resBand">-</div><div class="cap">雅思预估分</div><div class="sub2" id="resLevel"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="pw-top"><span>总体进度</span><span id="resProgLbl">0 / 0</span></div>
+      <div class="pw-track"><div class="pw-fill" id="resProgFill"></div></div>
+    </div>
+    <div class="instruction" id="bandNote" style="margin-top:14px;font-style:normal;color:#8a96a5;font-size:12px;"></div>
+  </div>
+  <div class="detail-h">详细结果</div>
+  <div id="detailHolder"></div>
+  <div class="back-row"><button class="btn-ghost" onclick="backToCover()">返回封面</button></div>
+</div>
+
+<script>
+/* ============================================================
+   一、试卷数据 —— 剑桥雅思16 Test 2 学术类阅读（官方原题 + 官方答案）
+   说明：每篇文章为一个对象 {id, passage:{title,byline,paras[]}, groups:[...]}
+   再发来 Passage 2、3 时按相同格式追加进 passages 数组即可。
+   ============================================================ */
+const TEST={"meta":{"volume":16,"testNo":2},"durationMin":60,"passages":[{"id":1,"passage":{"title":"The White Horse of Uffington","byline":"","paras":["The cutting of huge figures or 'geoglyphs' into the earth of English hillsides has taken place for more than 3,000 years. There are 56 hill figures scattered around England, with the vast majority on the chalk downlands of the country's southern counties. The figures include giants, horses, crosses and regimental badges. Although the majority of these geoglyphs date within the last 300 years or so, there are one or two that are much older.","The most famous of these figures is perhaps also the most mysterious - the Uffington White Horse in Oxfordshire. The White Horse has recently been re-dated and shown to be even older than its previously assigned 'ancient pre-Roman Iron Age' date. More controversial is the date of the enigmatic Long Man of Wilmington in Sussex. While many historians are convinced the figure is prehistoric, others believe that it was the work of an artistic monk from a nearby priory and was created between the 11th and 15th centuries.","The method of cutting these huge figures was simply to remove the overlying grass to reveal the gleaming white chalk below. However, the grass would soon grow over the geoglyph again unless it was regularly cleaned or scoured by a fairly large team of people. One reason that the vast majority of hill figures have disappeared is that when the traditions associated with the figures faded, people no longer bothered or remembered to clear away the grass to expose the chalk outline. Furthermore, over hundreds of years the outlines would sometimes change due to people not always cutting in exactly the same place, thus creating a different shape to the original geoglyph. The fact that any ancient hill figures survive at all in England today is testament to the strength and continuity of local customs and beliefs which, in one case at least, must stretch back over millennia.","The Uffington White Horse is a unique, stylised representation of a horse consisting of a long, sleek back, thin disjointed legs, a streaming tail, and a bird-like beaked head. The elegant creature almost melts into the landscape. The horse is situated 2.5km from Uffington village on a steep slope close to the Late Bronze Age (c. 7th century BCE) hillfort of Uffington Castle and below the Ridgeway, a long-distance Neolithic track.","The Uffington Horse is also surrounded by Bronze Age burial mounds. It is not far from the Bronze Age cemetery of Lambourn Seven Barrows, which consists of more than 30 well-preserved burial mounds. The carving has been placed in such a way as to make it extremely difficult to see from close quarters, and like many geoglyphs is best appreciated from the air. Nevertheless, there are certain areas of the Vale of the White Horse, the valley containing and named after the enigmatic creature, from which an adequate impression may be gained. Indeed on a clear day the carving can be seen from up to 30km away.","The earliest evidence of a horse at Uffington is from the 1070s CE when 'White Horse Hill' is mentioned in documents from the nearby Abbey of Abingdon, and the first reference to the horse itself is soon after, in 1190 CE. However, the carving is believed to date back much further than that. Due to the similarity of the Uffington White Horse to the stylised depictions of horses on 1st century BCE coins, it had been thought that the creature must also date to that period.","However, in 1995 Optically Stimulated Luminescence (OSL) testing was carried out by the Oxford Archaeological Unit on soil from two of the lower layers of the horse's body, and from another cut near the base. The result was a date for the horse's construction somewhere between 1400 and 600 BCE - in other words, it had a Late Bronze Age or Early Iron Age origin.","The latter end of this date range would tie the carving of the horse in with occupation of the nearby Uffington hillfort, indicating that it may represent a tribal emblem marking the land of the inhabitants of the hillfort. Alternatively, the carving may have been carried out during a Bronze or Iron Age ritual. Some researchers see the horse as representing the Celtic horse goddess Epona, who was worshipped as a protector of horses, and for her associations with fertility. However, the cult of Epona was not imported from Gaul (France) until around the first century CE. This date is at least six centuries after the Uffington Horse was probably carved. Nevertheless, the horse had great ritual and economic significance during the Bronze and Iron Ages, as attested by its depictions on jewellery and other metal objects. It is possible that the carving represents a goddess in native mythology, such as Rhiannon, described in later Welsh mythology as a beautiful woman dressed in gold and riding a white horse.","The fact that geoglyphs can disappear easily, along with their associated rituals and meaning, indicates that they were never intended to be anything more than temporary gestures. But this does not lessen their importance. These giant carvings are a fascinating glimpse into the minds of their creators and how they viewed the landscape in which they lived."]},"groups":[{"kind":"tfng","title":"Questions 1–8","instruction":"Do the statements agree with the information? Choose TRUE, FALSE or NOT GIVEN.","questions":[{"id":"Q1","no":1,"q":"1 Most geoglyphs in England are located in a particular area of the country.","answer":["TRUE"],"explain":"TRUE。"},{"id":"Q2","no":2,"q":"2 There are more geoglyphs in the shape of a horse than any other creature.","answer":["NOT GIVEN"],"explain":"NOT GIVEN。"},{"id":"Q3","no":3,"q":"3 A recent dating of the Uffington White Horse indicates that people were mistaken about its age.","answer":["TRUE"],"explain":"TRUE。"},{"id":"Q4","no":4,"q":"4 Historians have come to an agreement about the origins of the Long Man of Wilmington.","answer":["FALSE"],"explain":"FALSE。"},{"id":"Q5","no":5,"q":"5 Geoglyphs were created by people placing white chalk on the hillside.","answer":["FALSE"],"explain":"FALSE。"},{"id":"Q6","no":6,"q":"6 Many geoglyphs in England are no longer visible.","answer":["TRUE"],"explain":"TRUE。"},{"id":"Q7","no":7,"q":"7 The shape of some geoglyphs has been altered over time.","answer":["TRUE"],"explain":"TRUE。"},{"id":"Q8","no":8,"q":"8 The fame of the Uffington White Horse is due to its size.","answer":["NOT GIVEN"],"explain":"NOT GIVEN。"}]},{"kind":"note","title":"Questions 9–13","instruction":"Choose ONE WORD ONLY from the passage.","noteTitle":"The Uffington White Horse","lines":[{"h":"The location of the Uffington White Horse"},{"bullet":true,"html":"a distance of 2.5 km from Uffington village"},{"bullet":true,"html":"near an ancient road known as the <Q n=\"9\">"},{"bullet":true,"html":"close to an ancient cemetery that has a number of burial mounds"},{"h":"Dating the Uffington White Horse"},{"bullet":true,"html":"first reference to White Horse Hill appears in <Q n=\"10\"> from the 1070s"},{"bullet":true,"html":"according to analysis of the surrounding <Q n=\"11\">, the Horse is Late Bronze Age / Early Iron Age"},{"h":"Possible reasons for its creation"},{"bullet":true,"html":"a representation of goddess Epona, associated with horses and <Q n=\"12\">"},{"bullet":true,"html":"a representation of a Welsh goddess called <Q n=\"13\">"}],"questions":[{"id":"Q9","no":9,"answer":["Ridgeway","ridgeway"],"explain":"Ridgeway。"},{"id":"Q10","no":10,"answer":["documents"],"explain":"documents。"},{"id":"Q11","no":11,"answer":["soil"],"explain":"soil。"},{"id":"Q12","no":12,"answer":["fertility"],"explain":"fertility。"},{"id":"Q13","no":13,"answer":["Rhiannon","rhiannon"],"explain":"Rhiannon。"}]}]},{"id":2,"passage":{"title":"I contain multitudes","byline":"Wendy Moore reviews Ed Yong's book about microbes","paras":["Microbes, most of them bacteria, have populated this planet since long before animal life developed and they will outlive us. Invisible to the naked eye, they are ubiquitous. They inhabit the soil, air, rocks and water and are present within every form of life, from seaweed and coral to dogs and humans. And, as Yong explains in his utterly absorbing and hugely important book, we mess with them at our peril.","Every species has its own colony of microbes, called a 'microbiome', and these microbes vary not only between species but also between individuals and within different parts of each individual. What is amazing is that while the number of human cells in the average person is about 30 trillion, the number of microbial ones is higher - about 39 trillion. At best, Yong informs us, we are only 50 per cent human. Indeed, some scientists even suggest we should think of each species and its microbes as a single unit, dubbed a 'holobiont'.","In each human there are microbes that live only in the stomach, the mouth or the armpit and by and large they do so peacefully. So 'bad' microbes are just microbes out of context. Microbes that sit contentedly in the human gut (where there are more microbes than there are stars in the galaxy) can become deadly if they find their way into the bloodstream. These communities are constantly changing too. The right hand shares just one sixth of its microbes with the left hand. And, of course, we are surrounded by microbes. Every time we eat, we swallow a million microbes in each gram of food; we are continually swapping microbes with other humans, pets and the world at large.","It's a fascinating topic and Yong, a young British science journalist, is an extraordinarily adept guide. Writing with lightness and panache, he has a knack of explaining complex science in terms that are both easy to understand and totally enthralling. Yong is on a mission. Leading us gently by the hand, he takes us into the world of microbes - a bizarre, alien planet - in a bid to persuade us to love them as much as he does. By the end, we do.","For most of human history we had no idea that microbes existed. The first man to see these extraordinarily potent creatures was a Dutch lens-maker called Antony van Leeuwenhoek in the 1670s. Using microscopes of his own design that could magnify up to 270 times, he examined a drop of water from a nearby lake and found it teeming with tiny creatures he called 'animalcules'. It wasn't until nearly two hundred years later that the research of French biologist Louis Pasteur indicated that some microbes caused disease. It was Pasteur's 'germ theory' that gave bacteria the poor image that endures today.","Yong's book is in many ways a plea for microbial tolerance, pointing out that while fewer than one hundred species of bacteria bring disease, many thousands more play a vital role in maintaining our health. The book also acknowledges that our attitude towards bacteria is not a simple one. We tend to see the dangers posed by bacteria, yet at the same time we are sold yoghurts and drinks that supposedly nurture 'friendly' bacteria. In reality, says Yong, bacteria should not be viewed as either friends or foes, villains or heroes. Instead we should realise we have a symbiotic relationship, that can be mutually beneficial or mutually destructive.","What then do these millions of organisms do? The answer is pretty much everything. New research is now unravelling the ways in which bacteria aid digestion, regulate our immune systems, eliminate toxins, produce vitamins, affect our behaviour and even combat obesity. 'They actually help us become who we are,' says Yong. But we are facing a growing problem. Our obsession with hygiene, our overuse of antibiotics and our unhealthy, low-fibre diets are disrupting the bacterial balance and may be responsible for soaring rates of allergies and immune problems, such as inflammatory bowel disease (IBD).","The most recent research actually turns accepted norms upside down. For example, there are studies indicating that the excessive use of household detergents and antibacterial products actually destroys the microbes that normally keep the more dangerous germs at bay. Other studies show that keeping a dog as a pet gives children early exposure to a diverse range of bacteria, which may help protect them against allergies later.","The readers of Yong's book must be prepared for a decidedly unglamorous world. Among the less appealing case studies is one about a fungus that is wiping out entire populations of frogs and that can be halted by a rare microbial bacterium. Another is about squid that carry luminescent bacteria that protect them against predators. However, if you can overcome your distaste for some of the investigations, the reasons for Yong's enthusiasm become clear. The microbial world is a place of wonder. Already, in an attempt to stop mosquitoes spreading dengue fever - a disease that infects 400 million people a year - mosquitoes are being loaded with a bacterium to block the disease. In the future, our ability to manipulate microbes means we could construct buildings with useful microbes built into their walls to fight off infections. Just imagine a neonatal hospital ward coated in a specially mixed cocktail of microbes so that babies get the best start in life."]},"groups":[{"kind":"mcq","title":"Questions 14–16","instruction":"Choose the correct letter, A, B, C or D.","questions":[{"id":"Q14","no":14,"q":"14 What point does the writer make about microbes in the first paragraph?","options":{"A":"They adapt quickly to their environment.","B":"The risk they pose has been exaggerated.","C":"They are more plentiful in animal life than plant life.","D":"They will continue to exist for longer than the human race."},"answer":["D"],"explain":"D。"},{"id":"Q15","no":15,"q":"15 In the second paragraph, the writer is impressed by the fact that","options":{"A":"each species tends to have vastly different microbes.","B":"some parts of the body contain relatively few microbes.","C":"the average individual has more microbial cells than human ones.","D":"scientists have limited understanding of how microbial cells behave."},"answer":["C"],"explain":"C。"},{"id":"Q16","no":16,"q":"16 What is the writer doing in the fifth paragraph?","options":{"A":"explaining how a discovery was made","B":"comparing scientists' theories about microbes","C":"describing confusion among scientists","D":"giving details of how microbes cause disease"},"answer":["A"],"explain":"A。"}]},{"kind":"wbank","title":"Questions 17–20","instruction":"Complete the summary using A–H.","noteTitle":"We should be more tolerant of microbes","box":{"A":"solution","B":"partnership","C":"destruction","D":"exaggeration","E":"cleanliness","F":"regulations","G":"illness","H":"nutrition"},"lines":[{"html":"Yong's book argues that we should be more tolerant of microbes. Many have a beneficial effect, and only a relatively small number lead to <Q n=\"17\">. And although it is misleading to think of microbes as 'friendly', we should also stop thinking of them as the enemy. In fact, we should accept that our relationship with microbes is one based on <Q n=\"18\">."},{"html":"New research shows that microbes have numerous benefits for humans. Amongst other things, they aid digestion, remove poisons, produce vitamins and may even help reduce obesity. However, there is a growing problem. Our poor <Q n=\"19\">, our overuse of antibiotics, and our excessive focus on <Q n=\"20\"> are upsetting the bacterial balance and may be contributing to the huge increase in allergies and immune system problems."}],"questions":[{"id":"Q17","no":17,"answer":["G"],"explain":"G。"},{"id":"Q18","no":18,"answer":["B"],"explain":"B。"},{"id":"Q19","no":19,"answer":["H"],"explain":"H。"},{"id":"Q20","no":20,"answer":["E"],"explain":"E。"}]},{"kind":"tfng","variant":"yn","title":"Questions 21–26","instruction":"Do the statements agree with the claims of the writer? Choose YES, NO or NOT GIVEN.","questions":[{"id":"Q21","no":21,"q":"21 It is possible that using antibacterial products in the home fails to have the desired effect.","answer":["YES"],"explain":"YES。"},{"id":"Q22","no":22,"q":"22 It is a good idea to ensure that children come into contact with as few bacteria as possible.","answer":["NO"],"explain":"NO。"},{"id":"Q23","no":23,"q":"23 Yong's book contains more case studies than are necessary.","answer":["NOT GIVEN"],"explain":"NOT GIVEN。"},{"id":"Q24","no":24,"q":"24 The case study about bacteria that prevent squid from being attacked may have limited appeal.","answer":["YES"],"explain":"YES。"},{"id":"Q25","no":25,"q":"25 Efforts to control dengue fever have been surprisingly successful.","answer":["NOT GIVEN"],"explain":"NOT GIVEN。"},{"id":"Q26","no":26,"q":"26 Microbes that reduce the risk of infection have already been put inside the walls of some hospital wards.","answer":["NO"],"explain":"NO。"}]}]},{"id":3,"passage":{"title":"How to make wise decisions","byline":"","paras":["Across cultures, wisdom has been considered one of the most revered human qualities. Although the truly wise may seem few and far between, empirical research examining wisdom suggests that it isn't an exceptional trait possessed by a small handful of bearded philosophers after all - in fact, the latest studies suggest that most of us have the ability to make wise decisions, given the right context.","'It appears that experiential, situational, and cultural factors are even more powerful in shaping wisdom than previously imagined,' says Associate Professor Igor Grossmann of the University of Waterloo in Ontario, Canada. 'Recent empirical findings from cognitive, developmental, social, and personality psychology cumulatively suggest that people's ability to reason wisely varies dramatically across experiential and situational contexts. Understanding the role of such contextual factors offers unique insights into understanding wisdom in daily life, as well as how it can be enhanced and taught.'","It seems that it's not so much that some people simply possess wisdom and others lack it, but that our ability to reason wisely depends on a variety of external factors. 'It is impossible to characterize thought processes attributed to wisdom without considering the role of contextual factors,' explains Grossmann. 'In other words, wisdom is not solely an \"inner quality\" but rather unfolds as a function of situations people happen to be in. Some situations are more likely to promote wisdom than others.'","Coming up with a definition of wisdom is challenging, but Grossmann and his colleagues have identified four key characteristics as part of a framework of wise reasoning. One is intellectual humility or recognition of the limits of our own knowledge, and another is appreciation of perspectives wider than the issue at hand. Sensitivity to the possibility of change in social relations is also key, along with compromise or integration of different attitudes and beliefs.","Grossmann and his colleagues have also found that one of the most reliable ways to support wisdom in our own day-to-day decisions is to look at scenarios from a third-party perspective, as though giving advice to a friend. Research suggests that when adopting a first-person viewpoint we focus on 'the focal features of the environment' and when we adopt a third-person, 'observer' viewpoint we reason more broadly and focus more on interpersonal and moral ideals such as justice and impartiality. Looking at problems from this more expansive viewpoint appears to foster cognitive processes related to wise decisions.","What are we to do, then, when confronted with situations like a disagreement with a spouse or negotiating a contract at work, that require us to take a personal stake? Grossmann argues that even when we aren't able to change the situation, we can still evaluate these experiences from different perspectives.","For example, in one experiment that took place during the peak of a recent economic recession, graduating college seniors were asked to reflect on their job prospects. The students were instructed to imagine their career either 'as if you were a distant observer' or 'before your own eyes as if you were right there'. Participants in the group assigned to the 'distant observer' role displayed more wisdom-related reasoning (intellectual humility and recognition of change) than did participants in the control group.","In another study, couples in long-term romantic relationships were instructed to visualize an unresolved relationship conflict either through the eyes of an outsider or from their own perspective. Participants then discussed the incident with their partner for 10 minutes, after which they wrote down their thoughts about it. Couples in the 'other's eyes' condition were significantly more likely to rely on wise reasoning - recognizing others' perspectives and searching for a compromise - compared to the couples in the egocentric condition.","'Ego-decentering promotes greater focus on others and enables a bigger picture, conceptual view of the experience, affording recognition of intellectual humility and change,' says Grossmann.","We might associate wisdom with intelligence or particular personality traits, but research shows only a small positive relationship between wise thinking and crystallized intelligence and the personality traits of openness and agreeableness. 'It is remarkable how much people can vary in their wisdom from one situation to the next, and how much stronger such contextual effects are for understanding the relationship between wise judgment and its social and affective outcomes as compared to the generalized \"traits\",' Grossmann explains. 'That is, knowing how wisely a person behaves in a given situation is more informative for understanding their emotions or likelihood to forgive [or] retaliate as compared to knowing whether the person may be wise \"in general\".'"]},"groups":[{"kind":"mcq","title":"Questions 27–30","instruction":"Choose the correct letter, A, B, C or D.","questions":[{"id":"Q27","no":27,"q":"27 What point does the writer make in the first paragraph?","options":{"A":"Wisdom appears to be unique to the human race.","B":"A basic assumption about wisdom may be wrong.","C":"Concepts of wisdom may depend on the society we belong to.","D":"There is still much to be discovered about the nature of wisdom."},"answer":["B"],"explain":"B。"},{"id":"Q28","no":28,"q":"28 What does Igor Grossmann suggest about the ability to make wise decisions?","options":{"A":"It can vary greatly from one person to another.","B":"Earlier research into it was based on unreliable data.","C":"The importance of certain influences on it was underestimated.","D":"Various branches of psychology define it according to their own criteria."},"answer":["C"],"explain":"C。"},{"id":"Q29","no":29,"q":"29 According to the third paragraph, Grossmann claims that the level of wisdom an individual shows","options":{"A":"can be greater than they think it is.","B":"will be different in different circumstances.","C":"may be determined by particular aspects of their personality.","D":"should develop over time as a result of their life experiences."},"answer":["B"],"explain":"B。"},{"id":"Q30","no":30,"q":"30 What is described in the fifth paragraph?","options":{"A":"a difficulty encountered when attempting to reason wisely","B":"an example of the type of person who is likely to reason wisely","C":"a controversial view about the benefits of reasoning wisely","D":"a recommended strategy that can help people to reason wisely"},"answer":["D"],"explain":"D。"}]},{"kind":"wbank","title":"Questions 31–35","instruction":"Complete the summary using A–J.","noteTitle":"The characteristics of wise reasoning","box":{"A":"opinions","B":"confidence","C":"view","D":"modesty","E":"problems","F":"objectivity","G":"fairness","H":"experiences","I":"range","J":"reasons"},"lines":[{"html":"Igor Grossmann and colleagues have established four characteristics which enable us to make wise decisions. It is important to have a certain degree of <Q n=\"31\"> regarding the extent of our knowledge, and to take into account <Q n=\"32\"> which may not be the same as our own. We should also be able to take a broad <Q n=\"33\"> of any situation. Another key characteristic is being aware of the likelihood of alterations in the way that people relate to each other."},{"html":"Grossmann also believes that it is better to regard scenarios with <Q n=\"34\">. By avoiding the first-person perspective, we focus more on <Q n=\"35\"> and on other moral ideals, which in turn leads to wiser decision-making."}],"questions":[{"id":"Q31","no":31,"answer":["D"],"explain":"D。"},{"id":"Q32","no":32,"answer":["A"],"explain":"A。"},{"id":"Q33","no":33,"answer":["C"],"explain":"C。"},{"id":"Q34","no":34,"answer":["F"],"explain":"F。"},{"id":"Q35","no":35,"answer":["G"],"explain":"G。"}]},{"kind":"tfng","title":"Questions 36–40","instruction":"Do the statements agree with the information? Choose TRUE, FALSE or NOT GIVEN.","questions":[{"id":"Q36","no":36,"q":"36 Students participating in the job prospects experiment could choose one of two perspectives to take.","answer":["FALSE"],"explain":"FALSE。"},{"id":"Q37","no":37,"q":"37 Participants in the couples experiment were aware that they were taking part in a study about wise reasoning.","answer":["NOT GIVEN"],"explain":"NOT GIVEN。"},{"id":"Q38","no":38,"q":"38 In the couples experiments, the length of the couples' relationships had an impact on the results.","answer":["NOT GIVEN"],"explain":"NOT GIVEN。"},{"id":"Q39","no":39,"q":"39 In both experiments, the participants who looked at the situation from a more detached viewpoint tended to make wiser decisions.","answer":["TRUE"],"explain":"TRUE。"},{"id":"Q40","no":40,"q":"40 Grossmann believes that a person's wisdom is determined by their intelligence to only a very limited extent.","answer":["TRUE"],"explain":"TRUE。"}]}]}]};
+
+/* 封面信息 */
+(function initCover(){
+  document.getElementById('coverMeta').textContent = `${TEST.passages.length} 篇文章 · 共 ${totalQs()} 题`;
+})();
+
+/* 模式弹窗 */
+function openMode(){
+  document.getElementById('sectionChecks').innerHTML =
+    TEST.passages.map(p=>`<label class="sec-check"><input type="checkbox" class="secbox" value="${p.id}" checked> Passage ${p.id}（${allQs(p).length} 题）</label>`).join('');
+  document.getElementById('examList').innerHTML = TEST.passages.map(p=>`<li>• Passage ${p.id}</li>`).join('');
+  document.getElementById('toggleAllBtn').textContent='取消全选';
+  document.getElementById('modeModal').classList.add('show');
+}
+function closeMode(){ document.getElementById('modeModal').classList.remove('show'); }
+function toggleAll(){ const b=[...document.querySelectorAll('.secbox')]; const off=b.some(x=>!x.checked); b.forEach(x=>x.checked=off); document.getElementById('toggleAllBtn').textContent=off?'取消全选':'全选'; }
+
+function startTest(m){
+  mode=m;
+  if(m==='practice'){ const ids=[...document.querySelectorAll('.secbox:checked')].map(b=>+b.value); if(!ids.length){ alert('请至少选择一篇文章。'); return; } selectedSections=ids; }
+  else selectedSections=TEST.passages.map(p=>p.id);
+  currentPaper=TEST.passages.filter(p=>selectedSections.includes(p.id));
+  closeMode(); submitted=false;
+  document.getElementById('coverArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('testArea').style.display='block';
+  renderPaper(); setupTimer();
+  window.scrollTo(0,0);
+}
+
+function renderPaper(){
+  document.getElementById('testTitle').textContent=`剑桥雅思16 · Test 2 — 阅读`;
+  document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
+  document.getElementById('questionsHolder').innerHTML = currentPaper.map(passageHtml).join('');
+}
+function passageHtml(p){
+  const pp=p.passage;
+  const article = `<div class="passage-pane">
+      <div class="pp-kicker">READING PASSAGE ${p.id}</div>
+      <h3 class="ptitle">${pp.title}</h3>
+      ${pp.byline?`<div class="pp-byline">${pp.byline}</div>`:''}
+      ${pp.paras.map(t=>`<p>${t}</p>`).join('')}
+    </div>`;
+  const qs = `<div class="qcol">${p.groups.map(groupHtml).join('')}</div>`;
+  return `<div class="section-banner" id="anchor_${p.id}">
+      <div class="sb-top"><span class="sb-title">Passage ${p.id}</span></div>
+      <div class="sb-meta">建议用时约 20 分钟 · 本篇共 ${allQs(p).length} 题</div>
+    </div><div class="reading-cols">${article}${qs}</div>`;
+}
+function expandQ(html){ // 把 <Q n="x"> 占位替换成 编号徽标 + 输入框
+  return (html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><input type="text" id="Q${n}" autocomplete="off">`);
+}
+function groupHtml(g){
+  let body='';
+  if(g.kind==='note'){
+    body=`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
+      g.lines.map(l=>{
+        if(l.h) return `<div class="note-h">${l.h}</div>`;
+        if(l.plain) return `<div class="note-li${l.sub?' sub':''}">${expandQ(l.html)}</div>`;
+        if(l.html==null) return '';
+        const cls='note-li'+(l.sub2?' sub2':(l.sub?' sub':''));
+        const mark=l.dash?'–':(l.bullet?'•':'');
+        return `<div class="${cls}"><span class="bull">${mark}</span> ${expandQ(l.html)}</div>`;
+      }).join('')+`</div>`;
+  }
+  else if(g.kind==='table'){
+    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const rows=g.rows.map(r=>`<tr>${r.map(cell=>`<td>${expandQ(cell)}</td>`).join('')}</tr>`).join('');
+    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+  }
+  else if(g.kind==='tfng'){
+    const opts = g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN'];
+    body=g.questions.map(q=>{
+      const radios=opts.map(v=>`<label><input type="radio" name="${q.id}" value="${v}"> <span>${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div><div class="tfng-opts">${radios}</div></div>`;
+    }).join('');
+  }
+  else if(g.kind==='mcq'){
+    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
+      const opts=Object.entries(q.options).map(([k,v])=>`<label><input type="radio" name="${q.id}" value="${k}"> <span><strong>${k}</strong> &nbsp;${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div>${opts}</div>`;
+    }).join('');
+  }
+  else if(g.kind==='match'){
+    const box=g.noBox ? '' : `<div class="match-box"><div class="mb-h">${g.boxTitle||''}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
+    const qs=(g.subTitle?`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`:'')+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='multi'){
+    const box=`<div class="match-box">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=k=>`<select id="${k}"><option value="">—</option>${Object.keys(g.box).map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">选择一项（本组合计选出正确的几项，顺序不限）</span>${sel(q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='wbank'){
+    // 选词填空：词库 A–H + 文中下拉
+    const cols=g.boxCols||2;
+    const box=`<div class="match-box wbank-box" style="columns:${cols};">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const letters=Object.keys(g.box);
+    const expand=html=>(html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><select id="Q${n}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`);
+    const para=(g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:'')+g.lines.map(l=>`<div class="note-li plain" style="display:block;">${expand(l.html)}</div>`).join('');
+    body=box+`<div class="note-box">${para}</div>`;
+  }
+  return `<div class="qgroup"><h4>${g.title}</h4><div class="instruction">${g.instruction}</div>${body}</div>`;
+}
+
+/* 计时器 */
+function setupTimer(){
+  startTime=Date.now(); const t=document.getElementById('timer'); t.classList.add('show'); clearInterval(timerInterval);
+  if(mode==='exam'){ const total=TEST.durationMin*60;
+    timerInterval=setInterval(()=>{ const left=total-Math.floor((Date.now()-startTime)/1000);
+      if(left<=0){ clearInterval(timerInterval); document.getElementById('timerText').textContent='00:00'; alert('时间到，自动提交。'); submitTest(); return; }
+      t.classList.toggle('warn',left<=600&&left>120); t.classList.toggle('danger',left<=120);
+      document.getElementById('timerText').textContent=fmt(left); },500);
+  } else timerInterval=setInterval(()=>{ document.getElementById('timerText').textContent=fmt(Math.floor((Date.now()-startTime)/1000)); },500);
+}
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+/* 批改 */
+function norm(s){ return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,''); }
+function readAns(q){ const el=document.getElementById(q.id); if(el) return (el.tagName==='SELECT')?el.value:el.value.trim();
+  const r=document.getElementsByName(q.id); for(const x of r) if(x.checked) return x.value; return ''; }
+
+function confirmSubmit(){
+  let answered=0,total=0;
+  currentPaper.forEach(s=>allQs(s).forEach(q=>{ total++; if(readAns(q)!=='') answered++; }));
+  if(window.confirm(`已作答 ${answered}/${total} 题。\n确定提交并查看批改报告吗？`)) submitTest();
+}
+function submitTest(){
+  if(submitted) return; submitted=true;
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+
+  /* 先处理 multi 配对题（顺序不限、不重复计分） */
+  const pairCorrect={};
+  currentPaper.forEach(s=>s.groups.forEach(g=>{
+    if(g.kind==='multi'){ const set=g.answerSet.slice(); g.questions.forEach(q=>{ const ua=(readAns(q)||'').toUpperCase(); const i=set.indexOf(ua); if(ua&&i>-1){ pairCorrect[q.id]=true; set.splice(i,1);} else pairCorrect[q.id]=false; }); }
+  }));
+
+  let correct=0,total=0; const detail=[];
+  currentPaper.forEach(s=>{
+    let sc=0; const items=[];
+    s.groups.forEach(g=>g.questions.forEach(q=>{
+      const ua=readAns(q); let ok;
+      if(g.kind==='multi') ok=!!pairCorrect[q.id];
+      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      total++; if(ok){correct++;sc++;}
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+    }));
+    detail.push({s,sc,total:allQs(s).length,items});
+  });
+
+  const pct=total?Math.round(correct/total*100):0;
+  const band=lookupBand(correct,total);
+  const elapsed=Math.max(1,Math.round((Date.now()-startTime)/1000));
+
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resTitle').textContent='剑桥雅思16 · Test 2 — 阅读';
+  document.getElementById('resMeta').textContent=`${mode==='practice'?'练习模式':'模考模式'} · 用时 ${fmt(elapsed)} · 完成时间 ${new Date().toLocaleString('zh-CN')}`;
+  document.getElementById('resCorrect').textContent=`${correct}/${total}`;
+  document.getElementById('resPct').textContent=pct+'%';
+  document.getElementById('resBand').textContent=band.toFixed(1);
+  document.getElementById('resLevel').textContent='水平：'+levelLabel(band);
+  document.getElementById('resProgLbl').textContent=`${correct} / ${total}`;
+  setTimeout(()=>document.getElementById('resProgFill').style.width=pct+'%',60);
+  document.getElementById('bandNote').textContent = total===40
+    ? '雅思分按官方学术类阅读 40 题原始分对照表换算。'
+    : `本次仅测 ${total} 题，预估分按比例折算至 40 题后套用官方对照表；做完整 3 篇文章时为精确换算。`;
+
+  document.getElementById('detailHolder').innerHTML=detail.map((d,i)=>{
+    const sp=d.total?Math.round(d.sc/d.total*100):0;
+    const rows=d.items.map(it=>{
+      const cls=it.ok?'correct':'wrong';
+      const yours=it.ua?`你的答案：<span class="yours">${it.ua}</span>　`:`<span class="yours">未作答</span>　`;
+      return `<div class="ritem ${cls}"><div class="rq">${it.ok?'✔':'✘'} 第 ${it.q.no} 题</div>
+        <div class="ra">${it.ok?'<span class="correctv">回答正确</span>':yours+'正确答案：<span class="correctv">'+it.ans.join(' / ')+'</span>'}</div>
+        <div class="rex">💡 ${it.q.explain||''}</div></div>`;
+    }).join('');
+    return `<div class="sec-result${i===0?' open':''}"><div class="sr-head" onclick="this.parentNode.classList.toggle('open')">
+        <div><h5>Passage ${d.s.id}</h5><div class="sr-sum"><span class="${sp>=60?'ok':'bad'}">${d.sc} / ${d.total} 题正确　${sp}%</span></div></div>
+        <div class="sr-chevron">▾</div></div><div class="sr-body">${rows}</div></div>`;
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+function backToCover(){
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('coverArea').style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== */
+(function(){
+  function report(){
+    var rc=document.getElementById('resCorrect'); if(!rc) return;
+    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m) return;
+    var bandEl=document.getElementById('resBand'); var band=bandEl?parseFloat(bandEl.textContent):NaN;
+    try{ window.parent.postMessage({type:'yysd:score', score:+m[1], total:+m[2], band:isNaN(band)?null:band}, '*'); }catch(e){}
+  }
+  var rc=document.getElementById('resCorrect');
+  if(rc){ new MutationObserver(report).observe(rc,{childList:true,subtree:true,characterData:true}); }
+})();
+</script>
+</body>
+</html>
