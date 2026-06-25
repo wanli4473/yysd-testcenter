@@ -183,6 +183,22 @@ const TEST={durationMin:60,task1:{prompt:`You should spend about 20 minutes on t
 <g><circle cx="125" cy="485" r="17" fill="#eef5e6" stroke="#4b7b39"/><text x="125" y="491" text-anchor="middle" font-weight="700">7</text><text x="125" y="518" text-anchor="middle" font-weight="700">Drying and cooling</text><path d="M80 555h90v90q-45 20-90 0z" fill="#cbd5e1" stroke="#475569" stroke-width="3"/><ellipse cx="125" cy="555" rx="45" ry="12" fill="#f4f1e4" stroke="#475569" stroke-width="3"/><circle cx="95" cy="585" r="3" fill="#64748b"/><circle cx="105" cy="610" r="3" fill="#64748b"/><circle cx="155" cy="590" r="3" fill="#64748b"/><text x="125" y="685" text-anchor="middle" font-size="20" font-weight="700">SUGAR</text></g></g>
 </svg>`}]},task2:{prompt:`You should spend about 40 minutes on this task.<br><br><strong>Topic:</strong> In their advertising, businesses nowadays usually emphasise that their products are new in some way.<br><br>Why is this?<br>Do you think it is a positive or negative development?<br><br>Give reasons for your answer and include any relevant examples from your own knowledge or experience.<br><strong>Write at least 250 words.</strong>`}};
 
+const SKEY = 'yysd:writing:cambridge-16-test-2';
+let startTime = 0, timerInterval = null, finished = false;
+
+function wordCount(s){ return (s||'').trim().split(/\s+/).filter(Boolean).length; }
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+/* render prompts and the Task 1 diagram on load */
+document.getElementById('task1Prompt').innerHTML = TEST.task1.prompt;
+document.getElementById('task2Prompt').innerHTML = TEST.task2.prompt;
+document.getElementById('task1Tables').innerHTML = TEST.task1.charts.map(function(p){
+  if (p.svg) return '<figure class="wplan"><figcaption>'+p.caption+'</figcaption>'+p.svg+'</figure>';
+  return '<figure class="wplan"><figcaption>'+p.caption+'</figcaption>'+
+    '<img class="wplan-img" src="'+p.image+'" alt="'+p.caption+'">'+
+    '</figure>';
+}).join('');
+
 /* restore saved draft */
 (function restore(){
   try {
