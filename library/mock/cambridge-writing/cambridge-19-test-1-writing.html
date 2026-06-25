@@ -173,9 +173,83 @@
 const TEST = {
   durationMin: 60,
   task1: {
-    prompt: `You should spend about 20 minutes on this task.<br><br>The line graph below shows the percentage of people taking part in four types of leisure activities in one town between 2000 and 2015.<br><br>Summarise the information by selecting and reporting the main features, and make comparisons where relevant.<br><strong>Write at least 150 words.</strong>`,
+    prompt: `You should spend about 20 minutes on this task.<br><br>The line graph below shows the number of participants in five types of leisure activities in one town between 2000 and 2020.<br><br>Summarise the information by selecting and reporting the main features, and make comparisons where relevant.<br><strong>Write at least 150 words.</strong>`,
     charts: [
-      { caption: 'Leisure activities in one town, 2000–2015', image: 'ielts19_test1_graph.png' }
+      { caption: 'Leisure activities in one town, 2000–2020', image: 'ielts19_test1_graph.png', svg:`<svg viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;font-family:Arial,sans-serif;display:block;margin:0 auto;background:white;">
+  <!-- Title -->
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#222">Number of participants, by activity 2000–2020</text>
+  <!-- Y-axis label -->
+  <text transform="rotate(-90)" x="-190" y="16" text-anchor="middle" font-size="12" fill="#444">Number of participants</text>
+  <!-- X-axis label -->
+  <text x="315" y="405" text-anchor="middle" font-size="12" fill="#444">Year</text>
+  <!-- Grid lines and Y-axis ticks -->
+  <g stroke="#ddd" stroke-width="1">
+    <line x1="70" y1="30"  x2="560" y2="30" /><text x="60" y="34"  text-anchor="end" font-size="11" fill="#555">70</text>
+    <line x1="70" y1="76"  x2="560" y2="76" /><text x="60" y="80"  text-anchor="end" font-size="11" fill="#555">60</text>
+    <line x1="70" y1="122" x2="560" y2="122"/><text x="60" y="126" text-anchor="end" font-size="11" fill="#555">50</text>
+    <line x1="70" y1="167" x2="560" y2="167"/><text x="60" y="171" text-anchor="end" font-size="11" fill="#555">40</text>
+    <line x1="70" y1="213" x2="560" y2="213"/><text x="60" y="217" text-anchor="end" font-size="11" fill="#555">30</text>
+    <line x1="70" y1="259" x2="560" y2="259"/><text x="60" y="263" text-anchor="end" font-size="11" fill="#555">20</text>
+    <line x1="70" y1="304" x2="560" y2="304"/><text x="60" y="308" text-anchor="end" font-size="11" fill="#555">10</text>
+    <line x1="70" y1="350" x2="560" y2="350" stroke="#bbb"/>
+  </g>
+  <!-- Axes -->
+  <line x1="70" y1="30" x2="70" y2="355" stroke="#555" stroke-width="1.5"/>
+  <line x1="70" y1="350" x2="565" y2="350" stroke="#555" stroke-width="1.5"/>
+  <!-- X-axis labels -->
+  <g text-anchor="middle" font-size="12" fill="#444">
+    <text x="70"  y="368">2000</text>
+    <text x="193" y="368">2005</text>
+    <text x="315" y="368">2010</text>
+    <text x="438" y="368">2015</text>
+    <text x="560" y="368">2020</text>
+  </g>
+  <!-- Film club: dark solid line + circles -->
+  <polyline points="70,57.4 193,66.6 315,75.7 438,57.4 560,48.3" fill="none" stroke="#111" stroke-width="2.2"/>
+  <g fill="white" stroke="#111" stroke-width="2">
+    <circle cx="70" cy="57.4" r="5"/><circle cx="193" cy="66.6" r="5"/><circle cx="315" cy="75.7" r="5"/><circle cx="438" cy="57.4" r="5"/><circle cx="560" cy="48.3" r="5"/>
+  </g>
+  <!-- Martial arts: gray dashed + triangles -->
+  <polyline points="70,185.4 193,203.7 315,176.3 438,185.4 560,185.4" fill="none" stroke="#666" stroke-width="2" stroke-dasharray="8,4"/>
+  <g fill="#666" stroke="none">
+    <polygon points="70,179.4 65,189.4 75,189.4"/><polygon points="193,197.7 188,207.7 198,207.7"/><polygon points="315,170.3 310,180.3 320,180.3"/><polygon points="438,179.4 433,189.4 443,189.4"/><polygon points="560,179.4 555,189.4 565,189.4"/>
+  </g>
+  <!-- Amateur dramatics: dark dotted + diamonds -->
+  <polyline points="70,231.1 193,217.4 315,258.6 438,281.4 560,322.6" fill="none" stroke="#222" stroke-width="2" stroke-dasharray="2,3"/>
+  <g fill="white" stroke="#222" stroke-width="1.8">
+    <polygon points="70,225.1 75,231.1 70,237.1 65,231.1"/><polygon points="193,211.4 198,217.4 193,223.4 188,217.4"/><polygon points="315,252.60000000000002 320,258.6 315,264.6 310,258.6"/><polygon points="438,275.4 443,281.4 438,287.4 433,281.4"/><polygon points="560,316.6 565,322.6 560,328.6 555,322.6"/>
+  </g>
+  <!-- Table tennis: dark dash-dot + squares -->
+  <polyline points="70,276.9 193,258.6 315,258.6 438,190.0 560,103.1" fill="none" stroke="#222" stroke-width="2" stroke-dasharray="10,3,2,3"/>
+  <g fill="white" stroke="#222" stroke-width="1.8">
+    <rect x="65" y="271.9" width="10" height="10"/><rect x="188" y="253.60000000000002" width="10" height="10"/><rect x="310" y="253.60000000000002" width="10" height="10"/><rect x="433" y="185.0" width="10" height="10"/><rect x="555" y="98.1" width="10" height="10"/>
+  </g>
+  <!-- Musical performances: gray solid + X -->
+  <polyline points="70,350.0 193,350.0 315,295.1 438,276.9 560,263.1" fill="none" stroke="#888" stroke-width="1.8"/>
+  <g stroke="#888" stroke-width="2">
+    <line x1="65" y1="345.0" x2="75" y2="355.0"/><line x1="75" y1="345.0" x2="65" y2="355.0"/><line x1="188" y1="345.0" x2="198" y2="355.0"/><line x1="198" y1="345.0" x2="188" y2="355.0"/><line x1="310" y1="290.1" x2="320" y2="300.1"/><line x1="320" y1="290.1" x2="310" y2="300.1"/><line x1="433" y1="271.9" x2="443" y2="281.9"/><line x1="443" y1="271.9" x2="433" y2="281.9"/><line x1="555" y1="258.1" x2="565" y2="268.1"/><line x1="565" y1="258.1" x2="555" y2="268.1"/>
+  </g>
+  <!-- Legend box -->
+  <rect x="575" y="90" width="110" height="140" fill="white" stroke="#bbb" stroke-width="1"/>
+  <line x1="580" y1="108" x2="598" y2="108" stroke="#111" stroke-width="2.2"/>
+  <circle cx="589" cy="108" r="4" fill="white" stroke="#111" stroke-width="2"/>
+  <text x="602" y="112" font-size="11" fill="#222">Film club</text>
+  <line x1="580" y1="125" x2="598" y2="125" stroke="#666" stroke-width="2" stroke-dasharray="6,3"/>
+  <polygon points="589,119 584,129 594,129" fill="#666"/>
+  <text x="602" y="129" font-size="11" fill="#222">Martial arts</text>
+  <line x1="580" y1="143" x2="598" y2="143" stroke="#222" stroke-width="2" stroke-dasharray="2,3"/>
+  <polygon points="589,137 594,143 589,149 584,143" fill="white" stroke="#222" stroke-width="1.5"/>
+  <text x="602" y="147" font-size="10.5" fill="#222">Amateur</text>
+  <text x="602" y="159" font-size="10.5" fill="#222">dramatics</text>
+  <line x1="580" y1="173" x2="598" y2="173" stroke="#222" stroke-width="2" stroke-dasharray="8,2,2,2"/>
+  <rect x="584" y="168" width="10" height="10" fill="white" stroke="#222" stroke-width="1.5"/>
+  <text x="602" y="179" font-size="10.5" fill="#222">Table tennis</text>
+  <line x1="580" y1="197" x2="598" y2="197" stroke="#888" stroke-width="1.8"/>
+  <line x1="584" y1="193" x2="594" y2="201" stroke="#888" stroke-width="2"/>
+  <line x1="594" y1="193" x2="584" y2="201" stroke="#888" stroke-width="2"/>
+  <text x="602" y="197" font-size="10" fill="#222">Musical</text>
+  <text x="602" y="209" font-size="10" fill="#222">performances</text>
+</svg>` }
     ]
   },
   task2: {
@@ -193,6 +267,7 @@ function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+
 document.getElementById('task1Prompt').innerHTML = TEST.task1.prompt;
 document.getElementById('task2Prompt').innerHTML = TEST.task2.prompt;
 document.getElementById('task1Tables').innerHTML = TEST.task1.charts.map(function(p){
+  if(p.svg) return '<figure class="wplan"><figcaption>'+p.caption+'</figcaption>'+p.svg+'</figure>';
   return '<figure class="wplan"><figcaption>'+p.caption+'</figcaption>'+
     '<img class="wplan-img" src="'+p.image+'" alt="'+p.caption+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';">'+
     '<div class="wplan-missing" style="display:none;">\ud83e\udeb5 流程图待上传：请把书上「How bamboo fabric is made」竹纤维布料制作流程图发给老师，上传后此处会显示图，即可对照作答。</div></figure>';
