@@ -188,10 +188,11 @@ window.YYSD = (function () {
   // One volume card (clean VOL.NN style) → opens cambridge.html?vol=N
   function camVolumeCardHTML(v, prefix) {
     var tag = camVolTag(v.vol);
-    var skills = '' +
-      (v.listening ? '<span class="vc-skill" title="听力">🎧</span>' : '') +
-      (v.reading ? '<span class="vc-skill" title="阅读">📖</span>' : '') +
-      (v.writing ? '<span class="vc-skill" title="写作">✍️</span>' : '');
+    var bookIcon = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path d="M4.5 5.5c2.6 0 4.8.5 6.5 1.6v11.4c-1.7-1.1-3.9-1.6-6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M19.5 5.5c-2.6 0-4.8.5-6.5 1.6v11.4c1.7-1.1 3.9-1.6 6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M12 7.1v11.4" stroke="currentColor" stroke-width="2"/></svg>';
+    var skills = '<span class="vc-skill vc-skill--a">A</span><span class="vc-skill vc-skill--b">B</span><span class="vc-skill vc-skill--u">◯</span>';
     return '' +
       '<a class="vol-card" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
         '<div class="vol-card__top">' +
@@ -199,7 +200,7 @@ window.YYSD = (function () {
           '<span class="vol-card__tag vol-card__tag--' + tag.c + '">' + tag.t + '</span>' +
         '</div>' +
         '<div class="vol-card__body">' +
-          '<span class="vol-card__ico">📖</span>' +
+          '<span class="vol-card__ico">' + bookIcon + '</span>' +
           '<div><h3>剑桥雅思 ' + esc(v.vol) + '</h3>' +
           '<div class="vol-card__cnt">包含 ' + v.tests + ' 套</div></div>' +
         '</div>' +

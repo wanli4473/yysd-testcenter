@@ -624,6 +624,309 @@ table.data th { background: var(--bg); font-size: 12.5px; color: var(--text-mute
 table.data tr:last-child td { border-bottom: 0; }
 .score-pill { display:inline-block; padding:3px 11px; border-radius:999px; font-weight:700; font-size:13px; background:rgba(30,158,106,.12); color:var(--c-reading); }
 
+/* ==========================================================================
+   Minimal homepage redesign
+   ========================================================================== */
+.home-minimal {
+  --minimal-ink: #111449;
+  --minimal-muted: #667085;
+  --minimal-line: #e7ebf3;
+  --minimal-card: rgba(255,255,255,.9);
+  --minimal-blue: #2671ff;
+  --minimal-gold: #b88a36;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(52,70,168,.12), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(182,139,66,.10), transparent 24%),
+    linear-gradient(180deg,#fbfcff 0%,#f7f8fb 48%,#fff 100%);
+  overflow-x: hidden;
+  letter-spacing: -.015em;
+}
+.minimal-shell {
+  width: min(1440px, calc(100% - 48px));
+  margin: 0 auto;
+}
+.minimal-topbar {
+  position: relative;
+  z-index: 10;
+  background: transparent;
+  border: 0;
+}
+.minimal-topbar__inner {
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.minimal-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--minimal-ink);
+}
+.minimal-brand__logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  box-shadow: 0 14px 28px rgba(22,24,74,.16);
+}
+.minimal-brand__text b {
+  display: block;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--minimal-ink);
+}
+.minimal-brand__text span {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #687083;
+  letter-spacing: 0;
+}
+.minimal-nav {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+.minimal-nav a {
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: #475467;
+  font-size: 16px;
+  font-weight: 750;
+}
+.minimal-nav a:hover {
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(16,24,40,.06);
+  color: var(--minimal-ink);
+}
+.minimal-hero {
+  padding: 92px 0 72px;
+}
+.minimal-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border: 1px solid rgba(52,70,168,.16);
+  border-radius: 999px;
+  color: #3446a8;
+  background: rgba(255,255,255,.72);
+  backdrop-filter: blur(12px);
+  font-size: 15px;
+  font-weight: 750;
+}
+.minimal-eyebrow span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--minimal-gold);
+}
+.minimal-hero h1 {
+  max-width: 1060px;
+  margin: 34px 0 22px;
+  font-size: clamp(46px, 6vw, 86px);
+  line-height: 1.06;
+  color: var(--minimal-ink);
+  letter-spacing: -.065em;
+}
+.minimal-lead {
+  max-width: 820px;
+  margin: 0;
+  color: #4b5565;
+  font-size: 22px;
+  line-height: 1.72;
+  letter-spacing: 0;
+}
+.minimal-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 54px;
+}
+.minimal-entry-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 250px;
+  padding: 34px 38px;
+  border: 1px solid rgba(230,233,239,.95);
+  border-radius: 28px;
+  background: rgba(255,255,255,.84);
+  box-shadow: 0 24px 70px rgba(16,24,40,.08);
+  transition: transform .22s var(--ease-out), box-shadow .22s var(--ease), border-color .22s var(--ease);
+}
+.minimal-entry-card:hover {
+  transform: translateY(-4px);
+  border-color: #dce3f2;
+  box-shadow: 0 32px 90px rgba(16,24,40,.12);
+}
+.minimal-entry-card::after {
+  content: "";
+  position: absolute;
+  right: -34px;
+  bottom: -54px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: #eef2ff;
+}
+.minimal-entry-card__kicker {
+  color: var(--minimal-gold);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.minimal-entry-card h2 {
+  margin: 20px 0 12px;
+  color: var(--minimal-ink);
+  font-size: 40px;
+  line-height: 1.15;
+  letter-spacing: -.045em;
+}
+.minimal-entry-card p {
+  max-width: 360px;
+  margin: 0;
+  color: var(--minimal-muted);
+  font-size: 17px;
+  line-height: 1.72;
+  letter-spacing: 0;
+}
+.minimal-entry-card > span {
+  position: absolute;
+  left: 38px;
+  bottom: 32px;
+  z-index: 1;
+  color: #3446a8;
+  font-size: 17px;
+  font-weight: 800;
+}
+.minimal-section {
+  padding: 72px 0;
+}
+.minimal-section__head {
+  margin-bottom: 28px;
+}
+.minimal-section__head h2 {
+  margin: 0;
+  color: var(--minimal-ink);
+  font-size: 48px;
+  line-height: 1.12;
+  letter-spacing: -.055em;
+}
+.minimal-section__head p {
+  margin: 12px 0 0;
+  color: var(--minimal-muted);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+.minimal-vol-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+.minimal-footer {
+  padding: 48px 0 60px;
+  color: #98a2b3;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+/* Course-volume cards used by the minimal homepage and Cambridge group views. */
+.vol-card {
+  min-height: 230px;
+  gap: 0;
+  padding: 24px 24px 22px;
+  border-radius: 22px;
+  background: rgba(255,255,255,.92);
+  border-color: rgba(237,240,246,.92);
+  box-shadow: 0 18px 52px rgba(16,24,40,.06);
+}
+.vol-card:hover {
+  transform: translateY(-4px);
+  border-color: #dce3f2;
+  box-shadow: 0 24px 64px rgba(16,24,40,.10);
+}
+.vol-card__top {
+  margin-bottom: 28px;
+}
+.vol-card__vol {
+  color: #a5acba;
+  font-size: 15px;
+  letter-spacing: .09em;
+}
+.vol-card__tag {
+  min-width: 46px;
+  height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.vol-card__tag--new { color: #1677ff; background: #eaf4ff; }
+.vol-card__tag--mid { color: #333; background: #f4f5f7; }
+.vol-card__tag--base { color: #333; background: #f4f5f7; }
+.vol-card__body {
+  gap: 16px;
+}
+.vol-card__ico {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  background: #eef4ff;
+  color: #2671ff;
+  font-size: 0;
+}
+.vol-card__ico svg {
+  width: 32px;
+  height: 32px;
+}
+.vol-card__body h3 {
+  margin: 0;
+  color: var(--minimal-ink, var(--brand-navy));
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -.04em;
+  white-space: nowrap;
+}
+.vol-card__cnt {
+  margin-top: 8px;
+  color: #222;
+  font-size: 16px;
+  font-weight: 700;
+}
+.vol-card__foot {
+  margin-top: auto;
+  padding-top: 20px;
+}
+.vol-card__skills {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.vol-card__skills .vc-skill {
+  width: 28px;
+  height: 28px;
+  margin-right: -7px;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+.vc-skill--a { background: #ffdcbf !important; }
+.vc-skill--b { background: #78d764 !important; }
+.vc-skill--u { background: #1677ff !important; }
+.vol-card__go {
+  color: #202633;
+  font-size: 16px;
+  font-weight: 800;
+}
+.vol-card:hover .vol-card__go {
+  color: #1677ff;
+}
+
 /* ---------- Responsive ----------------------------------------------- */
 @media (max-width: 820px) {
   /* Header becomes a single row with a horizontally-scrollable nav */
@@ -644,6 +947,40 @@ table.data tr:last-child td { border-bottom: 0; }
   }
   .nav::-webkit-scrollbar { display: none; }
   .nav a { padding: 7px 10px; font-size: 13px; }
+
+  .minimal-shell { width: min(100% - 32px, 720px); }
+  .minimal-topbar__inner {
+    min-height: auto;
+    padding: 22px 0;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .minimal-nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .minimal-nav a { padding: 8px 10px; font-size: 15px; }
+  .minimal-hero { padding: 42px 0 50px; }
+  .minimal-hero h1 { font-size: clamp(40px, 12vw, 64px); }
+  .minimal-lead { font-size: 18px; }
+  .minimal-entry-grid,
+  .minimal-vol-grid {
+    grid-template-columns: 1fr;
+  }
+  .minimal-entry-card {
+    min-height: auto;
+    padding: 30px;
+  }
+  .minimal-entry-card > span {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    display: inline-flex;
+    margin-top: 22px;
+  }
+  .minimal-section { padding: 52px 0; }
+  .minimal-section__head h2 { font-size: 40px; }
 }
 @media (max-width: 640px) {
   .brand__name { display: none; }        /* phones: show logo only, free up space for nav */
@@ -652,4 +989,9 @@ table.data tr:last-child td { border-bottom: 0; }
   .hero h1 { font-size: 27px; }
   .zone-head h1 { font-size: 24px; }
   .viewer-bar .v-meta, .viewer-bar .v-sep { display: none; }
+
+  .minimal-brand__text b { font-size: 17px; }
+  .minimal-brand__text span { font-size: 12px; }
+  .minimal-entry-card h2 { font-size: 34px; }
+  .vol-card__body h3 { font-size: 21px; }
 }
