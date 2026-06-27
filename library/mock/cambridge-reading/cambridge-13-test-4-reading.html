@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优益思达 · 剑桥雅思13 Test 4 阅读</title>
+<meta name="exam:title" content="剑桥雅思13 · Test 4（阅读）">
+<meta name="exam:zone" content="mock">
+<meta name="exam:subject" content="cambridge-reading">
+<meta name="exam:duration" content="0">
+<meta name="exam:description" content="剑桥雅思16 Test 4 学术类阅读：罗马隧道、数字阅读习惯与人工智能态度，共40题，支持自动批改。">
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:'Segoe UI','PingFang SC',Roboto,sans-serif; background:#f0f2f6; margin:0; color:#1e2a3a; line-height:1.7; padding:0 0 60px; }
+  .header { background:linear-gradient(135deg,#1e1b4b,#312e81); color:#fff; padding:12px 28px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 18px rgba(0,0,0,.25); flex-wrap:wrap; gap:10px; }
+  .header h1 { margin:0; font-size:19px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .header h1 .brandtag { font-size:11px; background:#6366f1; padding:2px 9px; border-radius:20px; font-weight:600; letter-spacing:.5px; }
+  .timer { font-size:18px; font-weight:700; background:#1e8449; padding:6px 18px; border-radius:30px; display:none; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); transition:background .4s; }
+  .timer.show { display:flex; }
+  .timer.warn { background:#e67e22; } .timer.danger { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+  .container { max-width:1180px; margin:24px auto; padding:0 24px; }
+
+  /* 封面 */
+  .cover-hero { display:flex; align-items:center; gap:24px; background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .cover-badge { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border-radius:14px; padding:18px 30px; text-align:center; min-width:180px; }
+  .cover-badge .lbl { font-size:12px; letter-spacing:2px; color:#4f46e5; font-weight:600; }
+  .cover-badge .num { font-size:54px; font-weight:800; color:#4338ca; line-height:1; margin-top:4px; }
+  .cover-hero h2 { margin:0; font-size:30px; color:#1e1b4b; }
+  .cover-hero .sub { color:#6b7a8f; margin-top:6px; font-size:14px; }
+  .paper-card-wrap { margin-top:24px; }
+  .paper-card { border-radius:16px; padding:30px 26px; text-align:center; border:2px solid; transition:transform .15s,box-shadow .2s; background:#eef2ff; border-color:#c7d2fe; cursor:pointer; }
+  .paper-card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.10); }
+  .paper-card .pc-icon { font-size:40px; }
+  .paper-card h3 { margin:10px 0 4px; font-size:24px; color:#3730a3; }
+  .paper-card .pc-meta { font-size:13px; color:#6b7a8f; }
+  .paper-card .pc-go { margin-top:18px; display:inline-block; padding:11px 30px; border-radius:30px; color:#fff; font-weight:600; font-size:15px; background:#4f46e5; }
+
+  /* 模式弹窗 */
+  .modal-mask { display:none; position:fixed; inset:0; background:rgba(10,20,40,.55); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; max-width:880px; width:100%; padding:28px 30px 34px; position:relative; max-height:92vh; overflow:auto; }
+  .modal h2 { margin:0 0 20px; font-size:24px; color:#111; }
+  .modal-close { position:absolute; right:20px; top:18px; border:none; background:none; font-size:24px; color:#8a96a5; cursor:pointer; }
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:680px){ .mode-grid{grid-template-columns:1fr;} }
+  .mode-box { border:1px solid #e2e8f0; border-radius:14px; padding:24px 22px; }
+  .mode-box .mb-ic { width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 12px; }
+  .mode-box.practice .mb-ic { background:#e0e7ff; } .mode-box.exam .mb-ic { background:#ffe8cf; }
+  .mode-box h3 { text-align:center; margin:0 0 6px; font-size:20px; }
+  .mode-box .mb-desc { text-align:center; color:#6b7a8f; font-size:13.5px; min-height:38px; }
+  .mode-box .mb-sub { font-weight:700; color:#3730a3; margin:14px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .mode-box .mb-sub button { background:#fff; border:1px solid #cdd7e2; border-radius:8px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .sec-check { display:flex; align-items:center; gap:10px; padding:8px 4px; font-size:15px; font-weight:600; color:#3730a3; cursor:pointer; }
+  .sec-check input { width:18px; height:18px; accent-color:#4338ca; }
+  .exam-list { list-style:none; padding:0; margin:10px 0 0; color:#445; font-size:14.5px; }
+  .exam-list li { padding:3px 0; }
+  .mode-start { width:100%; margin-top:18px; border:none; color:#fff; font-weight:700; font-size:16px; padding:13px; border-radius:10px; cursor:pointer; }
+  .mode-box.practice .mode-start { background:#4f46e5; } .mode-box.exam .mode-start { background:#e67e22; }
+
+  /* 答题区 */
+  #testArea { display:none; }
+  .test-topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#fff; border-radius:14px; padding:14px 22px; box-shadow:0 4px 18px rgba(0,0,0,.05); margin-bottom:18px; position:sticky; top:60px; z-index:600; }
+  .test-topbar .tt-title { font-size:19px; font-weight:700; color:#1e1b4b; }
+  .test-topbar .tt-mode { font-size:13px; background:#eef2ff; color:#3730a3; padding:3px 12px; border-radius:20px; font-weight:600; }
+  .btn-ghost { border:1px solid #cdd7e2; background:#fff; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; color:#33475b; }
+  .btn-ghost:hover { background:#f3f6fa; }
+
+  .section-banner { background:#eef2ff; border:1px solid #c7d2fe; border-radius:12px; padding:14px 20px; margin:26px 0 14px; }
+  .section-banner .sb-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .section-banner .sb-title { font-size:20px; font-weight:800; color:#3730a3; letter-spacing:.5px; }
+  .section-banner .sb-meta { font-size:13px; color:#5a6b8a; margin-top:6px; }
+
+  /* 阅读分栏：左文章 右题目 */
+  .reading-cols { display:flex; gap:24px; align-items:flex-start; }
+  .passage-pane { flex:1 1 50%; background:#fff; border:1px solid #e3e6ee; border-radius:12px; padding:22px 26px; position:sticky; top:130px; max-height:calc(100vh - 150px); overflow:auto; }
+  .passage-pane .pp-kicker { font-size:12px; letter-spacing:1.5px; color:#6366f1; font-weight:700; }
+  .passage-pane .ptitle { margin:6px 0 4px; font-size:21px; color:#1e1b4b; }
+  .passage-pane .pp-byline { font-style:italic; color:#6b7a8f; font-size:13.5px; margin-bottom:12px; }
+  .passage-pane p { margin:0 0 13px; font-size:15px; text-align:justify; }
+  .passage-pane .para-label { font-weight:800; color:#4338ca; margin-right:6px; }
+  .qcol { flex:1 1 50%; min-width:0; }
+  @media(max-width:900px){
+    .reading-cols { flex-direction:column; }
+    .passage-pane { position:static; max-height:none; width:100%; }
+    .test-topbar { position:static; }
+  }
+
+  .qgroup { background:#fff; border:1px solid #eaeef4; border-radius:12px; padding:22px 26px; margin-bottom:18px; }
+  .qgroup h4 { margin:0 0 6px; font-size:18px; color:#111; }
+  .instruction { font-style:italic; color:#445; font-size:14.5px; margin-bottom:14px; }
+  .note-box { border:1px solid #d8e0ea; border-radius:10px; padding:18px 22px; background:#fafbff; }
+  .note-title { text-align:center; font-weight:800; font-size:17px; margin-bottom:12px; color:#22303f; }
+  .note-h { font-weight:700; margin:12px 0 4px; }
+  .note-li { margin:6px 0 6px 4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .note-li .bull { color:#7a8aa0; }
+  .note-li.sub { margin-left:26px; } .note-li.sub2 { margin-left:48px; }
+  .qnum-badge { background:#e0e7ff; color:#3730a3; font-weight:700; min-width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; padding:0 6px; }
+  input[type=text]{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:15px; width:150px; }
+  input[type=text]:focus{ border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.14); outline:none; }
+  table.note-table { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.note-table th, table.note-table td { border:1px solid #d3dce6; padding:10px 12px; font-size:14.5px; vertical-align:top; text-align:left; }
+  table.note-table th { background:#eef2ff; }
+  .mcq { margin:6px 0 16px; }
+  .mcq .qtext { font-weight:600; margin-bottom:6px; display:flex; gap:8px; }
+  .mcq label { display:flex; gap:9px; align-items:flex-start; padding:6px 10px; border-radius:7px; cursor:pointer; }
+  .mcq label:hover { background:#eef2fa; }
+  .mcq input{ accent-color:#1e1b4b; margin-top:3px; }
+  .tfng-opts { display:flex; gap:10px; flex-wrap:wrap; }
+  .tfng-opts label { border:1px solid #dfe4ee; border-radius:8px; padding:6px 14px; }
+  select{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:14.5px; min-width:70px; }
+  select:focus{ border-color:#4f46e5; outline:none; }
+  .match-box { border:1px solid #d8e0ea; border-radius:10px; background:#f6f8ff; padding:14px 18px; margin-bottom:14px; }
+  .match-box .mb-h { text-align:center; font-weight:700; margin-bottom:8px; }
+  .match-box .mb-row { display:flex; gap:10px; padding:2px 0; }
+  .match-q { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .match-q .mq-txt { flex:1; }
+
+  .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+  .submit-btn:hover { transform:translateY(-2px); }
+
+  /* 结果 */
+  #resultArea { display:none; }
+  .res-card { background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .res-title { font-size:24px; font-weight:800; color:#1e1b4b; margin:4px 0 2px; }
+  .res-meta { color:#6b7a8f; font-size:13px; margin-bottom:20px; }
+  .res-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:680px){ .res-stats{grid-template-columns:1fr;} }
+  .stat-box { border-radius:14px; padding:26px 16px; text-align:center; }
+  .stat-box.s1 { background:#eef2ff; } .stat-box.s2 { background:#eefaf2; } .stat-box.s3 { background:#f5f3ff; }
+  .stat-box .big { font-size:40px; font-weight:800; line-height:1; }
+  .stat-box.s1 .big { color:#4f46e5; } .stat-box.s2 .big { color:#1e8449; } .stat-box.s3 .big { color:#5b3fd6; }
+  .stat-box .cap { color:#5a7184; margin-top:8px; font-size:14px; }
+  .stat-box .sub2 { color:#8a96a5; font-size:12px; margin-top:2px; }
+  .progress-wrap { margin-top:22px; }
+  .progress-wrap .pw-top { display:flex; justify-content:space-between; font-size:13px; color:#5a7184; margin-bottom:6px; }
+  .pw-track { height:14px; background:#e2e8f0; border-radius:10px; overflow:hidden; }
+  .pw-fill { height:100%; background:linear-gradient(90deg,#6366f1,#27ae60); width:0; transition:width .8s; }
+
+  .detail-h { font-size:20px; font-weight:800; color:#1e1b4b; margin:26px 0 12px; }
+  .sec-result { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.05); margin-bottom:12px; overflow:hidden; }
+  .sec-result .sr-head { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; cursor:pointer; }
+  .sec-result .sr-head h5 { margin:0; font-size:17px; }
+  .sec-result .sr-head .sr-sum { font-size:13px; color:#6b7a8f; margin-top:3px; }
+  .sec-result .sr-head .sr-sum .ok { color:#1e8449; font-weight:700; } .sec-result .sr-head .sr-sum .bad { color:#c0392b; font-weight:700; }
+  .sr-body { display:none; padding:0 22px 16px; }
+  .sec-result.open .sr-body { display:block; }
+  .sr-chevron { transition:transform .2s; color:#8a96a5; }
+  .sec-result.open .sr-chevron { transform:rotate(180deg); }
+  .ritem { padding:12px 16px; border-radius:9px; margin:8px 0; border-left:5px solid transparent; }
+  .ritem.correct { background:#e8f8ee; border-left-color:#27ae60; }
+  .ritem.wrong { background:#fdeaea; border-left-color:#e74c3c; }
+  .ritem .rq { font-weight:700; color:#22303f; }
+  .ritem .ra { font-size:14px; margin-top:4px; }
+  .ritem .ra .yours { color:#7b1a1a; } .ritem .ra .correctv { color:#145a32; font-weight:700; }
+  .ritem .rex { font-size:13.5px; color:#3a4a5a; margin-top:6px; background:rgba(255,255,255,.65); padding:7px 11px; border-radius:7px; }
+  .back-row { text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="brandtag">优益思达</span> 剑桥雅思真题测试</h1>
+  <div class="timer" id="timer"><span id="timerText">00:00</span></div>
+</div>
+
+<!-- 封面 -->
+<div class="container" id="coverArea">
+  <div class="cover-hero">
+    <div class="cover-badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">13</div></div>
+    <div>
+      <h2>剑桥雅思 13 · Test 4</h2>
+      <div class="sub">学术类阅读 · 官方真题 · 自动批改并给出雅思预估分。点击下方开始测试。</div>
+    </div>
+  </div>
+  <div class="paper-card-wrap">
+    <div class="paper-card" onclick="openMode()">
+      <div class="pc-icon">📖</div>
+      <h3>学术类阅读 (Academic Reading)</h3>
+      <div class="pc-meta" id="coverMeta">加载中…</div>
+      <div class="pc-go">开始测试 ›</div>
+    </div>
+  </div>
+</div>
+
+<!-- 模式弹窗 -->
+<div class="modal-mask" id="modeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeMode()">×</button>
+    <h2>选择模式</h2>
+    <div class="mode-grid">
+      <div class="mode-box practice">
+        <div class="mb-ic">📘</div>
+        <h3>练习模式</h3>
+        <div class="mb-desc">适合分篇突破，可只练某几篇文章，正向计时不施加压力。</div>
+        <div class="mb-sub"><span>选择练习文章：</span><button onclick="toggleAll()" id="toggleAllBtn">取消全选</button></div>
+        <div id="sectionChecks"></div>
+        <button class="mode-start" onclick="startTest('practice')">开始练习</button>
+      </div>
+      <div class="mode-box exam">
+        <div class="mb-ic">⏱️</div>
+        <h3>模考模式</h3>
+        <div class="mb-desc">完整模拟真实考试：所有文章一次完成，限时 60 分钟。</div>
+        <div class="mb-sub"><span>测试信息：</span></div>
+        <div style="color:#445;font-size:14.5px;" id="examInfo">完整测试（限时 60 分钟）</div>
+        <ul class="exam-list" id="examList"></ul>
+        <button class="mode-start" onclick="startTest('exam')">开始模考</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 答题区 -->
+<div class="container" id="testArea">
+  <div class="test-topbar">
+    <div><div class="tt-title" id="testTitle"></div><span class="tt-mode" id="testModeTag"></span></div>
+    <button class="btn-ghost" onclick="backToCover()">← 返回封面</button>
+  </div>
+  <div id="questionsHolder"></div>
+  <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+</div>
+
+<!-- 结果区 -->
+<div class="container" id="resultArea">
+  <div class="res-card">
+    <div style="font-size:14px;color:#4338ca;font-weight:700;">🏆 批改报告</div>
+    <div class="res-title" id="resTitle"></div>
+    <div class="res-meta" id="resMeta"></div>
+    <div class="res-stats">
+      <div class="stat-box s1"><div class="big" id="resCorrect">0/0</div><div class="cap">答对题数</div></div>
+      <div class="stat-box s2"><div class="big" id="resPct">0%</div><div class="cap">正确率</div></div>
+      <div class="stat-box s3"><div class="big" id="resBand">-</div><div class="cap">雅思预估分</div><div class="sub2" id="resLevel"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="pw-top"><span>总体进度</span><span id="resProgLbl">0 / 0</span></div>
+      <div class="pw-track"><div class="pw-fill" id="resProgFill"></div></div>
+    </div>
+    <div class="instruction" id="bandNote" style="margin-top:14px;font-style:normal;color:#8a96a5;font-size:12px;"></div>
+  </div>
+  <div class="detail-h">详细结果</div>
+  <div id="detailHolder"></div>
+  <div class="back-row"><button class="btn-ghost" onclick="backToCover()">返回封面</button></div>
+</div>
+
+<script>
+/* ============================================================
+   一、试卷数据 —— 剑桥雅思16 Test 4 学术类阅读（官方原题 + 官方答案）
+   说明：每篇文章为一个对象 {id, passage:{title,byline,paras[]}, groups:[...]}
+   再发来 Passage 2、3 时按相同格式追加进 passages 数组即可。
+   ============================================================ */
+const TEST = {
+  meta:{ volume:13, testNo:4 },
+  durationMin:60,
+  passages:[
+    { id:1,
+      passage:{
+        title:'Cutty Sark: the fastest sailing ship of all time',
+        byline:'You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.',
+        paras:[
+          `The nineteenth century was a period of great technological development in Britain, and for shipping the major changes were from wind to steam power, and from wood to iron and steel.`,
+          `The fastest commercial sailing vessels of all time were clippers, three-masted ships built to transport goods around the world, although some also took passengers. From the 1840s until 1869, when the Suez Canal opened and steam propulsion was replacing sail, clippers dominated world trade. Although many were built, only one has survived more or less intact: Cutty Sark, now on display in Greenwich, southeast London.`,
+          `Cutty Sark's unusual name comes from the poem Tam O'Shanter by the Scottish poet Robert Burns. Tam, a farmer, is chased by a witch called Nannie, who is wearing a 'cutty sark' – an old Scottish name for a short nightdress. The witch is depicted in Cutty Sark's figurehead – the carving of a woman typically at the front of old sailing ships. In legend, and in Burns's poem, witches cannot cross water, so this was a rather strange choice of name for a ship.`,
+          `Cutty Sark was built in Dumbarton, Scotland, in 1869, for a shipping company owned by John Willis. To carry out construction, Willis chose a new shipbuilding firm, Scott & Linton, and ensured that the contract with them put him in a very strong position. In the end, the firm was forced out of business, and the ship was finished by a competitor.`,
+          `Willis's company was active in the tea trade between China and Britain, where speed could bring shipowners both profits and prestige, so Cutty Sark was designed to make the journey more quickly than any other ship. On her maiden voyage, in 1870, she set sail from London, carrying large amounts of goods to China. She returned laden with tea, making the journey back to London in four months. However, Cutty Sark never lived up to the high expectations of her owner, as a result of bad winds and various misfortunes. On one occasion, in 1872, the ship and a rival clipper, Thermopylae, left port in China on the same day. Crossing the Indian Ocean, Cutty Sark gained a lead of over 400 miles, but then her rudder was severely damaged in stormy seas, making her impossible to steer. The ship's crew had the daunting task of repairing the rudder at sea, and only succeeded at the second attempt. Cutty Sark reached London a week after Thermopylae.`,
+          `Steam ships posed a growing threat to clippers, as their speed and cargo capacity increased. In addition, the opening of the Suez Canal in 1869, the same year that Cutty Sark was launched, had a serious impact. While steam ships could make use of the quick, direct route between the Mediterranean and the Red Sea, the canal was of no use to sailing ships, which needed the much stronger winds of the oceans, and so had to sail a far greater distance. Steam ships reduced the journey time between Britain and China by approximately two months.`,
+          `By 1878, tea traders weren't interested in Cutty Sark, and instead, she took on the much less prestigious work of carrying any cargo between any two ports in the world. In 1880, violence aboard the ship led ultimately to the replacement of the captain with an incompetent drunkard who stole the crew's wages. He was suspended from service, and a new captain appointed. This marked a turnaround and the beginning of the most successful period in Cutty Sark's working life, transporting wool from Australia to Britain. One such journey took just under 12 weeks, beating every other ship sailing that year by around a month.`,
+          `The ship's next captain, Richard Woodget, was an excellent navigator, who got the best out of both his ship and his crew. As a sailing ship, Cutty Sark depended on the strong trade winds of the southern hemisphere, and Woodget took her further south than any previous captain, bringing her dangerously close to icebergs off the southern tip of South America. His gamble paid off, though, and the ship was the fastest vessel in the wool trade for ten years.`,
+          `As competition from steam ships increased in the 1890s, and Cutty Sark approached the end of her life expectancy, she became less profitable. She was sold to a Portuguese firm, which renamed her Ferreira. For the next 25 years, she again carried miscellaneous cargoes around the world.`,
+          `Badly damaged in a gale in 1922, she was put into Falmouth harbour in southwest England, for repairs. Wilfred Dowman, a retired sea captain who owned a training vessel, recognised her and tried to buy her, but without success. She returned to Portugal and was sold to another Portuguese company. Dowman was determined, however, and offered a high price: this was accepted, and the ship returned to Falmouth the following year and had her original name restored.`,
+          `Dowman used Cutty Sark as a training ship, and she continued in this role after his death. When she was no longer required, in 1954, she was transferred to dry dock at Greenwich to go on public display. The ship suffered from fire in 2007, and again, less seriously, in 2014, but now Cutty Sark attracts a quarter of a million visitors a year.`
+        ]
+      },
+      groups:[
+        { kind:'tfng', title:'Questions 1–8',
+          instruction:'Do the following statements agree with the information given in Reading Passage 1? Choose TRUE, FALSE, or NOT GIVEN.',
+          questions:[
+            {id:'Q1',no:1,q:`Clippers were originally intended to be used as passenger ships.`,answer:['FALSE'],explain:`第2段：快帆船是为运货而造，部分也载客。 FALSE。`},
+            {id:'Q2',no:2,q:`Cutty Sark was given the name of a character in a poem.`,answer:['FALSE'],explain:`第3段：名字取自"短睡裙"一词，非诗中人物之名。 FALSE。`},
+            {id:'Q3',no:3,q:`The contract between John Willis and Scott & Linton favoured Willis.`,answer:['TRUE'],explain:`第4段：合同使 Willis 处于很有利地位。 TRUE。`},
+            {id:'Q4',no:4,q:`John Willis wanted Cutty Sark to be the fastest tea clipper travelling between the UK and China.`,answer:['TRUE'],explain:`第5段：设计目的就是比任何船更快。 TRUE。`},
+            {id:'Q5',no:5,q:`Despite storm damage, Cutty Sark beat Thermopylae back to London.`,answer:['FALSE'],explain:`第5段：舵受损后，Cutty Sark 比对手晚一周到达。 FALSE。`},
+            {id:'Q6',no:6,q:`The opening of the Suez Canal meant that steam ships could travel between Britain and China faster than clippers.`,answer:['TRUE'],explain:`第6段：蒸汽船可走苏伊士直达航线，缩短约两个月。 TRUE。`},
+            {id:'Q7',no:7,q:`Steam ships sometimes used the ocean route to travel between London and China.`,answer:['NOT GIVEN'],explain:`未提蒸汽船是否走海洋航线。 NOT GIVEN。`},
+            {id:'Q8',no:8,q:`Captain Woodget put Cutty Sark at risk of hitting an iceberg.`,answer:['TRUE'],explain:`第8段：Woodget 把船开到危险地靠近冰山。 TRUE。`},
+          ]},
+        { kind:'note', title:'Questions 9–13',
+          instruction:'Complete the sentences below. Choose ONE WORD ONLY from the passage for each answer.',
+          lines:[
+            {bullet:true, html:`After 1880, Cutty Sark carried <Q n="9"> as its main cargo during its most successful time.`},
+            {bullet:true, html:`As a captain and <Q n="10">, Woodget was very skilled.`},
+            {bullet:true, html:`Ferreira went to Falmouth to repair damage that a <Q n="11"> had caused.`},
+            {bullet:true, html:`Between 1923 and 1954, Cutty Sark was used for <Q n="12">.`},
+            {bullet:true, html:`Cutty Sark has twice been damaged by <Q n="13"> in the 21st century.`},
+          ],
+          questions:[
+            {id:'Q9',no:9,answer:['wool'],explain:`第7段：最成功时期运羊毛 wool。答案：wool。`},
+            {id:'Q10',no:10,answer:['navigator'],explain:`第8段：Woodget 是出色的航海家 navigator。答案：navigator。`},
+            {id:'Q11',no:11,answer:['gale'],explain:`第10段：被大风 gale 严重损坏。答案：gale。`},
+            {id:'Q12',no:12,answer:['training'],explain:`第11段：用作训练 training 船。答案：training。`},
+            {id:'Q13',no:13,answer:['fire'],explain:`第11段：21世纪两次被火 fire 损坏。答案：fire。`},
+          ]},
+      ]},
+    { id:2,
+      passage:{
+        title:'Saving the soil',
+        byline:'You should spend about 20 minutes on Questions 14–26, which are based on Reading Passage 2 below. More than a third of the Earth\'s top layer is at risk. Is there hope for our planet\'s most precious resource?',
+        paras:[
+          `<span class="para-label">A</span>More than a third of the world's soil is endangered, according to a recent UN report. If we don't slow the decline, all farmable soil could be gone in 60 years. Since soil grows 95% of our food, and sustains human life in other more surprising ways, that is a huge problem.`,
+          `<span class="para-label">B</span>Peter Groffman, from the Cary Institute of Ecosystem Studies in New York, points out that soil scientists have been warning about the degradation of the world's soil for decades. At the same time, our understanding of its importance to humans has grown. A single gram of healthy soil might contain 100 million bacteria, as well as other microorganisms such as viruses and fungi, living amid decomposing plants and various minerals. That means soils do not just grow our food, but are the source of nearly all our existing antibiotics, and could be our best hope in the fight against antibiotic-resistant bacteria. Soil is also an ally against climate change: as microorganisms within soil digest dead animals and plants, they lock in their carbon content, holding three times the amount of carbon as does the entire atmosphere. Soils also store water, preventing flood damage: in the UK, damage to buildings, roads and bridges from floods caused by soil degradation costs £233 million every year.`,
+          `<span class="para-label">C</span>If the soil loses its ability to perform these functions, the human race could be in big trouble. The danger is not that the soil will disappear completely, but that the microorganisms that give it its special properties will be lost. And once this has happened, it may take the soil thousands of years to recover. Agriculture is by far the biggest problem. In the wild, when plants grow they remove nutrients from the soil, but then when the plants die and decay these nutrients are returned directly to the soil. Humans tend not to return unused parts of harvested crops directly to the soil to enrich it, meaning that the soil gradually becomes less fertile. In the past we developed strategies to get around the problem, such as regularly varying the types of crops grown, or leaving fields uncultivated for a season.`,
+          `<span class="para-label">D</span>But these practices became inconvenient as populations grew and agriculture had to be run on more commercial lines. A solution came in the early 20th century with the Haber-Bosch process for manufacturing ammonium nitrate. Farmers have been putting this synthetic fertiliser on their fields ever since. But over the past few decades, it has become clear this wasn't such a bright idea. Chemical fertilisers can release polluting nitrous oxide into the atmosphere and excess is often washed away with the rain, releasing nitrogen into rivers. More recently, we have found that indiscriminate use of fertilisers hurts the soil itself, turning it acidic and salty, and degrading the soil they are supposed to nourish.`,
+          `<span class="para-label">E</span>One of the people looking for a solution to this problem is Pius Floris, who started out running a tree-care business in the Netherlands, and now advises some of the world's top soil scientists. He came to realise that the best way to ensure his trees flourished was to take care of the soil, and has developed a cocktail of beneficial bacteria, fungi and humus to do this. Researchers at the University of Valladolid in Spain recently used this cocktail on soils destroyed by years of fertiliser overuse. When they applied Floris's mix to the desert-like test plots, a good crop of plants emerged that were not just healthy at the surface, but had roots strong enough to pierce dirt as hard as rock. The few plants that grew in the control plots, fed with traditional fertilisers, were small and weak.`,
+          `<span class="para-label">F</span>However, measures like this are not enough to solve the global soil degradation problem. To assess our options on a global scale we first need an accurate picture of what types of soil are out there, and the problems they face. That's not easy. For one thing, there is no agreed international system for classifying soil. In an attempt to unify the different approaches, the UN has created the Global Soil Map project. Researchers from nine countries are working together to create a map linked to a database that can be fed measurements from field surveys, drone surveys, satellite imagery, lab analyses and so on to provide real-time data on the state of the soil. Within the next four years, they aim to have mapped soils worldwide to a depth of 100 metres, with the results freely accessible to all.`,
+          `<span class="para-label">G</span>But this is only a first step. We need ways of presenting the problem that bring it home to governments and the wider public, says Pamela Chasek at the International Institute for Sustainable Development, in Winnipeg, Canada. 'Most scientists don't speak language that policy-makers can understand, and vice versa.' Chasek and her colleagues have proposed a goal of 'zero net land degradation'. Like the idea of carbon neutrality, it is an easily understood target that can help shape expectations and encourage action. For soils on the brink, that may be too late. Several researchers are agitating for the immediate creation of protected zones for endangered soils. One difficulty here is defining what these areas should conserve: areas where the greatest soil diversity is present? Or areas of unspoilt soils that could act as a future benchmark of quality? Whatever we do, if we want our soils to survive, we need to take action now.`
+        ]
+      },
+      groups:[
+        { kind:'note', title:'Questions 14–17',
+          instruction:'Complete the summary below. Write ONE WORD ONLY from the passage for each answer.',
+          noteTitle:'Why soil degradation could be a disaster for humans',
+          lines:[
+            {plain:true, html:`Healthy soil contains a large variety of bacteria and other microorganisms, as well as plant remains and <Q n="14">. It provides us with food and also with antibiotics, and its function in storing <Q n="15"> has a significant effect on the climate. In addition, it prevents damage to property and infrastructure because it holds <Q n="16">. If these microorganisms are lost, soil may lose its special properties. The main factor contributing to soil degradation is the <Q n="17"> carried out by humans.`},
+          ],
+          questions:[
+            {id:'Q14',no:14,answer:['minerals'],explain:`B段：含细菌、微生物、腐烂植物和各种矿物质 minerals。答案：minerals。`},
+            {id:'Q15',no:15,answer:['carbon'],explain:`B段：储存碳 carbon 对气候有重大影响。答案：carbon。`},
+            {id:'Q16',no:16,answer:['water'],explain:`B段：土壤储水 water 防洪。答案：water。`},
+            {id:'Q17',no:17,answer:['agriculture'],explain:`C段：农业 agriculture 是最大问题。答案：agriculture。`},
+          ]},
+        { kind:'match', title:'Questions 18–21',
+          instruction:'Complete each sentence with the correct ending, A–F, below. Write the correct letter, A–F.',
+          boxTitle:'Endings',
+          box:{A:`may improve the number and quality of plants growing there.`,B:`may contain data from up to nine countries.`,C:`may not be put back into the soil.`,D:`may help governments to be more aware of soil-related issues.`,E:`may cause damage to different aspects of the environment.`,F:`may be better for use at a global level.`},
+          subTitle:'Sentence beginnings',
+          questions:[
+            {id:'Q18',no:18,q:`Nutrients contained in the unused parts of harvested crops`,answer:['C'],explain:`C段：收割作物未用部分的养分可能不会被放回土壤。 C。`},
+            {id:'Q19',no:19,q:`Synthetic fertilisers produced with the Haber-Bosch process`,answer:['E'],explain:`D段：合成肥料会破坏环境的不同方面。 E。`},
+            {id:'Q20',no:20,q:`Addition of a mixture developed by Pius Floris to the soil`,answer:['A'],explain:`E段：Floris 的混合剂可改善植物的数量与质量。 A。`},
+            {id:'Q21',no:21,q:`The idea of zero net soil degradation`,answer:['D'],explain:`G段："零净土地退化"目标可帮助政府更关注土壤问题。 D。`},
+          ]},
+        { kind:'match', title:'Questions 22–26', noBox:true,
+          instruction:'Reading Passage 2 has seven paragraphs, A–G. Which section contains the following information? Write the correct letter, A–G. You may use any letter more than once.',
+          box:{A:'',B:'',C:'',D:'',E:'',F:'',G:''},
+          questions:[
+            {id:'Q22',no:22,q:`a reference to one person's motivation for a soil-improvement project`,answer:['E'],explain:`E段：Floris 因想让树木茂盛而照料土壤。 E。`},
+            {id:'Q23',no:23,q:`an explanation of how soil stayed healthy before the development of farming`,answer:['C'],explain:`C段：野生状态下养分会直接回归土壤。 C。`},
+            {id:'Q24',no:24,q:`examples of different ways of collecting information on soil degradation`,answer:['F'],explain:`F段：田野调查、无人机、卫星影像、实验室分析等。 F。`},
+            {id:'Q25',no:25,q:`a suggestion for a way of keeping some types of soil safe in the near future`,answer:['G'],explain:`G段：建议为濒危土壤设立保护区。 G。`},
+            {id:'Q26',no:26,q:`a reason why it is difficult to provide an overview of soil degradation`,answer:['F'],explain:`F段：没有统一的国际土壤分类系统。 F。`},
+          ]},
+      ]},
+    { id:3,
+      passage:{
+        title:'The Happiness Industry (book review)',
+        byline:'You should spend about 20 minutes on Questions 27–40, which are based on Reading Passage 3 below. A review of The Happiness Industry: How the Government and Big Business Sold Us Well-Being by William Davies.',
+        paras:[
+          `'Happiness is the ultimate goal because it is self-evidently good. If we are asked why happiness matters we can give no further external reason. It just obviously does matter.' This pronouncement by Richard Layard, an economist and advocate of 'positive psychology', summarises the beliefs of many people today. For Layard and others like him, it is obvious that the purpose of government is to promote a state of collective well-being. The only question is how to achieve it, and here positive psychology – a supposed science that not only identifies what makes people happy but also allows their happiness to be measured – can show the way. Equipped with this science, they say, governments can secure happiness in society in a way they never could in the past.`,
+          `It is an astonishingly crude and simple-minded way of thinking, and for that very reason increasingly popular. Those who think in this way are oblivious to the vast philosophical literature in which the meaning and value of happiness have been explored and questioned, and write as if nothing of any importance had been thought on the subject until it came to their attention. It was the philosopher Jeremy Bentham (1748–1832) who was more than anyone else responsible for the development of this way of thinking. For Bentham it was obvious that the human good consists of pleasure and the absence of pain. The Greek philosopher Aristotle may have identified happiness with self-realisation in the 4th century BC, and thinkers throughout the ages may have struggled to reconcile the pursuit of happiness with other human values, but for Bentham all this was mere metaphysics or fiction. Without knowing anything much of him or the school of moral theory he established – since they are by education and intellectual conviction illiterate in the history of ideas – our advocates of positive psychology follow in his tracks in rejecting as outmoded and irrelevant pretty much the entirety of ethical reflection on human happiness to date.`,
+          `But as William Davies notes in his recent book The Happiness Industry, the view that happiness is the only self-evident good is actually a way of limiting moral inquiry. One of the virtues of this rich, lucid and arresting book is that it places the current cult of happiness in a well-defined historical framework. Rightly, Davies begins his story with Bentham, noting that he was far more than a philosopher. Davies writes, 'Bentham's activities were those which we might now associate with a public sector management consultant'. In the 1790s, he wrote to the Home Office suggesting that the departments of government be linked together through a set of 'conversation tubes', and to the Bank of England with a design for a printing device that could produce unforgeable banknotes. He drew up plans for a 'frigidarium' to keep provisions such as meat, fish, fruit and vegetables fresh. His celebrated design for a prison to be known as a 'Panopticon', in which prisoners would be kept in solitary confinement while being visible at all times to the guards, was very nearly adopted. (Surprisingly, Davies does not discuss the fact that Bentham meant his Panopticon not just as a model prison but also as an instrument of control that could be applied to schools and factories.)`,
+          `Bentham was also a pioneer of the 'science of happiness'. If happiness is to be regarded as a science, it has to be measured, and Bentham suggested two ways in which this might be done. Viewing happiness as a complex of pleasurable sensations, he suggested that it might be quantified by measuring the human pulse rate. Alternatively, money could be used as the standard for quantification: if two different goods have the same price, it can be claimed that they produce the same quantity of pleasure in the consumer. Bentham was more attracted by the latter measure. By associating money so closely to inner experience, Davies writes, Bentham 'set the stage for the entangling of psychological research and capitalism that would shape the business practices of the twentieth century'.`,
+          `The Happiness Industry describes how the project of a science of happiness has become integral to capitalism. We learn much that is interesting about how economic problems are being redefined and treated as psychological maladies. In addition, Davies shows how the belief that inner states of pleasure and displeasure can be objectively measured has informed management studies and advertising. The tendency of thinkers such as J B Watson, the founder of behaviourism, was that human beings could be shaped, or manipulated, by policymakers and managers. Watson had no factual basis for his view of human action. When he became president of the American Psychological Association in 1915, he 'had never even studied a single human being': his research had been confined to experiments on white rats. Yet Watson's reductive model is now widely applied, with 'behaviour change' becoming the goal of governments: in Britain, a 'Behaviour Insights Team' has been established by the government to study how people can be encouraged, at minimum cost to the public purse, to live in what are considered to be socially desirable ways.`,
+          `Modern industrial societies appear to need the possibility of ever-increasing happiness to motivate them in their labours. But whatever its intellectual pedigree, the idea that governments should be responsible for promoting happiness is always a threat to human freedom.`
+        ]
+      },
+      groups:[
+        { kind:'mcq', title:'Questions 27–29',
+          instruction:'Choose the correct letter, A, B, C or D.',
+          questions:[
+            {id:'Q27',no:27,q:`What is the reviewer's attitude to advocates of positive psychology?`,options:{A:`They are wrong to reject the ideas of Bentham.`,B:`They are over-influenced by their study of Bentham's theories.`,C:`They have a fresh new approach to ideas on human happiness.`,D:`They are ignorant about the ideas they should be considering.`},answer:['D'],explain:`第2段：他们对思想史一无所知，无视大量哲学文献。 D。`},
+            {id:'Q28',no:28,q:`The reviewer refers to the Greek philosopher Aristotle in order to suggest that happiness`,options:{A:`may not be just pleasure and the absence of pain.`,B:`should not be the main goal of humans.`,C:`is not something that should be fought for.`,D:`is not just an abstract concept.`},answer:['A'],explain:`第2段：亚里士多德把幸福等同于自我实现——幸福不只是快乐与无痛。 A。`},
+            {id:'Q29',no:29,q:`According to Davies, Bentham's suggestion for linking the price of goods to happiness was significant because`,options:{A:`it was the first successful way of assessing happiness.`,B:`it established a connection between work and psychology.`,C:`it was the first successful example of psychological research.`,D:`it involved consideration of the rights of consumers.`},answer:['B'],explain:`第4段：把金钱与内心体验关联，为心理学研究与资本主义的交织奠基。 B。`},
+          ]},
+        { kind:'wbank', title:'Questions 30–34',
+          instruction:'Complete the summary using the list of words A–G below. Write the correct letter, A–G, in the boxes.',
+          noteTitle:'Jeremy Bentham',
+          box:{A:`measurement`,B:`security`,C:`implementation`,D:`profits`,E:`observation`,F:`communication`,G:`preservation`},
+          boxCols:2,
+          lines:[
+            {html:`Jeremy Bentham was active in other areas besides philosophy. In the 1790s he suggested a type of technology to improve <Q n="30"> for different Government departments. He developed a new way of printing banknotes to increase <Q n="31"> and also designed a method for the <Q n="32"> of food. He also drew up plans for a prison which allowed the <Q n="33"> of prisoners at all times, and believed the same design could be used for other institutions as well. When researching happiness, he investigated possibilities for its <Q n="34">, and suggested some methods of doing this.`},
+          ],
+          questions:[
+            {id:'Q30',no:30,answer:['F'],explain:`答案：F（communication）——"conversation tubes"改善各部门通信。`},
+            {id:'Q31',no:31,answer:['B'],explain:`答案：B（security）——防伪钞票提高安全性。`},
+            {id:'Q32',no:32,answer:['G'],explain:`答案：G（preservation）——"frigidarium"保鲜食物。`},
+            {id:'Q33',no:33,answer:['E'],explain:`答案：E（observation）——圆形监狱可随时观察囚犯。`},
+            {id:'Q34',no:34,answer:['A'],explain:`答案：A（measurement）——研究幸福的测量方法。`},
+          ]},
+        { kind:'tfng', title:'Questions 35–40',
+          variant:'yn',
+          instruction:'Do the following statements agree with the claims of the writer in Reading Passage 3? Write YES, NO, or NOT GIVEN.',
+          questions:[
+            {id:'Q35',no:35,q:`One strength of The Happiness Industry is its discussion of the relationship between psychology and economics.`,answer:['YES'],explain:`第5段：书中精彩地展示了经济问题如何被当作心理疾病——心理学与经济学关系是亮点。 YES。`},
+            {id:'Q36',no:36,q:`It is more difficult to measure some emotions than others.`,answer:['NOT GIVEN'],explain:`未比较不同情绪测量的难易。 NOT GIVEN。`},
+            {id:'Q37',no:37,q:`Watson's ideas on behaviourism were supported by research on humans he carried out before 1915.`,answer:['NO'],explain:`第5段：1915年前 Watson 只研究白鼠，"从未研究过一个人"。 NO。`},
+            {id:'Q38',no:38,q:`Watson's ideas have been most influential on governments outside America.`,answer:['NOT GIVEN'],explain:`只举了英国例子，未比较各国影响程度。 NOT GIVEN。`},
+            {id:'Q39',no:39,q:`The need for happiness is linked to industrialisation.`,answer:['YES'],explain:`末段：现代工业社会似乎需要不断增长的幸福来激励劳动。 YES。`},
+            {id:'Q40',no:40,q:`A main aim of government should be to increase the happiness of the population.`,answer:['NO'],explain:`末段：作者认为政府负责促进幸福始终威胁人类自由。 NO。`},
+          ]},
+      ]},
+  ]
+};
+
+
+/* 官方 学术类阅读 原始分(0-40) → 雅思分 对照表 */
+const BAND_TABLE = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0],[4,2.5],[0,2.0]];
+const LEVEL_LABEL = [[8.5,'Expert / Very good user'],[7.0,'Good user'],[6.0,'Competent user'],[5.0,'Modest user'],[4.0,'Limited user'],[0,'Basic user']];
+function lookupBand(correct,total){ const scaled = total===40?correct:Math.round(correct/Math.max(1,total)*40); for(const [m,b] of BAND_TABLE) if(scaled>=m) return b; return 2.0; }
+function levelLabel(b){ for(const [m,l] of LEVEL_LABEL) if(b>=m) return l; return ''; }
+
+/* ============================================================
+   二、引擎
+   ============================================================ */
+let currentPaper=[], selectedSections=[], mode='practice', startTime=0, timerInterval=null, submitted=false;
+const allQs = sec => sec.groups.flatMap(g=>g.questions);
+const totalQs = () => TEST.passages.reduce((n,p)=>n+allQs(p).length,0);
+
+/* 封面信息 */
+(function initCover(){
+  document.getElementById('coverMeta').textContent = `${TEST.passages.length} 篇文章 · 共 ${totalQs()} 题`;
+})();
+
+/* 模式弹窗 */
+function openMode(){
+  document.getElementById('sectionChecks').innerHTML =
+    TEST.passages.map(p=>`<label class="sec-check"><input type="checkbox" class="secbox" value="${p.id}" checked> Passage ${p.id}（${allQs(p).length} 题）</label>`).join('');
+  document.getElementById('examList').innerHTML = TEST.passages.map(p=>`<li>• Passage ${p.id}</li>`).join('');
+  document.getElementById('toggleAllBtn').textContent='取消全选';
+  document.getElementById('modeModal').classList.add('show');
+}
+function closeMode(){ document.getElementById('modeModal').classList.remove('show'); }
+function toggleAll(){ const b=[...document.querySelectorAll('.secbox')]; const off=b.some(x=>!x.checked); b.forEach(x=>x.checked=off); document.getElementById('toggleAllBtn').textContent=off?'取消全选':'全选'; }
+
+function startTest(m){
+  mode=m;
+  if(m==='practice'){ const ids=[...document.querySelectorAll('.secbox:checked')].map(b=>+b.value); if(!ids.length){ alert('请至少选择一篇文章。'); return; } selectedSections=ids; }
+  else selectedSections=TEST.passages.map(p=>p.id);
+  currentPaper=TEST.passages.filter(p=>selectedSections.includes(p.id));
+  closeMode(); submitted=false;
+  document.getElementById('coverArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('testArea').style.display='block';
+  renderPaper(); setupTimer();
+  window.scrollTo(0,0);
+}
+
+function renderPaper(){
+  document.getElementById('testTitle').textContent=`剑桥雅思13 · Test 4 — 阅读`;
+  document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
+  document.getElementById('questionsHolder').innerHTML = currentPaper.map(passageHtml).join('');
+}
+function passageHtml(p){
+  const pp=p.passage;
+  const article = `<div class="passage-pane">
+      <div class="pp-kicker">READING PASSAGE ${p.id}</div>
+      <h3 class="ptitle">${pp.title}</h3>
+      ${pp.byline?`<div class="pp-byline">${pp.byline}</div>`:''}
+      ${pp.paras.map(t=>`<p>${t}</p>`).join('')}
+    </div>`;
+  const qs = `<div class="qcol">${p.groups.map(groupHtml).join('')}</div>`;
+  return `<div class="section-banner" id="anchor_${p.id}">
+      <div class="sb-top"><span class="sb-title">Passage ${p.id}</span></div>
+      <div class="sb-meta">建议用时约 20 分钟 · 本篇共 ${allQs(p).length} 题</div>
+    </div><div class="reading-cols">${article}${qs}</div>`;
+}
+function expandQ(html){ // 把 <Q n="x"> 占位替换成 编号徽标 + 输入框
+  return (html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><input type="text" id="Q${n}" autocomplete="off">`);
+}
+function groupHtml(g){
+  let body='';
+  if(g.kind==='note'){
+    body=(g.svg?`<div style="margin:14px auto 20px;max-width:900px;">${g.svg}</div>`:'')+`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
+      g.lines.map(l=>{
+        if(l.h) return `<div class="note-h">${l.h}</div>`;
+        if(l.plain) return `<div class="note-li${l.sub?' sub':''}">${expandQ(l.html)}</div>`;
+        if(l.html==null) return '';
+        const cls='note-li'+(l.sub2?' sub2':(l.sub?' sub':''));
+        const mark=l.dash?'–':(l.bullet?'•':'');
+        return `<div class="${cls}"><span class="bull">${mark}</span> ${expandQ(l.html)}</div>`;
+      }).join('')+`</div>`;
+  }
+  else if(g.kind==='table'){
+    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const rows=g.rows.map(r=>`<tr>${r.map(cell=>`<td>${expandQ(cell)}</td>`).join('')}</tr>`).join('');
+    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+  }
+  else if(g.kind==='tfng'){
+    const opts = g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN'];
+    body=g.questions.map(q=>{
+      const radios=opts.map(v=>`<label><input type="radio" name="${q.id}" value="${v}"> <span>${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div><div class="tfng-opts">${radios}</div></div>`;
+    }).join('');
+  }
+  else if(g.kind==='mcq'){
+    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
+      const opts=Object.entries(q.options).map(([k,v])=>`<label><input type="radio" name="${q.id}" value="${k}"> <span><strong>${k}</strong> &nbsp;${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div>${opts}</div>`;
+    }).join('');
+  }
+  else if(g.kind==='match'){
+    const box=g.noBox ? '' : `<div class="match-box"><div class="mb-h">${g.boxTitle||''}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
+    const qs=(g.subTitle?`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`:'')+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='multi'){
+    const box=`<div class="match-box">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=k=>`<select id="${k}"><option value="">—</option>${Object.keys(g.box).map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">选择一项（本组合计选出正确的几项，顺序不限）</span>${sel(q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='wbank'){
+    // 选词填空：词库 A–H + 文中下拉
+    const cols=g.boxCols||2;
+    const box=`<div class="match-box wbank-box" style="columns:${cols};">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const letters=Object.keys(g.box);
+    const expand=html=>(html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><select id="Q${n}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`);
+    const para=(g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:'')+g.lines.map(l=>`<div class="note-li plain" style="display:block;">${expand(l.html)}</div>`).join('');
+    body=box+`<div class="note-box">${para}</div>`;
+  }
+  return `<div class="qgroup"><h4>${g.title}</h4><div class="instruction">${g.instruction}</div>${body}</div>`;
+}
+
+/* 计时器 */
+function setupTimer(){
+  startTime=Date.now(); const t=document.getElementById('timer'); t.classList.add('show'); clearInterval(timerInterval);
+  if(mode==='exam'){ const total=TEST.durationMin*60;
+    timerInterval=setInterval(()=>{ const left=total-Math.floor((Date.now()-startTime)/1000);
+      if(left<=0){ clearInterval(timerInterval); document.getElementById('timerText').textContent='00:00'; alert('时间到，自动提交。'); submitTest(); return; }
+      t.classList.toggle('warn',left<=600&&left>120); t.classList.toggle('danger',left<=120);
+      document.getElementById('timerText').textContent=fmt(left); },500);
+  } else timerInterval=setInterval(()=>{ document.getElementById('timerText').textContent=fmt(Math.floor((Date.now()-startTime)/1000)); },500);
+}
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+/* 批改 */
+function norm(s){ return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,''); }
+function readAns(q){ const el=document.getElementById(q.id); if(el) return (el.tagName==='SELECT')?el.value:el.value.trim();
+  const r=document.getElementsByName(q.id); for(const x of r) if(x.checked) return x.value; return ''; }
+
+function confirmSubmit(){
+  let answered=0,total=0;
+  currentPaper.forEach(s=>allQs(s).forEach(q=>{ total++; if(readAns(q)!=='') answered++; }));
+  if(window.confirm(`已作答 ${answered}/${total} 题。\n确定提交并查看批改报告吗？`)) submitTest();
+}
+function submitTest(){
+  if(submitted) return; submitted=true;
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+
+  /* 先处理 multi 配对题（顺序不限、不重复计分） */
+  const pairCorrect={};
+  currentPaper.forEach(s=>s.groups.forEach(g=>{
+    if(g.kind==='multi'){ const set=g.answerSet.slice(); g.questions.forEach(q=>{ const ua=(readAns(q)||'').toUpperCase(); const i=set.indexOf(ua); if(ua&&i>-1){ pairCorrect[q.id]=true; set.splice(i,1);} else pairCorrect[q.id]=false; }); }
+  }));
+
+  let correct=0,total=0; const detail=[];
+  currentPaper.forEach(s=>{
+    let sc=0; const items=[];
+    s.groups.forEach(g=>g.questions.forEach(q=>{
+      const ua=readAns(q); let ok;
+      if(g.kind==='multi') ok=!!pairCorrect[q.id];
+      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      total++; if(ok){correct++;sc++;}
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+    }));
+    detail.push({s,sc,total:allQs(s).length,items});
+  });
+
+  const pct=total?Math.round(correct/total*100):0;
+  const band=lookupBand(correct,total);
+  const elapsed=Math.max(1,Math.round((Date.now()-startTime)/1000));
+
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resTitle').textContent='剑桥雅思13 · Test 4 — 阅读';
+  document.getElementById('resMeta').textContent=`${mode==='practice'?'练习模式':'模考模式'} · 用时 ${fmt(elapsed)} · 完成时间 ${new Date().toLocaleString('zh-CN')}`;
+  document.getElementById('resCorrect').textContent=`${correct}/${total}`;
+  document.getElementById('resPct').textContent=pct+'%';
+  document.getElementById('resBand').textContent=band.toFixed(1);
+  document.getElementById('resLevel').textContent='水平：'+levelLabel(band);
+  document.getElementById('resProgLbl').textContent=`${correct} / ${total}`;
+  setTimeout(()=>document.getElementById('resProgFill').style.width=pct+'%',60);
+  document.getElementById('bandNote').textContent = total===40
+    ? '雅思分按官方学术类阅读 40 题原始分对照表换算。'
+    : `本次仅测 ${total} 题，预估分按比例折算至 40 题后套用官方对照表；做完整 3 篇文章时为精确换算。`;
+
+  document.getElementById('detailHolder').innerHTML=detail.map((d,i)=>{
+    const sp=d.total?Math.round(d.sc/d.total*100):0;
+    const rows=d.items.map(it=>{
+      const cls=it.ok?'correct':'wrong';
+      const yours=it.ua?`你的答案：<span class="yours">${it.ua}</span>　`:`<span class="yours">未作答</span>　`;
+      return `<div class="ritem ${cls}"><div class="rq">${it.ok?'✔':'✘'} 第 ${it.q.no} 题</div>
+        <div class="ra">${it.ok?'<span class="correctv">回答正确</span>':yours+'正确答案：<span class="correctv">'+it.ans.join(' / ')+'</span>'}</div>
+        <div class="rex">💡 ${it.q.explain||''}</div></div>`;
+    }).join('');
+    return `<div class="sec-result${i===0?' open':''}"><div class="sr-head" onclick="this.parentNode.classList.toggle('open')">
+        <div><h5>Passage ${d.s.id}</h5><div class="sr-sum"><span class="${sp>=60?'ok':'bad'}">${d.sc} / ${d.total} 题正确　${sp}%</span></div></div>
+        <div class="sr-chevron">▾</div></div><div class="sr-body">${rows}</div></div>`;
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+function backToCover(){
+  clearInterval(timerInterval);
+  document.getElementById('timer').classList.remove('show');
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('coverArea').style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== */
+(function(){
+  function report(){
+    var rc=document.getElementById('resCorrect'); if(!rc) return;
+    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m) return;
+    var bandEl=document.getElementById('resBand'); var band=bandEl?parseFloat(bandEl.textContent):NaN;
+    try{ window.parent.postMessage({type:'yysd:score', score:+m[1], total:+m[2], band:isNaN(band)?null:band}, '*'); }catch(e){}
+  }
+  var rc=document.getElementById('resCorrect');
+  if(rc){ new MutationObserver(report).observe(rc,{childList:true,subtree:true,characterData:true}); }
+})();
+</script>
+</body>
+</html>
