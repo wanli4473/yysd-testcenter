@@ -50,7 +50,15 @@
     document.title = item.title + " · 优益思达学习中心";
     metaEl.textContent = [subjLabel, zoneLabel,
       (!isStudy && item.duration ? item.duration + " 分钟" : "")].filter(Boolean).join(" · ");
-    backBtn.textContent = isStudy ? "← 退出学习" : "← 退出考场";
+    backBtn.textContent = isStudy ? "← 返回单词" : "← 退出考场";
+    if (isStudy && Y.isVocabListSubject(item.subject)) {
+      backBtn.href = "vocab.html?book=" + (item.subject === "vocab" ? "gaozhong" : "cet4");
+    } else if (isStudy && Y.isVocabSpecial(item.subject)) {
+      backBtn.href = "vocab.html?book=special";
+    } else if (isStudy) {
+      backBtn.href = "zone.html?zone=study";
+      backBtn.textContent = "← 返回学习区";
+    }
 
     frame.src = "library/" + item.file;
 

@@ -149,6 +149,118 @@ window.YYSD = (function () {
       '</a>';
   }
 
+  // ---- Vocabulary book grouping (学习区单词 → vocab.html?book=…) ----
+  var VOCAB_BOOKS = {
+    gaozhong: { key: "gaozhong", label: "高中词汇", subject: "vocab", tag: "雅思基础", chunk: 10 },
+    cet4:     { key: "cet4",     label: "四级词汇", subject: "vocab-cet4", tag: "CET-4", chunk: 10 },
+    special:  {
+      key: "special", label: "专项词汇", tag: "专题",
+      subjects: ["vocab-special-listening", "vocab-special-reading", "vocab-special-writing"]
+    }
+  };
+
+  function isVocabListSubject(subject) {
+    return subject === "vocab" || subject === "vocab-cet4";
+  }
+
+  function isVocabSpecial(subject) {
+    return String(subject || "").indexOf("vocab-special-") === 0;
+  }
+
+  function vocabListNo(item) {
+    var t = String((item && item.title) || "");
+    var m = t.match(/LIST\s*0*(\d+)/i);
+    if (m) return Number(m[1]);
+    m = String((item && item.id) || "").match(/list\s*0*(\d+)/i);
+    return m ? Number(m[1]) : 0;
+  }
+
+  function vocabBookStats(items, bookKey) {
+    var book = VOCAB_BOOKS[bookKey];
+    if (!book) return null;
+    var lists = [];
+    if (book.subject) {
+      lists = (items || []).filter(function (it) { return it.subject === book.subject; });
+    } else if (book.subjects) {
+      lists = (items || []).filter(function (it) { return book.subjects.indexOf(it.subject) >= 0; });
+    }
+    lists.sort(function (a, b) {
+      var d = vocabListNo(a) - vocabListNo(b);
+      return d || String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
+    });
+    return { book: book, total: lists.length, lists: lists };
+  }
+
+  function vocabProgress(lists) {
+    var res = results();
+    var done = 0, last = null, lastNo = 0;
+    (lists || []).forEach(function (it) {
+      if (!res[it.id]) return;
+      done++;
+      var n = vocabListNo(it);
+      if (n >= lastNo) { lastNo = n; last = it; }
+    });
+    var sorted = (lists || []).slice().sort(function (a, b) { return vocabListNo(a) - vocabListNo(b); });
+    var next = null, i;
+    for (i = 0; i < sorted.length; i++) {
+      if (vocabListNo(sorted[i]) > lastNo && !res[sorted[i].id]) { next = sorted[i]; break; }
+    }
+    if (!next) {
+      for (i = 0; i < sorted.length; i++) {
+        if (!res[sorted[i].id]) { next = sorted[i]; break; }
+      }
+    }
+    if (!next && sorted.length) next = sorted[0];
+    return { done: done, total: sorted.length, last: last, next: next };
+  }
+
+  function vocabListRanges(lists, chunkSize) {
+    var nums = (lists || []).map(vocabListNo).filter(function (n) { return n > 0; });
+    if (!nums.length) return [{ id: "all", label: "全部", start: 0, end: 9999 }];
+    var max = Math.max.apply(null, nums);
+    var chunk = chunkSize || 10;
+    var ranges = [];
+    for (var start = 1; start <= max; start += chunk) {
+      var end = Math.min(start + chunk - 1, max);
+      ranges.push({ id: start + "-" + end, label: "LIST " + start + "–" + end, start: start, end: end });
+    }
+    return ranges;
+  }
+
+  function vocabBooksForZone(items) {
+    return ["gaozhong", "cet4", "special"].map(function (k) {
+      return vocabBookStats(items, k);
+    }).filter(function (s) { return s && s.total > 0; });
+  }
+
+  function vocabBookCardHTML(stats, prefix) {
+    var book = stats.book;
+    var prog = vocabProgress(stats.lists);
+    var unit = book.subject ? " LIST" : " 份";
+    var cnt = stats.total + unit;
+    var progTxt = prog.done ? ("已学 " + prog.done + "/" + stats.total) : cnt;
+    var badge = book.key === "gaozhong" ? "GZ" : (book.key === "cet4" ? "4" : "SP");
+    var bookIcon = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path d="M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z" stroke="currentColor" stroke-width="2"/>' +
+      '<path d="M8 4v13a3 3 0 0 0 3 3h9V7a3 3 0 0 0-3-3H8Z" stroke="currentColor" stroke-width="2"/></svg>';
+    return '' +
+      '<a class="vol-card vol-card--vocab" href="' + (prefix || "") + 'vocab.html?book=' + encodeURIComponent(book.key) + '">' +
+        '<div class="vol-card__top">' +
+          '<span class="vol-card__vol">' + esc(badge) + '</span>' +
+          '<span class="vol-card__tag vol-card__tag--mid">' + esc(book.tag) + '</span>' +
+        '</div>' +
+        '<div class="vol-card__body">' +
+          '<span class="vol-card__ico vol-card__ico--vocab">' + bookIcon + '</span>' +
+          '<div><h3>' + esc(book.label) + '</h3>' +
+          '<div class="vol-card__cnt">' + esc(progTxt) + '</div></div>' +
+        '</div>' +
+        '<div class="vol-card__foot">' +
+          '<span class="vol-card__skills"><span class="vc-skill vc-skill--a">词</span></span>' +
+          '<span class="vol-card__go">进入 ›</span>' +
+        '</div>' +
+      '</a>';
+  }
+
   // ---- Cambridge series grouping (模考区 shows one card per volume) ----
   function isCambridge(subject) {
     return subject === "cambridge-listening" || subject === "cambridge-reading" || subject === "cambridge-writing";
@@ -234,6 +346,9 @@ window.YYSD = (function () {
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
     fileHref: fileHref, cardHTML: cardHTML, countsBySubject: countsBySubject,
     isCambridge: isCambridge, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,
-    camVolumeCardHTML: camVolumeCardHTML
+    camVolumeCardHTML: camVolumeCardHTML,
+    VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,
+    vocabListNo: vocabListNo, vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
+    vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML
   };
 })();

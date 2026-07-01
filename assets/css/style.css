@@ -529,6 +529,60 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
 .skill-panel__btn:hover { background: var(--brand-red); }
 @media (max-width: 640px) { .cam-hero { flex-direction: column; text-align: center; } }
 
+/* ---------- Vocabulary book hub (vocab.html) --------------------------- */
+.vocab-hero__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.vocab-range-wrap { margin-top: 8px; }
+.vocab-range-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.vocab-range-panel { display: none; }
+.vocab-range-panel.is-active { display: block; }
+.vocab-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.vocab-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .18s var(--ease), transform .18s var(--ease-out);
+}
+.vocab-list-row:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.vocab-list-row.is-done { background: #f8faf8; border-color: #d4e8d9; }
+.vocab-list-row__no {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  color: var(--text-faint);
+  min-width: 52px;
+}
+.vocab-list-row__title {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--brand-navy);
+  line-height: 1.35;
+}
+.vocab-list-row__go { font-size: 13px; font-weight: 700; color: var(--brand-red); flex-shrink: 0; }
+.vocab-list-row__badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2d6a4a;
+  background: #e8f5ee;
+  padding: 3px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.vol-card--vocab .vol-card__ico--vocab { background: #f0f4ff; color: var(--brand-navy); }
+.exam-grid--compact { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.test-block > h2 .cnt { font-size: 13px; font-weight: 600; color: var(--text-faint); margin-left: 8px; }
+
 /* ---------- Footer ---------------------------------------------------- */
 .site-footer {
   border-top: 1px solid var(--border);
