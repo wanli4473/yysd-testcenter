@@ -40,7 +40,8 @@ MANIFEST = os.path.join(LIB_DIR, "manifest.json")
 
 # zone -> list of valid subjects (first = default for that zone)
 ZONE_SUBJECTS = {
-    "study":    ["grammar", "vocab", "vocab-cet4", "vocab-special"],
+    "study":    ["grammar", "vocab", "vocab-cet4",
+                 "vocab-special-listening", "vocab-special-reading", "vocab-special-writing"],
     "practice": ["changnanju", "jingting", "ielts"],
     "mock":     ["cambridge-listening", "cambridge-reading", "cambridge-writing", "ielts",
                  "ielts-speaking", "ielts-writing", "alevel", "ap", "toefl", "sat"],

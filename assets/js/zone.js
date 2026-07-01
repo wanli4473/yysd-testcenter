@@ -28,13 +28,25 @@
   var contentEl = document.getElementById("content");
   var allItems = [];
 
-  // If deep-linked to a subject, open its parent category.
+  // If deep-linked to a subject, open its top-level filter category.
   function catOfSubject(s) {
+    function walk(nodes, top) {
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        if (n.subject === s) return top;
+        if (n.children) {
+          var hit = walk(n.children, top);
+          if (hit) return hit;
+        }
+      }
+      return null;
+    }
     for (var i = 0; i < nav.length; i++) {
       var c = nav[i];
       if (c.subject === s) return c;
-      if (c.children) for (var j = 0; j < c.children.length; j++) {
-        if (c.children[j].subject === s) return c;
+      if (c.children) {
+        var hit = walk(c.children, c);
+        if (hit) return hit;
       }
     }
     return null;
@@ -95,6 +107,19 @@
       '</div>';
   }
 
+  // Render a nav node: leaf subject block, or a grouped parent with nested leaves.
+  function nodeBlockHTML(node) {
+    if (node.children) {
+      var inner = node.children.map(function (ch) {
+        return leafBlockHTML(ch.label, ch.subject);
+      }).join("");
+      return '<div class="leaf-block leaf-block--group">' +
+        '<div class="leaf-block__head"><h4>' + Y.esc(node.label) + '</h4></div>' +
+        '<div class="leaf-nest">' + inner + '</div></div>';
+    }
+    return leafBlockHTML(node.label, node.subject);
+  }
+
   function categoryHTML(cat) {
     var sub = Y.SUBJECT[cat.subject] || { color: "var(--c-cambridge)" };
     var head = '<div class="subject-group__head">' +
@@ -110,7 +135,7 @@
         : '<div class="soon-box">暂无剑桥真题，老师上传后会显示在这里。</div>';
     } else if (cat.children) {
       var blocks = [];
-      cat.children.forEach(function (ch) { blocks.push(leafBlockHTML(ch.label, ch.subject)); });
+      cat.children.forEach(function (ch) { blocks.push(nodeBlockHTML(ch)); });
       body = '<div class="leaf-wrap">' + blocks.join("") + '</div>';
     } else {
       body = leafBody(cat.subject);

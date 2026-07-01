@@ -19,7 +19,8 @@ window.YYSD = (function () {
 
   // ordered subjects per zone (leaf keys used by the manifest / folder classification)
   var ZONE_SUBJECTS = {
-    study:    ["grammar", "vocab", "vocab-cet4", "vocab-special"],
+    study:    ["grammar", "vocab", "vocab-cet4",
+               "vocab-special-listening", "vocab-special-reading", "vocab-special-writing"],
     practice: ["changnanju", "jingting", "ielts"],
     mock:     ["cambridge-listening", "cambridge-reading", "ielts",
                "ielts-speaking", "ielts-writing", "alevel", "ap", "toefl", "sat"]
@@ -40,7 +41,9 @@ window.YYSD = (function () {
     grammar: { label: "语法", en: "Grammar", color: "var(--c-grammar)" },
     vocab:   { label: "高中词汇", en: "Vocabulary", color: "var(--c-vocab)" },
     "vocab-cet4":    { label: "四级词汇", en: "CET-4", color: "var(--c-vocab)" },
-    "vocab-special": { label: "专项词汇", en: "Topic Words", color: "var(--c-vocab)" },
+    "vocab-special-listening": { label: "听力专项词汇", en: "Listening Words", color: "var(--c-cambridge-listening)" },
+    "vocab-special-reading":   { label: "阅读高频词汇", en: "Reading Words", color: "var(--c-cambridge-reading)" },
+    "vocab-special-writing":   { label: "写作短语", en: "Writing Phrases", color: "var(--c-cambridge-reading)" },
     changnanju: { label: "长难句", en: "Complex Sentences", color: "var(--c-zone-practice)" },
     jingting:   { label: "听力精听", en: "Intensive Listening", color: "var(--c-zone-practice)" }
   };
@@ -53,7 +56,11 @@ window.YYSD = (function () {
       { key: "vocab", label: "单词", children: [
         { label: "高中词汇", subject: "vocab" },
         { label: "四级词汇", subject: "vocab-cet4" },
-        { label: "专项词汇", subject: "vocab-special" }
+        { key: "vocab-special", label: "专项词汇", children: [
+          { label: "听力专项词汇", subject: "vocab-special-listening" },
+          { label: "阅读高频词汇", subject: "vocab-special-reading" },
+          { label: "写作短语", subject: "vocab-special-writing" }
+        ] }
       ] }
     ],
     practice: [
