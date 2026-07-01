@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>优益思达 · 剑桥雅思10 Test 2 听力</title>
+<meta name="exam:title" content="剑桥雅思10 · Test 2（听力）">
+<meta name="exam:zone" content="mock">
+<meta name="exam:subject" content="cambridge-listening">
+<meta name="exam:duration" content="0">
+<meta name="exam:description" content="剑桥雅思10 Test 2 听力：4 个 section，共 40 题，含音频、自动批改与雅思预估分。">
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:'Segoe UI','PingFang SC',Roboto,sans-serif; background:#f0f2f6; margin:0; color:#1e2a3a; line-height:1.7; padding:0 0 60px; }
+  .header { background:linear-gradient(135deg,#001f3f,#003366); color:#fff; padding:12px 28px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 18px rgba(0,0,0,.25); flex-wrap:wrap; gap:10px; }
+  .header h1 { margin:0; font-size:19px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .header h1 .brandtag { font-size:11px; background:#2e86de; padding:2px 9px; border-radius:20px; font-weight:600; letter-spacing:.5px; }
+  .timer { font-size:18px; font-weight:700; background:#1e8449; padding:6px 18px; border-radius:30px; display:none; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,.25); transition:background .4s; }
+  .timer.show { display:flex; }
+  .timer.warn { background:#e67e22; } .timer.danger { background:#c0392b; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+  .container { max-width:1080px; margin:24px auto; padding:0 24px; }
+
+  /* 封面 */
+  .cover-hero { display:flex; align-items:center; gap:24px; background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .cover-badge { background:linear-gradient(135deg,#eaf2ff,#dbe9ff); border-radius:14px; padding:18px 30px; text-align:center; min-width:180px; }
+  .cover-badge .lbl { font-size:12px; letter-spacing:2px; color:#5a7184; font-weight:600; }
+  .cover-badge .num { font-size:54px; font-weight:800; color:#1e8449; line-height:1; margin-top:4px; }
+  .cover-hero h2 { margin:0; font-size:30px; color:#001f3f; }
+  .cover-hero .sub { color:#6b7a8f; margin-top:6px; font-size:14px; }
+  .paper-card-wrap { margin-top:24px; }
+  @media(max-width:760px){ .cover-hero{flex-direction:column; text-align:center;} }
+  .paper-card { border-radius:16px; padding:30px 26px; text-align:center; border:2px solid; transition:transform .15s,box-shadow .2s; }
+  .paper-card.listen { background:#eff5ff; border-color:#bcd4f6; cursor:pointer; }
+  .paper-card.listen:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.10); }
+  .paper-card.read { background:#f3f5f8; border-color:#dde3ea; opacity:.7; }
+  .paper-card .pc-icon { font-size:40px; }
+  .paper-card h3 { margin:10px 0 4px; font-size:24px; }
+  .paper-card.listen h3 { color:#1b4f8a; } .paper-card.read h3 { color:#90a0b2; }
+  .paper-card .pc-meta { font-size:13px; color:#6b7a8f; }
+  .paper-card .pc-go { margin-top:18px; display:inline-block; padding:11px 30px; border-radius:30px; color:#fff; font-weight:600; font-size:15px; }
+  .paper-card.listen .pc-go { background:#2563eb; } .paper-card.read .pc-go { background:#aeb9c6; }
+
+  /* 模式弹窗 */
+  .modal-mask { display:none; position:fixed; inset:0; background:rgba(10,20,40,.55); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; max-width:880px; width:100%; padding:28px 30px 34px; position:relative; max-height:92vh; overflow:auto; }
+  .modal h2 { margin:0 0 20px; font-size:24px; color:#111; }
+  .modal-close { position:absolute; right:20px; top:18px; border:none; background:none; font-size:24px; color:#8a96a5; cursor:pointer; }
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:680px){ .mode-grid{grid-template-columns:1fr;} }
+  .mode-box { border:1px solid #e2e8f0; border-radius:14px; padding:24px 22px; }
+  .mode-box .mb-ic { width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 12px; }
+  .mode-box.practice .mb-ic { background:#dceafe; } .mode-box.exam .mb-ic { background:#ffe8cf; }
+  .mode-box h3 { text-align:center; margin:0 0 6px; font-size:20px; }
+  .mode-box .mb-desc { text-align:center; color:#6b7a8f; font-size:13.5px; min-height:38px; }
+  .mode-box .mb-sub { font-weight:700; color:#1b4f8a; margin:14px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .mode-box .mb-sub button { background:#fff; border:1px solid #cdd7e2; border-radius:8px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .sec-check { display:flex; align-items:center; gap:10px; padding:8px 4px; font-size:15px; font-weight:600; color:#1b4f8a; cursor:pointer; }
+  .sec-check input { width:18px; height:18px; accent-color:#001f3f; }
+  .exam-list { list-style:none; padding:0; margin:10px 0 0; color:#445; font-size:14.5px; }
+  .exam-list li { padding:3px 0; }
+  .mode-start { width:100%; margin-top:18px; border:none; color:#fff; font-weight:700; font-size:16px; padding:13px; border-radius:10px; cursor:pointer; }
+  .mode-box.practice .mode-start { background:#2563eb; } .mode-box.exam .mode-start { background:#e67e22; }
+
+  /* 答题区 */
+  #testArea { display:none; }
+  .test-topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#fff; border-radius:14px; padding:14px 22px; box-shadow:0 4px 18px rgba(0,0,0,.05); margin-bottom:18px; }
+  .test-topbar .tt-title { font-size:19px; font-weight:700; color:#001f3f; }
+  .test-topbar .tt-mode { font-size:13px; background:#eef4fb; color:#1b4f8a; padding:3px 12px; border-radius:20px; font-weight:600; }
+  .btn-ghost { border:1px solid #cdd7e2; background:#fff; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; color:#33475b; }
+  .btn-ghost:hover { background:#f3f6fa; }
+
+  .audio-bar { background:#eff5ff; border:1px solid #cfe0f7; border-radius:12px; padding:14px 18px; margin-bottom:20px; position:sticky; top:62px; z-index:500; box-shadow:0 4px 14px rgba(0,0,0,.05); }
+  .audio-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .audio-play { background:#2563eb; color:#fff; border:none; width:46px; height:46px; border-radius:50%; font-size:18px; cursor:pointer; flex-shrink:0; }
+  .audio-prog { flex:1; min-width:140px; height:8px; background:#cfdcf0; border-radius:6px; cursor:pointer; position:relative; }
+  .audio-prog .fill { position:absolute; left:0; top:0; bottom:0; background:#2563eb; border-radius:6px; width:0; }
+  .audio-time { font-size:13px; color:#33475b; min-width:96px; text-align:right; font-variant-numeric:tabular-nums; }
+  .audio-cur { font-size:13px; font-weight:700; color:#1b4f8a; }
+  .audio-note { font-size:12px; color:#8a96a5; margin-top:8px; }
+
+  .section-banner { background:#eff5ff; border:1px solid #cfe0f7; border-radius:12px; padding:14px 20px; margin:26px 0 14px; }
+  .section-banner .sb-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .section-banner .sb-title { font-size:20px; font-weight:800; color:#1b4f8a; letter-spacing:.5px; }
+  .listen-here { background:#2563eb; color:#fff; border:none; border-radius:20px; padding:5px 14px; font-size:13px; cursor:pointer; display:inline-flex; gap:6px; align-items:center; }
+  .section-banner .sb-meta { font-size:13px; color:#5a7184; margin-top:6px; }
+
+  .qgroup { background:#fff; border:1px solid #eaeef4; border-radius:12px; padding:22px 26px; margin-bottom:18px; }
+  .qgroup h4 { margin:0 0 6px; font-size:18px; color:#111; }
+  .instruction { font-style:italic; color:#445; font-size:14.5px; margin-bottom:14px; }
+  .note-box { border:1px solid #d8e0ea; border-radius:10px; padding:18px 22px; background:#fafcff; }
+  .note-title { text-align:center; font-weight:800; font-size:17px; margin-bottom:12px; color:#22303f; }
+  .note-h { font-weight:700; margin:12px 0 4px; }
+  .note-li { margin:6px 0 6px 4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .note-li .bull { color:#7a8aa0; }
+  .note-li.sub { margin-left:26px; } .note-li.sub2 { margin-left:48px; }
+  .qnum-badge { background:#dceafe; color:#1b4f8a; font-weight:700; min-width:30px; height:30px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; padding:0 6px; }
+  input[type=text]{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:15px; width:150px; }
+  input[type=text]:focus{ border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.14); outline:none; }
+  table.note-table { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.note-table th, table.note-table td { border:1px solid #d3dce6; padding:10px 12px; font-size:14.5px; vertical-align:top; text-align:left; }
+  table.note-table th { background:#eef4fb; }
+  .mcq { margin:6px 0 16px; }
+  .mcq .qtext { font-weight:600; margin-bottom:6px; display:flex; gap:8px; }
+  .mcq label { display:flex; gap:9px; align-items:flex-start; padding:6px 10px; border-radius:7px; cursor:pointer; }
+  .mcq label:hover { background:#eef4fa; }
+  .mcq input{ accent-color:#001f3f; margin-top:3px; }
+  select{ padding:6px 10px; border:1.5px solid #d0d8e0; border-radius:6px; font-size:14.5px; min-width:70px; }
+  select:focus{ border-color:#2563eb; outline:none; }
+  .match-box { border:1px solid #d8e0ea; border-radius:10px; background:#f7faff; padding:14px 18px; margin-bottom:14px; }
+  .match-box .mb-h { text-align:center; font-weight:700; margin-bottom:8px; }
+  .match-box .mb-row { display:flex; gap:10px; padding:2px 0; }
+  .match-q { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .match-q .mq-txt { flex:1; }
+  .map-wrap { border:1px solid #d8e0ea; border-radius:10px; background:#fafcff; padding:14px 16px; margin-bottom:16px; text-align:center; }
+  .map-img { max-width:100%; height:auto; border-radius:8px; }
+  .map-missing { color:#8a6d1b; background:#fff7e0; border:1px dashed #e0c879; border-radius:8px; padding:18px; font-size:14px; }
+
+  .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+  .submit-btn:hover { transform:translateY(-2px); }
+
+  /* 结果 */
+  #resultArea { display:none; }
+  .res-card { background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  .res-title { font-size:24px; font-weight:800; color:#001f3f; margin:4px 0 2px; }
+  .res-meta { color:#6b7a8f; font-size:13px; margin-bottom:20px; }
+  .res-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:680px){ .res-stats{grid-template-columns:1fr;} }
+  .stat-box { border-radius:14px; padding:26px 16px; text-align:center; }
+  .stat-box.s1 { background:#eef5ff; } .stat-box.s2 { background:#eefaf2; } .stat-box.s3 { background:#f5f3ff; }
+  .stat-box .big { font-size:40px; font-weight:800; line-height:1; }
+  .stat-box.s1 .big { color:#2563eb; } .stat-box.s2 .big { color:#1e8449; } .stat-box.s3 .big { color:#5b3fd6; }
+  .stat-box .cap { color:#5a7184; margin-top:8px; font-size:14px; }
+  .stat-box .sub2 { color:#8a96a5; font-size:12px; margin-top:2px; }
+  .progress-wrap { margin-top:22px; }
+  .progress-wrap .pw-top { display:flex; justify-content:space-between; font-size:13px; color:#5a7184; margin-bottom:6px; }
+  .pw-track { height:14px; background:#e2e8f0; border-radius:10px; overflow:hidden; }
+  .pw-fill { height:100%; background:linear-gradient(90deg,#2e86de,#27ae60); width:0; transition:width .8s; }
+
+  .detail-h { font-size:20px; font-weight:800; color:#001f3f; margin:26px 0 12px; }
+  .sec-result { background:#fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.05); margin-bottom:12px; overflow:hidden; }
+  .sec-result .sr-head { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; cursor:pointer; }
+  .sec-result .sr-head h5 { margin:0; font-size:17px; }
+  .sec-result .sr-head .sr-sum { font-size:13px; color:#6b7a8f; margin-top:3px; }
+  .sec-result .sr-head .sr-sum .ok { color:#1e8449; font-weight:700; } .sec-result .sr-head .sr-sum .bad { color:#c0392b; font-weight:700; }
+  .sr-body { display:none; padding:0 22px 16px; }
+  .sec-result.open .sr-body { display:block; }
+  .sr-chevron { transition:transform .2s; color:#8a96a5; }
+  .sec-result.open .sr-chevron { transform:rotate(180deg); }
+  .ritem { padding:12px 16px; border-radius:9px; margin:8px 0; border-left:5px solid transparent; }
+  .ritem.correct { background:#e8f8ee; border-left-color:#27ae60; }
+  .ritem.wrong { background:#fdeaea; border-left-color:#e74c3c; }
+  .ritem .rq { font-weight:700; color:#22303f; }
+  .ritem .ra { font-size:14px; margin-top:4px; }
+  .ritem .ra .yours { color:#7b1a1a; } .ritem .ra .correctv { color:#145a32; font-weight:700; }
+  .ritem .rex { font-size:13.5px; color:#3a4a5a; margin-top:6px; background:rgba(255,255,255,.65); padding:7px 11px; border-radius:7px; }
+  .back-row { text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="brandtag">优益思达</span> 剑桥雅思真题测试</h1>
+  <div class="timer" id="timer"><span id="timerText">00:00</span></div>
+</div>
+
+<!-- 封面 -->
+<div class="container" id="coverArea">
+  <div class="cover-hero">
+    <div class="cover-badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">10</div></div>
+    <div>
+      <h2>剑桥雅思 10 · Test 2</h2>
+      <div class="sub">官方真题 · 自动批改并给出雅思预估分。请选择科目开始测试。</div>
+    </div>
+  </div>
+  <div class="paper-card-wrap">
+    <div class="paper-card listen" onclick="openMode()">
+      <div class="pc-icon">🎧</div>
+      <h3>听力 (Listening)</h3>
+      <div class="pc-meta">4 个部分 · 共 40 题</div>
+      <div class="pc-go">开始测试 ›</div>
+    </div>
+  </div>
+</div>
+
+<!-- 模式弹窗 -->
+<div class="modal-mask" id="modeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeMode()">×</button>
+    <h2>选择模式</h2>
+    <div class="mode-grid">
+      <div class="mode-box practice">
+        <div class="mb-ic">📘</div>
+        <h3>练习模式</h3>
+        <div class="mb-desc">适合分项突破，可只练某几个部分，正向计时不施加压力。</div>
+        <div class="mb-sub"><span>选择练习部分：</span><button onclick="toggleAll()" id="toggleAllBtn">取消全选</button></div>
+        <div id="sectionChecks"></div>
+        <button class="mode-start" onclick="startTest('practice')">开始练习</button>
+      </div>
+      <div class="mode-box exam">
+        <div class="mb-ic">⏱️</div>
+        <h3>模考模式</h3>
+        <div class="mb-desc">完整模拟真实考试：4 个部分一次完成，限时 30 分钟并自动连播录音。</div>
+        <div class="mb-sub"><span>测试信息：</span></div>
+        <div style="color:#445;font-size:14.5px;">完整测试（4 个部分，限时 30 分钟）</div>
+        <ul class="exam-list"><li>• Section 1</li><li>• Section 2</li><li>• Section 3</li><li>• Section 4</li></ul>
+        <button class="mode-start" onclick="startTest('exam')">开始模考</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 答题区 -->
+<div class="container" id="testArea">
+  <div class="test-topbar">
+    <div><div class="tt-title" id="testTitle"></div><span class="tt-mode" id="testModeTag"></span></div>
+    <button class="btn-ghost" onclick="backToCover()">← 返回封面</button>
+  </div>
+  <div class="audio-bar">
+    <div class="audio-row">
+      <button class="audio-play" id="aPlay" onclick="togglePlay()">▶</button>
+      <span class="audio-cur" id="aCur">Section 1</span>
+      <div class="audio-prog" id="aProg" onclick="seekAudio(event)"><div class="fill" id="aFill"></div></div>
+      <div class="audio-time" id="aTime">00:00 / 00:00</div>
+    </div>
+    <div class="audio-note" id="aNote">🔊 点击各部分的「▶ 听本部分录音」可单独播放该部分；模考模式下会自动连播。</div>
+    <audio id="player" preload="none"></audio>
+  </div>
+  <div id="questionsHolder"></div>
+  <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+</div>
+
+<!-- 结果区 -->
+<div class="container" id="resultArea">
+  <div class="res-card">
+    <div style="font-size:14px;color:#b9770e;font-weight:700;">🏆 批改报告</div>
+    <div class="res-title" id="resTitle"></div>
+    <div class="res-meta" id="resMeta"></div>
+    <div class="res-stats">
+      <div class="stat-box s1"><div class="big" id="resCorrect">0/0</div><div class="cap">答对题数</div></div>
+      <div class="stat-box s2"><div class="big" id="resPct">0%</div><div class="cap">正确率</div></div>
+      <div class="stat-box s3"><div class="big" id="resBand">-</div><div class="cap">雅思预估分</div><div class="sub2" id="resLevel"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="pw-top"><span>总体进度</span><span id="resProgLbl">0 / 0</span></div>
+      <div class="pw-track"><div class="pw-fill" id="resProgFill"></div></div>
+    </div>
+    <div class="audio-note" id="bandNote" style="margin-top:14px;"></div>
+  </div>
+  <div class="detail-h">详细结果</div>
+  <div id="detailHolder"></div>
+  <div class="back-row"><button class="btn-ghost" onclick="backToCover()">返回封面</button></div>
+</div>
+
+<script>
+/* ============================================================
+   一、试卷数据 —— 剑桥雅思10 Test 2 听力（官方原题 + 官方答案）
+   ============================================================ */
+const TEST = {
+  "meta": {
+    "volume": 10,
+    "testNo": 2
+  },
+  "durationMin": 30,
+  "sections": [
+    {
+      "id": 1,
+      "audio": "ielts10_test2_audio1.mp3",
+      "groups": [
+        {
+          "kind": "note",
+          "title": "Questions 1–10",
+          "instruction": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+          "noteTitle": "Transport Survey",
+          "lines": [
+            {
+              "bullet": true,
+              "html": "Example: Travelled to town today: by bus"
+            },
+            {
+              "bullet": true,
+              "html": "Name: Luisa <Q n=\"1\">"
+            },
+            {
+              "bullet": true,
+              "html": "Address: <Q n=\"2\"> White Stone Rd"
+            },
+            {
+              "bullet": true,
+              "html": "Area: Bradfield"
+            },
+            {
+              "bullet": true,
+              "html": "Postcode: <Q n=\"3\">"
+            },
+            {
+              "bullet": true,
+              "html": "Occupation: <Q n=\"4\">"
+            },
+            {
+              "bullet": true,
+              "html": "Reason for visit to town: to go to the <Q n=\"5\">"
+            },
+            {
+              "plain": true,
+              "html": "<strong>Suggestions for improvement:</strong>"
+            },
+            {
+              "bullet": true,
+              "html": "better <Q n=\"6\">"
+            },
+            {
+              "bullet": true,
+              "html": "have more footpaths"
+            },
+            {
+              "bullet": true,
+              "html": "more frequent <Q n=\"7\">"
+            },
+            {
+              "plain": true,
+              "html": "<strong>Things that would encourage cycling to work:</strong>"
+            },
+            {
+              "bullet": true,
+              "html": "having <Q n=\"8\"> parking places for bicycles"
+            },
+            {
+              "bullet": true,
+              "html": "being able to use a <Q n=\"9\"> at work"
+            },
+            {
+              "bullet": true,
+              "html": "the opportunity to have cycling <Q n=\"10\"> on busy roads"
+            }
+          ],
+          "questions": [
+            {
+              "id": "L1",
+              "no": 1,
+              "answer": [
+                "Hardie"
+              ],
+              "explain": "答案：Hardie。"
+            },
+            {
+              "id": "L2",
+              "no": 2,
+              "answer": [
+                "19"
+              ],
+              "explain": "答案：19。"
+            },
+            {
+              "id": "L3",
+              "no": 3,
+              "answer": [
+                "GT8 2LC",
+                "GT82LC"
+              ],
+              "explain": "答案：GT8 2LC, GT82LC。"
+            },
+            {
+              "id": "L4",
+              "no": 4,
+              "answer": [
+                "hairdresser"
+              ],
+              "explain": "答案：hairdresser。"
+            },
+            {
+              "id": "L5",
+              "no": 5,
+              "answer": [
+                "dentist",
+                "dentist's",
+                "dentists"
+              ],
+              "explain": "答案：dentist, dentist's, dentists。"
+            },
+            {
+              "id": "L6",
+              "no": 6,
+              "answer": [
+                "lighting"
+              ],
+              "explain": "答案：lighting。"
+            },
+            {
+              "id": "L7",
+              "no": 7,
+              "answer": [
+                "trains"
+              ],
+              "explain": "答案：trains。"
+            },
+            {
+              "id": "L8",
+              "no": 8,
+              "answer": [
+                "safe"
+              ],
+              "explain": "答案：safe。"
+            },
+            {
+              "id": "L9",
+              "no": 9,
+              "answer": [
+                "shower"
+              ],
+              "explain": "答案：shower。"
+            },
+            {
+              "id": "L10",
+              "no": 10,
+              "answer": [
+                "training"
+              ],
+              "explain": "答案：training。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "audio": "ielts10_test2_audio2.mp3",
+      "groups": [
+        {
+          "kind": "mcq",
+          "title": "Questions 11–14",
+          "instruction": "Choose the correct letter, A, B or C.",
+          "questions": [
+            {
+              "id": "L11",
+              "no": 11,
+              "q": "The play area will be available for",
+              "options": {
+                "A": "2 days.",
+                "B": "5 days.",
+                "C": "7 days."
+              },
+              "answer": [
+                "A"
+              ],
+              "explain": "答案：A。"
+            },
+            {
+              "id": "L12",
+              "no": 12,
+              "q": "The play area will be",
+              "options": {
+                "A": "in the middle of the city.",
+                "B": "near the river.",
+                "C": "beside the old market."
+              },
+              "answer": [
+                "C"
+              ],
+              "explain": "答案：C。"
+            },
+            {
+              "id": "L13",
+              "no": 13,
+              "q": "The play area will be made of",
+              "options": {
+                "A": "wood.",
+                "B": "plastic.",
+                "C": "metal."
+              },
+              "answer": [
+                "C"
+              ],
+              "explain": "答案：C。"
+            },
+            {
+              "id": "L14",
+              "no": 14,
+              "q": "The play area will have",
+              "options": {
+                "A": "a cafe.",
+                "B": "a shop.",
+                "C": "a visitor centre."
+              },
+              "answer": [
+                "A"
+              ],
+              "explain": "答案：A。"
+            }
+          ]
+        },
+        {
+          "kind": "match",
+          "title": "Questions 15–20",
+          "instruction": "Which feature is related to each of the following areas of the world represented in the playground? Choose SIX answers from the box and write the correct letter, A–I.",
+          "boxTitle": "Features",
+          "box": {
+            "A": "ancient forts",
+            "B": "waterways",
+            "C": "ice and snow",
+            "D": "jewels",
+            "E": "local animals",
+            "F": "mountains",
+            "G": "music and film",
+            "H": "space travel",
+            "I": "volcanoes"
+          },
+          "subTitle": "Areas of the world",
+          "questions": [
+            {
+              "id": "L15",
+              "no": 15,
+              "q": "Asia",
+              "answer": [
+                "E"
+              ],
+              "explain": "答案：E。"
+            },
+            {
+              "id": "L16",
+              "no": 16,
+              "q": "Antarctica",
+              "answer": [
+                "F"
+              ],
+              "explain": "答案：F。"
+            },
+            {
+              "id": "L17",
+              "no": 17,
+              "q": "South America",
+              "answer": [
+                "D"
+              ],
+              "explain": "答案：D。"
+            },
+            {
+              "id": "L18",
+              "no": 18,
+              "q": "North America",
+              "answer": [
+                "H"
+              ],
+              "explain": "答案：H。"
+            },
+            {
+              "id": "L19",
+              "no": 19,
+              "q": "Europe",
+              "answer": [
+                "A"
+              ],
+              "explain": "答案：A。"
+            },
+            {
+              "id": "L20",
+              "no": 20,
+              "q": "Africa",
+              "answer": [
+                "B"
+              ],
+              "explain": "答案：B。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "audio": "ielts10_test2_audio3.mp3",
+      "groups": [
+        {
+          "kind": "multi",
+          "title": "Questions 21 and 22",
+          "instruction": "Choose TWO letters, A–E. Which TWO hobbies was Thor Heyerdahl very interested in as a youth?",
+          "box": {
+            "A": "camping",
+            "B": "climbing",
+            "C": "collecting",
+            "D": "hunting",
+            "E": "reading"
+          },
+          "answerSet": [
+            "B",
+            "C"
+          ],
+          "questions": [
+            {
+              "id": "L21",
+              "no": 21,
+              "explain": "答案：B 与 C，顺序不限。"
+            },
+            {
+              "id": "L22",
+              "no": 22,
+              "explain": "答案：B 与 C，顺序不限。"
+            }
+          ]
+        },
+        {
+          "kind": "multi",
+          "title": "Questions 23 and 24",
+          "instruction": "Choose TWO letters, A–E. Which do the speakers say are the TWO reasons why Heyerdahl went to live on an island?",
+          "box": {
+            "A": "to examine ancient carvings",
+            "B": "to experience an isolated place",
+            "C": "to formulate a new theory",
+            "D": "to learn survival skills",
+            "E": "to study the impact of an extreme environment"
+          },
+          "answerSet": [
+            "B",
+            "E"
+          ],
+          "questions": [
+            {
+              "id": "L23",
+              "no": 23,
+              "explain": "答案：B 与 E，顺序不限。"
+            },
+            {
+              "id": "L24",
+              "no": 24,
+              "explain": "答案：B 与 E，顺序不限。"
+            }
+          ]
+        },
+        {
+          "kind": "mcq",
+          "title": "Questions 25–30",
+          "instruction": "Choose the correct letter, A, B or C.",
+          "questions": [
+            {
+              "id": "L25",
+              "no": 25,
+              "q": "According to Victor and Olivia, academics thought that Polynesian migration from the east was impossible due to",
+              "options": {
+                "A": "the fact that Eastern countries were far away.",
+                "B": "the lack of materials for boat building.",
+                "C": "the direction of the winds and currents."
+              },
+              "answer": [
+                "A"
+              ],
+              "explain": "答案：A。"
+            },
+            {
+              "id": "L26",
+              "no": 26,
+              "q": "Which do the speakers agree was the main reason for Heyerdahl's raft journey?",
+              "options": {
+                "A": "to overcome a research setback",
+                "B": "to demonstrate a personal quality",
+                "C": "to test a new theory"
+              },
+              "answer": [
+                "C"
+              ],
+              "explain": "答案：C。"
+            },
+            {
+              "id": "L27",
+              "no": 27,
+              "q": "What was most important to Heyerdahl about his raft journey?",
+              "options": {
+                "A": "the fact that he was the first person to do it",
+                "B": "the speed of crossing the Pacific",
+                "C": "the use of authentic construction methods"
+              },
+              "answer": [
+                "C"
+              ],
+              "explain": "答案：C。"
+            },
+            {
+              "id": "L28",
+              "no": 28,
+              "q": "Why did Heyerdahl go to Easter Island?",
+              "options": {
+                "A": "to build a stone statue",
+                "B": "to sail a reed boat",
+                "C": "to learn the local language"
+              },
+              "answer": [
+                "A"
+              ],
+              "explain": "答案：A。"
+            },
+            {
+              "id": "L29",
+              "no": 29,
+              "q": "In Olivia's opinion, Heyerdahl's greatest influence was on",
+              "options": {
+                "A": "theories about Polynesian origins.",
+                "B": "the development of archaeological methodology.",
+                "C": "establishing archaeology as an academic subject."
+              },
+              "answer": [
+                "B"
+              ],
+              "explain": "答案：B。"
+            },
+            {
+              "id": "L30",
+              "no": 30,
+              "q": "Which criticism do the speakers make of William Oliver's textbook?",
+              "options": {
+                "A": "Its style is out of date.",
+                "B": "Its content is over-simplified.",
+                "C": "Its methodology is flawed."
+              },
+              "answer": [
+                "A"
+              ],
+              "explain": "答案：A。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "audio": "ielts10_test2_audio4.mp3",
+      "groups": [
+        {
+          "kind": "note",
+          "title": "Questions 31–40",
+          "instruction": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+          "noteTitle": "The Future of Management",
+          "lines": [
+            {
+              "plain": true,
+              "html": "<strong>Business markets</strong>"
+            },
+            {
+              "bullet": true,
+              "html": "greater <Q n=\"31\"> among companies"
+            },
+            {
+              "bullet": true,
+              "html": "increase in power of large <Q n=\"32\"> companies"
+            },
+            {
+              "bullet": true,
+              "html": "rising <Q n=\"33\"> in certain countries"
+            },
+            {
+              "plain": true,
+              "html": "<strong>External influences on businesses</strong>"
+            },
+            {
+              "bullet": true,
+              "html": "more discussion with <Q n=\"34\"> before making business decisions"
+            },
+            {
+              "bullet": true,
+              "html": "environmental concerns which may lead to more <Q n=\"35\">"
+            },
+            {
+              "plain": true,
+              "html": "<strong>Business structures</strong>"
+            },
+            {
+              "bullet": true,
+              "html": "more teams will be formed to work on a particular <Q n=\"36\">"
+            },
+            {
+              "bullet": true,
+              "html": "businesses may need to offer hours that are <Q n=\"37\">, or the chance to work remotely"
+            },
+            {
+              "plain": true,
+              "html": "<strong>Management styles</strong>"
+            },
+            {
+              "bullet": true,
+              "html": "increasing need for managers to provide good <Q n=\"38\">"
+            },
+            {
+              "plain": true,
+              "html": "<strong>Changes in the economy</strong>"
+            },
+            {
+              "bullet": true,
+              "html": "service sector continues to be important"
+            },
+            {
+              "bullet": true,
+              "html": "increasing value of intellectual property"
+            },
+            {
+              "bullet": true,
+              "html": "more and more <Q n=\"39\"> in senior roles"
+            },
+            {
+              "bullet": true,
+              "html": "growth in <Q n=\"40\"> workers"
+            }
+          ],
+          "questions": [
+            {
+              "id": "L31",
+              "no": 31,
+              "answer": [
+                "competition"
+              ],
+              "explain": "答案：competition。"
+            },
+            {
+              "id": "L32",
+              "no": 32,
+              "answer": [
+                "global"
+              ],
+              "explain": "答案：global。"
+            },
+            {
+              "id": "L33",
+              "no": 33,
+              "answer": [
+                "demand"
+              ],
+              "explain": "答案：demand。"
+            },
+            {
+              "id": "L34",
+              "no": 34,
+              "answer": [
+                "customers"
+              ],
+              "explain": "答案：customers。"
+            },
+            {
+              "id": "L35",
+              "no": 35,
+              "answer": [
+                "regulation"
+              ],
+              "explain": "答案：regulation。"
+            },
+            {
+              "id": "L36",
+              "no": 36,
+              "answer": [
+                "project"
+              ],
+              "explain": "答案：project。"
+            },
+            {
+              "id": "L37",
+              "no": 37,
+              "answer": [
+                "flexible"
+              ],
+              "explain": "答案：flexible。"
+            },
+            {
+              "id": "L38",
+              "no": 38,
+              "answer": [
+                "leadership"
+              ],
+              "explain": "答案：leadership。"
+            },
+            {
+              "id": "L39",
+              "no": 39,
+              "answer": [
+                "women"
+              ],
+              "explain": "答案：women。"
+            },
+            {
+              "id": "L40",
+              "no": 40,
+              "answer": [
+                "self-employed",
+                "self employed"
+              ],
+              "explain": "答案：self-employed, self employed。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+const allQs = sec => sec.groups.flatMap(g=>g.questions);
+
+/* 模式弹窗 */
+function openMode(){
+  document.getElementById('sectionChecks').innerHTML =
+    TEST.sections.map(s=>`<label class="sec-check"><input type="checkbox" class="secbox" value="${s.id}" checked> Section ${s.id}</label>`).join('');
+  document.getElementById('toggleAllBtn').textContent='取消全选';
+  document.getElementById('modeModal').classList.add('show');
+}
+function closeMode(){ document.getElementById('modeModal').classList.remove('show'); }
+function toggleAll(){ const b=[...document.querySelectorAll('.secbox')]; const off=b.some(x=>!x.checked); b.forEach(x=>x.checked=off); document.getElementById('toggleAllBtn').textContent=off?'取消全选':'全选'; }
+
+function startTest(m){
+  mode=m;
+  if(m==='practice'){ const ids=[...document.querySelectorAll('.secbox:checked')].map(b=>+b.value); if(!ids.length){ alert('请至少选择一个部分。'); return; } selectedSections=ids; }
+  else selectedSections=TEST.sections.map(s=>s.id);
+  currentPaper=TEST.sections.filter(s=>selectedSections.includes(s.id));
+  closeMode(); submitted=false;
+  document.getElementById('coverArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('testArea').style.display='block';
+  renderPaper(); setupTimer(); initAudio();
+  window.scrollTo(0,0);
+}
+
+function renderPaper(){
+  document.getElementById('testTitle').textContent=`剑桥雅思10 · Test 2 — 听力`;
+  document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
+  document.getElementById('questionsHolder').innerHTML = currentPaper.map(sectionHtml).join('');
+}
+function sectionHtml(s){
+  return `<div class="section-banner" id="anchor_${s.id}">
+      <div class="sb-top"><span class="sb-title">Section ${s.id}</span>
+        <button class="listen-here" onclick="playSection(${s.id})">▶ 听本部分录音</button></div>
+      <div class="sb-meta">本部分共 ${allQs(s).length} 题</div>
+    </div>${s.groups.map(groupHtml).join('')}`;
+}
+function expandQ(html){ // 把 <Q n="x"> 占位替换成 编号徽标 + 输入框
+  return (html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><input type="text" id="L${n}" autocomplete="off">`);
+}
+function groupHtml(g){
+  let body='';
+  if(g.kind==='note'){
+    body=`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
+      g.lines.map(l=>{
+        if(l.h) return `<div class="note-h">${l.h}</div>`;
+        if(l.plain) return `<div class="note-li${l.sub?' sub':''}">${expandQ(l.html)}</div>`;
+        if(l.html==null) return '';
+        const cls='note-li'+(l.sub2?' sub2':(l.sub?' sub':''));
+        const mark=l.dash?'–':(l.bullet?'•':'');
+        return `<div class="${cls}"><span class="bull">${mark}</span> ${expandQ(l.html)}</div>`;
+      }).join('')+`</div>`;
+  }
+  else if(g.kind==='table'){
+    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const rows=g.rows.map(r=>`<tr>${r.map(cell=>{ const html=cell.split('|')[0]; return `<td>${expandQ(html)}</td>`; }).join('')}</tr>`).join('');
+    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+  }
+  else if(g.kind==='mcq'){
+    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
+      const opts=Object.entries(q.options).map(([k,v])=>`<label><input type="radio" name="${q.id}" value="${k}"> <span><strong>${k}</strong> &nbsp;${v}</span></label>`).join('');
+      return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div>${opts}</div>`;
+    }).join('');
+  }
+  else if(g.kind==='match'){
+    const box=`<div class="match-box"><div class="mb-h">${g.boxTitle}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
+    const qs=`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='multi'){
+    const box=`<div class="match-box">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const sel=k=>`<select id="${k}"><option value="">—</option>${Object.keys(g.box).map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">选择一项（两题合计选出正确的两项，顺序不限）</span>${sel(q.id)}</div>`).join('');
+    body=box+qs;
+  }
+  else if(g.kind==='map'){
+    const letters=g.letters||['A','B','C','D','E','F','G','H','I'];
+    const inner=g.svg?g.svg:`<img class="map-img" src="${g.image}" alt="${g.mapTitle||'map'}" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">` +
+      `<div class="map-missing" style="display:none;">📍 地图图片待上传：请把书上这张地图发给老师，上传后此处会显示地图，即可对照作答。</div>`;
+    const img=`<div class="map-wrap">${g.mapTitle?`<div class="note-title">${g.mapTitle}</div>`:''}${inner}</div>`;
+    const sel=k=>`<select id="${k}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+    const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel(q.id)}</div>`).join('');
+    body=img+qs;
+  }
+  return `<div class="qgroup"><h4>${g.title}</h4><div class="instruction">${g.instruction}</div>${body}</div>`;
+}
+
+/* 计时器 */
+function setupTimer(){
+  startTime=Date.now(); const t=document.getElementById('timer'); t.classList.add('show'); clearInterval(timerInterval);
+  if(mode==='exam'){ const total=TEST.durationMin*60;
+    timerInterval=setInterval(()=>{ const left=total-Math.floor((Date.now()-startTime)/1000);
+      if(left<=0){ clearInterval(timerInterval); document.getElementById('timerText').textContent='00:00'; alert('时间到，自动提交。'); submitTest(); return; }
+      t.classList.toggle('warn',left<=300&&left>60); t.classList.toggle('danger',left<=60);
+      document.getElementById('timerText').textContent=fmt(left); },500);
+  } else timerInterval=setInterval(()=>{ document.getElementById('timerText').textContent=fmt(Math.floor((Date.now()-startTime)/1000)); },500);
+}
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+/* 音频（真实文件，每部分一段；模考自动连播） */
+let curAudioSec=null;
+const player=document.getElementById('player');
+function initAudio(){ curAudioSec=currentPaper[0].id; loadSection(curAudioSec,false); paintAudio(); }
+function loadSection(id,autoplay){
+  curAudioSec=id; const s=TEST.sections.find(x=>x.id===id);
+  player.src=s.audio; document.getElementById('aCur').textContent='Section '+id;
+  if(autoplay){ player.play().catch(()=>{}); }
+}
+function playSection(id){ loadSection(id,true); document.getElementById('aPlay').textContent='⏸'; const a=document.getElementById('anchor_'+id); if(a) a.scrollIntoView({behavior:'smooth',block:'start'}); }
+function togglePlay(){ if(player.paused){ player.play().catch(()=>{}); document.getElementById('aPlay').textContent='⏸'; } else { player.pause(); document.getElementById('aPlay').textContent='▶'; } }
+function seekAudio(e){ if(!player.duration) return; const r=document.getElementById('aProg').getBoundingClientRect(); player.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*player.duration; }
+player.addEventListener('timeupdate',paintAudio);
+player.addEventListener('play',()=>document.getElementById('aPlay').textContent='⏸');
+player.addEventListener('pause',()=>document.getElementById('aPlay').textContent='▶');
+player.addEventListener('ended',()=>{
+  document.getElementById('aPlay').textContent='▶';
+  if(mode==='exam'){ const idx=currentPaper.findIndex(s=>s.id===curAudioSec); if(idx>-1&&idx<currentPaper.length-1) loadSection(currentPaper[idx+1].id,true); }
+});
+function paintAudio(){ const d=player.duration||0,c=player.currentTime||0; document.getElementById('aFill').style.width=(d?c/d*100:0)+'%'; document.getElementById('aTime').textContent=fmt(Math.floor(c))+' / '+fmt(Math.floor(d)); }
+
+/* 批改 */
+function norm(s){ return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,''); }
+function readAns(q){ const el=document.getElementById(q.id); if(el) return (el.tagName==='SELECT')?el.value:el.value.trim();
+  const r=document.getElementsByName(q.id); for(const x of r) if(x.checked) return x.value; return ''; }
+
+function confirmSubmit(){
+  let answered=0,total=0;
+  currentPaper.forEach(s=>allQs(s).forEach(q=>{ total++; if(readAns(q)!=='') answered++; }));
+  if(window.confirm(`已作答 ${answered}/${total} 题。\n确定提交并查看批改报告吗？`)) submitTest();
+}
+function submitTest(){
+  if(submitted) return; submitted=true;
+  clearInterval(timerInterval); player.pause();
+  document.getElementById('timer').classList.remove('show');
+
+  /* 先处理 multi 配对题（顺序不限、不重复计分） */
+  const pairCorrect={};
+  currentPaper.forEach(s=>s.groups.forEach(g=>{
+    if(g.kind==='multi'){ const set=g.answerSet.slice(); g.questions.forEach(q=>{ const ua=(readAns(q)||'').toUpperCase(); const i=set.indexOf(ua); if(ua&&i>-1){ pairCorrect[q.id]=true; set.splice(i,1);} else pairCorrect[q.id]=false; }); }
+  }));
+
+  let correct=0,total=0; const detail=[];
+  currentPaper.forEach(s=>{
+    let sc=0; const items=[];
+    s.groups.forEach(g=>g.questions.forEach(q=>{
+      const ua=readAns(q); let ok;
+      if(g.kind==='multi') ok=!!pairCorrect[q.id];
+      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      total++; if(ok){correct++;sc++;}
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+    }));
+    detail.push({s,sc,total:allQs(s).length,items});
+  });
+
+  const pct=total?Math.round(correct/total*100):0;
+  const band=lookupBand(correct,total);
+  const elapsed=Math.max(1,Math.round((Date.now()-startTime)/1000));
+
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resTitle').textContent='剑桥雅思10 · Test 2 — 听力';
+  document.getElementById('resMeta').textContent=`${mode==='practice'?'练习模式':'模考模式'} · 用时 ${fmt(elapsed)} · 完成时间 ${new Date().toLocaleString('zh-CN')}`;
+  document.getElementById('resCorrect').textContent=`${correct}/${total}`;
+  document.getElementById('resPct').textContent=pct+'%';
+  document.getElementById('resBand').textContent=band.toFixed(1);
+  document.getElementById('resLevel').textContent='水平：'+levelLabel(band);
+  document.getElementById('resProgLbl').textContent=`${correct} / ${total}`;
+  setTimeout(()=>document.getElementById('resProgFill').style.width=pct+'%',60);
+  document.getElementById('bandNote').textContent = total===40
+    ? '雅思分按官方听力 40 题原始分对照表换算。'
+    : `本次仅测 ${total} 题，预估分按比例折算至 40 题后套用官方对照表；做完整 4 个部分时为精确换算。`;
+
+  document.getElementById('detailHolder').innerHTML=detail.map((d,i)=>{
+    const sp=d.total?Math.round(d.sc/d.total*100):0;
+    const rows=d.items.map(it=>{
+      const cls=it.ok?'correct':'wrong';
+      const yours=it.ua?`你的答案：<span class="yours">${it.ua}</span>　`:`<span class="yours">未作答</span>　`;
+      return `<div class="ritem ${cls}"><div class="rq">${it.ok?'✔':'✘'} 第 ${it.q.no} 题</div>
+        <div class="ra">${it.ok?'<span class="correctv">回答正确</span>':yours+'正确答案：<span class="correctv">'+it.ans.join(' / ')+'</span>'}</div>
+        <div class="rex">💡 ${it.q.explain||''}</div></div>`;
+    }).join('');
+    return `<div class="sec-result${i===0?' open':''}"><div class="sr-head" onclick="this.parentNode.classList.toggle('open')">
+        <div><h5>Section ${d.s.id}</h5><div class="sr-sum"><span class="${sp>=60?'ok':'bad'}">${d.sc} / ${d.total} 题正确　${sp}%</span></div></div>
+        <div class="sr-chevron">▾</div></div><div class="sr-body">${rows}</div></div>`;
+  }).join('');
+  window.scrollTo(0,0);
+}
+
+function backToCover(){
+  clearInterval(timerInterval); player.pause();
+  document.getElementById('timer').classList.remove('show');
+  document.getElementById('testArea').style.display='none';
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('coverArea').style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== */
+(function(){
+  function report(){
+    var rc=document.getElementById('resCorrect'); if(!rc) return;
+    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m) return;
+    var bandEl=document.getElementById('resBand'); var band=bandEl?parseFloat(bandEl.textContent):NaN;
+    try{ window.parent.postMessage({type:'yysd:score', score:+m[1], total:+m[2], band:isNaN(band)?null:band}, '*'); }catch(e){}
+  }
+  var rc=document.getElementById('resCorrect');
+  if(rc){ new MutationObserver(report).observe(rc,{childList:true,subtree:true,characterData:true}); }
+})();
+</script>
+</body>
+</html>
