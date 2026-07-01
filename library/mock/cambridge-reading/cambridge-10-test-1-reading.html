@@ -906,9 +906,10 @@ function groupHtml(g){
       }).join('')+`</div>`;
   }
   else if(g.kind==='table'){
-    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const cols = g.cols || g.columns || [];
+    const head=`<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
     const rows=g.rows.map(r=>`<tr>${r.map(cell=>`<td>${expandQ(cell)}</td>`).join('')}</tr>`).join('');
-    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+    body=`${(g.tableTitle||g.noteTitle)?`<div class="note-title">${g.tableTitle||g.noteTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
   }
   else if(g.kind==='tfng'){
     const opts = g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN'];

@@ -971,9 +971,10 @@ function groupHtml(g){
       }).join('')+`</div>`;
   }
   else if(g.kind==='table'){
-    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const cols = g.cols || g.columns || [];
+    const head=`<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
     const rows=g.rows.map(r=>`<tr>${r.map(cell=>{ const html=cell.split('|')[0]; return `<td>${expandQ(html)}</td>`; }).join('')}</tr>`).join('');
-    body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+    body=`${(g.tableTitle||g.noteTitle)?`<div class="note-title">${g.tableTitle||g.noteTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
   }
   else if(g.kind==='mcq'){
     body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
