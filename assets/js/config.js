@@ -55,7 +55,7 @@ window.YYSD = (function () {
       { key: "vocab", label: "单词", children: [
         { label: "高中词汇", subject: "vocab" },
         { label: "四级词汇", subject: "vocab-cet4" },
-        { key: "vocab-special", label: "专项词汇", children: [
+        { key: "vocab-special", label: "雅思专项词汇", children: [
           { label: "听力专项词汇", subject: "vocab-special-listening" },
           { label: "阅读专项词汇", subject: "vocab-special-reading" },
           { label: "写作专项词汇", subject: "vocab-special-writing" }
@@ -160,7 +160,7 @@ window.YYSD = (function () {
     gaozhong: { key: "gaozhong", label: "高中词汇", subject: "vocab", tag: "雅思基础", chunk: 10 },
     cet4:     { key: "cet4",     label: "四级词汇", subject: "vocab-cet4", tag: "CET-4", chunk: 10 },
     special:  {
-      key: "special", label: "专项词汇", tag: "专题",
+      key: "special", label: "雅思专项词汇", tag: "专题",
       subjects: ["vocab-special-listening", "vocab-special-reading", "vocab-special-writing"]
     }
   };
