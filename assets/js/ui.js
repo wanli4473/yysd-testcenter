@@ -77,8 +77,14 @@
 
   var wm = document.querySelector(".hero-motifs");
   if (wm && !reduced) {
+    var parallaxPending = false;
     window.addEventListener("scroll", function () {
-      wm.style.transform = "translateY(" + (window.scrollY * 0.08) + "px)";
+      if (parallaxPending) return;
+      parallaxPending = true;
+      requestAnimationFrame(function () {
+        wm.style.transform = "translateY(" + (window.scrollY * 0.06) + "px)";
+        parallaxPending = false;
+      });
     }, { passive: true });
   }
 

@@ -100,15 +100,22 @@ window.YYSD = (function () {
       + "library/manifest.json";
   }
 
+  var _manifestPromise;
+
   function load() {
-    return fetch(manifestUrl(), { cache: "no-store" }).then(function (r) {
+    if (_manifestPromise) return _manifestPromise;
+    _manifestPromise = fetch(manifestUrl()).then(function (r) {
       if (!r.ok) throw new Error("manifest.json HTTP " + r.status);
       return r.json();
     }).then(function (d) {
       var items = (d && (d.items || d.exams)) || [];   // accept old key too
       items.sort(function (a, b) { return String(b.added || "").localeCompare(String(a.added || "")); });
       return items;
+    }).catch(function (err) {
+      _manifestPromise = null;
+      throw err;
     });
+    return _manifestPromise;
   }
 
   function subjectsOf(zone) { return ZONE_SUBJECTS[zone] || []; }
