@@ -69,6 +69,7 @@
     var tabs = Y.vocabListRanges(stats.lists, chunk);
     var activeId = rangeParam;
     if (!activeId && tabs.length) activeId = tabs[0].id;
+    rangeParam = activeId;
 
     document.title = book.label + " · 优益思达国际课程中心";
 
@@ -90,20 +91,44 @@
     contentEl.innerHTML = heroHTML(book, stats, prog) +
       '<div class="vocab-range-wrap">' +
       '<div class="vocab-range-chips">' + chips + '</div>' +
-      panels +
+      '<div class="vocab-range-panels">' + panels + '</div>' +
       '</div>';
 
     contentEl.querySelector(".vocab-range-chips").addEventListener("click", function (e) {
       var btn = e.target.closest(".vocab-range-chip");
       if (!btn) return;
-      var id = btn.getAttribute("data-range");
+      switchRange(btn.getAttribute("data-range"));
+    });
+
+    animateListRows(contentEl.querySelector(".vocab-range-panel.is-active"));
+  }
+
+  function switchRange(id) {
+    if (!id || id === rangeParam) return;
+    rangeParam = id;
+    var panelsWrap = contentEl.querySelector(".vocab-range-panels");
+    if (panelsWrap) panelsWrap.classList.add("is-swapping");
+
+    setTimeout(function () {
       contentEl.querySelectorAll(".vocab-range-chip").forEach(function (c) {
         c.classList.toggle("is-active", c.getAttribute("data-range") === id);
       });
       contentEl.querySelectorAll(".vocab-range-panel").forEach(function (p) {
         p.classList.toggle("is-active", p.getAttribute("data-range") === id);
       });
+      if (panelsWrap) panelsWrap.classList.remove("is-swapping");
+      animateListRows(contentEl.querySelector(".vocab-range-panel.is-active"));
       history.replaceState(null, "", "vocab.html?book=" + encodeURIComponent(bookKey) + "&range=" + encodeURIComponent(id));
+    }, 150);
+  }
+
+  function animateListRows(panel) {
+    if (!panel) return;
+    panel.classList.remove("is-entering");
+    void panel.offsetWidth;
+    panel.classList.add("is-entering");
+    panel.querySelectorAll(".vocab-list-row").forEach(function (row, i) {
+      row.style.setProperty("--row-i", String(i));
     });
   }
 

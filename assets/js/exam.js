@@ -1,8 +1,5 @@
 /* =========================================================================
-   exam.js — content viewer (mock exam / study material / practice set)
-   - Loads the chosen HTML into an iframe
-   - Optional countdown timer (only for timed mock/practice items)
-   - Records a score reported via postMessage to "我的成绩"
+   exam.js — content viewer + timer + score toast
    ========================================================================= */
 (function () {
   "use strict";
@@ -14,9 +11,11 @@
   var metaEl = document.getElementById("v-meta");
   var timerEl = document.getElementById("timer");
   var backBtn = document.getElementById("back-btn");
+  var toastHost = document.getElementById("score-toast-host");
 
   var item = null;
   var timerHandle = null;
+  var toastTimer = null;
 
   if (!id) { fail("缺少内容编号。"); return; }
 
@@ -36,9 +35,50 @@
     var doc = frame.contentDocument;
     doc.open();
     doc.write('<div style="font-family:sans-serif;padding:60px;text-align:center;color:#6b7589">' +
-      '<h2 style="color:#14213d">😕 ' + msg + '</h2>' +
+      '<h2 style="color:#14213d">😕 ' + Y.esc(msg) + '</h2>' +
       '<p><a href="index.html" style="color:#c8102e">← 返回首页</a></p></div>');
     doc.close();
+  }
+
+  function showScoreToast(record, payload) {
+    if (!toastHost) return;
+    clearTimeout(toastTimer);
+
+    var isStudy = item.zone === "study";
+    var heading = isStudy ? "学习进度已保存" : "成绩已保存";
+    var sub = "记录保存在本浏览器，可在「我的成绩」查看";
+    var scoreLine = "";
+
+    if (payload.score != null) {
+      scoreLine = String(payload.score);
+      if (payload.total != null) scoreLine += " / " + payload.total;
+      if (payload.band != null) scoreLine += " · Band " + payload.band;
+    } else if (isStudy) {
+      scoreLine = "已完成";
+    }
+
+    toastHost.innerHTML =
+      '<div class="score-toast" role="status">' +
+        '<div class="score-toast__icon" aria-hidden="true">✓</div>' +
+        '<div class="score-toast__body">' +
+          '<b>' + Y.esc(heading) + '</b>' +
+          (scoreLine ? '<span class="score-toast__score">' + Y.esc(scoreLine) + '</span>' : '') +
+          '<span class="score-toast__sub">' + Y.esc(sub) + '</span>' +
+        '</div>' +
+        '<a class="score-toast__link" href="results.html">查看 →</a>' +
+        '<button type="button" class="score-toast__close" aria-label="关闭">×</button>' +
+      '</div>';
+
+    toastHost.classList.add("is-visible");
+
+    toastHost.querySelector(".score-toast__close").addEventListener("click", hideToast);
+    toastTimer = setTimeout(hideToast, 6000);
+  }
+
+  function hideToast() {
+    if (!toastHost) return;
+    toastHost.classList.remove("is-visible");
+    clearTimeout(toastTimer);
   }
 
   function start() {
@@ -88,10 +128,10 @@
     timerHandle = setInterval(tick, 1000);
   }
 
-  // ---- score capture -----------------------------------------------------
   window.addEventListener("message", function (e) {
     var d = e.data;
     if (!d || d.type !== "yysd:score" || !item) return;
+
     var store = {};
     try { store = JSON.parse(localStorage.getItem("yysd:results") || "{}"); } catch (err) {}
     store[item.id] = {
@@ -102,5 +142,12 @@
       date: new Date().toISOString()
     };
     localStorage.setItem("yysd:results", JSON.stringify(store));
+    showScoreToast(store[item.id], d);
+
+    if (timerHandle) {
+      clearInterval(timerHandle);
+      timerHandle = null;
+      timerEl.classList.remove("is-low");
+    }
   });
 })();

@@ -305,29 +305,158 @@ window.YYSD = (function () {
   }
 
   // One volume card (clean VOL.NN style) → opens cambridge.html?vol=N
-  function camVolumeCardHTML(v, prefix) {
+  function camVolumeProgress(items, vol) {
+    var cam = (items || []).filter(function (it) {
+      return isCambridge(it.subject) && camVolume(it) === String(vol);
+    });
+    var res = results();
+    var done = cam.filter(function (it) { return res[it.id]; }).length;
+    return { done: done, total: cam.length };
+  }
+
+  function camVolumeCardHTML(v, prefix, items) {
     var tag = camVolTag(v.vol);
-    var bookIcon = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
-      '<path d="M4.5 5.5c2.6 0 4.8.5 6.5 1.6v11.4c-1.7-1.1-3.9-1.6-6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
-      '<path d="M19.5 5.5c-2.6 0-4.8.5-6.5 1.6v11.4c1.7-1.1 3.9-1.6 6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
+    var prog = items ? camVolumeProgress(items, v.vol) : null;
+    var cntText = prog && prog.done
+      ? "已完成 " + prog.done + "/" + prog.total + " 份 · " + v.tests + " 套"
+      : "包含 " + v.tests + " 套";
+    var doneClass = prog && prog.total && prog.done >= prog.total ? " vol-card--done" : "";
+    var shieldIcon = '<svg class="vol-card__shield" viewBox="0 0 14 16" aria-hidden="true"><path d="M7 1.2 12 3v5.2c0 3.4-2.1 5.9-5 7.3-2.9-1.4-5-3.9-5-7.3V3L7 1.2Z" fill="currentColor"/></svg>';
+    var bookIcon = '<svg class="vol-card__book" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path class="vol-card__book-l" d="M4.5 5.5c2.6 0 4.8.5 6.5 1.6v11.4c-1.7-1.1-3.9-1.6-6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="vol-card__book-r" d="M19.5 5.5c-2.6 0-4.8.5-6.5 1.6v11.4c1.7-1.1 3.9-1.6 6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
       '<path d="M12 7.1v11.4" stroke="currentColor" stroke-width="2"/></svg>';
     var skills = '<span class="vc-skill vc-skill--a">A</span><span class="vc-skill vc-skill--b">B</span><span class="vc-skill vc-skill--u">◯</span>';
     return '' +
-      '<a class="vol-card" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
+      '<a class="vol-card' + doneClass + '" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
         '<div class="vol-card__top">' +
-          '<span class="vol-card__vol">VOL.' + esc(v.vol) + '</span>' +
+          '<span class="vol-card__vol">' + shieldIcon + ' VOL.' + esc(v.vol) + '</span>' +
           '<span class="vol-card__tag vol-card__tag--' + tag.c + '">' + tag.t + '</span>' +
         '</div>' +
         '<div class="vol-card__body">' +
           '<span class="vol-card__ico">' + bookIcon + '</span>' +
           '<div><h3>剑桥雅思 ' + esc(v.vol) + '</h3>' +
-          '<div class="vol-card__cnt">包含 ' + v.tests + ' 套</div></div>' +
+          '<div class="vol-card__cnt">' + cntText + '</div></div>' +
         '</div>' +
         '<div class="vol-card__foot">' +
           '<span class="vol-card__skills">' + skills + '</span>' +
           '<span class="vol-card__go">开始练习 ›</span>' +
         '</div>' +
       '</a>';
+  }
+
+  // Cambridge catalog: tier filter, search, collapsible legacy volumes.
+  function cambridgeCatalogHTML(volumes, items, prefix, opts) {
+    opts = opts || {};
+    var q = String(opts.query || "").toLowerCase().trim();
+    var tier = opts.tier || "all";
+    var collapseLegacy = opts.collapseLegacy !== false;
+    var legacyBefore = opts.legacyBefore != null ? opts.legacyBefore : 13;
+
+    var filtered = (volumes || []).filter(function (v) {
+      var n = Number(v.vol);
+      if (tier === "new" && n < 19) return false;
+      if (tier === "mid" && (n < 13 || n > 18)) return false;
+      if (tier === "base" && n >= 13) return false;
+      if (q) {
+        var hay = ("剑桥雅思 vol " + v.vol + " cambridge " + v.vol).toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      return true;
+    });
+
+    if (!filtered.length) {
+      return '<div class="soon-box">没有匹配的册数，试试其他筛选条件。</div>';
+    }
+
+    function cards(vols) {
+      return vols.map(function (v) { return camVolumeCardHTML(v, prefix, items); }).join("");
+    }
+
+    if (tier !== "all" || q || !collapseLegacy) {
+      return '<div class="vol-grid">' + cards(filtered) + '</div>';
+    }
+
+    var recent = filtered.filter(function (v) { return Number(v.vol) >= legacyBefore; });
+    var legacy = filtered.filter(function (v) { return Number(v.vol) < legacyBefore; });
+    var html = '<div class="vol-grid">' + cards(recent) + "</div>";
+    if (legacy.length) {
+      html += '<details class="catalog-collapse">' +
+        '<summary><span class="catalog-collapse__label">更多基础册</span>' +
+        '<span class="catalog-collapse__meta">' + legacy.length + " 册 · Vol." +
+        legacy[legacy.length - 1].vol + "–" + legacy[0].vol + "</span></summary>" +
+        '<div class="vol-grid">' + cards(legacy) + "</div></details>";
+    }
+    return html;
+  }
+
+  function searchItems(items, query) {
+    var q = String(query || "").toLowerCase().trim();
+    if (!q) return items || [];
+    return (items || []).filter(function (it) {
+      var hay = (it.title + " " + (it.description || "") + " " + it.subject + " " + it.id).toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+  }
+
+  function recentActivity(items, limit) {
+    var store = results();
+    var byId = {};
+    (items || []).forEach(function (it) { byId[it.id] = it; });
+    return Object.keys(store).map(function (k) { return store[k]; })
+      .filter(function (r) { return byId[r.id]; })
+      .sort(function (a, b) { return String(b.date || "").localeCompare(String(a.date || "")); })
+      .slice(0, limit || 3)
+      .map(function (r) { return { item: byId[r.id], result: r }; });
+  }
+
+  function continueStripHTML(activities, prefix) {
+    if (!activities.length) return "";
+    var rows = activities.map(function (a) {
+      var r = a.result;
+      var meta = r.score != null ? r.score + (r.total ? "/" + r.total : "") : "继续";
+      return '<a class="continue-row" href="' + fileHref(a.item, prefix) + '">' +
+        '<span class="continue-row__title">' + esc(a.item.title) + "</span>" +
+        '<span class="continue-row__meta">' + esc(meta) + " ›</span></a>";
+    }).join("");
+    return '<section class="continue-strip" aria-label="继续学习">' +
+      '<div class="continue-strip__head">' +
+      "<h2>继续学习</h2>" +
+      '<a href="' + (prefix || "") + 'results.html">全部记录 →</a></div>' +
+      '<div class="continue-strip__list">' + rows + "</div></section>";
+  }
+
+  function compactItemRowHTML(item, prefix) {
+    var done = results()[item.id];
+    var subj = SUBJECT[item.subject] || { label: "其他" };
+    return '<a class="catalog-row' + (done ? " is-done" : "") + '" href="' + fileHref(item, prefix) + '">' +
+      '<span class="catalog-row__badge badge badge--' + esc(item.subject) + '">' + esc(subj.label) + "</span>" +
+      '<span class="catalog-row__title">' + esc(item.title) + "</span>" +
+      (done ? '<span class="catalog-row__status">已完成</span>' : '<span class="catalog-row__go">进入 ›</span>') +
+      "</a>";
+  }
+
+  function searchResultsHTML(items, prefix) {
+    if (!items.length) {
+      return '<div class="soon-box">没有找到匹配的内容，试试其他关键词。</div>';
+    }
+    var bySubject = {};
+    items.forEach(function (it) {
+      (bySubject[it.subject] = bySubject[it.subject] || []).push(it);
+    });
+    return Object.keys(bySubject).sort().map(function (subj) {
+      var label = (SUBJECT[subj] || {}).label || subj;
+      var its = bySubject[subj].slice().sort(function (a, b) {
+        if (isVocabListSubject(subj)) return vocabListNo(a) - vocabListNo(b);
+        return String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
+      });
+      var body = its.length > 8 && isVocabListSubject(subj)
+        ? '<div class="catalog-rows">' + its.map(function (it) { return compactItemRowHTML(it, prefix); }).join("") + "</div>"
+        : '<div class="exam-grid exam-grid--compact">' + its.map(function (it) { return cardHTML(it, prefix); }).join("") + "</div>";
+      return '<div class="catalog-section">' +
+        '<div class="catalog-section__head"><h3>' + esc(label) + '</h3><span class="cnt">' + its.length + " 份</span></div>" +
+        body + "</div>";
+    }).join("");
   }
 
   // Count manifest items per subject (within an optional zone).
@@ -346,7 +475,10 @@ window.YYSD = (function () {
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
     fileHref: fileHref, cardHTML: cardHTML, countsBySubject: countsBySubject,
     isCambridge: isCambridge, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,
-    camVolumeCardHTML: camVolumeCardHTML,
+    camVolumeCardHTML: camVolumeCardHTML, camVolumeProgress: camVolumeProgress,
+    cambridgeCatalogHTML: cambridgeCatalogHTML, searchItems: searchItems,
+    recentActivity: recentActivity, continueStripHTML: continueStripHTML,
+    searchResultsHTML: searchResultsHTML, compactItemRowHTML: compactItemRowHTML,
     VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,
     vocabListNo: vocabListNo, vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
     vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML

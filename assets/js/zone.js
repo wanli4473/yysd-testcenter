@@ -1,6 +1,5 @@
 /* =========================================================================
-   zone.js — a single zone (学习区 / 练习区 / 模考区) rendered as a category tree.
-   Categories may have children (sub-skills); leaves map to a manifest subject.
+   zone.js — zone catalog with search, tier filters, collapsible groups
    ========================================================================= */
 (function () {
   "use strict";
@@ -9,12 +8,15 @@
   var params = new URLSearchParams(location.search);
   var zone = params.get("zone");
   if (!Y.ZONE[zone]) zone = "mock";
-  var focusSubject = params.get("s") || "";        // deep-link from homepage
+  var focusSubject = params.get("s") || "";
   var z = Y.ZONE[zone];
   var nav = Y.navOf(zone);
   var activeCat = "all";
+  var searchQuery = "";
+  var camTier = "all";
 
-  // header
+  document.body.classList.add("zone-page", "zone-page--" + zone);
+
   document.title = z.label + " · 优益思达国际课程中心";
   document.getElementById("crumb-zone").textContent = z.label;
   document.getElementById("zone-en").textContent = z.en || z.label;
@@ -25,10 +27,11 @@
   if (navLink) navLink.classList.add("is-active");
 
   var filtersEl = document.getElementById("filters");
+  var subFiltersEl = document.getElementById("sub-filters");
+  var searchInput = document.getElementById("catalog-search");
   var contentEl = document.getElementById("content");
   var allItems = [];
 
-  // If deep-linked to a subject, open its top-level filter category.
   function catOfSubject(s) {
     function walk(nodes, top) {
       for (var i = 0; i < nodes.length; i++) {
@@ -51,23 +54,76 @@
     }
     return null;
   }
-  if (focusSubject) { var fc = catOfSubject(focusSubject); if (fc) activeCat = fc.key; }
+  if (focusSubject === "ielts") activeCat = "ielts";
+  else if (focusSubject) { var fc = catOfSubject(focusSubject); if (fc) activeCat = fc.key; }
+
+  function showCambridgeSubFilters() {
+    return zone === "mock" && (activeCat === "all" || activeCat === "ielts") && !searchQuery;
+  }
+
+  function buildSubFilters() {
+    if (!subFiltersEl) return;
+    if (!showCambridgeSubFilters()) {
+      subFiltersEl.innerHTML = "";
+      subFiltersEl.hidden = true;
+      return;
+    }
+    subFiltersEl.hidden = false;
+    var tiers = [
+      { id: "all", label: "全部册" },
+      { id: "new", label: "最新 Vol.19+" },
+      { id: "mid", label: "进阶 Vol.13–18" },
+      { id: "base", label: "基础 Vol.7–12" }
+    ];
+    subFiltersEl.innerHTML = tiers.map(function (t) {
+      return '<button type="button" class="chip chip--sub' + (camTier === t.id ? " is-active" : "") +
+        '" data-tier="' + t.id + '">' + t.label + "</button>";
+    }).join("");
+  }
 
   function buildFilters() {
-    var chips = ['<button class="chip' + (activeCat === "all" ? " is-active" : "") + '" data-s="all">全部</button>'];
+    var chips = ['<button type="button" class="chip' + (activeCat === "all" ? " is-active" : "") + '" data-s="all">全部</button>'];
     nav.forEach(function (c) {
-      chips.push('<button class="chip' + (activeCat === c.key ? " is-active" : "") +
-        '" data-s="' + c.key + '">' + Y.esc(c.label) + '</button>');
+      chips.push('<button type="button" class="chip' + (activeCat === c.key ? " is-active" : "") +
+        '" data-s="' + c.key + '">' + Y.esc(c.label) + "</button>");
     });
     filtersEl.innerHTML = chips.join("");
-    filtersEl.addEventListener("click", function (e) {
+    buildSubFilters();
+  }
+
+  filtersEl.addEventListener("click", function (e) {
+    var b = e.target.closest(".chip");
+    if (!b || b.closest("#sub-filters")) return;
+    filtersEl.querySelectorAll(".chip").forEach(function (c) { c.classList.remove("is-active"); });
+    b.classList.add("is-active");
+    activeCat = b.getAttribute("data-s");
+    buildSubFilters();
+    render();
+  });
+
+  if (subFiltersEl) {
+    subFiltersEl.addEventListener("click", function (e) {
       var b = e.target.closest(".chip");
       if (!b) return;
-      filtersEl.querySelectorAll(".chip").forEach(function (c) { c.classList.remove("is-active"); });
+      subFiltersEl.querySelectorAll(".chip").forEach(function (c) { c.classList.remove("is-active"); });
       b.classList.add("is-active");
-      activeCat = b.getAttribute("data-s");
+      camTier = b.getAttribute("data-tier");
       render();
     });
+  }
+
+  if (searchInput) {
+    searchInput.placeholder = zone === "mock" ? "搜索模考、册数、Test…" : "搜索内容名称…";
+    var onSearch = window.YYSD_DEBOUNCE ? window.YYSD_DEBOUNCE(function () {
+      searchQuery = searchInput.value.trim();
+      buildSubFilters();
+      render();
+    }, 200) : function () {
+      searchQuery = searchInput.value.trim();
+      buildSubFilters();
+      render();
+    };
+    searchInput.addEventListener("input", onSearch);
   }
 
   function itemsOf(subject) {
@@ -77,17 +133,19 @@
       });
   }
 
-  // Body for one leaf subject: cambridge → series cards; else cards / placeholder.
   function leafBody(subject) {
     if (Y.isCambridge(subject)) {
       var vols = Y.camVolumes(allItems.filter(function (it) { return it.subject === subject; }));
       if (vols.length) {
-        return '<div class="exam-grid">' + vols.map(function (v) { return Y.camVolumeCardHTML(v, ""); }).join("") + '</div>';
+        return '<div class="exam-grid">' + vols.map(function (v) { return Y.camVolumeCardHTML(v, "", allItems); }).join("") + "</div>";
       }
     } else {
       var its = itemsOf(subject);
       if (its.length) {
-        return '<div class="exam-grid">' + its.map(function (it) { return Y.cardHTML(it, ""); }).join("") + '</div>';
+        if (its.length > 8 && Y.isVocabListSubject(subject)) {
+          return '<div class="catalog-rows">' + its.map(function (it) { return Y.compactItemRowHTML(it, ""); }).join("") + "</div>";
+        }
+        return '<div class="exam-grid">' + its.map(function (it) { return Y.cardHTML(it, ""); }).join("") + "</div>";
       }
     }
     return '<div class="soon-box">该板块即将上线，敬请期待。</div>';
@@ -101,21 +159,20 @@
 
   function leafBlockHTML(label, subject) {
     return '<div class="leaf-block">' +
-      '<div class="leaf-block__head"><h4>' + Y.esc(label) + '</h4>' +
-        '<span class="cnt">' + countOf(subject) + unitOf(subject) + '</span></div>' +
+      '<div class="leaf-block__head"><h4>' + Y.esc(label) + "</h4>" +
+        '<span class="cnt">' + countOf(subject) + unitOf(subject) + "</span></div>" +
       leafBody(subject) +
-      '</div>';
+      "</div>";
   }
 
-  // Render a nav node: leaf subject block, or a grouped parent with nested leaves.
   function nodeBlockHTML(node) {
     if (node.children) {
       var inner = node.children.map(function (ch) {
         return leafBlockHTML(ch.label, ch.subject);
       }).join("");
       return '<div class="leaf-block leaf-block--group">' +
-        '<div class="leaf-block__head"><h4>' + Y.esc(node.label) + '</h4></div>' +
-        '<div class="leaf-nest">' + inner + '</div></div>';
+        '<div class="leaf-block__head"><h4>' + Y.esc(node.label) + "</h4></div>" +
+        '<div class="leaf-nest">' + inner + "</div></div>";
     }
     return leafBlockHTML(node.label, node.subject);
   }
@@ -124,33 +181,46 @@
     var sub = Y.SUBJECT[cat.subject] || { color: "var(--c-cambridge)" };
     var head = '<div class="subject-group__head">' +
       '<span class="subject-dot" style="background:' + sub.color + '"></span>' +
-      '<h2>' + Y.esc(cat.label) + '</h2></div>';
+      "<h2>" + Y.esc(cat.label) + '</h2><span class="cnt">' +
+      (cat.key === "ielts" ? Y.camVolumes(allItems).length + " 册" : countOf(cat.subject) + unitOf(cat.subject || "")) +
+      "</span></div>";
 
     var body;
     if (cat.key === "ielts") {
-      // 雅思真题 = clean Cambridge volume-card grid (听力/阅读/写作 live inside each volume)
       var vols = Y.camVolumes(allItems);
       body = vols.length
-        ? '<div class="vol-grid">' + vols.map(function (v) { return Y.camVolumeCardHTML(v, ""); }).join("") + '</div>'
+        ? Y.cambridgeCatalogHTML(vols, allItems, "", { tier: camTier, query: searchQuery, collapseLegacy: true })
         : '<div class="soon-box">暂无剑桥真题，老师上传后会显示在这里。</div>';
     } else if (cat.key === "vocab") {
       var vbooks = Y.vocabBooksForZone(allItems);
       body = vbooks.length
-        ? '<div class="vol-grid">' + vbooks.map(function (s) { return Y.vocabBookCardHTML(s, ""); }).join("") + '</div>'
+        ? '<div class="vol-grid">' + vbooks.map(function (s) { return Y.vocabBookCardHTML(s, ""); }).join("") + "</div>"
         : '<div class="soon-box">暂无单词内容，上传后会显示在这里。</div>';
     } else if (cat.children) {
-      var blocks = [];
-      cat.children.forEach(function (ch) { blocks.push(nodeBlockHTML(ch)); });
-      body = '<div class="leaf-wrap">' + blocks.join("") + '</div>';
+      body = '<div class="leaf-wrap">' + cat.children.map(nodeBlockHTML).join("") + "</div>";
     } else {
       body = leafBody(cat.subject);
     }
-    return '<div class="subject-group">' + head + body + '</div>';
+    return '<div class="subject-group">' + head + body + "</div>";
   }
 
   function render() {
-    var cats = activeCat === "all" ? nav : nav.filter(function (c) { return c.key === activeCat; });
-    contentEl.innerHTML = cats.map(categoryHTML).join("");
+    var html;
+    if (searchQuery) {
+      var matched = Y.searchItems(allItems, searchQuery);
+      html = '<div class="catalog-search-meta">找到 ' + matched.length + " 条结果</div>" +
+        Y.searchResultsHTML(matched, "");
+    } else {
+      var recent = Y.recentActivity(allItems, 3);
+      var continueHTML = recent.length ? Y.continueStripHTML(recent, "") : "";
+      var cats = activeCat === "all" ? nav : nav.filter(function (c) { return c.key === activeCat; });
+      html = continueHTML + cats.map(categoryHTML).join("");
+    }
+    if (window.YYSD_UI_SWAP && contentEl.innerHTML && !contentEl.querySelector(".spinner--brand")) {
+      window.YYSD_UI_SWAP(contentEl, html);
+    } else {
+      contentEl.innerHTML = html;
+    }
   }
 
   buildFilters();
@@ -162,7 +232,7 @@
     var msg = location.protocol === "file:"
       ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"
       : err.message;
-    contentEl.innerHTML = '<div class="state"><h3>加载失败</h3><p>' + Y.esc(msg) + '</p></div>';
+    contentEl.innerHTML = '<div class="state state--brand"><h3>加载失败</h3><p>' + Y.esc(msg) + '</p></div>';
   });
 
   document.getElementById("year").textContent = new Date().getFullYear();
