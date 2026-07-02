@@ -178,7 +178,11 @@ window.YYSD = (function () {
     var t = String((item && item.title) || "");
     var m = t.match(/LIST\s*0*(\d+)/i);
     if (m) return Number(m[1]);
-    m = String((item && item.id) || "").match(/list\s*0*(\d+)/i);
+    m = t.match(/单元\s*0*(\d+)/);
+    if (m) return Number(m[1]);
+    m = t.match(/第\s*0*(\d+)\s*篇/);
+    if (m) return Number(m[1]);
+    m = String((item && item.id) || "").match(/(?:writing|listening)-vocab-0*(\d+)/i);
     return m ? Number(m[1]) : 0;
   }
 
@@ -192,6 +196,11 @@ window.YYSD = (function () {
       lists = (items || []).filter(function (it) { return book.subjects.indexOf(it.subject) >= 0; });
     }
     lists.sort(function (a, b) {
+      if (book.subjects) {
+        var ai = book.subjects.indexOf(a.subject);
+        var bi = book.subjects.indexOf(b.subject);
+        if (ai !== bi) return ai - bi;
+      }
       var d = vocabListNo(a) - vocabListNo(b);
       return d || String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
     });

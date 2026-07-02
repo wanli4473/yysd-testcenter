@@ -17,9 +17,9 @@
   document.getElementById("year").textContent = new Date().getFullYear();
 
   var SPECIAL_SECTIONS = [
-    { subject: "vocab-special-listening", label: "听力专项词汇" },
-    { subject: "vocab-special-reading", label: "阅读高频词汇" },
-    { subject: "vocab-special-writing", label: "写作专项词汇" }
+    { subject: "vocab-special-listening", label: "听力专项词汇", short: "听力", badge: "第", suffix: "篇" },
+    { subject: "vocab-special-reading", label: "阅读高频词汇", short: "阅读", badge: "第", suffix: "篇" },
+    { subject: "vocab-special-writing", label: "写作专项词汇", short: "写作", badge: "单元", suffix: "" }
   ];
 
   function fail(msg) {
@@ -27,20 +27,42 @@
       '</p><p><a href="zone.html?zone=study&s=vocab">返回学习区</a></p></div>';
   }
 
+  function listBadge(item) {
+    var n = Y.vocabListNo(item);
+    if (!n) return "#";
+    if (item.subject === "vocab-special-listening" || item.subject === "vocab-special-reading") {
+      return "第" + n + "篇";
+    }
+    if (item.subject === "vocab-special-writing") return "单元" + n;
+    return "LIST " + n;
+  }
+
   function heroHTML(book, stats, prog) {
     var badge = book.key === "gaozhong" ? "GZ" : (book.key === "cet4" ? "CET4" : "SP");
     var sub = stats.total + (book.subject ? " 个 LIST" : " 份专题");
-    var progLine = prog.done
-      ? "已学 " + prog.done + " / " + stats.total + (prog.last ? " · 上次 LIST " + Y.vocabListNo(prog.last) : "")
-      : "边学边测 · 点击 LIST 进入";
+    var progLine;
+    if (book.subject) {
+      progLine = prog.done
+        ? "已学 " + prog.done + " / " + stats.total + (prog.last ? " · 上次 LIST " + Y.vocabListNo(prog.last) : "")
+        : "边学边测 · 点击 LIST 进入";
+    } else {
+      progLine = prog.done
+        ? "已学 " + prog.done + " / " + stats.total + (prog.last ? " · 上次 " + listBadge(prog.last) : "")
+        : "边学边测 · 点击单元进入";
+    }
 
     var actions = "";
-    if (prog.next && book.subject) {
+    if (prog.next) {
+      var nextLabel = book.subject ? ("LIST " + Y.vocabListNo(prog.next)) : listBadge(prog.next);
+      var first = stats.lists[0];
       actions = '<div class="vocab-hero__actions">' +
-        '<a class="btn btn--primary btn--sm" href="' + Y.fileHref(prog.next, "") + '">继续学习 · LIST ' +
-        Y.vocabListNo(prog.next) + '</a>' +
-        '<a class="btn btn--ghost btn--sm" href="' + Y.fileHref(stats.lists[0], "") + '">从 LIST 1 开始</a>' +
-        '</div>';
+        '<a class="btn btn--primary btn--sm" href="' + Y.fileHref(prog.next, "") + '">继续学习 · ' +
+        Y.esc(nextLabel) + '</a>';
+      if (first) {
+        actions += '<a class="btn btn--ghost btn--sm" href="' + Y.fileHref(first, "") + '">' +
+          (book.subject ? "从 LIST 1 开始" : "从第一篇开始") + '</a>';
+      }
+      actions += '</div>';
     }
 
     return '<div class="cam-hero vocab-hero">' +
@@ -52,10 +74,9 @@
   }
 
   function listRowHTML(item) {
-    var no = Y.vocabListNo(item);
     var done = Y.results()[item.id];
     return '<a class="vocab-list-row' + (done ? " is-done" : "") + '" href="' + Y.fileHref(item, "") + '">' +
-      '<span class="vocab-list-row__no">' + (no ? "LIST " + no : "#") + '</span>' +
+      '<span class="vocab-list-row__no">' + Y.esc(listBadge(item)) + '</span>' +
       '<span class="vocab-list-row__title">' + Y.esc(item.title) + '</span>' +
       (done
         ? '<span class="vocab-list-row__badge">已学</span>'
@@ -63,12 +84,56 @@
       '</a>';
   }
 
-  function renderListBook(stats) {
+  function specialTabs(lists) {
+    var tabs = [];
+    var chunk = 10;
+    SPECIAL_SECTIONS.forEach(function (sec) {
+      var its = lists.filter(function (it) { return it.subject === sec.subject; });
+      its.sort(function (a, b) {
+        return Y.vocabListNo(a) - Y.vocabListNo(b) ||
+          String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
+      });
+      if (!its.length) {
+        tabs.push({ id: sec.subject, label: sec.short + " · 即将上线", empty: true, items: [] });
+        return;
+      }
+      var max = Math.max.apply(null, its.map(Y.vocabListNo));
+      for (var start = 1; start <= max; start += chunk) {
+        var end = Math.min(start + chunk - 1, max);
+        tabs.push({
+          id: sec.subject + "-" + start + "-" + end,
+          label: sec.short + " " + start + "–" + end,
+          items: its.filter(function (it) {
+            var n = Y.vocabListNo(it);
+            return n >= start && n <= end;
+          })
+        });
+      }
+    });
+    return tabs;
+  }
+
+  function buildTabs(stats) {
+    if (bookKey === "special") return specialTabs(stats.lists);
+    return Y.vocabListRanges(stats.lists, stats.book.chunk || 10).map(function (t) {
+      return {
+        id: t.id,
+        label: t.label,
+        items: stats.lists.filter(function (it) {
+          var n = Y.vocabListNo(it);
+          return n >= t.start && n <= t.end;
+        })
+      };
+    });
+  }
+
+  function renderRangedBook(stats) {
     var book = stats.book;
-    var chunk = book.chunk || 10;
-    var tabs = Y.vocabListRanges(stats.lists, chunk);
+    var tabs = buildTabs(stats);
     var activeId = rangeParam;
-    if (!activeId && tabs.length) activeId = tabs[0].id;
+    if (!activeId || !tabs.some(function (t) { return t.id === activeId; })) {
+      activeId = tabs.length ? tabs[0].id : "";
+    }
     rangeParam = activeId;
 
     document.title = book.label + " · 优益思达国际课程中心";
@@ -80,12 +145,11 @@
     }).join("");
 
     var panels = tabs.map(function (t) {
-      var rows = stats.lists.filter(function (it) {
-        var n = Y.vocabListNo(it);
-        return n >= t.start && n <= t.end;
-      }).map(listRowHTML).join("");
+      var body = t.empty
+        ? '<div class="soon-box">该板块即将上线，敬请期待。</div>'
+        : '<div class="vocab-list-grid">' + t.items.map(listRowHTML).join("") + '</div>';
       return '<div class="vocab-range-panel' + (t.id === activeId ? " is-active" : "") +
-        '" data-range="' + Y.esc(t.id) + '"><div class="vocab-list-grid">' + rows + '</div></div>';
+        '" data-range="' + Y.esc(t.id) + '">' + body + '</div>';
     }).join("");
 
     contentEl.innerHTML = heroHTML(book, stats, prog) +
@@ -132,25 +196,6 @@
     });
   }
 
-  function renderSpecial(stats) {
-    var book = stats.book;
-    document.title = book.label + " · 优益思达国际课程中心";
-
-    var prog = Y.vocabProgress(stats.lists);
-    var blocks = SPECIAL_SECTIONS.map(function (sec) {
-      var its = stats.lists.filter(function (it) { return it.subject === sec.subject; });
-      its.sort(function (a, b) {
-        return String(a.title).localeCompare(String(b.title), "zh-Hans-CN", { numeric: true, sensitivity: "base" });
-      });
-      var body = its.length
-        ? '<div class="exam-grid exam-grid--compact">' + its.map(function (it) { return Y.cardHTML(it, ""); }).join("") + '</div>'
-        : '<div class="soon-box">该板块即将上线，敬请期待。</div>';
-      return '<div class="test-block"><h2>' + Y.esc(sec.label) + ' <span class="cnt">' + its.length + ' 份</span></h2>' + body + '</div>';
-    }).join("");
-
-    contentEl.innerHTML = heroHTML(book, stats, prog) + blocks;
-  }
-
   Y.load().then(function (items) {
     var study = items.filter(function (it) { return it.zone === "study"; });
     var stats = Y.vocabBookStats(study, bookKey);
@@ -160,8 +205,7 @@
       return;
     }
 
-    if (bookKey === "special") renderSpecial(stats);
-    else renderListBook(stats);
+    renderRangedBook(stats);
   }).catch(function (err) {
     var msg = location.protocol === "file:"
       ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"
