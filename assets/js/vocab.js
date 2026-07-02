@@ -19,7 +19,7 @@
   var SPECIAL_SECTIONS = [
     { subject: "vocab-special-listening", label: "听力专项词汇" },
     { subject: "vocab-special-reading", label: "阅读高频词汇" },
-    { subject: "vocab-special-writing", label: "写作短语" }
+    { subject: "vocab-special-writing", label: "写作专项词汇" }
   ];
 
   function fail(msg) {

@@ -43,7 +43,7 @@ window.YYSD = (function () {
     "vocab-cet4":    { label: "四级词汇", en: "CET-4", color: "var(--c-vocab)" },
     "vocab-special-listening": { label: "听力专项词汇", en: "Listening Words", color: "var(--c-cambridge-listening)" },
     "vocab-special-reading":   { label: "阅读高频词汇", en: "Reading Words", color: "var(--c-cambridge-reading)" },
-    "vocab-special-writing":   { label: "写作短语", en: "Writing Phrases", color: "var(--c-cambridge-reading)" },
+    "vocab-special-writing":   { label: "写作专项词汇", en: "Writing Vocabulary", color: "var(--c-cambridge-reading)" },
     changnanju: { label: "长难句", en: "Complex Sentences", color: "var(--c-zone-practice)" },
     jingting:   { label: "听力精听", en: "Intensive Listening", color: "var(--c-zone-practice)" }
   };
@@ -59,7 +59,7 @@ window.YYSD = (function () {
         { key: "vocab-special", label: "专项词汇", children: [
           { label: "听力专项词汇", subject: "vocab-special-listening" },
           { label: "阅读高频词汇", subject: "vocab-special-reading" },
-          { label: "写作短语", subject: "vocab-special-writing" }
+          { label: "写作专项词汇", subject: "vocab-special-writing" }
         ] }
       ] }
     ],
