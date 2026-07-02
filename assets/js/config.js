@@ -42,7 +42,7 @@ window.YYSD = (function () {
     vocab:   { label: "高中词汇", en: "Vocabulary", color: "var(--c-vocab)" },
     "vocab-cet4":    { label: "四级词汇", en: "CET-4", color: "var(--c-vocab)" },
     "vocab-special-listening": { label: "听力专项词汇", en: "Listening Words", color: "var(--c-cambridge-listening)" },
-    "vocab-special-reading":   { label: "阅读高频词汇", en: "Reading Words", color: "var(--c-cambridge-reading)" },
+    "vocab-special-reading":   { label: "阅读专项词汇", en: "Reading Words", color: "var(--c-cambridge-reading)" },
     "vocab-special-writing":   { label: "写作专项词汇", en: "Writing Vocabulary", color: "var(--c-cambridge-reading)" },
     changnanju: { label: "长难句", en: "Complex Sentences", color: "var(--c-zone-practice)" },
     jingting:   { label: "听力精听", en: "Intensive Listening", color: "var(--c-zone-practice)" }
@@ -182,7 +182,7 @@ window.YYSD = (function () {
     if (m) return Number(m[1]);
     m = t.match(/第\s*0*(\d+)\s*篇/);
     if (m) return Number(m[1]);
-    m = String((item && item.id) || "").match(/(?:writing|listening)-vocab-0*(\d+)/i);
+    m = String((item && item.id) || "").match(/(?:writing|listening|reading)-vocab-0*(\d+)/i);
     return m ? Number(m[1]) : 0;
   }
 

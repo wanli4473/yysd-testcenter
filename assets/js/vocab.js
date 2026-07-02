@@ -18,7 +18,7 @@
 
   var SPECIAL_SECTIONS = [
     { subject: "vocab-special-listening", label: "听力专项词汇", short: "听力", badge: "第", suffix: "篇" },
-    { subject: "vocab-special-reading", label: "阅读高频词汇", short: "阅读", badge: "第", suffix: "篇" },
+    { subject: "vocab-special-reading", label: "阅读专项词汇", short: "阅读", badge: "单元", suffix: "" },
     { subject: "vocab-special-writing", label: "写作专项词汇", short: "写作", badge: "单元", suffix: "" }
   ];
 
@@ -30,10 +30,12 @@
   function listBadge(item) {
     var n = Y.vocabListNo(item);
     if (!n) return "#";
-    if (item.subject === "vocab-special-listening" || item.subject === "vocab-special-reading") {
+    if (item.subject === "vocab-special-listening") {
       return "第" + n + "篇";
     }
-    if (item.subject === "vocab-special-writing") return "单元" + n;
+    if (item.subject === "vocab-special-reading" || item.subject === "vocab-special-writing") {
+      return "单元" + n;
+    }
     return "LIST " + n;
   }
 
