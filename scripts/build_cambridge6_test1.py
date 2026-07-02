@@ -13,6 +13,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from cambridge_scoring import patch_scoring
 TEST_RE = re.compile(r"const TEST = (\{[\s\S]*?\});", re.S)
 W_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 
@@ -640,10 +642,11 @@ def copy_assets() -> None:
     print(f"copied image -> {chart_dst.relative_to(ROOT)}")
 
 
-def write_page(template: Path, out: Path, test: dict, patch_meta) -> None:
+def write_page(template: Path, out: Path, test: dict, patch_meta, *, reading: bool = False) -> None:
     html = template.read_text(encoding="utf-8")
     html = replace_test(html, test)
     html = patch_meta(html)
+    html = patch_scoring(html, reading=reading)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
     print(f"wrote {out.relative_to(ROOT)}")
@@ -662,7 +665,7 @@ def run_checks(paths: list[Path]) -> int:
 def main() -> int:
     copy_assets()
     write_page(TPL_LISTENING, OUT_LISTENING, listening_test(), patch_listening_meta)
-    write_page(TPL_READING, OUT_READING, reading_test(), patch_reading_meta)
+    write_page(TPL_READING, OUT_READING, reading_test(), patch_reading_meta, reading=True)
     write_page(TPL_WRITING, OUT_WRITING, writing_test(), patch_writing_meta)
     return run_checks([OUT_LISTENING, OUT_READING, OUT_WRITING])
 
