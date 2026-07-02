@@ -17,7 +17,7 @@
   // header
   document.title = z.label + " · 优益思达国际课程中心";
   document.getElementById("crumb-zone").textContent = z.label;
-  document.getElementById("zone-ico").textContent = z.icon;
+  document.getElementById("zone-en").textContent = z.en || z.label;
   document.getElementById("zone-title").textContent = z.label;
   document.getElementById("zone-desc").textContent = z.desc;
 
