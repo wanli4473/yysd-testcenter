@@ -58,7 +58,7 @@ window.YYSD = (function () {
         { label: "四级词汇", subject: "vocab-cet4" },
         { key: "vocab-special", label: "专项词汇", children: [
           { label: "听力专项词汇", subject: "vocab-special-listening" },
-          { label: "阅读高频词汇", subject: "vocab-special-reading" },
+          { label: "阅读专项词汇", subject: "vocab-special-reading" },
           { label: "写作专项词汇", subject: "vocab-special-writing" }
         ] }
       ] }
