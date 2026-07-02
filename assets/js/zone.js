@@ -226,7 +226,10 @@
   buildFilters();
 
   Y.load().then(function (items) {
-    allItems = items.filter(function (it) { return it.zone === zone; });
+    // ponytail: grammar hidden from study zone UI until re-enabled in NAV.study
+    allItems = items.filter(function (it) {
+      return it.zone === zone && !(zone === "study" && it.subject === "grammar");
+    });
     render();
   }).catch(function (err) {
     var msg = location.protocol === "file:"

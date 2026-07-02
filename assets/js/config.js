@@ -10,7 +10,7 @@ window.YYSD = (function () {
 
   var ZONE = {
     study:    { label: "学习区", en: "Study", icon: "📚",
-                desc: "语法、单词系统精讲，边学边测，打牢基础。" },
+                desc: "单词系统精讲，边学边测，打牢基础。" },
     practice: { label: "练习区", en: "Practice", icon: "✏️",
                 desc: "长难句、听力精听等专项训练，针对性提分。" },
     mock:     { label: "模考区", en: "Mock Tests", icon: "🎯",
@@ -52,7 +52,6 @@ window.YYSD = (function () {
   // Each leaf maps to a manifest `subject`; categories may have `children`.
   var NAV = {
     study: [
-      { key: "grammar", label: "语法", subject: "grammar" },
       { key: "vocab", label: "单词", children: [
         { label: "高中词汇", subject: "vocab" },
         { label: "四级词汇", subject: "vocab-cet4" },
