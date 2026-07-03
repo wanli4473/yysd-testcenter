@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-writing">
     <meta name="exam:title" content="单元1 · 学习行为与态度">
     <meta name="exam:description" content="写作专项词汇 · 教育 · 学习行为与态度">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元1 · 学习行为与态度</title>
+    <title>雅思写作 · 教育话题（30词）</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -534,11 +534,12 @@ function renderQuestion() {
         qOptionsContainer.appendChild(wrap);
         setTimeout(() => input.focus(), 100);
 
+        // 拼写输入框：按 Enter 不提交，仅阻止默认行为
         input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !submitted) {
                 e.preventDefault();
                 e.stopPropagation();
-                submitAnswer();
+                // 不调用 submitAnswer()，防止误触提交
             }
         });
     } else {
