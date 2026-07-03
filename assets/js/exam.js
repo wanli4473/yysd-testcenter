@@ -98,6 +98,8 @@
     } else if (isStudy) {
       backBtn.href = "zone.html?zone=study";
       backBtn.textContent = "← 返回学习区";
+    } else if (item.zone === "mock") {
+      backBtn.href = "zone.html?zone=mock&s=ielts";
     }
 
     frame.src = "library/" + item.file;

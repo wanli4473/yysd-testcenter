@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260702f">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260703p1">
 </head>
 <body class="home-minimal">
 
@@ -42,6 +42,7 @@
     <div class="section__head section__head--actions">
       <button class="btn btn--ghost btn--sm" id="clear-btn">清空记录</button>
     </div>
+    <div id="results-timeline"></div>
     <div id="results-area"></div>
   </main>
 
@@ -64,19 +65,28 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260702f"></script>
+  <script src="assets/js/config.js?v=20260703p1"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
     var Y = window.YYSD;
     var area = document.getElementById("results-area");
+    var timelineEl = document.getElementById("results-timeline");
 
     function render() {
       var store = Y.results();
       var rows = Object.keys(store).map(function (k) { return store[k]; })
         .sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
 
+      if (timelineEl) {
+        timelineEl.innerHTML = Y.resultsBandTimelineHTML(rows);
+        if (window.YYSD_UI_REVEAL) {
+          window.YYSD_UI_REVEAL(timelineEl.querySelectorAll(".reveal"));
+        }
+      }
+
       if (!rows.length) {
+        if (timelineEl) timelineEl.innerHTML = "";
         area.innerHTML = '<div class="state"><h3>还没有成绩记录</h3>' +
           '<p>去完成一份模考或练习吧，交卷后成绩会自动记录在这里。</p>' +
           '<p style="margin-top:14px"><a class="btn btn--primary btn--sm" href="index.html">前往学习中心 →</a></p></div>';

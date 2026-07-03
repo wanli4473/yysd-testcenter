@@ -29,7 +29,7 @@ window.YYSD = (function () {
   var SUBJECT = {
     "cambridge-listening": { label: "听力", en: "Listening", color: "var(--c-cambridge-listening)" },
     "cambridge-reading":   { label: "阅读", en: "Reading", color: "var(--c-cambridge-reading)" },
-    "cambridge-writing":   { label: "写作", en: "Writing", color: "var(--c-cambridge-reading)" },
+    "cambridge-writing":   { label: "写作", en: "Writing", color: "var(--c-writing)" },
     "ielts-speaking":      { label: "口语", en: "Speaking", color: "var(--c-ielts)" },
     "ielts-writing":       { label: "写作", en: "Writing", color: "var(--c-ielts)" },
     cambridge: { label: "剑桥真题", en: "Cambridge", color: "var(--c-cambridge)" },
@@ -343,7 +343,9 @@ window.YYSD = (function () {
       '<path d="M12 7.1v11.4" stroke="currentColor" stroke-width="2"/></svg>';
     var skills = '<span class="vc-skill vc-skill--a">A</span><span class="vc-skill vc-skill--b">B</span><span class="vc-skill vc-skill--u">◯</span>';
     return '' +
-      '<a class="vol-card' + doneClass + '" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
+      '<a class="vol-card vol-card--tier-' + tag.c + doneClass + '" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
+        '<span class="vol-card__spine" aria-hidden="true"><span class="vol-card__spine-num">' + esc(v.vol) + '</span></span>' +
+        '<div class="vol-card__main">' +
         '<div class="vol-card__top">' +
           '<span class="vol-card__vol">' + shieldIcon + ' VOL.' + esc(v.vol) + '</span>' +
           '<span class="vol-card__tag vol-card__tag--' + tag.c + '">' + tag.t + '</span>' +
@@ -355,7 +357,8 @@ window.YYSD = (function () {
         '</div>' +
         '<div class="vol-card__foot">' +
           '<span class="vol-card__skills">' + skills + '</span>' +
-          '<span class="vol-card__go">开始练习 ›</span>' +
+          '<span class="vol-card__go">开始模考 ›</span>' +
+        '</div>' +
         '</div>' +
       '</a>';
   }
@@ -427,18 +430,100 @@ window.YYSD = (function () {
 
   function continueStripHTML(activities, prefix) {
     if (!activities.length) return "";
-    var rows = activities.map(function (a) {
-      var r = a.result;
-      var meta = r.score != null ? r.score + (r.total ? "/" + r.total : "") : "继续";
-      return '<a class="continue-row" href="' + fileHref(a.item, prefix) + '">' +
-        '<span class="continue-row__title">' + esc(a.item.title) + "</span>" +
-        '<span class="continue-row__meta">' + esc(meta) + " ›</span></a>";
+    return homeDashboardHTML([], activities, prefix);
+  }
+
+  function journeyStats(items) {
+    var store = results();
+    var byId = {};
+    (items || []).forEach(function (it) { byId[it.id] = it; });
+    var counts = { study: 0, practice: 0, mock: 0, total: 0 };
+    Object.keys(store).forEach(function (k) {
+      var it = byId[k];
+      if (!it || !counts.hasOwnProperty(it.zone)) return;
+      counts[it.zone]++;
+      counts.total++;
+    });
+    return counts;
+  }
+
+  function homeJourneyHTML(items, prefix) {
+    var counts = journeyStats(items);
+    var steps = [
+      { zone: "study", step: "01", label: "学习", sub: "词汇 · 语法", href: (prefix || "") + "zone.html?zone=study" },
+      { zone: "practice", step: "02", label: "练习", sub: "精听 · 专项", href: (prefix || "") + "zone.html?zone=practice" },
+      { zone: "mock", step: "03", label: "模考", sub: "剑桥真题", href: (prefix || "") + "zone.html?zone=mock" }
+    ];
+    var current = "study";
+    if (counts.mock) current = "mock";
+    else if (counts.practice) current = "practice";
+    else if (counts.study) current = "study";
+
+    var nodes = steps.map(function (s) {
+      var n = counts[s.zone] || 0;
+      var cls = "home-journey__node";
+      if (n) cls += " is-done";
+      if (s.zone === current && counts.total) cls += " is-current";
+      return '<a class="' + cls + '" href="' + s.href + '">' +
+        '<span class="home-journey__step">' + s.step + '</span>' +
+        '<span class="home-journey__label">' + esc(s.label) + '</span>' +
+        '<span class="home-journey__sub">' + esc(s.sub) + '</span>' +
+        (n ? '<span class="home-journey__count">' + n + ' 份</span>' : "") +
+        "</a>";
     }).join("");
-    return '<section class="continue-strip" aria-label="继续学习">' +
-      '<div class="continue-strip__head">' +
-      "<h2>继续学习</h2>" +
-      '<a href="' + (prefix || "") + 'results.html">全部记录 →</a></div>' +
-      '<div class="continue-strip__list">' + rows + "</div></section>";
+
+    return '<section class="home-journey reveal" aria-label="备考路径">' +
+      '<div class="home-journey__head">' +
+        '<span class="home-journey__eyebrow">LEARNING PATH</span>' +
+        '<h2>你的备考路径</h2>' +
+        '<p>学习打基础 → 练习强技能 → 模考验真章</p>' +
+      "</div>" +
+      '<div class="home-journey__track">' + nodes + "</div>" +
+      "</section>";
+  }
+
+  function homeDashboardHTML(items, activities, prefix) {
+    var counts = journeyStats(items || []);
+    var acts = activities || [];
+    var p = prefix || "";
+
+    if (!acts.length) {
+      return '<section class="home-dashboard home-dashboard--empty reveal" aria-label="备考仪表盘">' +
+        '<div class="home-dashboard__inner">' +
+          '<span class="home-dashboard__eyebrow">YOUR COCKPIT</span>' +
+          "<h2>开始你的备考路径</h2>" +
+          "<p>从学习区或模考区任选入口，进度会保存在本浏览器。</p>" +
+          '<div class="home-dashboard__actions">' +
+            '<a class="btn btn--gold btn--sm" href="' + p + 'zone.html?zone=mock">开始模考</a>' +
+            '<a class="btn btn--ghost-dark btn--sm" href="' + p + 'zone.html?zone=study">进入学习区</a>' +
+          "</div></div></section>";
+    }
+
+    var rows = acts.map(function (a) {
+      var r = a.result;
+      var zone = (ZONE[a.item.zone] || {}).label || "";
+      var meta = r.score != null ? r.score + (r.total ? "/" + r.total : "") : "继续";
+      if (r.band != null) meta += " · Band " + r.band;
+      return '<a class="home-dashboard__row" href="' + fileHref(a.item, p) + '">' +
+        '<span class="home-dashboard__row-zone">' + esc(zone) + "</span>" +
+        '<span class="home-dashboard__row-title">' + esc(a.item.title) + "</span>" +
+        '<span class="home-dashboard__row-meta">' + esc(meta) + " ›</span></a>";
+    }).join("");
+
+    return '<section class="home-dashboard reveal" aria-label="备考仪表盘">' +
+      '<div class="home-dashboard__inner">' +
+        '<div class="home-dashboard__top">' +
+          '<div><span class="home-dashboard__eyebrow">YOUR COCKPIT</span>' +
+          "<h2>继续备考</h2>" +
+          "<p>从上次停下的地方接着学</p></div>" +
+          '<div class="home-dashboard__metrics">' +
+            '<div class="home-dashboard__metric"><b>' + counts.total + '</b><span>已做</span></div>' +
+            '<div class="home-dashboard__metric"><b>' + counts.mock + '</b><span>模考</span></div>' +
+            '<div class="home-dashboard__metric"><b>' + counts.study + '</b><span>学习</span></div>' +
+          "</div></div>" +
+        '<div class="home-dashboard__list">' + rows + "</div>" +
+        '<a class="home-dashboard__all" href="' + p + 'results.html">查看全部成绩 →</a>' +
+      "</div></section>";
   }
 
   function compactItemRowHTML(item, prefix) {
@@ -484,6 +569,34 @@ window.YYSD = (function () {
     return m;
   }
 
+  function resultsBandTimelineHTML(rows) {
+    var pts = (rows || []).filter(function (r) { return r.band != null; }).slice(0, 10);
+    if (pts.length < 2) return "";
+    pts = pts.slice().reverse();
+    var maxBand = 9;
+    var bars = pts.map(function (r, i) {
+      var h = Math.max(12, Math.round((Number(r.band) / maxBand) * 100));
+      var d = r.date ? new Date(r.date) : null;
+      var dateLabel = d && !isNaN(d.getTime())
+        ? (d.getMonth() + 1) + "/" + d.getDate()
+        : "";
+      return '<div class="band-timeline__item" style="--h:' + h + '%;--i:' + i + '">' +
+        '<div class="band-timeline__bar-wrap"><span class="band-timeline__bar"></span></div>' +
+        '<span class="band-timeline__val">' + esc(String(r.band)) + '</span>' +
+        (dateLabel ? '<span class="band-timeline__date">' + esc(dateLabel) + '</span>' : "") +
+        "</div>";
+    }).join("");
+    var latest = pts[pts.length - 1].band;
+    return '<section class="band-timeline reveal" aria-label="Band 轨迹">' +
+      '<div class="band-timeline__head">' +
+        '<span class="band-timeline__eyebrow">BAND TRAJECTORY</span>' +
+        "<h2>Band 轨迹</h2>" +
+        "<p>最近 " + pts.length + " 次模考 · 最新 Band " + esc(String(latest)) + "</p>" +
+      "</div>" +
+      '<div class="band-timeline__chart">' + bars + "</div>" +
+      "</section>";
+  }
+
   return {
     ZONES: ZONES, ZONE: ZONE, ZONE_SUBJECTS: ZONE_SUBJECTS, SUBJECT: SUBJECT,
     NAV: NAV, navOf: navOf,
@@ -493,6 +606,8 @@ window.YYSD = (function () {
     camVolumeCardHTML: camVolumeCardHTML, camVolumeProgress: camVolumeProgress,
     cambridgeCatalogHTML: cambridgeCatalogHTML, searchItems: searchItems,
     recentActivity: recentActivity, continueStripHTML: continueStripHTML,
+    journeyStats: journeyStats, homeJourneyHTML: homeJourneyHTML, homeDashboardHTML: homeDashboardHTML,
+    resultsBandTimelineHTML: resultsBandTimelineHTML,
     searchResultsHTML: searchResultsHTML, compactItemRowHTML: compactItemRowHTML,
     VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,
     vocabListNo: vocabListNo, vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,

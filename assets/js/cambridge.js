@@ -70,10 +70,12 @@
 
     var tabs = tests.map(function (t, i) {
       var prog = testProgress(byTest[t]);
-      var badge = prog.total && prog.done >= prog.total
-        ? '<span class="test-tab__done">✓</span>'
+      var complete = prog.total && prog.done >= prog.total;
+      var badge = complete
+        ? '<span class="test-tab__done" aria-label="已完成">✓</span>'
         : (prog.done ? '<span class="test-tab__part">' + prog.done + "/" + prog.total + "</span>" : "");
-      return '<button type="button" class="test-tab' + (i === 0 ? " is-active" : "") + '" data-test="' + Y.esc(t) + '">' +
+      return '<button type="button" class="test-tab' + (i === 0 ? " is-active" : "") +
+        (complete ? " test-tab--complete" : "") + '" data-test="' + Y.esc(t) + '">' +
         "Test " + Y.esc(t) + badge + "</button>";
     }).join("");
 
@@ -91,23 +93,40 @@
 
     contentEl.querySelector(".test-tabs").addEventListener("click", function (e) {
       var btn = e.target.closest(".test-tab");
-      if (!btn) return;
+      if (!btn || btn.classList.contains("is-active")) return;
       var t = btn.getAttribute("data-test");
-      contentEl.querySelectorAll(".test-tab").forEach(function (b) {
-        b.classList.toggle("is-active", b.getAttribute("data-test") === t);
-      });
-      contentEl.querySelectorAll(".test-panel").forEach(function (p) {
-        var on = p.getAttribute("data-test") === t;
-        p.classList.toggle("is-active", on);
-        if (on) {
-          p.classList.remove("is-entering");
-          void p.offsetWidth;
-          p.classList.add("is-entering");
-        }
-      });
+      var panelsWrap = contentEl.querySelector(".test-panels");
+      if (panelsWrap) panelsWrap.classList.add("is-swapping");
+
+      setTimeout(function () {
+        contentEl.querySelectorAll(".test-tab").forEach(function (b) {
+          b.classList.toggle("is-active", b.getAttribute("data-test") === t);
+        });
+        contentEl.querySelectorAll(".test-panel").forEach(function (p) {
+          var on = p.getAttribute("data-test") === t;
+          p.classList.toggle("is-active", on);
+          if (on) {
+            p.classList.remove("is-entering");
+            void p.offsetWidth;
+            p.classList.add("is-entering");
+            p.querySelectorAll(".skill-panel").forEach(function (panel, i) {
+              panel.style.setProperty("--panel-i", String(i));
+            });
+          }
+        });
+        if (panelsWrap) panelsWrap.classList.remove("is-swapping");
+      }, 150);
     });
 
     contentEl.querySelectorAll(".test-tab").forEach(function (b) { b.setAttribute("tabindex", "0"); });
+
+    var activePanel = contentEl.querySelector(".test-panel.is-active");
+    if (activePanel) {
+      activePanel.classList.add("is-entering");
+      activePanel.querySelectorAll(".skill-panel").forEach(function (panel, i) {
+        panel.style.setProperty("--panel-i", String(i));
+      });
+    }
   }).catch(function (err) {
     var msg = location.protocol === "file:"
       ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"

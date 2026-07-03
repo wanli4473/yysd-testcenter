@@ -8,6 +8,7 @@
   var HOME_PREVIEW = 4;
   var volumesEl = document.getElementById("home-cambridge-volumes");
   var continueEl = document.getElementById("home-continue");
+  var journeyEl = document.getElementById("home-journey");
 
   function skeletonCards(n) {
     var html = "";
@@ -57,9 +58,14 @@
     var volCountEl = document.getElementById("home-vol-count");
     if (volCountEl) volCountEl.textContent = String(volumes.length);
 
+    if (journeyEl) {
+      journeyEl.innerHTML = Y.homeJourneyHTML(items, "");
+      bindReveal(journeyEl);
+    }
+
     if (continueEl) {
       var recent = Y.recentActivity(items, 3);
-      continueEl.innerHTML = recent.length ? Y.continueStripHTML(recent, "") : "";
+      continueEl.innerHTML = Y.homeDashboardHTML(items, recent, "");
       bindReveal(continueEl);
     }
 

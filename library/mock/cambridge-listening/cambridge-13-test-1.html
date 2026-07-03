@@ -7,7 +7,7 @@
 <meta name="exam:title" content="剑桥雅思13 · Test 1（听力）">
 <meta name="exam:zone" content="mock">
 <meta name="exam:subject" content="cambridge-listening">
-<meta name="exam:duration" content="0">
+X">
 <meta name="exam:description" content="剑桥雅思13 Test 1 听力：4 个 section，共 40 题，含音频、地图题、自动批改与雅思预估分。">
 <style>
   * { box-sizing:border-box; }
@@ -899,7 +899,7 @@ function groupHtml(g){
       }).join('')+`</div>`;
   }
   else if(g.kind==='table'){
-    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const head=`<tr>${(g.cols || g.columns || []).map(c=>`<th>${c}</th>`).join('')}</tr>`;
     const rows=g.rows.map(r=>`<tr>${r.map(cell=>{ const html=cell.split('|')[0]; return `<td>${expandQ(html)}</td>`; }).join('')}</tr>`).join('');
     body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
   }

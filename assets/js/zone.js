@@ -81,13 +81,37 @@
     }).join("");
   }
 
+  function catHasContent(cat) {
+    if (cat.key === "ielts") return Y.camVolumes(allItems).length > 0;
+    if (cat.key === "vocab") return Y.vocabBooksForZone(allItems).length > 0;
+    if (cat.children) {
+      return cat.children.some(function (ch) {
+        if (Y.isCambridge(ch.subject)) {
+          return Y.camVolumes(allItems.filter(function (it) { return it.subject === ch.subject; })).length > 0;
+        }
+        return itemsOf(ch.subject).length > 0;
+      });
+    }
+    if (Y.isCambridge(cat.subject)) {
+      return Y.camVolumes(allItems.filter(function (it) { return it.subject === cat.subject; })).length > 0;
+    }
+    return countOf(cat.subject) > 0;
+  }
+
+  function visibleNav() {
+    return zone === "mock" ? nav.filter(catHasContent) : nav;
+  }
+
   function buildFilters() {
     var chips = ['<button type="button" class="chip' + (activeCat === "all" ? " is-active" : "") + '" data-s="all">全部</button>'];
-    nav.forEach(function (c) {
+    visibleNav().forEach(function (c) {
       chips.push('<button type="button" class="chip' + (activeCat === c.key ? " is-active" : "") +
         '" data-s="' + c.key + '">' + Y.esc(c.label) + "</button>");
     });
     filtersEl.innerHTML = chips.join("");
+    if (zone === "mock" && activeCat !== "all" && !visibleNav().some(function (c) { return c.key === activeCat; })) {
+      activeCat = "all";
+    }
     buildSubFilters();
   }
 
@@ -213,7 +237,7 @@
     } else {
       var recent = Y.recentActivity(allItems, 3);
       var continueHTML = recent.length ? Y.continueStripHTML(recent, "") : "";
-      var cats = activeCat === "all" ? nav : nav.filter(function (c) { return c.key === activeCat; });
+      var cats = activeCat === "all" ? visibleNav() : visibleNav().filter(function (c) { return c.key === activeCat; });
       html = continueHTML + cats.map(categoryHTML).join("");
     }
     if (window.YYSD_UI_SWAP && contentEl.innerHTML && !contentEl.querySelector(".spinner--brand")) {
@@ -227,9 +251,14 @@
 
   Y.load().then(function (items) {
     // ponytail: grammar hidden from study zone UI until re-enabled in NAV.study
+    // ponytail: placement tests hidden from mock zone until re-enabled
     allItems = items.filter(function (it) {
-      return it.zone === zone && !(zone === "study" && it.subject === "grammar");
+      if (it.zone !== zone) return false;
+      if (zone === "study" && it.subject === "grammar") return false;
+      if (zone === "mock" && it.subject === "ielts") return false;
+      return true;
     });
+    buildFilters();
     render();
   }).catch(function (err) {
     var msg = location.protocol === "file:"
