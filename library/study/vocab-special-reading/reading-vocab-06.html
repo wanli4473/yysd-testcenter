@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-reading">
     <meta name="exam:title" content="单元6 · 语言与传播">
     <meta name="exam:description" content="阅读专项词汇 · 语言与传播">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元6 · 语言与传播</title>
+    <title>阅读-单元6-语言与传播</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -135,7 +135,7 @@
             <button class="nav-tab active" data-mode="learn">📚 学习</button>
             <button class="nav-tab" data-mode="test">🎯 综合检测</button>
         </nav>
-        <span class="word-count-badge">共 32 词</span>
+        <span class="word-count-badge" id="wordCountBadge">词汇加载中</span>
     </div>
 </header>
 <div class="main-container">
@@ -143,7 +143,7 @@
 
     <section class="section" id="testSection">
         <div class="test-setup" id="testSetup">
-            <h3>📋 综合检测 · 共30题</h3>
+            <h3 id="testTotalTitle">📋 综合检测 · 题目加载中</h3>
             <p>分三个阶段，依次完成，不可跳转。</p>
             <div class="stage-info">
                 <div class="stage-item"><div class="num">①</div><div class="label">词义识别<br>英文→中文</div></div>
@@ -195,7 +195,7 @@ const wordData = [
     { word:'grammar', ipa:'/ˈɡræm.ər/', pos:'n.', meaning:'语法；语法书', synonym:'syntax', target:'grammar', example:'Good grammar is essential for clear communication.', accept_meaning:['语法','语法书'] },
     { word:'vocabulary', ipa:'/vəˈkæb.jə.lər.i/', pos:'n.', meaning:'词汇；词汇量', synonym:'lexicon', target:'vocabulary', example:'A wide vocabulary helps in academic writing.', accept_meaning:['词汇','词汇量'] },
     { word:'pronunciation', ipa:'/prəˌnʌn.siˈeɪ.ʃən/', pos:'n.', meaning:'发音', synonym:'enunciation', target:'pronunciation', example:'Correct pronunciation is important for effective communication.', accept_meaning:['发音'] },
-    { word:'dialect', ipa:'/ˈdaɪ.ə.lekt/', pos:'n.', meaning:'方言', synonym:'vernacular', target:'dialect', example:'People in different regions speak different dialects.', accept_meaning:['方言'] },
+    { word:'dialect', ipa:'/ˈdaɪ.ə.lekt/', pos:'n.', meaning:'方言', synonym:'vernacular', target:'dialects', example:'People in different regions speak different dialects.', accept_meaning:['方言'] },
     { word:'idiom', ipa:'/ˈɪd.i.əm/', pos:'n.', meaning:'习语；成语', synonym:'expression', target:'idiom', example:'He used an idiom that confused the foreign students.', accept_meaning:['习语','成语'] },
 
     // —— 交流与传播 ——
@@ -209,9 +209,9 @@ const wordData = [
     { word:'exchange', ipa:'/ɪksˈtʃeɪndʒ/', pos:'n./v.', meaning:'交换；交流', synonym:'swap', target:'exchange', example:'Cultural exchange programmes promote understanding.', accept_meaning:['交换','交流'] },
 
     // —— 表达与含义 ——
-    { word:'formulate', ipa:'/ˈfɔː.mjə.leɪt/', pos:'v.', meaning:'表述；构想；制定', synonym:'devise', target:'formulate', example:'They formulated a plan to tackle the problem.', accept_meaning:['表述','构想','制定'] },
-    { word:'convey', ipa:'/kənˈveɪ/', pos:'v.', meaning:'传达；传递；运输', synonym:'communicate', target:'convey', example:'Her tone of voice conveyed a sense of urgency.', accept_meaning:['传达','传递','运输'] },
-    { word:'denote', ipa:'/dɪˈnəʊt/', pos:'v.', meaning:'表示；指示；意味着', synonym:'indicate', target:'denote', example:'The colour red often denotes danger.', accept_meaning:['表示','指示','意味着'] },
+    { word:'formulate', ipa:'/ˈfɔː.mjə.leɪt/', pos:'v.', meaning:'表述；构想；制定', synonym:'devise', target:'formulated', example:'They formulated a plan to tackle the problem.', accept_meaning:['表述','构想','制定'] },
+    { word:'convey', ipa:'/kənˈveɪ/', pos:'v.', meaning:'传达；传递；运输', synonym:'communicate', target:'conveyed', example:'Her tone of voice conveyed a sense of urgency.', accept_meaning:['传达','传递','运输'] },
+    { word:'denote', ipa:'/dɪˈnəʊt/', pos:'v.', meaning:'表示；指示；意味着', synonym:'indicate', target:'denotes', example:'The colour red often denotes danger.', accept_meaning:['表示','指示','意味着'] },
     { word:'imply', ipa:'/ɪmˈplaɪ/', pos:'v.', meaning:'暗示；意味着', synonym:'suggest', target:'imply', example:'The statistics imply a significant increase in population.', accept_meaning:['暗示','意味着'] },
     { word:'infer', ipa:'/ɪnˈfɜː/', pos:'v.', meaning:'推断；推论', synonym:'deduce', target:'infer', example:'We can infer from the data that the economy is improving.', accept_meaning:['推断','推论'] },
     { word:'context', ipa:'/ˈkɒn.tekst/', pos:'n.', meaning:'上下文；背景；环境', synonym:'background', target:'context', example:'The meaning of the word depends on the context.', accept_meaning:['上下文','背景','环境'] },
@@ -223,7 +223,7 @@ const wordData = [
     { word:'syntax', ipa:'/ˈsɪn.tæks/', pos:'n.', meaning:'句法；语法结构', synonym:'grammar', target:'syntax', example:'The syntax of this sentence is incorrect.', accept_meaning:['句法','语法结构'] },
     { word:'semantics', ipa:'/sɪˈmæn.tɪks/', pos:'n.', meaning:'语义学；词义', synonym:'meaning', target:'semantics', example:'Semantics is the study of meaning in language.', accept_meaning:['语义学','词义'] },
     { word:'phonetics', ipa:'/fəˈnet.ɪks/', pos:'n.', meaning:'语音学；语音', synonym:'phonology', target:'phonetics', example:'Phonetics deals with the sounds of speech.', accept_meaning:['语音学','语音'] },
-    { word:'pragmatics', ipa:'/præɡˈmæt.ɪks/', pos:'n.', meaning:'语用学', synonym:'pragmatics', target:'pragmatics', example:'Pragmatics studies how context affects meaning.', accept_meaning:['语用学'] },
+    { word:'pragmatics', ipa:'/præɡˈmæt.ɪks/', pos:'n.', meaning:'语用学', synonym:'language use', target:'pragmatics', example:'Pragmatics studies how context affects meaning.', accept_meaning:['语用学'] },
     { word:'morphology', ipa:'/mɔːˈfɒl.ə.dʒi/', pos:'n.', meaning:'形态学；词法', synonym:'structure', target:'morphology', example:'Morphology examines the structure of words.', accept_meaning:['形态学','词法'] },
     { word:'etymology', ipa:'/ˌet.ɪˈmɒl.ə.dʒi/', pos:'n.', meaning:'词源学；词源', synonym:'origin', target:'etymology', example:'The etymology of this word is very interesting.', accept_meaning:['词源学','词源'] },
     { word:'colloquial', ipa:'/kəˈləʊ.kwi.əl/', pos:'adj.', meaning:'口语的；非正式的', synonym:'informal', target:'colloquial', example:'He used colloquial language in his speech.', accept_meaning:['口语的','非正式的'] }
@@ -233,9 +233,17 @@ const wordData = [
 console.log('✅ wordData 长度:', wordData.length);
 console.log('✅ 预期长度: 32');
 
-const TOTAL = 30;
+const TOTAL_STAGE1 = wordData.length; // 32 — 阶段一覆盖全部单词
+const TOTAL_STAGE2 = 10;
+const TOTAL_STAGE3 = 10;
+const TOTAL = TOTAL_STAGE1 + TOTAL_STAGE2 + TOTAL_STAGE3; // 52
+
 const STAGE_NAMES = ['词义识别', '同义替换', '综合应用'];
-const STAGE_DESC = ['英文→中文', '英文→英文近义', '语境填空+一词多义'];
+const STAGE_DESC = [`英文→中文（全部${TOTAL_STAGE1}词）`, '英文→英文近义', '语境填空+一词多义'];
+const wordCountBadge = document.getElementById('wordCountBadge');
+if (wordCountBadge) wordCountBadge.textContent = `共 ${TOTAL_STAGE1} 词`;
+const testTotalTitle = document.getElementById('testTotalTitle');
+if (testTotalTitle) testTotalTitle.textContent = `📋 综合检测 · 共${TOTAL}题`;
 
 // ==================== 工具 ====================
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -245,10 +253,10 @@ function generateQuestions() {
     const all = shuffle([...wordData]);
     const questions = [];
 
-    // 阶段一：词义识别 (10题)
-    const stage1Data = all.slice(0, 10);
+    // 阶段一：词义识别 (32题) — 覆盖全部单词
+    const stage1Data = all; // 全部 32 个
     stage1Data.forEach(w => {
-        const allMeanings = wordData.filter(x => x.word !== w.word).map(x => x.meaning);
+        const allMeanings = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.meaning).filter(m => m !== w.meaning))];
         const shuffledMeanings = shuffle([...allMeanings]);
         const wrongs = shuffledMeanings.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('未知');
@@ -266,7 +274,7 @@ function generateQuestions() {
     // 阶段二：同义替换 (10题)
     const stage2Data = all.slice(10, 20);
     stage2Data.forEach(w => {
-        const allSynonyms = wordData.filter(x => x.word !== w.word).map(x => x.synonym);
+        const allSynonyms = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.synonym).filter(s => s !== w.synonym))];
         const shuffledSyns = shuffle([...allSynonyms]);
         const wrongs = shuffledSyns.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
@@ -289,7 +297,7 @@ function generateQuestions() {
             // 语境填空
             const regex = new RegExp('\\b' + w.target + '\\b', 'gi');
             const sentenceDisplay = w.example.replace(regex, '______');
-            const allWords = wordData.filter(x => x.word !== w.word).map(x => x.word);
+            const allWords = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.word).filter(word => word !== w.word))];
             const shuffledWords = shuffle([...allWords]);
             const wrongs = shuffledWords.slice(0, 3);
             while(wrongs.length < 3) wrongs.push('unknown');
@@ -307,7 +315,7 @@ function generateQuestions() {
             const correctMeaning = w.accept_meaning[0];
             const wrongMeanings = w.accept_meaning.slice(1);
             while(wrongMeanings.length < 3) {
-                const otherMeanings = wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning);
+                const otherMeanings = [...new Set(wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning).filter(m => m !== correctMeaning))];
                 const shuffledOthers = shuffle([...otherMeanings]);
                 for (const m of shuffledOthers) {
                     if (!wrongMeanings.includes(m) && m !== correctMeaning) {
@@ -470,7 +478,7 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === 'test' && isTestActive) {
-            alert('检测进行中，请先完成全部30题！');
+            alert(`检测进行中，请先完成全部${TOTAL}题！`);
             return;
         }
         switchMode(mode);

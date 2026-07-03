@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-reading">
     <meta name="exam:title" content="单元4 · 环境与生态">
     <meta name="exam:description" content="阅读专项词汇 · 环境与生态">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元4 · 环境与生态</title>
+    <title>阅读-单元4-环境与生态</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -135,7 +135,7 @@
             <button class="nav-tab active" data-mode="learn">📚 学习</button>
             <button class="nav-tab" data-mode="test">🎯 综合检测</button>
         </nav>
-        <span class="word-count-badge">共 32 词</span>
+        <span class="word-count-badge" id="wordCountBadge">词汇加载中</span>
     </div>
 </header>
 <div class="main-container">
@@ -143,7 +143,7 @@
 
     <section class="section" id="testSection">
         <div class="test-setup" id="testSetup">
-            <h3>📋 综合检测 · 共30题</h3>
+            <h3 id="testTotalTitle">📋 综合检测 · 题目加载中</h3>
             <p>分三个阶段，依次完成，不可跳转。</p>
             <div class="stage-info">
                 <div class="stage-item"><div class="num">①</div><div class="label">词义识别<br>英文→中文</div></div>
@@ -190,19 +190,19 @@
 const wordData = [
     // —— 污染与排放（7个） ——
     { word:'pollution', ipa:'/pəˈluː.ʃən/', pos:'n.', meaning:'污染', synonym:'contamination', target:'pollution', example:'Air pollution is a serious problem in many cities.', accept_meaning:['污染','污染物'] },
-    { word:'pollutant', ipa:'/pəˈluː.tənt/', pos:'n.', meaning:'污染物', synonym:'contaminant', target:'pollutant', example:'Factories release harmful pollutants into the air.', accept_meaning:['污染物'] },
-    { word:'emission', ipa:'/ɪˈmɪʃ.ən/', pos:'n.', meaning:'排放；排放物', synonym:'discharge', target:'emission', example:'The government aims to reduce carbon emissions.', accept_meaning:['排放','排放物'] },
+    { word:'pollutant', ipa:'/pəˈluː.tənt/', pos:'n.', meaning:'污染物', synonym:'contaminant', target:'pollutants', example:'Factories release harmful pollutants into the air.', accept_meaning:['污染物'] },
+    { word:'emission', ipa:'/ɪˈmɪʃ.ən/', pos:'n.', meaning:'排放；排放物', synonym:'discharge', target:'emissions', example:'The government aims to reduce carbon emissions.', accept_meaning:['排放','排放物'] },
     { word:'emit', ipa:'/iˈmɪt/', pos:'v.', meaning:'排放；散发', synonym:'release', target:'emit', example:'Cars emit large amounts of carbon dioxide.', accept_meaning:['排放','散发'] },
-    { word:'discharge', ipa:'/dɪsˈtʃɑːdʒ/', pos:'v./n.', meaning:'排放；放电；解雇', synonym:'release', target:'discharge', example:'The factory was fined for discharging toxic waste.', accept_meaning:['排放','放电','解雇'] },
+    { word:'discharge', ipa:'/dɪsˈtʃɑːdʒ/', pos:'v./n.', meaning:'排放；放电；解雇', synonym:'release', target:'discharging', example:'The factory was fined for discharging toxic waste.', accept_meaning:['排放','放电','解雇'] },
     { word:'greenhouse', ipa:'/ˈɡriːn.haʊs/', pos:'n./adj.', meaning:'温室；温室气体的', synonym:'glasshouse', target:'greenhouse', example:'Greenhouse gases trap heat in the atmosphere.', accept_meaning:['温室','温室气体的'] },
-    { word:'carbon', ipa:'/ˈkɑː.bən/', pos:'n.', meaning:'碳；碳元素', synonym:'carbon', target:'carbon', example:'Carbon emissions are a major cause of global warming.', accept_meaning:['碳','碳元素'] },
+    { word:'carbon', ipa:'/ˈkɑː.bən/', pos:'n.', meaning:'碳；碳元素', synonym:'chemical element', target:'carbon', example:'Carbon emissions are a major cause of global warming.', accept_meaning:['碳','碳元素'] },
 
     // —— 环境问题与灾害（7个） ——
     { word:'deforestation', ipa:'/diːˌfɒr.ɪˈsteɪ.ʃən/', pos:'n.', meaning:'森林减少；砍伐森林', synonym:'forest loss', target:'deforestation', example:'Deforestation has led to the loss of many species.', accept_meaning:['森林减少','砍伐森林'] },
     { word:'degradation', ipa:'/ˌdeɡ.rəˈdeɪ.ʃən/', pos:'n.', meaning:'退化；恶化', synonym:'deterioration', target:'degradation', example:'Land degradation threatens food production.', accept_meaning:['退化','恶化'] },
     { word:'erosion', ipa:'/ɪˈrəʊ.ʒən/', pos:'n.', meaning:'侵蚀；腐蚀', synonym:'corrosion', target:'erosion', example:'Soil erosion is a serious problem in many regions.', accept_meaning:['侵蚀','腐蚀'] },
     { word:'drought', ipa:'/draʊt/', pos:'n.', meaning:'干旱', synonym:'dry spell', target:'drought', example:'The drought lasted for several months.', accept_meaning:['干旱'] },
-    { word:'desertification', ipa:'/dɪˌzɜː.tɪ.fɪˈkeɪ.ʃən/', pos:'n.', meaning:'荒漠化', synonym:'desertification', target:'desertification', example:'Desertification is a major environmental concern.', accept_meaning:['荒漠化'] },
+    { word:'desertification', ipa:'/dɪˌzɜː.tɪ.fɪˈkeɪ.ʃən/', pos:'n.', meaning:'荒漠化', synonym:'land degradation', target:'desertification', example:'Desertification is a major environmental concern.', accept_meaning:['荒漠化'] },
     { word:'extinct', ipa:'/ɪkˈstɪŋkt/', pos:'adj.', meaning:'灭绝的；绝种的', synonym:'vanished', target:'extinct', example:'Many species are in danger of becoming extinct.', accept_meaning:['灭绝的','绝种的'] },
     { word:'extinction', ipa:'/ɪkˈstɪŋk.ʃən/', pos:'n.', meaning:'灭绝；消亡', synonym:'extermination', target:'extinction', example:'The extinction of the dinosaurs is a mystery.', accept_meaning:['灭绝','消亡'] },
 
@@ -216,8 +216,8 @@ const wordData = [
 
     // —— 能源与资源（6个） ——
     { word:'fossil', ipa:'/ˈfɒs.əl/', pos:'n./adj.', meaning:'化石；化石的', synonym:'remains', target:'fossil', example:'Fossil fuels are a major source of energy.', accept_meaning:['化石','化石的'] },
-    { word:'renewable', ipa:'/rɪˈnjuː.ə.bəl/', pos:'adj.', meaning:'可再生的', synonym:'renewable', target:'renewable', example:'Renewable energy sources are becoming more affordable.', accept_meaning:['可再生的'] },
-    { word:'sustainable', ipa:'/səˈsteɪ.nə.bəl/', pos:'adj.', meaning:'可持续的', synonym:'sustainable', target:'sustainable', example:'Sustainable development is essential for future generations.', accept_meaning:['可持续的'] },
+    { word:'renewable', ipa:'/rɪˈnjuː.ə.bəl/', pos:'adj.', meaning:'可再生的', synonym:'replenishable', target:'renewable', example:'Renewable energy sources are becoming more affordable.', accept_meaning:['可再生的'] },
+    { word:'sustainable', ipa:'/səˈsteɪ.nə.bəl/', pos:'adj.', meaning:'可持续的', synonym:'viable', target:'sustainable', example:'Sustainable development is essential for future generations.', accept_meaning:['可持续的'] },
     { word:'reservoir', ipa:'/ˈrez.ə.vwɑːr/', pos:'n.', meaning:'水库；蓄水池', synonym:'lake', target:'reservoir', example:'The reservoir supplies water to the whole region.', accept_meaning:['水库','蓄水池'] },
     { word:'aquifer', ipa:'/ˈæk.wɪ.fər/', pos:'n.', meaning:'含水层；蓄水层', synonym:'water table', target:'aquifer', example:'The aquifer provides water for agriculture.', accept_meaning:['含水层','蓄水层'] },
     { word:'mineral', ipa:'/ˈmɪn.ər.əl/', pos:'n./adj.', meaning:'矿物；矿物的', synonym:'ore', target:'mineral', example:'The area is rich in mineral resources.', accept_meaning:['矿物','矿物的'] },
@@ -235,9 +235,17 @@ const wordData = [
 console.log('✅ wordData 长度:', wordData.length);
 console.log('✅ 预期长度: 32');
 
-const TOTAL = 30;
+const TOTAL_STAGE1 = wordData.length; // 32 — 阶段一覆盖全部单词
+const TOTAL_STAGE2 = 10;
+const TOTAL_STAGE3 = 10;
+const TOTAL = TOTAL_STAGE1 + TOTAL_STAGE2 + TOTAL_STAGE3; // 52
+
 const STAGE_NAMES = ['词义识别', '同义替换', '综合应用'];
-const STAGE_DESC = ['英文→中文', '英文→英文近义', '语境填空+一词多义'];
+const STAGE_DESC = [`英文→中文（全部${TOTAL_STAGE1}词）`, '英文→英文近义', '语境填空+一词多义'];
+const wordCountBadge = document.getElementById('wordCountBadge');
+if (wordCountBadge) wordCountBadge.textContent = `共 ${TOTAL_STAGE1} 词`;
+const testTotalTitle = document.getElementById('testTotalTitle');
+if (testTotalTitle) testTotalTitle.textContent = `📋 综合检测 · 共${TOTAL}题`;
 
 // ==================== 工具 ====================
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -247,10 +255,10 @@ function generateQuestions() {
     const all = shuffle([...wordData]);
     const questions = [];
 
-    // 阶段一：词义识别 (10题)
-    const stage1Data = all.slice(0, 10);
+    // 阶段一：词义识别 (32题) — 覆盖全部单词
+    const stage1Data = all; // 全部 32 个
     stage1Data.forEach(w => {
-        const allMeanings = wordData.filter(x => x.word !== w.word).map(x => x.meaning);
+        const allMeanings = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.meaning).filter(m => m !== w.meaning))];
         const shuffledMeanings = shuffle([...allMeanings]);
         const wrongs = shuffledMeanings.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('未知');
@@ -268,7 +276,7 @@ function generateQuestions() {
     // 阶段二：同义替换 (10题)
     const stage2Data = all.slice(10, 20);
     stage2Data.forEach(w => {
-        const allSynonyms = wordData.filter(x => x.word !== w.word).map(x => x.synonym);
+        const allSynonyms = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.synonym).filter(s => s !== w.synonym))];
         const shuffledSyns = shuffle([...allSynonyms]);
         const wrongs = shuffledSyns.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
@@ -291,7 +299,7 @@ function generateQuestions() {
             // 语境填空
             const regex = new RegExp('\\b' + w.target + '\\b', 'gi');
             const sentenceDisplay = w.example.replace(regex, '______');
-            const allWords = wordData.filter(x => x.word !== w.word).map(x => x.word);
+            const allWords = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.word).filter(word => word !== w.word))];
             const shuffledWords = shuffle([...allWords]);
             const wrongs = shuffledWords.slice(0, 3);
             while(wrongs.length < 3) wrongs.push('unknown');
@@ -309,7 +317,7 @@ function generateQuestions() {
             const correctMeaning = w.accept_meaning[0];
             const wrongMeanings = w.accept_meaning.slice(1);
             while(wrongMeanings.length < 3) {
-                const otherMeanings = wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning);
+                const otherMeanings = [...new Set(wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning).filter(m => m !== correctMeaning))];
                 const shuffledOthers = shuffle([...otherMeanings]);
                 for (const m of shuffledOthers) {
                     if (!wrongMeanings.includes(m) && m !== correctMeaning) {
@@ -472,7 +480,7 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === 'test' && isTestActive) {
-            alert('检测进行中，请先完成全部30题！');
+            alert(`检测进行中，请先完成全部${TOTAL}题！`);
             return;
         }
         switchMode(mode);

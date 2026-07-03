@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-reading">
     <meta name="exam:title" content="单元7 · 经济与商业">
     <meta name="exam:description" content="阅读专项词汇 · 经济与商业">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元7 · 经济与商业</title>
+    <title>阅读-单元7-经济与商业</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -135,7 +135,7 @@
             <button class="nav-tab active" data-mode="learn">📚 学习</button>
             <button class="nav-tab" data-mode="test">🎯 综合检测</button>
         </nav>
-        <span class="word-count-badge">共 32 词</span>
+        <span class="word-count-badge" id="wordCountBadge">词汇加载中</span>
     </div>
 </header>
 <div class="main-container">
@@ -143,7 +143,7 @@
 
     <section class="section" id="testSection">
         <div class="test-setup" id="testSetup">
-            <h3>📋 综合检测 · 共30题</h3>
+            <h3 id="testTotalTitle">📋 综合检测 · 题目加载中</h3>
             <p>分三个阶段，依次完成，不可跳转。</p>
             <div class="stage-info">
                 <div class="stage-item"><div class="num">①</div><div class="label">词义识别<br>英文→中文</div></div>
@@ -196,19 +196,19 @@ const wordData = [
     { word:'firm', ipa:'/fɜːm/', pos:'n./adj.', meaning:'公司；坚定的；牢固的', synonym:'company', target:'firm', example:'She works for a law firm.', accept_meaning:['公司','坚定的','牢固的'] },
 
     // —— 金融与投资 ——
-    { word:'investment', ipa:'/ɪnˈvest.mənt/', pos:'n.', meaning:'投资；投入', synonym:'investment', target:'investment', example:'Investment in education is crucial for development.', accept_meaning:['投资','投入'] },
+    { word:'investment', ipa:'/ɪnˈvest.mənt/', pos:'n.', meaning:'投资；投入', synonym:'funding', target:'investment', example:'Investment in education is crucial for development.', accept_meaning:['投资','投入'] },
     { word:'capital', ipa:'/ˈkæp.ɪ.təl/', pos:'n.', meaning:'资本；资金；首都', synonym:'funds', target:'capital', example:'The company needs more capital to expand.', accept_meaning:['资本','资金','首都'] },
     { word:'stock', ipa:'/stɒk/', pos:'n.', meaning:'股票；库存；储备', synonym:'shares', target:'stock', example:'The stock market crashed in 2008.', accept_meaning:['股票','库存','储备'] },
     { word:'share', ipa:'/ʃeər/', pos:'n./v.', meaning:'股份；份额；分享', synonym:'portion', target:'share', example:'He owns a large share of the company.', accept_meaning:['股份','份额','分享'] },
-    { word:'asset', ipa:'/ˈæs.et/', pos:'n.', meaning:'资产；财产；优点', synonym:'property', target:'asset', example:'The company\'s assets are worth millions.', accept_meaning:['资产','财产','优点'] },
+    { word:'asset', ipa:'/ˈæs.et/', pos:'n.', meaning:'资产；财产；优点', synonym:'property', target:'assets', example:'The company\'s assets are worth millions.', accept_meaning:['资产','财产','优点'] },
     { word:'profit', ipa:'/ˈprɒf.ɪt/', pos:'n.', meaning:'利润；盈利', synonym:'earnings', target:'profit', example:'The company made a large profit this year.', accept_meaning:['利润','盈利'] },
 
     // —— 贸易与市场 ——
     { word:'market', ipa:'/ˈmɑː.kɪt/', pos:'n./v.', meaning:'市场；推销', synonym:'marketplace', target:'market', example:'The housing market is very competitive.', accept_meaning:['市场','推销'] },
     { word:'demand', ipa:'/dɪˈmɑːnd/', pos:'n./v.', meaning:'需求；要求', synonym:'need', target:'demand', example:'There is a growing demand for renewable energy.', accept_meaning:['需求','要求'] },
     { word:'supply', ipa:'/səˈplaɪ/', pos:'n./v.', meaning:'供应；供给', synonym:'provide', target:'supply', example:'The supply of fresh water is limited.', accept_meaning:['供应','供给'] },
-    { word:'export', ipa:'/ˈek.spɔːt/', pos:'n./v.', meaning:'出口', synonym:'ship abroad', target:'export', example:'The country exports a large amount of oil.', accept_meaning:['出口'] },
-    { word:'import', ipa:'/ˈɪm.pɔːt/', pos:'n./v.', meaning:'进口', synonym:'bring in', target:'import', example:'Japan imports a lot of oil and gas.', accept_meaning:['进口'] },
+    { word:'export', ipa:'/ˈek.spɔːt/', pos:'n./v.', meaning:'出口', synonym:'ship abroad', target:'exports', example:'The country exports a large amount of oil.', accept_meaning:['出口'] },
+    { word:'import', ipa:'/ˈɪm.pɔːt/', pos:'n./v.', meaning:'进口', synonym:'bring in', target:'imports', example:'Japan imports a lot of oil and gas.', accept_meaning:['进口'] },
 
     // —— 会计与财务 ——
     { word:'revenue', ipa:'/ˈrev.ən.juː/', pos:'n.', meaning:'收入；营收', synonym:'income', target:'revenue', example:'The government\'s revenue comes mainly from taxes.', accept_meaning:['收入','营收'] },
@@ -222,8 +222,8 @@ const wordData = [
     // —— 经济现象与政策 ——
     { word:'inflation', ipa:'/ɪnˈfleɪ.ʃən/', pos:'n.', meaning:'通货膨胀', synonym:'price rise', target:'inflation', example:'Inflation has been rising in recent months.', accept_meaning:['通货膨胀'] },
     { word:'recession', ipa:'/rɪˈseʃ.ən/', pos:'n.', meaning:'经济衰退', synonym:'downturn', target:'recession', example:'The country experienced a severe recession.', accept_meaning:['经济衰退'] },
-    { word:'tax', ipa:'/tæks/', pos:'n./v.', meaning:'税收；征税', synonym:'levy', target:'tax', example:'The government plans to increase taxes.', accept_meaning:['税收','征税'] },
-    { word:'subsidy', ipa:'/ˈsʌb.sɪ.di/', pos:'n.', meaning:'补贴；津贴', synonym:'grant', target:'subsidy', example:'The government provides subsidies to farmers.', accept_meaning:['补贴','津贴'] },
+    { word:'tax', ipa:'/tæks/', pos:'n./v.', meaning:'税收；征税', synonym:'levy', target:'taxes', example:'The government plans to increase taxes.', accept_meaning:['税收','征税'] },
+    { word:'subsidy', ipa:'/ˈsʌb.sɪ.di/', pos:'n.', meaning:'补贴；津贴', synonym:'grant', target:'subsidies', example:'The government provides subsidies to farmers.', accept_meaning:['补贴','津贴'] },
     { word:'welfare', ipa:'/ˈwel.feər/', pos:'n.', meaning:'福利；福祉', synonym:'well-being', target:'welfare', example:'The welfare system supports the poor.', accept_meaning:['福利','福祉'] },
     { word:'unemployment', ipa:'/ˌʌn.ɪmˈplɔɪ.mənt/', pos:'n.', meaning:'失业；失业人数', synonym:'joblessness', target:'unemployment', example:'Unemployment has reached a record high.', accept_meaning:['失业','失业人数'] },
 
@@ -232,16 +232,24 @@ const wordData = [
     { word:'growth', ipa:'/ɡrəʊθ/', pos:'n.', meaning:'增长；成长', synonym:'expansion', target:'growth', example:'Economic growth has slowed down recently.', accept_meaning:['增长','成长'] },
     { word:'development', ipa:'/dɪˈvel.əp.mənt/', pos:'n.', meaning:'发展；开发', synonym:'progress', target:'development', example:'The company is investing in research and development.', accept_meaning:['发展','开发'] },
     { word:'sustainable', ipa:'/səˈsteɪ.nə.bəl/', pos:'adj.', meaning:'可持续的', synonym:'viable', target:'sustainable', example:'Sustainable economic growth is essential.', accept_meaning:['可持续的'] },
-    { word:'globalisation', ipa:'/ˌɡləʊ.bə.laɪˈzeɪ.ʃən/', pos:'n.', meaning:'全球化', synonym:'globalisation', target:'globalisation', example:'Globalisation has changed the world economy.', accept_meaning:['全球化'] }
+    { word:'globalisation', ipa:'/ˌɡləʊ.bə.laɪˈzeɪ.ʃən/', pos:'n.', meaning:'全球化', synonym:'worldwide integration', target:'globalisation', example:'Globalisation has changed the world economy.', accept_meaning:['全球化'] }
 ];
 
 // ==================== 数据完整性自检 ====================
 console.log('✅ wordData 长度:', wordData.length);
 console.log('✅ 预期长度: 32');
 
-const TOTAL = 30;
+const TOTAL_STAGE1 = wordData.length; // 32 — 阶段一覆盖全部单词
+const TOTAL_STAGE2 = 10;
+const TOTAL_STAGE3 = 10;
+const TOTAL = TOTAL_STAGE1 + TOTAL_STAGE2 + TOTAL_STAGE3; // 52
+
 const STAGE_NAMES = ['词义识别', '同义替换', '综合应用'];
-const STAGE_DESC = ['英文→中文', '英文→英文近义', '语境填空+一词多义'];
+const STAGE_DESC = [`英文→中文（全部${TOTAL_STAGE1}词）`, '英文→英文近义', '语境填空+一词多义'];
+const wordCountBadge = document.getElementById('wordCountBadge');
+if (wordCountBadge) wordCountBadge.textContent = `共 ${TOTAL_STAGE1} 词`;
+const testTotalTitle = document.getElementById('testTotalTitle');
+if (testTotalTitle) testTotalTitle.textContent = `📋 综合检测 · 共${TOTAL}题`;
 
 // ==================== 工具 ====================
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -251,10 +259,10 @@ function generateQuestions() {
     const all = shuffle([...wordData]);
     const questions = [];
 
-    // 阶段一：词义识别 (10题)
-    const stage1Data = all.slice(0, 10);
+    // 阶段一：词义识别 (32题) — 覆盖全部单词
+    const stage1Data = all; // 全部 32 个
     stage1Data.forEach(w => {
-        const allMeanings = wordData.filter(x => x.word !== w.word).map(x => x.meaning);
+        const allMeanings = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.meaning).filter(m => m !== w.meaning))];
         const shuffledMeanings = shuffle([...allMeanings]);
         const wrongs = shuffledMeanings.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('未知');
@@ -272,7 +280,7 @@ function generateQuestions() {
     // 阶段二：同义替换 (10题)
     const stage2Data = all.slice(10, 20);
     stage2Data.forEach(w => {
-        const allSynonyms = wordData.filter(x => x.word !== w.word).map(x => x.synonym);
+        const allSynonyms = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.synonym).filter(s => s !== w.synonym))];
         const shuffledSyns = shuffle([...allSynonyms]);
         const wrongs = shuffledSyns.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
@@ -295,7 +303,7 @@ function generateQuestions() {
             // 语境填空
             const regex = new RegExp('\\b' + w.target + '\\b', 'gi');
             const sentenceDisplay = w.example.replace(regex, '______');
-            const allWords = wordData.filter(x => x.word !== w.word).map(x => x.word);
+            const allWords = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.word).filter(word => word !== w.word))];
             const shuffledWords = shuffle([...allWords]);
             const wrongs = shuffledWords.slice(0, 3);
             while(wrongs.length < 3) wrongs.push('unknown');
@@ -313,7 +321,7 @@ function generateQuestions() {
             const correctMeaning = w.accept_meaning[0];
             const wrongMeanings = w.accept_meaning.slice(1);
             while(wrongMeanings.length < 3) {
-                const otherMeanings = wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning);
+                const otherMeanings = [...new Set(wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning).filter(m => m !== correctMeaning))];
                 const shuffledOthers = shuffle([...otherMeanings]);
                 for (const m of shuffledOthers) {
                     if (!wrongMeanings.includes(m) && m !== correctMeaning) {
@@ -476,7 +484,7 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === 'test' && isTestActive) {
-            alert('检测进行中，请先完成全部30题！');
+            alert(`检测进行中，请先完成全部${TOTAL}题！`);
             return;
         }
         switchMode(mode);

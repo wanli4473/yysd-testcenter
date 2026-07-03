@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-reading">
     <meta name="exam:title" content="单元8 · 历史与考古">
     <meta name="exam:description" content="阅读专项词汇 · 历史与考古">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元8 · 历史与考古</title>
+    <title>阅读-单元8-历史与考古</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -135,7 +135,7 @@
             <button class="nav-tab active" data-mode="learn">📚 学习</button>
             <button class="nav-tab" data-mode="test">🎯 综合检测</button>
         </nav>
-        <span class="word-count-badge">共 32 词</span>
+        <span class="word-count-badge" id="wordCountBadge">词汇加载中</span>
     </div>
 </header>
 <div class="main-container">
@@ -143,7 +143,7 @@
 
     <section class="section" id="testSection">
         <div class="test-setup" id="testSetup">
-            <h3>📋 综合检测 · 共30题</h3>
+            <h3 id="testTotalTitle">📋 综合检测 · 题目加载中</h3>
             <p>分三个阶段，依次完成，不可跳转。</p>
             <div class="stage-info">
                 <div class="stage-item"><div class="num">①</div><div class="label">词义识别<br>英文→中文</div></div>
@@ -197,26 +197,26 @@ const wordData = [
     { word:'prehistoric', ipa:'/ˌpriː.hɪˈstɒr.ɪk/', pos:'adj.', meaning:'史前的；远古的', synonym:'primitive', target:'prehistoric', example:'Prehistoric humans used stone tools and lived in caves.', accept_meaning:['史前的','远古的'] },
 
     // —— 历史遗迹与建筑（7个） ——
-    { word:'ruin', ipa:'/ˈruː.ɪn/', pos:'n./v.', meaning:'废墟；毁灭', synonym:'remains', target:'ruin', example:'The ancient city now lies in ruins.', accept_meaning:['废墟','毁灭'] },
-    { word:'relic', ipa:'/ˈrel.ɪk/', pos:'n.', meaning:'遗迹；遗物', synonym:'artifact', target:'relic', example:'The museum houses many religious relics.', accept_meaning:['遗迹','遗物'] },
-    { word:'artifact', ipa:'/ˈɑː.tɪ.fækt/', pos:'n.', meaning:'文物；手工艺品', synonym:'object', target:'artifact', example:'Archaeologists discovered many artifacts at the site.', accept_meaning:['文物','手工艺品'] },
+    { word:'ruin', ipa:'/ˈruː.ɪn/', pos:'n./v.', meaning:'废墟；毁灭', synonym:'remains', target:'ruins', example:'The ancient city now lies in ruins.', accept_meaning:['废墟','毁灭'] },
+    { word:'relic', ipa:'/ˈrel.ɪk/', pos:'n.', meaning:'遗迹；遗物', synonym:'artifact', target:'relics', example:'The museum houses many religious relics.', accept_meaning:['遗迹','遗物'] },
+    { word:'artifact', ipa:'/ˈɑː.tɪ.fækt/', pos:'n.', meaning:'文物；手工艺品', synonym:'object', target:'artifacts', example:'Archaeologists discovered many artifacts at the site.', accept_meaning:['文物','手工艺品'] },
     { word:'tomb', ipa:'/tuːm/', pos:'n.', meaning:'坟墓；墓穴', synonym:'grave', target:'tomb', example:'The tomb of the pharaoh was discovered in the Valley of the Kings.', accept_meaning:['坟墓','墓穴'] },
     { word:'pagoda', ipa:'/pəˈɡəʊ.də/', pos:'n.', meaning:'宝塔', synonym:'tower', target:'pagoda', example:'The ancient pagoda is over 1,000 years old.', accept_meaning:['宝塔'] },
     { word:'monument', ipa:'/ˈmɒn.jə.mənt/', pos:'n.', meaning:'纪念碑；历史遗迹', synonym:'memorial', target:'monument', example:'The monument was built to commemorate the soldiers.', accept_meaning:['纪念碑','历史遗迹'] },
     { word:'cathedral', ipa:'/kəˈθiː.drəl/', pos:'n.', meaning:'大教堂', synonym:'church', target:'cathedral', example:'The cathedral was built in the 12th century and still stands today.', accept_meaning:['大教堂'] },
 
     // —— 考古发现与文物（6个） ——
-    { word:'archaeology', ipa:'/ˌɑː.kiˈɒl.ə.dʒi/', pos:'n.', meaning:'考古学', synonym:'archaeology', target:'archaeology', example:'Archaeology helps us understand past civilisations.', accept_meaning:['考古学'] },
+    { word:'archaeology', ipa:'/ˌɑː.kiˈɒl.ə.dʒi/', pos:'n.', meaning:'考古学', synonym:'study of antiquities', target:'archaeology', example:'Archaeology helps us understand past civilisations.', accept_meaning:['考古学'] },
     { word:'excavation', ipa:'/ˌek.skəˈveɪ.ʃən/', pos:'n.', meaning:'挖掘；发掘', synonym:'digging', target:'excavation', example:'The excavation site revealed many ancient remains.', accept_meaning:['挖掘','发掘'] },
     { word:'inscription', ipa:'/ɪnˈskrɪp.ʃən/', pos:'n.', meaning:'铭文；碑文；题字', synonym:'writing', target:'inscription', example:'The inscription on the stone was difficult to read.', accept_meaning:['铭文','碑文','题字'] },
     { word:'manuscript', ipa:'/ˈmæn.jə.skrɪpt/', pos:'n.', meaning:'手稿；手抄本', synonym:'document', target:'manuscript', example:'The medieval manuscript was beautifully decorated with gold leaf.', accept_meaning:['手稿','手抄本'] },
     { word:'pottery', ipa:'/ˈpɒt.ər.i/', pos:'n.', meaning:'陶器；陶艺', synonym:'ceramics', target:'pottery', example:'The pottery found at the site dates back over 2,000 years.', accept_meaning:['陶器','陶艺'] },
-    { word:'fossil', ipa:'/ˈfɒs.əl/', pos:'n./adj.', meaning:'化石', synonym:'remains', target:'fossil', example:'Fossils provide evidence about prehistoric life.', accept_meaning:['化石'] },
+    { word:'fossil', ipa:'/ˈfɒs.əl/', pos:'n./adj.', meaning:'化石', synonym:'remains', target:'Fossils', example:'Fossils provide evidence about prehistoric life.', accept_meaning:['化石'] },
 
     // —— 历史事件与变革（7个） ——
-    { word:'topple', ipa:'/ˈtɒp.əl/', pos:'v.', meaning:'推翻；颠覆；倒塌', synonym:'overthrow', target:'topple', example:'The government was toppled by a military coup.', accept_meaning:['推翻','颠覆','倒塌'] },
-    { word:'overthrow', ipa:'/ˌəʊ.vəˈθrəʊ/', pos:'v./n.', meaning:'推翻；打倒', synonym:'oust', target:'overthrow', example:'The revolution overthrew the monarchy.', accept_meaning:['推翻','打倒'] },
-    { word:'colonise', ipa:'/ˈkɒl.ə.naɪz/', pos:'v.', meaning:'殖民；开拓殖民地', synonym:'settle', target:'colonise', example:'European powers colonised many parts of Africa.', accept_meaning:['殖民','开拓殖民地'] },
+    { word:'topple', ipa:'/ˈtɒp.əl/', pos:'v.', meaning:'推翻；颠覆；倒塌', synonym:'overthrow', target:'toppled', example:'The government was toppled by a military coup.', accept_meaning:['推翻','颠覆','倒塌'] },
+    { word:'overthrow', ipa:'/ˌəʊ.vəˈθrəʊ/', pos:'v./n.', meaning:'推翻；打倒', synonym:'oust', target:'overthrew', example:'The revolution overthrew the monarchy.', accept_meaning:['推翻','打倒'] },
+    { word:'colonise', ipa:'/ˈkɒl.ə.naɪz/', pos:'v.', meaning:'殖民；开拓殖民地', synonym:'settle', target:'colonised', example:'European powers colonised many parts of Africa.', accept_meaning:['殖民','开拓殖民地'] },
     { word:'reign', ipa:'/reɪn/', pos:'n./v.', meaning:'统治；君主统治时期', synonym:'rule', target:'reign', example:'Queen Victoria\'s reign lasted for 64 years.', accept_meaning:['统治','君主统治时期'] },
     { word:'rebellion', ipa:'/rɪˈbel.jən/', pos:'n.', meaning:'叛乱；反抗', synonym:'uprising', target:'rebellion', example:'The rebellion was quickly suppressed by the army.', accept_meaning:['叛乱','反抗'] },
     { word:'revolution', ipa:'/ˌrev.əˈluː.ʃən/', pos:'n.', meaning:'革命；彻底变革', synonym:'revolt', target:'revolution', example:'The Industrial Revolution changed the world forever.', accept_meaning:['革命','彻底变革'] },
@@ -224,20 +224,28 @@ const wordData = [
 
     // —— 历史研究方法（6个） ——
     { word:'heritage', ipa:'/ˈher.ɪ.tɪdʒ/', pos:'n.', meaning:'遗产；传统', synonym:'legacy', target:'heritage', example:'We must protect our cultural heritage for future generations.', accept_meaning:['遗产','传统'] },
-    { word:'ancestor', ipa:'/ˈæn.ses.tər/', pos:'n.', meaning:'祖先；祖宗', synonym:'forefather', target:'ancestor', example:'His ancestors came from Ireland.', accept_meaning:['祖先','祖宗'] },
+    { word:'ancestor', ipa:'/ˈæn.ses.tər/', pos:'n.', meaning:'祖先；祖宗', synonym:'forefather', target:'ancestors', example:'His ancestors came from Ireland.', accept_meaning:['祖先','祖宗'] },
     { word:'origin', ipa:'/ˈɒr.ɪ.dʒɪn/', pos:'n.', meaning:'起源；由来', synonym:'source', target:'origin', example:'The origin of the species is still a matter of debate.', accept_meaning:['起源','由来'] },
     { word:'chronology', ipa:'/krəˈnɒl.ə.dʒi/', pos:'n.', meaning:'年代学；年表', synonym:'timeline', target:'chronology', example:'The chronology of events was carefully documented.', accept_meaning:['年代学','年表'] },
-    { word:'restore', ipa:'/rɪˈstɔːr/', pos:'v.', meaning:'修复；恢复', synonym:'repair', target:'restore', example:'The ancient building was restored to its original condition.', accept_meaning:['修复','恢复'] },
-    { word:'preserve', ipa:'/prɪˈzɜːv/', pos:'v.', meaning:'保护；保存；维持', synonym:'protect', target:'preserve', example:'The museum preserves many valuable historical objects.', accept_meaning:['保护','保存','维持'] }
+    { word:'restore', ipa:'/rɪˈstɔːr/', pos:'v.', meaning:'修复；恢复', synonym:'repair', target:'restored', example:'The ancient building was restored to its original condition.', accept_meaning:['修复','恢复'] },
+    { word:'preserve', ipa:'/prɪˈzɜːv/', pos:'v.', meaning:'保护；保存；维持', synonym:'protect', target:'preserves', example:'The museum preserves many valuable historical objects.', accept_meaning:['保护','保存','维持'] }
 ];
 
 // ==================== 数据完整性自检 ====================
 console.log('✅ wordData 长度:', wordData.length);
 console.log('✅ 预期长度: 32');
 
-const TOTAL = 30;
+const TOTAL_STAGE1 = wordData.length; // 32 — 阶段一覆盖全部单词
+const TOTAL_STAGE2 = 10;
+const TOTAL_STAGE3 = 10;
+const TOTAL = TOTAL_STAGE1 + TOTAL_STAGE2 + TOTAL_STAGE3; // 52
+
 const STAGE_NAMES = ['词义识别', '同义替换', '综合应用'];
-const STAGE_DESC = ['英文→中文', '英文→英文近义', '语境填空+一词多义'];
+const STAGE_DESC = [`英文→中文（全部${TOTAL_STAGE1}词）`, '英文→英文近义', '语境填空+一词多义'];
+const wordCountBadge = document.getElementById('wordCountBadge');
+if (wordCountBadge) wordCountBadge.textContent = `共 ${TOTAL_STAGE1} 词`;
+const testTotalTitle = document.getElementById('testTotalTitle');
+if (testTotalTitle) testTotalTitle.textContent = `📋 综合检测 · 共${TOTAL}题`;
 
 // ==================== 工具 ====================
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -247,10 +255,10 @@ function generateQuestions() {
     const all = shuffle([...wordData]);
     const questions = [];
 
-    // 阶段一：词义识别 (10题)
-    const stage1Data = all.slice(0, 10);
+    // 阶段一：词义识别 (32题) — 覆盖全部单词
+    const stage1Data = all; // 全部 32 个
     stage1Data.forEach(w => {
-        const allMeanings = wordData.filter(x => x.word !== w.word).map(x => x.meaning);
+        const allMeanings = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.meaning).filter(m => m !== w.meaning))];
         const shuffledMeanings = shuffle([...allMeanings]);
         const wrongs = shuffledMeanings.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('未知');
@@ -268,7 +276,7 @@ function generateQuestions() {
     // 阶段二：同义替换 (10题)
     const stage2Data = all.slice(10, 20);
     stage2Data.forEach(w => {
-        const allSynonyms = wordData.filter(x => x.word !== w.word).map(x => x.synonym);
+        const allSynonyms = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.synonym).filter(s => s !== w.synonym))];
         const shuffledSyns = shuffle([...allSynonyms]);
         const wrongs = shuffledSyns.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
@@ -291,7 +299,7 @@ function generateQuestions() {
             // 语境填空
             const regex = new RegExp('\\b' + w.target + '\\b', 'gi');
             const sentenceDisplay = w.example.replace(regex, '______');
-            const allWords = wordData.filter(x => x.word !== w.word).map(x => x.word);
+            const allWords = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.word).filter(word => word !== w.word))];
             const shuffledWords = shuffle([...allWords]);
             const wrongs = shuffledWords.slice(0, 3);
             while(wrongs.length < 3) wrongs.push('unknown');
@@ -309,7 +317,7 @@ function generateQuestions() {
             const correctMeaning = w.accept_meaning[0];
             const wrongMeanings = w.accept_meaning.slice(1);
             while(wrongMeanings.length < 3) {
-                const otherMeanings = wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning);
+                const otherMeanings = [...new Set(wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning).filter(m => m !== correctMeaning))];
                 const shuffledOthers = shuffle([...otherMeanings]);
                 for (const m of shuffledOthers) {
                     if (!wrongMeanings.includes(m) && m !== correctMeaning) {
@@ -472,7 +480,7 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === 'test' && isTestActive) {
-            alert('检测进行中，请先完成全部30题！');
+            alert(`检测进行中，请先完成全部${TOTAL}题！`);
             return;
         }
         switchMode(mode);

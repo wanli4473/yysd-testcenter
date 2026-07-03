@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-reading">
     <meta name="exam:title" content="单元2 · 心理与认知">
     <meta name="exam:description" content="阅读专项词汇 · 心理与认知">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元2 · 心理与认知</title>
+    <title>阅读-单元2-心理与认知</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -138,7 +138,7 @@
             <button class="nav-tab active" data-mode="learn">📚 学习</button>
             <button class="nav-tab" data-mode="test">🎯 综合检测</button>
         </nav>
-        <span class="word-count-badge">共 32 词</span>
+        <span class="word-count-badge" id="wordCountBadge">词汇加载中</span>
     </div>
 </header>
 <div class="main-container">
@@ -148,7 +148,7 @@
     <!-- 检测模式 -->
     <section class="section" id="testSection">
         <div class="test-setup" id="testSetup">
-            <h3>📋 综合检测 · 共30题</h3>
+            <h3 id="testTotalTitle">📋 综合检测 · 题目加载中</h3>
             <p>分三个阶段，依次完成，不可跳转。</p>
             <div class="stage-info">
                 <div class="stage-item"><div class="num">①</div><div class="label">词义识别<br>英文→中文</div></div>
@@ -205,12 +205,10 @@ const wordData = [
     { word:'adjust', ipa:'/əˈdʒʌst/', pos:'v.', meaning:'调整；适应；校准', synonym:'adapt', target:'adjust', example:'It takes time to adjust to a new environment.', accept_meaning:['调整','适应','校准'] },
 
     // —— 认知与思维 ——
-    { word:'conceive', ipa:'/kənˈsiːv/', pos:'v.', meaning:'构思；设想；怀孕', synonym:'devise', target:'conceive', example:'She conceived a brilliant plan to solve the problem.', accept_meaning:['构思','设想','怀孕'] },
+    { word:'conceive', ipa:'/kənˈsiːv/', pos:'v.', meaning:'构思；设想；怀孕', synonym:'devise', target:'conceived', example:'She conceived a brilliant plan to solve the problem.', accept_meaning:['构思','设想','怀孕'] },
     { word:'analyse', ipa:'/ˈæn.ə.laɪz/', pos:'v.', meaning:'分析；分解；细察', synonym:'examine', target:'analyse', example:'We need to analyse the data carefully.', accept_meaning:['分析','分解','细察'] },
     { word:'assess', ipa:'/əˈses/', pos:'v.', meaning:'评定；估价；评估', synonym:'evaluate', target:'assess', example:'It is difficult to assess the long-term effects of the policy.', accept_meaning:['评定','估价','评估'] },
-    { word:'assess', ipa:'/əˈses/', pos:'v.', meaning:'评定；估价；评估', synonym:'evaluate', target:'assess', example:'It is difficult to assess the long-term effects of the policy.', accept_meaning:['评定','估价','评估'] },
     { word:'alter', ipa:'/ˈɔːl.tər/', pos:'v.', meaning:'改变；更改；修改', synonym:'change', target:'alter', example:'The weather is likely to alter dramatically in the coming days.', accept_meaning:['改变','更改','修改'] },
-    { word:'adjust', ipa:'/əˈdʒʌst/', pos:'v.', meaning:'调整；适应；校准', synonym:'adapt', target:'adjust', example:'It takes time to adjust to a new environment.', accept_meaning:['调整','适应','校准'] },
     { word:'eliminate', ipa:'/iˈlɪm.ɪ.neɪt/', pos:'v.', meaning:'消除；排除；淘汰', synonym:'remove', target:'eliminate', example:'The new policy aims to eliminate poverty.', accept_meaning:['消除','排除','淘汰'] },
 
     // —— 语言与表达 ——
@@ -218,25 +216,24 @@ const wordData = [
     { word:'speech', ipa:'/spiːtʃ/', pos:'n.', meaning:'演讲；讲话；语音', synonym:'address', target:'speech', example:'She delivered an inspiring speech at the conference.', accept_meaning:['演讲','讲话','语音'] },
     { word:'converse', ipa:'/kənˈvɜːs/', pos:'v./adj.', meaning:'交谈；相反的', synonym:'talk', target:'converse', example:'They sat down to converse about the future of the project.', accept_meaning:['交谈','相反的'] },
     { word:'grammarian', ipa:'/ɡrəˈmeə.ri.ən/', pos:'n.', meaning:'文法学者；文法家', synonym:'linguist', target:'grammarian', example:'The grammarian spent years studying the structure of language.', accept_meaning:['文法学者','文法家','文法教师'] },
-    { word:'rudiment', ipa:'/ˈruː.dɪ.mənt/', pos:'n.', meaning:'雏形；基本原理', synonym:'foundation', target:'rudiment', example:'Students must learn the rudiments of grammar.', accept_meaning:['雏形','基本原理'] },
+    { word:'rudiment', ipa:'/ˈruː.dɪ.mənt/', pos:'n.', meaning:'雏形；基本原理', synonym:'foundation', target:'rudiments', example:'Students must learn the rudiments of grammar.', accept_meaning:['雏形','基本原理'] },
     { word:'expertise', ipa:'/ˌek.spɜːˈtiːz/', pos:'n.', meaning:'专门知识；专门技术', synonym:'specialization', target:'expertise', example:'The team has a great deal of expertise in this area.', accept_meaning:['专门知识','专门技术','专家的意见'] },
 
     // —— 能力与特质 ——
     { word:'faculty', ipa:'/ˈfæk.əl.ti/', pos:'n.', meaning:'能力；才能；全体教员', synonym:'ability', target:'faculty', example:'She has a remarkable faculty for learning languages.', accept_meaning:['能力','才能','全体教员'] },
     { word:'aptitude', ipa:'/ˈæp.tɪ.tjuːd/', pos:'n.', meaning:'天资；才能；倾向', synonym:'talent', target:'aptitude', example:'He showed an aptitude for mathematics from an early age.', accept_meaning:['天资','才能','倾向'] },
     { word:'capacity', ipa:'/kəˈpæs.ə.ti/', pos:'n.', meaning:'能力；容量；资格', synonym:'ability', target:'capacity', example:'The human mind has an enormous capacity for learning.', accept_meaning:['能力','容量','资格'] },
-    { word:'substitute', ipa:'/ˈsʌb.stɪ.tjuːt/', pos:'n./v.', meaning:'代替者；替代品；替代', synonym:'replacement', target:'substitute', example:'Sugar can be substituted with honey in this recipe.', accept_meaning:['代替者','替代品','替代'] },
+    { word:'substitute', ipa:'/ˈsʌb.stɪ.tjuːt/', pos:'n./v.', meaning:'代替者；替代品；替代', synonym:'replacement', target:'substituted', example:'Sugar can be substituted with honey in this recipe.', accept_meaning:['代替者','替代品','替代'] },
 
     // —— 认知障碍与限制 ——
     { word:'impediment', ipa:'/ɪmˈped.ɪ.mənt/', pos:'n.', meaning:'妨碍；障碍；口吃', synonym:'obstacle', target:'impediment', example:'Lack of funding is a major impediment to research.', accept_meaning:['妨碍','障碍','口吃'] },
-    { word:'intertwine', ipa:'/ˌɪn.təˈtwaɪn/', pos:'v.', meaning:'纠缠；编结；缠绕', synonym:'interweave', target:'intertwine', example:'Their lives were intertwined in a complex relationship.', accept_meaning:['纠缠','编结','缠绕'] },
+    { word:'intertwine', ipa:'/ˌɪn.təˈtwaɪn/', pos:'v.', meaning:'纠缠；编结；缠绕', synonym:'interweave', target:'intertwined', example:'Their lives were intertwined in a complex relationship.', accept_meaning:['纠缠','编结','缠绕'] },
     { word:'obstacle', ipa:'/ˈɒb.stə.kəl/', pos:'n.', meaning:'障碍；干扰；妨害物', synonym:'barrier', target:'obstacle', example:'Lack of education is a major obstacle to social progress.', accept_meaning:['障碍','干扰','妨害物'] },
     { word:'adversity', ipa:'/ədˈvɜː.sə.ti/', pos:'n.', meaning:'逆境；不幸；灾难', synonym:'hardship', target:'adversity', example:'She overcame great adversity to achieve her goals.', accept_meaning:['逆境','不幸','灾难'] },
 
     // —— 心理倾向与状态 ——
-    { word:'variant', ipa:'/ˈveə.ri.ənt/', pos:'adj./n.', meaning:'不同的；变体；转化', synonym:'different', target:'variant', example:'There are several variants of this disease.', accept_meaning:['不同的','变体','转化'] },
+    { word:'variant', ipa:'/ˈveə.ri.ənt/', pos:'adj./n.', meaning:'不同的；变体；转化', synonym:'different', target:'variants', example:'There are several variants of this disease.', accept_meaning:['不同的','变体','转化'] },
     { word:'fairness', ipa:'/ˈfeə.nəs/', pos:'n.', meaning:'公平；公正；美好', synonym:'justice', target:'fairness', example:'The fairness of the decision was questioned.', accept_meaning:['公平','公正','美好'] },
-    { word:'impediment', ipa:'/ɪmˈped.ɪ.mənt/', pos:'n.', meaning:'妨碍；障碍；口吃', synonym:'obstacle', target:'impediment', example:'Lack of funding is a major impediment to research.', accept_meaning:['妨碍','障碍','口吃'] },
     { word:'session', ipa:'/ˈseʃ.ən/', pos:'n.', meaning:'会议；学期；讲习会', synonym:'meeting', target:'session', example:'The first session of the conference will begin at 9 am.', accept_meaning:['会议','学期','讲习会'] },
     { word:'experiment', ipa:'/ɪkˈsper.ɪ.mənt/', pos:'n./v.', meaning:'实验；尝试；试验', synonym:'test', target:'experiment', example:'The experiment confirmed the hypothesis.', accept_meaning:['实验','尝试','试验'] },
     { word:'reproduce', ipa:'/ˌriː.prəˈdjuːs/', pos:'v.', meaning:'复制；繁殖；再生', synonym:'copy', target:'reproduce', example:'Cells can reproduce themselves through division.', accept_meaning:['复制','繁殖','再生'] },
@@ -258,9 +255,17 @@ if (targets.length !== uniqueTargets.size) {
     console.log('✅ 所有 target 值唯一');
 }
 
-const TOTAL = 30;
+const TOTAL_STAGE1 = wordData.length; // 32 — 阶段一覆盖全部单词
+const TOTAL_STAGE2 = 10;
+const TOTAL_STAGE3 = 10;
+const TOTAL = TOTAL_STAGE1 + TOTAL_STAGE2 + TOTAL_STAGE3; // 52
+
 const STAGE_NAMES = ['词义识别', '同义替换', '综合应用'];
-const STAGE_DESC = ['英文→中文', '英文→英文近义', '语境填空+一词多义'];
+const STAGE_DESC = [`英文→中文（全部${TOTAL_STAGE1}词）`, '英文→英文近义', '语境填空+一词多义'];
+const wordCountBadge = document.getElementById('wordCountBadge');
+if (wordCountBadge) wordCountBadge.textContent = `共 ${TOTAL_STAGE1} 词`;
+const testTotalTitle = document.getElementById('testTotalTitle');
+if (testTotalTitle) testTotalTitle.textContent = `📋 综合检测 · 共${TOTAL}题`;
 
 // ==================== 工具 ====================
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -270,10 +275,10 @@ function generateQuestions() {
     const all = shuffle([...wordData]);
     const questions = [];
 
-    // 阶段一：词义识别 (10题) — 英文选中文
-    const stage1Data = all.slice(0, 10);
+    // 阶段一：词义识别 (32题) — 覆盖全部单词
+    const stage1Data = all; // 全部 32 个
     stage1Data.forEach(w => {
-        const allMeanings = wordData.filter(x => x.word !== w.word).map(x => x.meaning);
+        const allMeanings = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.meaning).filter(m => m !== w.meaning))];
         const shuffledMeanings = shuffle([...allMeanings]);
         const wrongs = shuffledMeanings.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('未知');
@@ -291,7 +296,7 @@ function generateQuestions() {
     // 阶段二：同义替换 (10题) — 英文选英文近义词
     const stage2Data = all.slice(10, 20);
     stage2Data.forEach(w => {
-        const allSynonyms = wordData.filter(x => x.word !== w.word).map(x => x.synonym);
+        const allSynonyms = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.synonym).filter(s => s !== w.synonym))];
         const shuffledSyns = shuffle([...allSynonyms]);
         const wrongs = shuffledSyns.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
@@ -314,7 +319,7 @@ function generateQuestions() {
             // 语境填空：使用 target 替换
             const regex = new RegExp('\\b' + w.target + '\\b', 'gi');
             const sentenceDisplay = w.example.replace(regex, '______');
-            const allWords = wordData.filter(x => x.word !== w.word).map(x => x.word);
+            const allWords = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.word).filter(word => word !== w.word))];
             const shuffledWords = shuffle([...allWords]);
             const wrongs = shuffledWords.slice(0, 3);
             while(wrongs.length < 3) wrongs.push('unknown');
@@ -332,7 +337,7 @@ function generateQuestions() {
             const correctMeaning = w.accept_meaning[0];
             const wrongMeanings = w.accept_meaning.slice(1);
             while(wrongMeanings.length < 3) {
-                const otherMeanings = wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning);
+                const otherMeanings = [...new Set(wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning).filter(m => m !== correctMeaning))];
                 const shuffledOthers = shuffle([...otherMeanings]);
                 for (const m of shuffledOthers) {
                     if (!wrongMeanings.includes(m) && m !== correctMeaning) {
@@ -495,7 +500,7 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === 'test' && isTestActive) {
-            alert('检测进行中，请先完成全部30题！');
+            alert(`检测进行中，请先完成全部${TOTAL}题！`);
             return;
         }
         switchMode(mode);

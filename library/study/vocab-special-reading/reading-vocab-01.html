@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-reading">
     <meta name="exam:title" content="单元1 · 科技与发现">
     <meta name="exam:description" content="阅读专项词汇 · 科技与发现">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元1 · 科技与发现</title>
+    <title>阅读-单元1-科技与发现</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -139,7 +139,7 @@
             <button class="nav-tab active" data-mode="learn">📚 学习</button>
             <button class="nav-tab" data-mode="test">🎯 综合检测</button>
         </nav>
-        <span class="word-count-badge">共 32 词</span>
+        <span class="word-count-badge" id="wordCountBadge">词汇加载中</span>
     </div>
 </header>
 <div class="main-container">
@@ -149,7 +149,7 @@
     <!-- 检测模式 -->
     <section class="section" id="testSection">
         <div class="test-setup" id="testSetup">
-            <h3>📋 综合检测 · 共30题</h3>
+            <h3 id="testTotalTitle">📋 综合检测 · 题目加载中</h3>
             <p>分三个阶段，依次完成，不可跳转。</p>
             <div class="stage-info">
                 <div class="stage-item"><div class="num">①</div><div class="label">词义识别<br>英文→中文</div></div>
@@ -202,7 +202,7 @@ const wordData = [
     { word:'artificial', ipa:'/ˌɑː.tɪˈfɪʃ.əl/', pos:'adj.', meaning:'人造的；虚假的', synonym:'synthetic', target:'artificial', example:'The product contains artificial ingredients.', accept_meaning:['人造的','仿造的','虚伪的'] },
     { word:'technique', ipa:'/tekˈniːk/', pos:'n.', meaning:'技术；技巧；手法', synonym:'method', target:'technique', example:'This technique is widely used in scientific research.', accept_meaning:['技术','技巧','手法'] },
     { word:'mathematical', ipa:'/ˌmæθ.əˈmæt.ɪ.kəl/', pos:'adj.', meaning:'数学的；精确的', synonym:'numerical', target:'mathematical', example:'The study requires advanced mathematical skills.', accept_meaning:['数学的','精确的'] },
-    { word:'navigation', ipa:'/ˌnæv.ɪˈɡeɪ.ʃən/', pos:'n.', meaning:'航行；航海；导航', synonym:'navigation', target:'navigation', example:'GPS has revolutionised navigation.', accept_meaning:['航行','航海','导航'] },
+    { word:'navigation', ipa:'/ˌnæv.ɪˈɡeɪ.ʃən/', pos:'n.', meaning:'航行；航海；导航', synonym:'route-finding', target:'navigation', example:'GPS has revolutionised navigation.', accept_meaning:['航行','航海','导航'] },
 
     // —— 科学研究与探索 ——
     { word:'pioneer', ipa:'/ˌpaɪ.əˈnɪər/', pos:'n./v.', meaning:'先驱；开辟；倡导', synonym:'initiate', target:'pioneer', example:'Marie Curie was a pioneer in the field of radiation research.', accept_meaning:['先驱','开辟','倡导'] },
@@ -214,9 +214,9 @@ const wordData = [
     { word:'formula', ipa:'/ˈfɔː.mjə.lə/', pos:'n.', meaning:'公式；准则；配方', synonym:'equation', target:'formula', example:'The formula for success includes hard work and persistence.', accept_meaning:['公式','准则','配方'] },
 
     // —— 原理与性质 ——
-    { word:'principle', ipa:'/ˈprɪn.sə.pəl/', pos:'n.', meaning:'原理；原则；主义', synonym:'tenet', target:'principle', example:'We must adhere to the principles of scientific research.', accept_meaning:['原理','原则','主义'] },
+    { word:'principle', ipa:'/ˈprɪn.sə.pəl/', pos:'n.', meaning:'原理；原则；主义', synonym:'tenet', target:'principles', example:'We must adhere to the principles of scientific research.', accept_meaning:['原理','原则','主义'] },
     { word:'substance', ipa:'/ˈsʌb.stəns/', pos:'n.', meaning:'物质；实质；主旨', synonym:'matter', target:'substance', example:'The chemical substance is dangerous if mishandled.', accept_meaning:['物质','实质','主旨'] },
-    { word:'property', ipa:'/ˈprɒp.ə.ti/', pos:'n.', meaning:'性质；性能；财产', synonym:'attribute', target:'property', example:'The chemical properties of the element are well known.', accept_meaning:['性质','性能','财产'] },
+    { word:'property', ipa:'/ˈprɒp.ə.ti/', pos:'n.', meaning:'性质；性能；财产', synonym:'attribute', target:'properties', example:'The chemical properties of the element are well known.', accept_meaning:['性质','性能','财产'] },
     { word:'element', ipa:'/ˈel.ə.mənt/', pos:'n.', meaning:'元素；要素；成分', synonym:'component', target:'element', example:'Hydrogen is the most abundant element in the universe.', accept_meaning:['元素','要素','成分'] },
     { word:'fraction', ipa:'/ˈfræk.ʃən/', pos:'n.', meaning:'分数；部分；小部分', synonym:'portion', target:'fraction', example:'Only a fraction of the population supports this policy.', accept_meaning:['分数','部分','小部分'] },
     { word:'mineral', ipa:'/ˈmɪn.ər.əl/', pos:'n.', meaning:'矿物；无机物', synonym:'ore', target:'mineral', example:'The area is rich in mineral resources.', accept_meaning:['矿物','无机物'] },
@@ -224,15 +224,15 @@ const wordData = [
 
     // —— 认识与发现 ——
     { word:'recognition', ipa:'/ˌrek.əɡˈnɪʃ.ən/', pos:'n.', meaning:'识别；承认；认可', synonym:'acknowledgment', target:'recognition', example:'He received international recognition for his discoveries.', accept_meaning:['识别','承认','认可'] },
-    { word:'expose', ipa:'/ɪkˈspəʊz/', pos:'v.', meaning:'揭露；暴露；显示', synonym:'reveal', target:'expose', example:'The report exposes the truth about the company.', accept_meaning:['揭露','暴露','显示'] },
-    { word:'contribute', ipa:'/kənˈtrɪb.juːt/', pos:'v.', meaning:'贡献；促成；投稿', synonym:'contribute', target:'contribute', example:'Regular exercise contributes to good health.', accept_meaning:['贡献','促成','投稿'] },
-    { word:'echo', ipa:'/ˈek.əʊ/', pos:'v./n.', meaning:'反射；重复；回音', synonym:'reverberate', target:'echo', example:'His words echoed in the empty hall.', accept_meaning:['反射','重复','回音'] },
+    { word:'expose', ipa:'/ɪkˈspəʊz/', pos:'v.', meaning:'揭露；暴露；显示', synonym:'reveal', target:'exposes', example:'The report exposes the truth about the company.', accept_meaning:['揭露','暴露','显示'] },
+    { word:'contribute', ipa:'/kənˈtrɪb.juːt/', pos:'v.', meaning:'贡献；促成；投稿', synonym:'lead to', target:'contributes', example:'Regular exercise contributes to good health.', accept_meaning:['贡献','促成','投稿'] },
+    { word:'echo', ipa:'/ˈek.əʊ/', pos:'v./n.', meaning:'反射；重复；回音', synonym:'reverberate', target:'echoed', example:'His words echoed in the empty hall.', accept_meaning:['反射','重复','回音'] },
     { word:'object', ipa:'/ˈɒb.dʒɪkt/', pos:'n./v.', meaning:'物体；目标；反对', synonym:'disagree', target:'object', example:'The scientist observed the object under the microscope.', accept_meaning:['物体','目标','反对'] },
     { word:'strike', ipa:'/straɪk/', pos:'v./n.', meaning:'打击；罢工；敲击', synonym:'hit', target:'strike', example:'The workers decided to strike for better pay.', accept_meaning:['打击','罢工','敲击'] },
 
     // —— 障碍与限制 ——
     { word:'obstacle', ipa:'/ˈɒb.stə.kəl/', pos:'n.', meaning:'障碍；干扰；妨害物', synonym:'barrier', target:'obstacle', example:'Lack of funding is a major obstacle to research.', accept_meaning:['障碍','干扰','妨害物'] },
-    { word:'limitation', ipa:'/ˌlɪm.ɪˈteɪ.ʃən/', pos:'n.', meaning:'限制；局限性', synonym:'restriction', target:'limitation', example:'Every method has its limitations.', accept_meaning:['限制','局限性'] },
+    { word:'limitation', ipa:'/ˌlɪm.ɪˈteɪ.ʃən/', pos:'n.', meaning:'限制；局限性', synonym:'restriction', target:'limitations', example:'Every method has its limitations.', accept_meaning:['限制','局限性'] },
     { word:'inaccurate', ipa:'/ɪnˈæk.jə.rət/', pos:'adj.', meaning:'不准确的；错误的', synonym:'incorrect', target:'inaccurate', example:'The data was inaccurate and had to be corrected.', accept_meaning:['不准确的','错误的'] },
     { word:'isolated', ipa:'/ˈaɪ.sə.leɪ.tɪd/', pos:'adj.', meaning:'孤立的；隔离的', synonym:'remote', target:'isolated', example:'The village was isolated by the heavy snow.', accept_meaning:['孤立的','隔离的'] },
     { word:'superior', ipa:'/suːˈpɪə.ri.ər/', pos:'adj./n.', meaning:'优秀的；上级的；上级', synonym:'excellent', target:'superior', example:'She has a superior intellect.', accept_meaning:['优秀的','上级的','上级'] },
@@ -243,9 +243,17 @@ const wordData = [
 console.log('✅ wordData 长度:', wordData.length);
 console.log('✅ 预期长度: 32');
 
-const TOTAL = 30;
+const TOTAL_STAGE1 = wordData.length; // 32 — 阶段一覆盖全部单词
+const TOTAL_STAGE2 = 10;
+const TOTAL_STAGE3 = 10;
+const TOTAL = TOTAL_STAGE1 + TOTAL_STAGE2 + TOTAL_STAGE3; // 52
+
 const STAGE_NAMES = ['词义识别', '同义替换', '综合应用'];
-const STAGE_DESC = ['英文→中文', '英文→英文近义', '语境填空+一词多义'];
+const STAGE_DESC = [`英文→中文（全部${TOTAL_STAGE1}词）`, '英文→英文近义', '语境填空+一词多义'];
+const wordCountBadge = document.getElementById('wordCountBadge');
+if (wordCountBadge) wordCountBadge.textContent = `共 ${TOTAL_STAGE1} 词`;
+const testTotalTitle = document.getElementById('testTotalTitle');
+if (testTotalTitle) testTotalTitle.textContent = `📋 综合检测 · 共${TOTAL}题`;
 
 // ==================== 工具 ====================
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -255,11 +263,11 @@ function generateQuestions() {
     const all = shuffle([...wordData]);
     const questions = [];
 
-    // 阶段一：词义识别 (10题) — 英文选中文
-    const stage1Data = all.slice(0, 10);
+    // 阶段一：词义识别 (32题) — 覆盖全部单词
+    const stage1Data = all; // 全部 32 个
     stage1Data.forEach(w => {
         // 干扰项：从其他词的中文释义中选3个不同的
-        const allMeanings = wordData.filter(x => x.word !== w.word).map(x => x.meaning);
+        const allMeanings = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.meaning).filter(m => m !== w.meaning))];
         const shuffledMeanings = shuffle([...allMeanings]);
         const wrongs = shuffledMeanings.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('未知');
@@ -277,7 +285,7 @@ function generateQuestions() {
     // 阶段二：同义替换 (10题) — 英文选英文近义词
     const stage2Data = all.slice(10, 20);
     stage2Data.forEach(w => {
-        const allSynonyms = wordData.filter(x => x.word !== w.word).map(x => x.synonym);
+        const allSynonyms = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.synonym).filter(s => s !== w.synonym))];
         const shuffledSyns = shuffle([...allSynonyms]);
         const wrongs = shuffledSyns.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
@@ -303,7 +311,7 @@ function generateQuestions() {
             const regex = new RegExp('\\b' + w.target + '\\b', 'gi');
             const sentenceDisplay = w.example.replace(regex, '______');
             // 干扰项：从其他词中取3个不同的词
-            const allWords = wordData.filter(x => x.word !== w.word).map(x => x.word);
+            const allWords = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.word).filter(word => word !== w.word))];
             const shuffledWords = shuffle([...allWords]);
             const wrongs = shuffledWords.slice(0, 3);
             while(wrongs.length < 3) wrongs.push('unknown');
@@ -323,7 +331,7 @@ function generateQuestions() {
             const wrongMeanings = w.accept_meaning.slice(1);
             while(wrongMeanings.length < 3) {
                 // 从其他词的 accept_meaning 中补充
-                const otherMeanings = wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning);
+                const otherMeanings = [...new Set(wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning).filter(m => m !== correctMeaning))];
                 const shuffledOthers = shuffle([...otherMeanings]);
                 for (const m of shuffledOthers) {
                     if (!wrongMeanings.includes(m) && m !== correctMeaning) {
@@ -487,7 +495,7 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === 'test' && isTestActive) {
-            alert('检测进行中，请先完成全部30题！');
+            alert(`检测进行中，请先完成全部${TOTAL}题！`);
             return;
         }
         switchMode(mode);

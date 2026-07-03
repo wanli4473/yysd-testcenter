@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-reading">
     <meta name="exam:title" content="单元5 · 生物与动物">
     <meta name="exam:description" content="阅读专项词汇 · 生物与动物">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元5 · 生物与动物</title>
+    <title>阅读-单元5-生物与动物</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -135,7 +135,7 @@
             <button class="nav-tab active" data-mode="learn">📚 学习</button>
             <button class="nav-tab" data-mode="test">🎯 综合检测</button>
         </nav>
-        <span class="word-count-badge">共 32 词</span>
+        <span class="word-count-badge" id="wordCountBadge">词汇加载中</span>
     </div>
 </header>
 <div class="main-container">
@@ -143,7 +143,7 @@
 
     <section class="section" id="testSection">
         <div class="test-setup" id="testSetup">
-            <h3>📋 综合检测 · 共30题</h3>
+            <h3 id="testTotalTitle">📋 综合检测 · 题目加载中</h3>
             <p>分三个阶段，依次完成，不可跳转。</p>
             <div class="stage-info">
                 <div class="stage-item"><div class="num">①</div><div class="label">词义识别<br>英文→中文</div></div>
@@ -190,17 +190,17 @@
 const wordData = [
     // —— 动物分类（6个） ——
     { word:'species', ipa:'/ˈspiː.ʃiːz/', pos:'n.', meaning:'物种；种类', synonym:'organism', target:'species', example:'There are over 500 species of birds in this area.', accept_meaning:['物种','种类'] },
-    { word:'mammal', ipa:'/ˈmæm.əl/', pos:'n.', meaning:'哺乳动物', synonym:'vertebrate', target:'mammal', example:'Whales are mammals, not fish.', accept_meaning:['哺乳动物'] },
-    { word:'reptile', ipa:'/ˈrep.taɪl/', pos:'n.', meaning:'爬行动物', synonym:'reptile', target:'reptile', example:'Snakes and lizards are reptiles.', accept_meaning:['爬行动物','爬虫'] },
-    { word:'amphibian', ipa:'/æmˈfɪb.i.ən/', pos:'n.', meaning:'两栖动物', synonym:'amphibian', target:'amphibian', example:'Frogs and toads are amphibians.', accept_meaning:['两栖动物','水陆两用飞机'] },
-    { word:'insect', ipa:'/ˈɪn.sekt/', pos:'n.', meaning:'昆虫', synonym:'bug', target:'insect', example:'Bees and butterflies are insects.', accept_meaning:['昆虫'] },
-    { word:'invertebrate', ipa:'/ɪnˈvɜː.tɪ.brət/', pos:'n.', meaning:'无脊椎动物', synonym:'invertebrate', target:'invertebrate', example:'Spiders and worms are invertebrates.', accept_meaning:['无脊椎动物'] },
+    { word:'mammal', ipa:'/ˈmæm.əl/', pos:'n.', meaning:'哺乳动物', synonym:'vertebrate', target:'mammals', example:'Whales are mammals, not fish.', accept_meaning:['哺乳动物'] },
+    { word:'reptile', ipa:'/ˈrep.taɪl/', pos:'n.', meaning:'爬行动物', synonym:'cold-blooded vertebrate', target:'reptiles', example:'Snakes and lizards are reptiles.', accept_meaning:['爬行动物','爬虫'] },
+    { word:'amphibian', ipa:'/æmˈfɪb.i.ən/', pos:'n.', meaning:'两栖动物', synonym:'water-land vertebrate', target:'amphibians', example:'Frogs and toads are amphibians.', accept_meaning:['两栖动物','水陆两用飞机'] },
+    { word:'insect', ipa:'/ˈɪn.sekt/', pos:'n.', meaning:'昆虫', synonym:'bug', target:'insects', example:'Bees and butterflies are insects.', accept_meaning:['昆虫'] },
+    { word:'invertebrate', ipa:'/ɪnˈvɜː.tɪ.brət/', pos:'n.', meaning:'无脊椎动物', synonym:'spineless animal', target:'invertebrates', example:'Spiders and worms are invertebrates.', accept_meaning:['无脊椎动物'] },
 
     // —— 动物身体特征（7个） ——
     { word:'skeleton', ipa:'/ˈskel.ɪ.tən/', pos:'n.', meaning:'骨骼；骨架', synonym:'bone structure', target:'skeleton', example:'The human skeleton has 206 bones.', accept_meaning:['骨骼','骨架'] },
     { word:'limb', ipa:'/lɪm/', pos:'n.', meaning:'肢；臂；分支', synonym:'branch', target:'limb', example:'The tree limb broke in the strong wind.', accept_meaning:['肢','臂','分支'] },
-    { word:'feather', ipa:'/ˈfeð.ər/', pos:'n.', meaning:'羽毛', synonym:'plume', target:'feather', example:'Birds have feathers to keep warm.', accept_meaning:['羽毛'] },
-    { word:'scale', ipa:'/skeɪl/', pos:'n.', meaning:'鳞片；规模；尺度', synonym:'flake', target:'scale', example:'Fish are covered with scales.', accept_meaning:['鳞片','规模','尺度'] },
+    { word:'feather', ipa:'/ˈfeð.ər/', pos:'n.', meaning:'羽毛', synonym:'plume', target:'feathers', example:'Birds have feathers to keep warm.', accept_meaning:['羽毛'] },
+    { word:'scale', ipa:'/skeɪl/', pos:'n.', meaning:'鳞片；规模；尺度', synonym:'flake', target:'scales', example:'Fish are covered with scales.', accept_meaning:['鳞片','规模','尺度'] },
     { word:'fur', ipa:'/fɜːr/', pos:'n.', meaning:'毛皮', synonym:'coat', target:'fur', example:'The animal has thick fur to keep warm.', accept_meaning:['毛皮'] },
     { word:'horn', ipa:'/hɔːn/', pos:'n.', meaning:'角；喇叭', synonym:'antler', target:'horn', example:'The rhino uses its horn for defence.', accept_meaning:['角','喇叭'] },
     { word:'pouch', ipa:'/paʊtʃ/', pos:'n.', meaning:'育儿袋；小袋', synonym:'bag', target:'pouch', example:'Kangaroos carry their babies in a pouch.', accept_meaning:['育儿袋','小袋'] },
@@ -212,7 +212,7 @@ const wordData = [
     { word:'endangered', ipa:'/ɪnˈdeɪn.dʒəd/', pos:'adj.', meaning:'濒危的', synonym:'threatened', target:'endangered', example:'The panda is an endangered species.', accept_meaning:['濒危的','濒临灭绝的'] },
     { word:'wildlife', ipa:'/ˈwaɪld.laɪf/', pos:'n.', meaning:'野生动物', synonym:'fauna', target:'wildlife', example:'Wildlife must be protected from poaching.', accept_meaning:['野生动物','野生生物'] },
     { word:'conservation', ipa:'/ˌkɒn.səˈveɪ.ʃən/', pos:'n.', meaning:'保护；保存', synonym:'preservation', target:'conservation', example:'Wildlife conservation is a global priority.', accept_meaning:['保护','保存'] },
-    { word:'reserve', ipa:'/rɪˈzɜːv/', pos:'n./v.', meaning:'保护区；储备；保留', synonym:'sanctuary', target:'reserve', example:'Many animals are protected in nature reserves.', accept_meaning:['保护区','储备','保留'] },
+    { word:'reserve', ipa:'/rɪˈzɜːv/', pos:'n./v.', meaning:'保护区；储备；保留', synonym:'sanctuary', target:'reserves', example:'Many animals are protected in nature reserves.', accept_meaning:['保护区','储备','保留'] },
 
     // —— 生物过程与行为（6个） ——
     { word:'breed', ipa:'/briːd/', pos:'v./n.', meaning:'繁殖；品种；饲养', synonym:'reproduce', target:'breed', example:'These birds breed in the spring.', accept_meaning:['繁殖','品种','饲养'] },
@@ -220,12 +220,12 @@ const wordData = [
     { word:'evolve', ipa:'/iˈvɒlv/', pos:'v.', meaning:'进化；演变', synonym:'develop', target:'evolve', example:'Species evolve over millions of years.', accept_meaning:['进化','演变'] },
     { word:'adapt', ipa:'/əˈdæpt/', pos:'v.', meaning:'适应；改编', synonym:'adjust', target:'adapt', example:'Animals adapt to their environment to survive.', accept_meaning:['适应','改编'] },
     { word:'migrate', ipa:'/maɪˈɡreɪt/', pos:'v.', meaning:'迁徙；迁移', synonym:'move', target:'migrate', example:'Many birds migrate south in winter.', accept_meaning:['迁徙','迁移'] },
-    { word:'parasite', ipa:'/ˈpær.ə.saɪt/', pos:'n.', meaning:'寄生虫', synonym:'parasite', target:'parasite', example:'Fleas are parasites that live on animals.', accept_meaning:['寄生虫','寄生生物'] },
+    { word:'parasite', ipa:'/ˈpær.ə.saɪt/', pos:'n.', meaning:'寄生虫', synonym:'host-dependent organism', target:'parasites', example:'Fleas are parasites that live on animals.', accept_meaning:['寄生虫','寄生生物'] },
 
     // —— 生态关系（6个） ——
-    { word:'predator', ipa:'/ˈpred.ə.tər/', pos:'n.', meaning:'捕食者；掠夺者', synonym:'hunter', target:'predator', example:'Lions are predators that hunt other animals.', accept_meaning:['捕食者','掠夺者'] },
+    { word:'predator', ipa:'/ˈpred.ə.tər/', pos:'n.', meaning:'捕食者；掠夺者', synonym:'hunter', target:'predators', example:'Lions are predators that hunt other animals.', accept_meaning:['捕食者','掠夺者'] },
     { word:'prey', ipa:'/preɪ/', pos:'n.', meaning:'猎物；被捕食者', synonym:'victim', target:'prey', example:'Mice are prey for many larger animals.', accept_meaning:['猎物','被捕食者'] },
-    { word:'pest', ipa:'/pest/', pos:'n.', meaning:'害虫；有害动物', synonym:'nuisance', target:'pest', example:'Rats and mice are common household pests.', accept_meaning:['害虫','有害动物'] },
+    { word:'pest', ipa:'/pest/', pos:'n.', meaning:'害虫；有害动物', synonym:'nuisance', target:'pests', example:'Rats and mice are common household pests.', accept_meaning:['害虫','有害动物'] },
     { word:'creature', ipa:'/ˈkriː.tʃər/', pos:'n.', meaning:'生物；动物', synonym:'being', target:'creature', example:'The creature is very rare.', accept_meaning:['生物','动物'] },
     { word:'fauna', ipa:'/ˈfɔː.nə/', pos:'n.', meaning:'动物区系；动物群', synonym:'animals', target:'fauna', example:'The island has a unique and diverse fauna.', accept_meaning:['动物群','动物区系'] },
     { word:'flora', ipa:'/ˈflɔː.rə/', pos:'n.', meaning:'植物区系；植物群', synonym:'plants', target:'flora', example:'The region is known for its rich flora.', accept_meaning:['植物群','植物区系'] }
@@ -235,9 +235,17 @@ const wordData = [
 console.log('✅ wordData 长度:', wordData.length);
 console.log('✅ 预期长度: 32');
 
-const TOTAL = 30;
+const TOTAL_STAGE1 = wordData.length; // 32 — 阶段一覆盖全部单词
+const TOTAL_STAGE2 = 10;
+const TOTAL_STAGE3 = 10;
+const TOTAL = TOTAL_STAGE1 + TOTAL_STAGE2 + TOTAL_STAGE3; // 52
+
 const STAGE_NAMES = ['词义识别', '同义替换', '综合应用'];
-const STAGE_DESC = ['英文→中文', '英文→英文近义', '语境填空+一词多义'];
+const STAGE_DESC = [`英文→中文（全部${TOTAL_STAGE1}词）`, '英文→英文近义', '语境填空+一词多义'];
+const wordCountBadge = document.getElementById('wordCountBadge');
+if (wordCountBadge) wordCountBadge.textContent = `共 ${TOTAL_STAGE1} 词`;
+const testTotalTitle = document.getElementById('testTotalTitle');
+if (testTotalTitle) testTotalTitle.textContent = `📋 综合检测 · 共${TOTAL}题`;
 
 // ==================== 工具 ====================
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -247,10 +255,10 @@ function generateQuestions() {
     const all = shuffle([...wordData]);
     const questions = [];
 
-    // 阶段一：词义识别 (10题)
-    const stage1Data = all.slice(0, 10);
+    // 阶段一：词义识别 (32题) — 覆盖全部单词
+    const stage1Data = all; // 全部 32 个
     stage1Data.forEach(w => {
-        const allMeanings = wordData.filter(x => x.word !== w.word).map(x => x.meaning);
+        const allMeanings = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.meaning).filter(m => m !== w.meaning))];
         const shuffledMeanings = shuffle([...allMeanings]);
         const wrongs = shuffledMeanings.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('未知');
@@ -268,7 +276,7 @@ function generateQuestions() {
     // 阶段二：同义替换 (10题)
     const stage2Data = all.slice(10, 20);
     stage2Data.forEach(w => {
-        const allSynonyms = wordData.filter(x => x.word !== w.word).map(x => x.synonym);
+        const allSynonyms = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.synonym).filter(s => s !== w.synonym))];
         const shuffledSyns = shuffle([...allSynonyms]);
         const wrongs = shuffledSyns.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
@@ -291,7 +299,7 @@ function generateQuestions() {
             // 语境填空
             const regex = new RegExp('\\b' + w.target + '\\b', 'gi');
             const sentenceDisplay = w.example.replace(regex, '______');
-            const allWords = wordData.filter(x => x.word !== w.word).map(x => x.word);
+            const allWords = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.word).filter(word => word !== w.word))];
             const shuffledWords = shuffle([...allWords]);
             const wrongs = shuffledWords.slice(0, 3);
             while(wrongs.length < 3) wrongs.push('unknown');
@@ -309,7 +317,7 @@ function generateQuestions() {
             const correctMeaning = w.accept_meaning[0];
             const wrongMeanings = w.accept_meaning.slice(1);
             while(wrongMeanings.length < 3) {
-                const otherMeanings = wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning);
+                const otherMeanings = [...new Set(wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning).filter(m => m !== correctMeaning))];
                 const shuffledOthers = shuffle([...otherMeanings]);
                 for (const m of shuffledOthers) {
                     if (!wrongMeanings.includes(m) && m !== correctMeaning) {
@@ -472,7 +480,7 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === 'test' && isTestActive) {
-            alert('检测进行中，请先完成全部30题！');
+            alert(`检测进行中，请先完成全部${TOTAL}题！`);
             return;
         }
         switchMode(mode);
