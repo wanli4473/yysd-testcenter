@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-writing">
     <meta name="exam:title" content="单元6 · 能源与环保">
     <meta name="exam:description" content="写作专项词汇 · 科技环境 · 能源与环保">
-<meta charset="UTF-8">
+
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元6-科技环境-能源与环保</title>
+    <title>单元6 · 能源与环保</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -210,7 +210,7 @@ const phraseData = [
     // —— 可再生能源 ——
     { cn:'可再生能源', en:'Renewable energy', word:'Renewable', synonym:'Clean', target:'renewable', detail:'renewable energy 表示“可再生能源”，如太阳能、风能、水能等，取之不尽。', example:'Renewable energy is essential for a sustainable future.' },
     { cn:'太阳能', en:'Solar energy', word:'Solar', synonym:'Sun', target:'solar', detail:'solar energy 表示“太阳能”，是一种清洁、可再生的能源。', example:'Solar energy is becoming increasingly affordable and efficient.' },
-    { cn:'风力发电', en:'Wind power', word:'Wind', synonym:'Wind', target:'wind', detail:'wind power 表示“风力发电”，利用风能转化为电能。', example:'Wind power is one of the fastest-growing renewable energy sources.' },
+    { cn:'风力发电', en:'Wind power', word:'Wind', synonym:'Breeze', target:'wind', detail:'wind power 表示“风力发电”，利用风能转化为电能。', example:'Wind power is one of the fastest-growing renewable energy sources.' },
     { cn:'使用水力发电', en:'Use hydro power', word:'Hydro', synonym:'Water', target:'hydro', detail:'hydro power 表示“水力发电”，利用水流的力量产生电力。', example:'Hydro power is a reliable and clean source of energy.' },
 
     // —— 能源节约与效率 ——
@@ -300,16 +300,27 @@ function generateQuestions() {
     });
 
     // 阶段三：同义替换 (10题)
-    const stage3Data = shuffle([...phraseData]).slice(0, 10);
+    const stage3Pool = shuffle([...phraseData]).filter(function(p) {
+        return p.synonym && p.synonym.toLowerCase() !== (p.word || '').toLowerCase();
+    });
+    const stage3Data = stage3Pool.slice(0, 10);
     stage3Data.forEach(p => {
         const allSynonyms = phraseData.filter(x => x.word !== p.word).map(x => x.synonym);
         const shuffledSyns = shuffle([...allSynonyms]);
-        const wrongs = shuffledSyns.slice(0, 3);
+        const wrongs = shuffledSyns.filter(function(s) {
+            return s && s.toLowerCase() !== p.synonym.toLowerCase();
+        }).slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
         const opts = shuffle([p.synonym, ...wrongs]);
-        const regex = new RegExp('\\b' + p.target + '\\b', 'gi');
-        const sentenceDisplay = p.example.replace(regex, function(match) {
-            return '<u>' + match + '</u>';
+        const seeds = [p.target, p.word, (p.word || '').toLowerCase()].filter(Boolean);
+        let sentenceDisplay = p.example;
+        for (let si = 0; si < seeds.length; si++) {
+            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\]/g, '\$&') + '\w*\b', 'i');
+            if (re.test(sentenceDisplay)) {
+                sentenceDisplay = sentenceDisplay.replace(re, function(match) { return '<u>' + match + '</u>'; });
+                break;
+            }
+        }
         questions.push({
             stage: 2,
             type: 'choice',

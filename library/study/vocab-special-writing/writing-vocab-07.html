@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-writing">
     <meta name="exam:title" content="单元7 · 职场与工作">
     <meta name="exam:description" content="写作专项词汇 · 工作家庭 · 职场与工作">
-<meta charset="UTF-8">
+
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元7-工作家庭-职场与工作</title>
+    <title>单元7 · 职场与工作</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -241,13 +241,13 @@ const phraseData = [
     // —— 失业与招聘（4个） ——
     { cn:'失业率', en:'Unemployment rate', word:'Unemployment', synonym:'Joblessness', target:'unemployment', detail:'unemployment rate 表示“失业率”，指失业人口占劳动力人口的比例。', example:'The unemployment rate has dropped in recent months.' },
     { cn:'招收新员工', en:'Recruit new staff', word:'Recruit', synonym:'Hire', target:'recruit', detail:'recruit new staff 表示“招收新员工”，指招聘新员工。', example:'The company plans to recruit new staff next year.' },
-    { cn:'职位空缺', en:'Vacancy', word:'Vacancy', synonym:'Opening', target:'vacancy', detail:'vacancy 表示“职位空缺”，指尚未被填补的工作岗位。', example:'There are several vacancies in the marketing department.' },
+    { cn:'职位空缺', en:'Vacancy', word:'Vacancy', synonym:'Opening', target:'vacancies', detail:'vacancy 表示“职位空缺”，指尚未被填补的工作岗位。', example:'There are several vacancies in the marketing department.' },
     { cn:'被解雇', en:'Be laid off', word:'Laid', synonym:'Dismissed', target:'laid', detail:'be laid off 表示“被解雇”，指因经济原因被裁员。', example:'Many workers were laid off during the economic crisis.' },
 
     // —— 工作态度与挑战（6个） ——
     { cn:'为公司服务', en:'Serve the company', word:'Serve', synonym:'Work for', target:'serve', detail:'serve the company 表示“为公司服务”，指为组织努力工作。', example:'He has served the company for over 20 years.' },
     { cn:'接受挑战', en:'Take challenges', word:'Challenges', synonym:'Difficulties', target:'challenges', detail:'take challenges 表示“接受挑战”，指勇敢面对困难。', example:'Successful people are willing to take challenges.' },
-    { cn:'工作狂', en:'Workaholic', word:'Workaholic', synonym:'Workaholic', target:'workaholic', detail:'workaholic 表示“工作狂”，指过度沉迷于工作的人。', example:'He is a workaholic and rarely takes time off.' },
+    { cn:'工作狂', en:'Workaholic', word:'Workaholic', synonym:'Overworker', target:'workaholic', detail:'workaholic 表示“工作狂”，指过度沉迷于工作的人。', example:'He is a workaholic and rarely takes time off.' },
     { cn:'追逐名利', en:'Pursue fame and wealth', word:'Pursue', synonym:'Seek', target:'pursue', detail:'pursue fame and wealth 表示“追逐名利”，指追求名誉和财富。', example:'Some people pursue fame and wealth at the expense of their health.' },
     { cn:'成年期', en:'Adulthood', word:'Adulthood', synonym:'Maturity', target:'adulthood', detail:'adulthood 表示“成年期”，指成人的阶段。', example:'Entering adulthood brings new responsibilities, including career choices.' },
     { cn:'变得冷漠', en:'Become apathetic to others', word:'Apathetic', synonym:'Indifferent', target:'apathetic', detail:'apathetic 表示“冷漠的”，指对他人或事物缺乏兴趣或关心。', example:'Some employees become apathetic to others due to workplace stress.' }
@@ -300,20 +300,28 @@ function generateQuestions() {
         });
     });
 
-    // 阶段三：同义替换 (10题) — 使用修正后的正则（忽略大小写 + 保留原文格式）
-    const stage3Data = shuffle([...phraseData]).slice(0, 10);
+    // 阶段三：同义替换 (10题)
+    const stage3Pool = shuffle([...phraseData]).filter(function(p) {
+        return p.synonym && p.synonym.toLowerCase() !== (p.word || '').toLowerCase();
+    });
+    const stage3Data = stage3Pool.slice(0, 10);
     stage3Data.forEach(p => {
         const allSynonyms = phraseData.filter(x => x.word !== p.word).map(x => x.synonym);
         const shuffledSyns = shuffle([...allSynonyms]);
-        const wrongs = shuffledSyns.slice(0, 3);
+        const wrongs = shuffledSyns.filter(function(s) {
+            return s && s.toLowerCase() !== p.synonym.toLowerCase();
+        }).slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
         const opts = shuffle([p.synonym, ...wrongs]);
-        // ========== 修正后的代码（忽略大小写 + 保留原文大小写） ==========
-        const regex = new RegExp('\\b' + p.target + '\\b', 'gi');
-        const sentenceDisplay = p.example.replace(regex, function(match) {
-            return '<u>' + match + '</u>';
-        });
-        // =================================================================
+        const seeds = [p.target, p.word, (p.word || '').toLowerCase()].filter(Boolean);
+        let sentenceDisplay = p.example;
+        for (let si = 0; si < seeds.length; si++) {
+            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\]/g, '\$&') + '\w*\b', 'i');
+            if (re.test(sentenceDisplay)) {
+                sentenceDisplay = sentenceDisplay.replace(re, function(match) { return '<u>' + match + '</u>'; });
+                break;
+            }
+        }
         questions.push({
             stage: 2,
             type: 'choice',

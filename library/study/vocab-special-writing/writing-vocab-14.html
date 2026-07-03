@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-writing">
     <meta name="exam:title" content="单元14 · 态度与观点">
     <meta name="exam:description" content="写作专项词汇 · 通用词汇 · 态度与观点">
-<meta charset="UTF-8">
+
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元14-通用词汇-态度与观点</title>
+    <title>单元14 · 态度与观点</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -295,19 +295,27 @@ function generateQuestions() {
     });
 
     // 阶段三：同义替换 (10题)
-    const stage3Data = shuffle([...phraseData]).slice(0, 10);
+    const stage3Pool = shuffle([...phraseData]).filter(function(p) {
+        return p.synonym && p.synonym.toLowerCase() !== (p.word || '').toLowerCase();
+    });
+    const stage3Data = stage3Pool.slice(0, 10);
     stage3Data.forEach(p => {
         const allSynonyms = phraseData.filter(x => x.word !== p.word).map(x => x.synonym);
         const shuffledSyns = shuffle([...allSynonyms]);
-        const wrongs = shuffledSyns.slice(0, 3);
+        const wrongs = shuffledSyns.filter(function(s) {
+            return s && s.toLowerCase() !== p.synonym.toLowerCase();
+        }).slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
         const opts = shuffle([p.synonym, ...wrongs]);
-        // ========== 修正后的代码（忽略大小写 + 保留原文大小写） ==========
-        const regex = new RegExp('\\b' + p.target + '\\b', 'gi');
-        const sentenceDisplay = p.example.replace(regex, function(match) {
-            return '<u>' + match + '</u>';
-        });
-        // =================================================================
+        const seeds = [p.target, p.word, (p.word || '').toLowerCase()].filter(Boolean);
+        let sentenceDisplay = p.example;
+        for (let si = 0; si < seeds.length; si++) {
+            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\]/g, '\$&') + '\w*\b', 'i');
+            if (re.test(sentenceDisplay)) {
+                sentenceDisplay = sentenceDisplay.replace(re, function(match) { return '<u>' + match + '</u>'; });
+                break;
+            }
+        }
         questions.push({
             stage: 2,
             type: 'choice',

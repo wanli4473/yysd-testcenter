@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-writing">
     <meta name="exam:title" content="单元5 · 环境与污染">
     <meta name="exam:description" content="写作专项词汇 · 科技环境 · 环境与污染">
-<meta charset="UTF-8">
+
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元5-科技环境-环境与污染</title>
+    <title>单元5 · 环境与污染</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -213,7 +213,7 @@ const phraseData = [
     { cn:'二氧化碳', en:'Carbon dioxide', word:'Carbon', synonym:'CO2', target:'carbon', detail:'carbon dioxide 表示“二氧化碳”，是最主要的温室气体。', example:'Carbon dioxide is released when fossil fuels are burned.' },
     { cn:'有毒有害物质', en:'Toxic and harmful substances', word:'Toxic', synonym:'Poisonous', target:'toxic', detail:'toxic substances 表示“有毒有害物质”，指对人体和环境有害的化学物质。', example:'Toxic and harmful substances should be properly disposed of.' },
     { cn:'污染物', en:'Pollutant', word:'Pollutant', synonym:'Contaminant', target:'pollutant', detail:'pollutant 表示“污染物”，指污染空气、水或土壤的物质。', example:'Industrial factories release a large amount of pollutants.' },
-    { cn:'排放污水', en:'Discharge waste water', word:'Discharge', synonym:'Release', target:'discharge', detail:'discharge waste water 表示“排放污水”，指将废水排入环境中。', example:'Factories should treat waste water before discharging it.' },
+    { cn:'排放污水', en:'Discharge waste water', word:'Discharge', synonym:'Release', target:'discharging', detail:'discharge waste water 表示“排放污水”，指将废水排入环境中。', example:'Factories should treat waste water before discharging it.' },
     { cn:'垃圾处理', en:'Waste disposal', word:'Disposal', synonym:'Treatment', target:'disposal', detail:'waste disposal 表示“垃圾处理”，指对废弃物的管理和处置。', example:'Proper waste disposal is essential for environmental protection.' },
 
     // —— 环境问题 ——
@@ -229,9 +229,9 @@ const phraseData = [
     { cn:'化石燃料', en:'Fossil fuel', word:'Fossil', synonym:'Petroleum', target:'fossil', detail:'fossil fuel 表示“化石燃料”，如煤、石油、天然气等。', example:'Fossil fuels are non-renewable energy sources.' },
     { cn:'储量', en:'Reserves', word:'Reserves', synonym:'Resources', target:'reserves', detail:'reserves 表示“储量”，指自然资源的储存量。', example:'Oil reserves are being depleted at an alarming rate.' },
     { cn:'开采', en:'Exploit', word:'Exploit', synonym:'Extract', target:'exploit', detail:'exploit 表示“开采”，指对自然资源的开发、利用。', example:'Some countries exploit natural resources without considering environmental impact.' },
-    { cn:'耗尽自然资源', en:'Deplete natural resources', word:'Deplete', synonym:'Exhaust', target:'deplete', detail:'deplete natural resources 表示“耗尽自然资源”，指过度使用导致资源枯竭。', example:'Human activities are depleting natural resources at an unsustainable rate.' },
+    { cn:'耗尽自然资源', en:'Deplete natural resources', word:'Deplete', synonym:'Exhaust', target:'depleting', detail:'deplete natural resources 表示“耗尽自然资源”，指过度使用导致资源枯竭。', example:'Human activities are depleting natural resources at an unsustainable rate.' },
     { cn:'给资源造成压力', en:'Put a strain on resources', word:'Strain', synonym:'Pressure', target:'strain', detail:'put a strain on 表示“给...造成压力”，指增加资源的负担。', example:'The growing population puts a strain on natural resources.' },
-    { cn:'浪费', en:'Waste', word:'Waste', synonym:'Squander', target:'waste', detail:'waste 表示“浪费”，指不节约地使用资源。', example:'We should avoid wasting water and electricity.' },
+    { cn:'浪费', en:'Waste', word:'Waste', synonym:'Squander', target:'wasting', detail:'waste 表示“浪费”，指不节约地使用资源。', example:'We should avoid wasting water and electricity.' },
 
     // —— 环境治理与保护 ——
     { cn:'垃圾分类', en:'Waste classification', word:'Classification', synonym:'Sorting', target:'classification', detail:'waste classification 表示“垃圾分类”，指将垃圾按类别分开。', example:'Waste classification helps to improve recycling efficiency.' },
@@ -292,16 +292,27 @@ function generateQuestions() {
     });
 
     // 阶段三：同义替换 (10题)
-    const stage3Data = shuffle([...phraseData]).slice(0, 10);
+    const stage3Pool = shuffle([...phraseData]).filter(function(p) {
+        return p.synonym && p.synonym.toLowerCase() !== (p.word || '').toLowerCase();
+    });
+    const stage3Data = stage3Pool.slice(0, 10);
     stage3Data.forEach(p => {
         const allSynonyms = phraseData.filter(x => x.word !== p.word).map(x => x.synonym);
         const shuffledSyns = shuffle([...allSynonyms]);
-        const wrongs = shuffledSyns.slice(0, 3);
+        const wrongs = shuffledSyns.filter(function(s) {
+            return s && s.toLowerCase() !== p.synonym.toLowerCase();
+        }).slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
         const opts = shuffle([p.synonym, ...wrongs]);
-        const regex = new RegExp('\\b' + p.target + '\\b', 'gi');
-        const sentenceDisplay = p.example.replace(regex, function(match) {
-            return '<u>' + match + '</u>';
+        const seeds = [p.target, p.word, (p.word || '').toLowerCase()].filter(Boolean);
+        let sentenceDisplay = p.example;
+        for (let si = 0; si < seeds.length; si++) {
+            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\]/g, '\$&') + '\w*\b', 'i');
+            if (re.test(sentenceDisplay)) {
+                sentenceDisplay = sentenceDisplay.replace(re, function(match) { return '<u>' + match + '</u>'; });
+                break;
+            }
+        }
         questions.push({
             stage: 2,
             type: 'choice',

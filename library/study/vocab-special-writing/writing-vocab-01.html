@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-writing">
     <meta name="exam:title" content="单元1 · 学习行为与态度">
     <meta name="exam:description" content="写作专项词汇 · 教育 · 学习行为与态度">
-<meta charset="UTF-8">
+
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>雅思写作 · 教育话题（30词）</title>
+    <title>单元1 · 学习行为与态度</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -226,7 +226,7 @@ const phraseData = [
     { cn:'全面发展', en:'Comprehensive development', word:'Development', synonym:'Overall', target:'development', detail:'comprehensive development 表示“全面发展”。', example:'Education should promote comprehensive development of students.' },
     { cn:'批判思维', en:'Critical thinking', word:'Thinking', synonym:'Analytical', target:'thinking', detail:'critical thinking 表示“批判性思维”，是学术写作高频词。', example:'Schools should cultivate students\' critical thinking.' },
     { cn:'应试教育', en:'Exam-oriented education', word:'Oriented', synonym:'Test-focused', target:'oriented', detail:'exam-oriented 表示“以考试为导向的”。', example:'Exam-oriented education has been widely criticised.' },
-    { cn:'填鸭式教学', en:'Cramming method', word:'Cramming', synonym:'Cramming', target:'cramming', detail:'cramming 表示“填鸭式教学、死记硬背式学习”。', example:'The cramming method of teaching is outdated.' },
+    { cn:'填鸭式教学', en:'Cramming method', word:'Cramming', synonym:'Drilling', target:'cramming', detail:'cramming 表示“填鸭式教学、死记硬背式学习”。', example:'The cramming method of teaching is outdated.' },
 
     // —— 学生成长与发展 ——
     { cn:'开阔视野', en:'Broaden horizons', word:'Broaden', synonym:'Expand', target:'broaden', detail:'固定搭配，broaden one\'s horizons 表示“开阔眼界”。', example:'Travel can broaden one\'s horizons.' },
@@ -240,7 +240,7 @@ const phraseData = [
     { cn:'与...竞争', en:'Compete with', word:'Compete', synonym:'Vie', target:'compete', detail:'不及物动词，接 with 表示“与...竞争”，接 for 表示“为...而竞争”。', example:'Students compete with each other for scholarships.' },
     { cn:'与...合作', en:'Cooperate with', word:'Cooperate', synonym:'Collaborate', target:'cooperate', detail:'不及物动词，接 with 表示“与...合作”。', example:'Employees should cooperate with colleagues.' },
     { cn:'团队精神', en:'Team spirit', word:'Spirit', synonym:'Teamwork', target:'spirit', detail:'team spirit 表示“团队精神、协作精神”。', example:'Team spirit is essential for group projects.' },
-    { cn:'为...做贡献', en:'Contribute to', word:'Contribute', synonym:'Contribute', target:'contribute', detail:'contribute to 表示“为...做贡献、促成...”，介词 to 后接名词。', example:'Every student should contribute to the team.' },
+    { cn:'为...做贡献', en:'Contribute to', word:'Contribute', synonym:'Donate', target:'contribute', detail:'contribute to 表示“为...做贡献、促成...”，介词 to 后接名词。', example:'Every student should contribute to the team.' },
 
     // —— 教育问题与现象 ——
     { cn:'考试作弊', en:'Cheat in the exam', word:'Cheat', synonym:'Copy', target:'cheat', detail:'cheat in the exam 表示“考试作弊”。', example:'Students who cheat in the exam will be punished.' },
@@ -297,17 +297,27 @@ function generateQuestions() {
     });
 
     // 阶段三：同义替换 (10题)
-    const stage3Data = shuffle([...phraseData]).slice(0, 10);
+    const stage3Pool = shuffle([...phraseData]).filter(function(p) {
+        return p.synonym && p.synonym.toLowerCase() !== (p.word || '').toLowerCase();
+    });
+    const stage3Data = stage3Pool.slice(0, 10);
     stage3Data.forEach(p => {
         const allSynonyms = phraseData.filter(x => x.word !== p.word).map(x => x.synonym);
         const shuffledSyns = shuffle([...allSynonyms]);
-        const wrongs = shuffledSyns.slice(0, 3);
+        const wrongs = shuffledSyns.filter(function(s) {
+            return s && s.toLowerCase() !== p.synonym.toLowerCase();
+        }).slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
         const opts = shuffle([p.synonym, ...wrongs]);
-        const regex = new RegExp('\\b' + p.target + '\\b', 'gi');
-        const sentenceDisplay = p.example.replace(regex, function(match) {
-            return '<u>' + match + '</u>';
-        });
+        const seeds = [p.target, p.word, (p.word || '').toLowerCase()].filter(Boolean);
+        let sentenceDisplay = p.example;
+        for (let si = 0; si < seeds.length; si++) {
+            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\]/g, '\$&') + '\w*\b', 'i');
+            if (re.test(sentenceDisplay)) {
+                sentenceDisplay = sentenceDisplay.replace(re, function(match) { return '<u>' + match + '</u>'; });
+                break;
+            }
+        }
         questions.push({
             stage: 2,
             type: 'choice',

@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-writing">
     <meta name="exam:title" content="单元12 · 逻辑与因果">
     <meta name="exam:description" content="写作专项词汇 · 通用词汇 · 逻辑与因果">
-<meta charset="UTF-8">
+
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元12-通用词汇-逻辑与因果</title>
+    <title>单元12 · 逻辑与因果</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -209,7 +209,7 @@
 const phraseData = [
     // —— 因果关系 ——
     { cn:'导致', en:'Lead to', word:'Lead', synonym:'Cause', target:'lead', detail:'lead to 表示“导致”，指引起某种结果，后面接名词或动名词。', example:'Poor diet can lead to serious health problems.' },
-    { cn:'导致', en:'Result in', word:'Result', synonym:'Cause', target:'results', detail:'result in 表示“导致、产生”，指某种行为产生了某种结果。', example:'Hard work results in success.' },
+    { cn:'造成', en:'Result in', word:'Result', synonym:'Cause', target:'results', detail:'result in 表示“导致、产生”，指某种行为产生了某种结果。', example:'Hard work results in success.' },
     { cn:'归因于', en:'Be attributed to', word:'Attribute', synonym:'Due to', target:'attributed', detail:'be attributed to 表示“归因于...”，指某事物被视为由...引起的。', example:'The success was attributed to careful planning.' },
     { cn:'来源于', en:'Be derived from', word:'Derived', synonym:'Originate', target:'derived', detail:'be derived from 表示“来源于...”，指某事物源自于某处。', example:'Many English words are derived from Latin.' },
     { cn:'由...决定', en:'Be determined by', word:'Determined', synonym:'Decided by', target:'determined', detail:'be determined by 表示“由...决定”，指某事物的结果受某因素影响。', example:'The outcome is determined by many factors.' },
@@ -293,19 +293,27 @@ function generateQuestions() {
     });
 
     // 阶段三：同义替换 (10题)
-    const stage3Data = shuffle([...phraseData]).slice(0, 10);
+    const stage3Pool = shuffle([...phraseData]).filter(function(p) {
+        return p.synonym && p.synonym.toLowerCase() !== (p.word || '').toLowerCase();
+    });
+    const stage3Data = stage3Pool.slice(0, 10);
     stage3Data.forEach(p => {
         const allSynonyms = phraseData.filter(x => x.word !== p.word).map(x => x.synonym);
         const shuffledSyns = shuffle([...allSynonyms]);
-        const wrongs = shuffledSyns.slice(0, 3);
+        const wrongs = shuffledSyns.filter(function(s) {
+            return s && s.toLowerCase() !== p.synonym.toLowerCase();
+        }).slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
         const opts = shuffle([p.synonym, ...wrongs]);
-        // ========== 修正后的代码（忽略大小写 + 保留原文大小写） ==========
-        const regex = new RegExp('\\b' + p.target + '\\b', 'gi');
-        const sentenceDisplay = p.example.replace(regex, function(match) {
-            return '<u>' + match + '</u>';
-        });
-        // =================================================================
+        const seeds = [p.target, p.word, (p.word || '').toLowerCase()].filter(Boolean);
+        let sentenceDisplay = p.example;
+        for (let si = 0; si < seeds.length; si++) {
+            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\]/g, '\$&') + '\w*\b', 'i');
+            if (re.test(sentenceDisplay)) {
+                sentenceDisplay = sentenceDisplay.replace(re, function(match) { return '<u>' + match + '</u>'; });
+                break;
+            }
+        }
         questions.push({
             stage: 2,
             type: 'choice',

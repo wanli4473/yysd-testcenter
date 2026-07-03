@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-writing">
     <meta name="exam:title" content="单元13 · 对比与程度">
     <meta name="exam:description" content="写作专项词汇 · 通用词汇 · 对比与程度">
-<meta charset="UTF-8">
+
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元13-通用词汇-对比与程度</title>
+    <title>单元13 · 对比与程度</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -231,14 +231,14 @@ const phraseData = [
     { cn:'优于', en:'Be superior to', word:'Superior', synonym:'Better than', target:'superior', detail:'be superior to 表示“优于”，指比某事物更好。', example:'Online learning is superior to traditional methods in some aspects.' },
     { cn:'劣于', en:'Be inferior to', word:'Inferior', synonym:'Worse than', target:'inferior', detail:'be inferior to 表示“劣于”，指比某事物更差。', example:'Some products are inferior to others in quality.' },
     { cn:'与...相似', en:'Be similar to', word:'Similar', synonym:'Resemble', target:'similar', detail:'be similar to 表示“与...相似”，指两事物有相似之处。', example:'The two teaching methods are similar to each other.' },
-    { cn:'与...不同', en:'Be different from', word:'Different', synonym:'Differ from', target:'different', detail:'be different from 表示“与...不同”，指两事物有差异。', example:'This course is different from the one I took before.' },
+    { cn:'与...有差异', en:'Be different from', word:'Different', synonym:'Differ from', target:'different', detail:'be different from 表示“与...不同”，指两事物有差异。', example:'This course is different from the one I took before.' },
     { cn:'等同于', en:'Be equivalent to', word:'Equivalent', synonym:'Equal to', target:'equivalent', detail:'be equivalent to 表示“等同于”，指价值或意义相同。', example:'A bachelor\'s degree is equivalent to a four-year university education.' },
     { cn:'与...相同', en:'Be identical to', word:'Identical', synonym:'Same as', target:'identical', detail:'be identical to 表示“与...相同”，指完全一样。', example:'Your answer is identical to mine.' },
 
     // —— 程度与比例（4个） ——
     { cn:'成正比', en:'In proportion to', word:'Proportion', synonym:'Proportional', target:'proportion', detail:'in proportion to 表示“与...成正比”，指按比例变化。', example:'The cost is in proportion to the quality of the product.' },
     { cn:'成反比', en:'In reverse proportion to', word:'Reverse', synonym:'Inverse', target:'reverse', detail:'in reverse proportion to 表示“与...成反比”，指一方增加，另一方减少。', example:'The supply is in reverse proportion to the demand.' },
-    { cn:'稍微', en:'Slight', word:'Slight', synonym:'Small', target:'slight', detail:'slight 表示“轻微的、少量的”，形容变化或差异很小。', example:'There has been a slight increase in the price.' },
+    { cn:'轻微的', en:'Slight', word:'Slight', synonym:'Small', target:'slight', detail:'slight 表示“轻微的、少量的”，形容变化或差异很小。', example:'There has been a slight increase in the price.' },
     { cn:'适度的', en:'Moderate', word:'Moderate', synonym:'Reasonable', target:'moderate', detail:'moderate 表示“适度的、中等的”，指程度适中。', example:'The government should take moderate measures to control inflation.' },
 
     // —— 补充对比（2个） ——
@@ -293,19 +293,27 @@ function generateQuestions() {
     });
 
     // 阶段三：同义替换 (10题)
-    const stage3Data = shuffle([...phraseData]).slice(0, 10);
+    const stage3Pool = shuffle([...phraseData]).filter(function(p) {
+        return p.synonym && p.synonym.toLowerCase() !== (p.word || '').toLowerCase();
+    });
+    const stage3Data = stage3Pool.slice(0, 10);
     stage3Data.forEach(p => {
         const allSynonyms = phraseData.filter(x => x.word !== p.word).map(x => x.synonym);
         const shuffledSyns = shuffle([...allSynonyms]);
-        const wrongs = shuffledSyns.slice(0, 3);
+        const wrongs = shuffledSyns.filter(function(s) {
+            return s && s.toLowerCase() !== p.synonym.toLowerCase();
+        }).slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
         const opts = shuffle([p.synonym, ...wrongs]);
-        // ========== 修正后的代码（忽略大小写 + 保留原文大小写） ==========
-        const regex = new RegExp('\\b' + p.target + '\\b', 'gi');
-        const sentenceDisplay = p.example.replace(regex, function(match) {
-            return '<u>' + match + '</u>';
-        });
-        // =================================================================
+        const seeds = [p.target, p.word, (p.word || '').toLowerCase()].filter(Boolean);
+        let sentenceDisplay = p.example;
+        for (let si = 0; si < seeds.length; si++) {
+            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\]/g, '\$&') + '\w*\b', 'i');
+            if (re.test(sentenceDisplay)) {
+                sentenceDisplay = sentenceDisplay.replace(re, function(match) { return '<u>' + match + '</u>'; });
+                break;
+            }
+        }
         questions.push({
             stage: 2,
             type: 'choice',
