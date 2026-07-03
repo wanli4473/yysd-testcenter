@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    
     <meta name="exam:zone" content="study">
     <meta name="exam:subject" content="vocab-special-reading">
     <meta name="exam:title" content="单元10 · 综合高频">
     <meta name="exam:description" content="阅读专项词汇 · 综合高频">
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>单元10 · 综合高频</title>
+    <title>阅读-单元10-综合高频</title>
     <style>
         :root {
             --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
@@ -135,7 +135,7 @@
             <button class="nav-tab active" data-mode="learn">📚 学习</button>
             <button class="nav-tab" data-mode="test">🎯 综合检测</button>
         </nav>
-        <span class="word-count-badge">共 32 词</span>
+        <span class="word-count-badge" id="wordCountBadge">词汇加载中</span>
     </div>
 </header>
 <div class="main-container">
@@ -143,7 +143,7 @@
 
     <section class="section" id="testSection">
         <div class="test-setup" id="testSetup">
-            <h3>📋 综合检测 · 共30题</h3>
+            <h3 id="testTotalTitle">📋 综合检测 · 题目加载中</h3>
             <p>分三个阶段，依次完成，不可跳转。</p>
             <div class="stage-info">
                 <div class="stage-item"><div class="num">①</div><div class="label">词义识别<br>英文→中文</div></div>
@@ -198,7 +198,7 @@ const wordData = [
 
     // —— 因果关系 ——
     { word:'consequently', ipa:'/ˈkɒn.sɪ.kwənt.li/', pos:'adv.', meaning:'因此；结果', synonym:'therefore', target:'consequently', example:'The company failed to innovate; consequently, it lost market share.', accept_meaning:['因此','结果'] },
-    { word:'hence', ipa:'/hens/', pos:'adv.', meaning:'因此；从此', synonym:'therefore', target:'hence', example:'He was late; hence, he missed the beginning of the meeting.', accept_meaning:['因此','从此'] },
+    { word:'hence', ipa:'/hens/', pos:'adv.', meaning:'因此；从此', synonym:'thus', target:'hence', example:'He was late; hence, he missed the beginning of the meeting.', accept_meaning:['因此','从此'] },
     { word:'accordingly', ipa:'/əˈkɔː.dɪŋ.li/', pos:'adv.', meaning:'相应地；因此', synonym:'consequently', target:'accordingly', example:'The situation has changed; accordingly, we must adjust our plans.', accept_meaning:['相应地','因此'] },
     { word:'thereby', ipa:'/ðeəˈbaɪ/', pos:'adv.', meaning:'因此；从而', synonym:'thus', target:'thereby', example:'She reduced her spending, thereby saving more money.', accept_meaning:['因此','从而'] },
 
@@ -215,8 +215,8 @@ const wordData = [
     { word:'remarkably', ipa:'/rɪˈmɑː.kə.bli/', pos:'adv.', meaning:'显著地；引人注目地', synonym:'notably', target:'remarkably', example:'The economy has recovered remarkably in the past year.', accept_meaning:['显著地','引人注目地'] },
 
     // —— 转变/变化 ——
-    { word:'transform', ipa:'/trænsˈfɔːm/', pos:'v.', meaning:'改变；转化；改造', synonym:'convert', target:'transform', example:'Technology has transformed the way we communicate.', accept_meaning:['改变','转化','改造'] },
-    { word:'shift', ipa:'/ʃɪft/', pos:'v./n.', meaning:'转移；改变；轮班', synonym:'change', target:'shift', example:'Public opinion has shifted on this issue.', accept_meaning:['转移','改变','轮班'] },
+    { word:'transform', ipa:'/trænsˈfɔːm/', pos:'v.', meaning:'改变；转化；改造', synonym:'convert', target:'transformed', example:'Technology has transformed the way we communicate.', accept_meaning:['改变','转化','改造'] },
+    { word:'shift', ipa:'/ʃɪft/', pos:'v./n.', meaning:'转移；改变；轮班', synonym:'change', target:'shifted', example:'Public opinion has shifted on this issue.', accept_meaning:['转移','改变','轮班'] },
     { word:'evolve', ipa:'/iˈvɒlv/', pos:'v.', meaning:'进化；演变', synonym:'develop', target:'evolve', example:'Species evolve over time to adapt to their environment.', accept_meaning:['进化','演变'] },
     { word:'transition', ipa:'/trænˈzɪʃ.ən/', pos:'n.', meaning:'过渡；转变', synonym:'changeover', target:'transition', example:'The transition from school to work can be challenging.', accept_meaning:['过渡','转变'] },
 
@@ -232,10 +232,10 @@ const wordData = [
     { word:'generate', ipa:'/ˈdʒen.ə.reɪt/', pos:'v.', meaning:'产生；生成；引起', synonym:'produce', target:'generate', example:'The project is expected to generate more than 500 jobs.', accept_meaning:['产生','生成','引起'] },
     { word:'implement', ipa:'/ˈɪm.plɪ.ment/', pos:'v./n.', meaning:'实施；执行；工具', synonym:'execute', target:'implement', example:'The government will implement new policies next year.', accept_meaning:['实施','执行','工具'] },
     { word:'sustain', ipa:'/səˈsteɪn/', pos:'v.', meaning:'维持；支撑；承受', synonym:'maintain', target:'sustain', example:'The company needs to sustain its growth over the long term.', accept_meaning:['维持','支撑','承受'] },
-    { word:'emerge', ipa:'/iˈmɜːdʒ/', pos:'v.', meaning:'出现；浮现；兴起', synonym:'appear', target:'emerge', example:'New technologies are emerging all the time.', accept_meaning:['出现','浮现','兴起'] },
+    { word:'emerge', ipa:'/iˈmɜːdʒ/', pos:'v.', meaning:'出现；浮现；兴起', synonym:'appear', target:'emerging', example:'New technologies are emerging all the time.', accept_meaning:['出现','浮现','兴起'] },
 
     // —— 通用高频名词/形容词 ——
-    { word:'implication', ipa:'/ˌɪm.plɪˈkeɪ.ʃən/', pos:'n.', meaning:'含义；暗示；影响', synonym:'consequence', target:'implication', example:'The policy has serious implications for the economy.', accept_meaning:['含义','暗示','影响'] },
+    { word:'implication', ipa:'/ˌɪm.plɪˈkeɪ.ʃən/', pos:'n.', meaning:'含义；暗示；影响', synonym:'consequence', target:'implications', example:'The policy has serious implications for the economy.', accept_meaning:['含义','暗示','影响'] },
     { word:'diverse', ipa:'/daɪˈvɜːs/', pos:'adj.', meaning:'多样的；不同的', synonym:'varied', target:'diverse', example:'The city has a diverse population.', accept_meaning:['多样的','不同的'] },
     { word:'flexible', ipa:'/ˈflek.sə.bəl/', pos:'adj.', meaning:'灵活的；可变的', synonym:'adaptable', target:'flexible', example:'Online courses are more flexible than traditional classes.', accept_meaning:['灵活的','可变的'] },
     { word:'potential', ipa:'/pəˈten.ʃəl/', pos:'adj./n.', meaning:'潜在的；潜力；可能性', synonym:'possible', target:'potential', example:'The new technology has great potential for improving healthcare.', accept_meaning:['潜在的','潜力','可能性'] },
@@ -246,9 +246,17 @@ const wordData = [
 console.log('✅ wordData 长度:', wordData.length);
 console.log('✅ 预期长度: 32');
 
-const TOTAL = 30;
+const TOTAL_STAGE1 = wordData.length; // 32 — 阶段一覆盖全部单词
+const TOTAL_STAGE2 = 10;
+const TOTAL_STAGE3 = 10;
+const TOTAL = TOTAL_STAGE1 + TOTAL_STAGE2 + TOTAL_STAGE3; // 52
+
 const STAGE_NAMES = ['词义识别', '同义替换', '综合应用'];
-const STAGE_DESC = ['英文→中文', '英文→英文近义', '语境填空+一词多义'];
+const STAGE_DESC = [`英文→中文（全部${TOTAL_STAGE1}词）`, '英文→英文近义', '语境填空+一词多义'];
+const wordCountBadge = document.getElementById('wordCountBadge');
+if (wordCountBadge) wordCountBadge.textContent = `共 ${TOTAL_STAGE1} 词`;
+const testTotalTitle = document.getElementById('testTotalTitle');
+if (testTotalTitle) testTotalTitle.textContent = `📋 综合检测 · 共${TOTAL}题`;
 
 // ==================== 工具 ====================
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -258,10 +266,10 @@ function generateQuestions() {
     const all = shuffle([...wordData]);
     const questions = [];
 
-    // 阶段一：词义识别 (10题)
-    const stage1Data = all.slice(0, 10);
+    // 阶段一：词义识别 (32题) — 覆盖全部单词
+    const stage1Data = all; // 全部 32 个
     stage1Data.forEach(w => {
-        const allMeanings = wordData.filter(x => x.word !== w.word).map(x => x.meaning);
+        const allMeanings = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.meaning).filter(m => m !== w.meaning))];
         const shuffledMeanings = shuffle([...allMeanings]);
         const wrongs = shuffledMeanings.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('未知');
@@ -279,7 +287,7 @@ function generateQuestions() {
     // 阶段二：同义替换 (10题)
     const stage2Data = all.slice(10, 20);
     stage2Data.forEach(w => {
-        const allSynonyms = wordData.filter(x => x.word !== w.word).map(x => x.synonym);
+        const allSynonyms = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.synonym).filter(s => s !== w.synonym))];
         const shuffledSyns = shuffle([...allSynonyms]);
         const wrongs = shuffledSyns.slice(0, 3);
         while(wrongs.length < 3) wrongs.push('unknown');
@@ -302,7 +310,7 @@ function generateQuestions() {
             // 语境填空
             const regex = new RegExp('\\b' + w.target + '\\b', 'gi');
             const sentenceDisplay = w.example.replace(regex, '______');
-            const allWords = wordData.filter(x => x.word !== w.word).map(x => x.word);
+            const allWords = [...new Set(wordData.filter(x => x.word !== w.word).map(x => x.word).filter(word => word !== w.word))];
             const shuffledWords = shuffle([...allWords]);
             const wrongs = shuffledWords.slice(0, 3);
             while(wrongs.length < 3) wrongs.push('unknown');
@@ -320,7 +328,7 @@ function generateQuestions() {
             const correctMeaning = w.accept_meaning[0];
             const wrongMeanings = w.accept_meaning.slice(1);
             while(wrongMeanings.length < 3) {
-                const otherMeanings = wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning);
+                const otherMeanings = [...new Set(wordData.filter(x => x.word !== w.word).flatMap(x => x.accept_meaning).filter(m => m !== correctMeaning))];
                 const shuffledOthers = shuffle([...otherMeanings]);
                 for (const m of shuffledOthers) {
                     if (!wrongMeanings.includes(m) && m !== correctMeaning) {
@@ -483,7 +491,7 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === 'test' && isTestActive) {
-            alert('检测进行中，请先完成全部30题！');
+            alert(`检测进行中，请先完成全部${TOTAL}题！`);
             return;
         }
         switchMode(mode);
