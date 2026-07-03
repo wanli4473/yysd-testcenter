@@ -1084,46 +1084,11 @@ table.data tr:last-child td { border-bottom: 0; }
   padding: 24px 24px 22px;
   min-height: 230px;
 }
-.vol-card__spine {
-  width: 46px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, #102a4c, #07192f);
-  border-right: 1px solid rgba(199,164,93,.28);
-  box-shadow: inset -2px 0 8px rgba(0,0,0,.12);
-  transition: box-shadow var(--motion-base) var(--ease-premium);
-}
-.vol-card__spine-num {
-  font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  color: rgba(255,255,255,.92);
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
-.vol-card--tier-new .vol-card__spine {
-  background: linear-gradient(180deg, #163458, #07192f);
-  box-shadow: inset -3px 0 0 rgba(199,164,93,.55);
-}
-.vol-card--tier-mid .vol-card__spine {
-  background: linear-gradient(180deg, #1a3355, #0d2240);
-}
-.vol-card--tier-base .vol-card__spine {
-  background: linear-gradient(180deg, #3d4d62, #2a3544);
-  box-shadow: inset -2px 0 0 rgba(255,255,255,.12);
-}
 .vol-card:hover {
-  transform: translateY(-4px) translateX(3px);
+  transform: translateY(-4px);
   border-color: rgba(199,164,93,.64);
   box-shadow: 0 24px 56px rgba(7,25,47,.14);
 }
-.vol-card:hover .vol-card__spine {
-  box-shadow: inset -4px 0 0 rgba(241,211,138,.65);
-}
-.vol-card:has(.vol-card__spine)::after { display: none; }
 .vol-card__top {
   margin-bottom: 28px;
 }
@@ -1582,17 +1547,27 @@ table.data tr:last-child td { border-bottom: 0; }
 /* Zone pages — accent bar + chip restyle */
 .zone-page .minimal-page-head {
   position: relative;
-  padding-top: 40px;
+  padding: 18px 0 16px;
+  margin-bottom: 16px;
 }
 .zone-page .minimal-page-head::before {
   content: "";
   display: block;
   width: 52px;
   height: 3px;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
   border-radius: 99px;
   background: linear-gradient(90deg, var(--zone-accent, var(--brand-gold)), var(--brand-gold-light));
 }
+.zone-page .minimal-crumb { margin-bottom: 8px; }
+.zone-page .minimal-page-head h1 { margin: 6px 0 4px; }
+.zone-page .catalog-toolbar {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.zone-page .subject-group:first-child { margin-top: 0; }
+.zone-page .subject-group__head { margin-bottom: 12px; }
+.zone-page .home-dashboard { margin-bottom: 16px; }
 .zone-page--study    { --zone-accent: var(--c-zone-study); }
 .zone-page--practice { --zone-accent: var(--c-zone-practice); }
 .zone-page--mock     { --zone-accent: var(--c-zone-mock); }

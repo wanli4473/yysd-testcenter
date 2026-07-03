@@ -254,24 +254,29 @@ window.YYSD = (function () {
     var unit = book.subject ? " LIST" : " 份";
     var cnt = stats.total + unit;
     var progTxt = prog.done ? ("已学 " + prog.done + "/" + stats.total) : cnt;
-    var badge = book.key === "gaozhong" ? "GZ" : (book.key === "cet4" ? "4" : "SP");
-    var bookIcon = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
-      '<path d="M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z" stroke="currentColor" stroke-width="2"/>' +
-      '<path d="M8 4v13a3 3 0 0 0 3 3h9V7a3 3 0 0 0-3-3H8Z" stroke="currentColor" stroke-width="2"/></svg>';
+    var shortLabel = book.key === "gaozhong" ? "高中" : (book.key === "cet4" ? "四级" : "专项");
+    var tagTier = book.key === "special" ? "new" : (book.key === "cet4" ? "mid" : "base");
+    var shieldIcon = '<svg class="vol-card__shield" viewBox="0 0 14 16" aria-hidden="true"><path d="M7 1.2 12 3v5.2c0 3.4-2.1 5.9-5 7.3-2.9-1.4-5-3.9-5-7.3V3L7 1.2Z" fill="currentColor"/></svg>';
+    var bookIcon = '<svg class="vol-card__book" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path class="vol-card__book-l" d="M4.5 5.5c2.6 0 4.8.5 6.5 1.6v11.4c-1.7-1.1-3.9-1.6-6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="vol-card__book-r" d="M19.5 5.5c-2.6 0-4.8.5-6.5 1.6v11.4c1.7-1.1 3.9-1.6 6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M12 7.1v11.4" stroke="currentColor" stroke-width="2"/></svg>';
     return '' +
-      '<a class="vol-card vol-card--vocab" href="' + (prefix || "") + 'vocab.html?book=' + encodeURIComponent(book.key) + '">' +
+      '<a class="vol-card vol-card--vocab vol-card--tier-' + tagTier + '" href="' + (prefix || "") + 'vocab.html?book=' + encodeURIComponent(book.key) + '">' +
+        '<div class="vol-card__main">' +
         '<div class="vol-card__top">' +
-          '<span class="vol-card__vol">' + esc(badge) + '</span>' +
-          '<span class="vol-card__tag vol-card__tag--mid">' + esc(book.tag) + '</span>' +
+          '<span class="vol-card__vol">' + shieldIcon + ' ' + esc(shortLabel) + '</span>' +
+          '<span class="vol-card__tag vol-card__tag--' + tagTier + '">' + esc(book.tag) + '</span>' +
         '</div>' +
         '<div class="vol-card__body">' +
-          '<span class="vol-card__ico vol-card__ico--vocab">' + bookIcon + '</span>' +
+          '<span class="vol-card__ico">' + bookIcon + '</span>' +
           '<div><h3>' + esc(book.label) + '</h3>' +
           '<div class="vol-card__cnt">' + esc(progTxt) + '</div></div>' +
         '</div>' +
         '<div class="vol-card__foot">' +
           '<span class="vol-card__skills"><span class="vc-skill vc-skill--a">词</span></span>' +
           '<span class="vol-card__go">进入 ›</span>' +
+        '</div>' +
         '</div>' +
       '</a>';
   }
@@ -344,7 +349,6 @@ window.YYSD = (function () {
     var skills = '<span class="vc-skill vc-skill--a">A</span><span class="vc-skill vc-skill--b">B</span><span class="vc-skill vc-skill--u">◯</span>';
     return '' +
       '<a class="vol-card vol-card--tier-' + tag.c + doneClass + '" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
-        '<span class="vol-card__spine" aria-hidden="true"><span class="vol-card__spine-num">' + esc(v.vol) + '</span></span>' +
         '<div class="vol-card__main">' +
         '<div class="vol-card__top">' +
           '<span class="vol-card__vol">' + shieldIcon + ' VOL.' + esc(v.vol) + '</span>' +

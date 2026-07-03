@@ -206,7 +206,9 @@
     var head = '<div class="subject-group__head">' +
       '<span class="subject-dot" style="background:' + sub.color + '"></span>' +
       "<h2>" + Y.esc(cat.label) + '</h2><span class="cnt">' +
-      (cat.key === "ielts" ? Y.camVolumes(allItems).length + " 册" : countOf(cat.subject) + unitOf(cat.subject || "")) +
+      (cat.key === "ielts" ? Y.camVolumes(allItems).length + " 册"
+        : cat.key === "vocab" ? Y.vocabBooksForZone(allItems).length + " 本"
+        : countOf(cat.subject) + unitOf(cat.subject || "")) +
       "</span></div>";
 
     var body;
