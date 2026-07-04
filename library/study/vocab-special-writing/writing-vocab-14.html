@@ -310,7 +310,7 @@ function generateQuestions() {
         const seeds = [p.target, p.word, (p.word || '').toLowerCase()].filter(Boolean);
         let sentenceDisplay = p.example;
         for (let si = 0; si < seeds.length; si++) {
-            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\]/g, '\$&') + '\w*\b', 'i');
+            const re = new RegExp('\b' + seeds[si].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\w*\b', 'i');
             if (re.test(sentenceDisplay)) {
                 sentenceDisplay = sentenceDisplay.replace(re, function(match) { return '<u>' + match + '</u>'; });
                 break;
