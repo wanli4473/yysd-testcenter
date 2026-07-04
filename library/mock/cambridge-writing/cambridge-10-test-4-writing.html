@@ -200,7 +200,12 @@ document.getElementById('task1Tables').innerHTML = TEST.task1.charts.map(functio
     '<div class="wplan-missing" style="display:none;">\ud83e\udeb5 流程图待上传：流程图加载失败，请刷新页面后重试。</div></figure>';
 }).join('');
 
+let startTime = 0, timerInterval = null, finished = false;
+function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
 const SKEY = "cambridge-10-test-4-writing-draft";
+
+function wordCount(s){ return (s||'').trim().split(/\s+/).filter(Boolean).length; }
 
 /* restore saved draft */
 (function restore(){
