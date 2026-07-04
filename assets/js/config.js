@@ -5,6 +5,9 @@
 window.YYSD = (function () {
   "use strict";
 
+  // Bump when library HTML changes so exam iframe skips stale browser cache.
+  var CONTENT_VER = "20260704a";
+
   // Homepage display order: 学习区 → 练习区 → 模考区
   var ZONES = ["study", "practice", "mock"];
 
@@ -602,6 +605,7 @@ window.YYSD = (function () {
   }
 
   return {
+    CONTENT_VER: CONTENT_VER,
     ZONES: ZONES, ZONE: ZONE, ZONE_SUBJECTS: ZONE_SUBJECTS, SUBJECT: SUBJECT,
     NAV: NAV, navOf: navOf,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,

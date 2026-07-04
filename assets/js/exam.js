@@ -102,7 +102,7 @@
       backBtn.href = "zone.html?zone=mock&s=ielts";
     }
 
-    frame.src = "library/" + item.file;
+    frame.src = "library/" + item.file + "?v=" + encodeURIComponent(Y.CONTENT_VER || "1");
 
     if (!isStudy && item.duration > 0) startTimer(item.duration * 60);
 
