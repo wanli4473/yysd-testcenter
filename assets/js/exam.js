@@ -104,11 +104,35 @@
 
     frame.src = "library/" + item.file + "?v=" + encodeURIComponent(Y.CONTENT_VER || "1");
 
+    frame.addEventListener("load", injectReadingTools);
+
     if (!isStudy && item.duration > 0) startTimer(item.duration * 60);
 
     backBtn.addEventListener("click", function (e) {
       if (!isStudy && !confirm("确定退出吗？未交卷的作答可能不会被保存。")) e.preventDefault();
     });
+  }
+
+  function injectReadingTools() {
+    if (!item || !Y.isReadingExam(item)) return;
+    var doc = frame.contentDocument;
+    if (!doc || !doc.body || doc.getElementById("yysd-reading-tools-js")) return;
+
+    var v = encodeURIComponent(Y.CONTENT_VER || "1");
+    var base = new URL("./", location.href).href;
+
+    var link = doc.createElement("link");
+    link.id = "yysd-reading-tools-css";
+    link.rel = "stylesheet";
+    link.href = base + "assets/css/reading-tools.css?v=" + v;
+    doc.head.appendChild(link);
+
+    var script = doc.createElement("script");
+    script.id = "yysd-reading-tools-js";
+    script.src = base + "assets/js/reading-tools.js?v=" + v;
+    script.dataset.examId = item.id;
+    script.dataset.persist = item.zone === "mock" ? "session" : "local";
+    doc.body.appendChild(script);
   }
 
   function startTimer(seconds) {

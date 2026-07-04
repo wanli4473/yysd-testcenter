@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260704b";
+  var CONTENT_VER = "20260704d";
 
   // Homepage display order: 学习区 → 练习区 → 模考区
   var ZONES = ["study", "practice", "mock"];
@@ -287,6 +287,14 @@ window.YYSD = (function () {
   // ---- Cambridge series grouping (模考区 shows one card per volume) ----
   function isCambridge(subject) {
     return subject === "cambridge-listening" || subject === "cambridge-reading" || subject === "cambridge-writing";
+  }
+
+  // Reading exams that show passage text (Cambridge, practice reading, placement tests, etc.)
+  function isReadingExam(item) {
+    if (!item) return false;
+    if (item.subject === "cambridge-reading") return true;
+    var blob = (item.file || "") + (item.title || "") + (item.description || "");
+    return /reading|阅读/i.test(blob);
   }
 
   // Pull the volume number (e.g. "15") out of a title like "剑桥雅思15 · Test 1（听力）".
@@ -610,7 +618,7 @@ window.YYSD = (function () {
     NAV: NAV, navOf: navOf,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
     fileHref: fileHref, cardHTML: cardHTML, countsBySubject: countsBySubject,
-    isCambridge: isCambridge, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,
+    isCambridge: isCambridge, isReadingExam: isReadingExam, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,
     camVolumeCardHTML: camVolumeCardHTML, camVolumeProgress: camVolumeProgress,
     cambridgeCatalogHTML: cambridgeCatalogHTML, searchItems: searchItems,
     recentActivity: recentActivity, continueStripHTML: continueStripHTML,
