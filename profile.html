@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人中心 · 优益思达国际课程中心</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260707a">
+</head>
+<body class="home-minimal">
+
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="index.html" class="minimal-brand" aria-label="优益思达国际课程中心首页">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text">
+          <b>优益思达国际课程中心</b>
+          <span>YYSD International Course Center</span>
+        </span>
+      </a>
+      <nav class="minimal-nav" id="nav" aria-label="主导航">
+        <a href="zone.html?zone=study">学习区</a>
+        <a href="zone.html?zone=practice">练习区</a>
+        <a href="zone.html?zone=mock">模考区</a>
+        <a href="results.html">我的成绩</a>
+        <a href="profile.html" id="nav-auth" class="is-active">个人中心</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="minimal-shell minimal-page-head">
+    <div class="minimal-crumb"><a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> 个人中心</div>
+    <div class="minimal-eyebrow">PROFILE</div>
+    <h1>个人中心</h1>
+    <p class="minimal-page-desc" id="profile-desc">加载中…</p>
+  </section>
+
+  <main class="minimal-shell minimal-main">
+    <div class="auth-card reveal" id="profile-card">
+      <dl class="profile-dl">
+        <dt>手机号</dt><dd id="p-phone">—</dd>
+        <dt>注册时间</dt><dd id="p-created">—</dd>
+        <dt>最近登录</dt><dd id="p-login">—</dd>
+      </dl>
+      <p class="auth-card__desc">云端学习记录与付费解锁功能将在备案完成后陆续开放。</p>
+      <button type="button" class="btn btn--ghost" id="logout-btn">退出登录</button>
+    </div>
+  </main>
+
+  <footer class="minimal-footer minimal-footer--rich">
+    <div class="minimal-shell minimal-footer__inner">
+      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心
+        <span class="site-icp" data-icp></span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="assets/js/config.js?v=20260707a"></script>
+  <script src="assets/js/auth.js?v=20260707a"></script>
+  <script src="assets/js/ui.js?v=20260702f"></script>
+  <script>
+  (function () {
+    var A = window.YYSD_AUTH;
+    document.getElementById("year").textContent = new Date().getFullYear();
+    if (!A.requireLogin()) return;
+
+    function fmt(iso) {
+      if (!iso) return "—";
+      try {
+        return new Date(iso).toLocaleString("zh-CN", { hour12: false });
+      } catch (e) { return iso; }
+    }
+
+    A.api("/api/auth/me")
+      .then(function (d) {
+        var u = d.user;
+        document.getElementById("p-phone").textContent = u.phone;
+        document.getElementById("p-created").textContent = fmt(u.createdAt);
+        document.getElementById("p-login").textContent = fmt(u.lastLoginAt);
+        document.getElementById("profile-desc").textContent =
+          "欢迎回来。您的账号已登录，可在本站继续学习与模考。";
+      })
+      .catch(function () {
+        A.setToken("");
+        location.href = "login.html";
+      });
+
+    document.getElementById("logout-btn").addEventListener("click", function () {
+      A.logout();
+    });
+  })();
+  </script>
+</body>
+</html>
