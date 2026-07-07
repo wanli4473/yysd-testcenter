@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fix mock-zone manifest durations and sync exam:description meta in HTML files."""
+"""Fix mock-zone manifest durations and sync exam metadata in HTML files."""
 
 from __future__ import annotations
 
@@ -12,6 +12,8 @@ MANIFEST = ROOT / "library/manifest.json"
 TEST_RE = re.compile(r"const TEST = (\{.*?\n\});", re.S)
 DESC_RE = re.compile(r'(<meta name="exam:description" content=")([^"]*)(">)')
 DUR_RE = re.compile(r'(<meta name="exam:duration" content=")([^"]*)(">)')
+STRAY_DURATION_RE = re.compile(r'(?m)^X">$')
+SUBJECT_RE = re.compile(r'(<meta name="exam:subject" content="[^"]+">\n)')
 FILE_RE = re.compile(r"cambridge-(\d+)-test-(\d+)")
 
 
@@ -88,6 +90,16 @@ def patch_html(path: Path, description: str, duration: int) -> bool:
         text = DESC_RE.sub(lambda m: m.group(1) + description + m.group(3), text, count=1)
     if DUR_RE.search(text):
         text = DUR_RE.sub(lambda m: m.group(1) + str(duration) + m.group(3), text, count=1)
+    elif STRAY_DURATION_RE.search(text):
+        text = STRAY_DURATION_RE.sub(
+            f'<meta name="exam:duration" content="{duration}">', text, count=1
+        )
+    elif duration and SUBJECT_RE.search(text):
+        text = SUBJECT_RE.sub(
+            lambda m: m.group(1) + f'<meta name="exam:duration" content="{duration}">\n',
+            text,
+            count=1,
+        )
     if text != orig:
         path.write_text(text, encoding="utf-8")
         return True
