@@ -247,6 +247,7 @@
       window.YYSD_UI_SWAP(contentEl, html);
     } else {
       contentEl.innerHTML = html;
+      if (window.YYSD_UI_REVEAL) window.YYSD_UI_REVEAL(contentEl.querySelectorAll(".reveal"));
     }
   }
 
