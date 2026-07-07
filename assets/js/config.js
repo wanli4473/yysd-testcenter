@@ -423,6 +423,35 @@ window.YYSD = (function () {
     return html;
   }
 
+  function resultsSummaryHTML(rows, prefix) {
+    if (!rows.length) return "";
+    var p = prefix || "";
+    var latest = rows[0];
+    var bandRows = rows.filter(function (r) { return r.band != null; });
+    var latestBand = bandRows.length ? bandRows[0].band : null;
+    var scoreTxt = latest.score != null
+      ? latest.score + (latest.total != null ? " / " + latest.total : "")
+      : "—";
+    var dateTxt = latest.date
+      ? new Date(latest.date).toLocaleString("zh-CN", { hour12: false })
+      : "—";
+    return '<section class="results-hero reveal" aria-label="成绩概览">' +
+      '<div class="results-hero__main">' +
+        '<span class="results-hero__eyebrow">LATEST RESULT</span>' +
+        '<h2>' + esc(latest.title) + "</h2>" +
+        '<p class="results-hero__meta">最近完成 · ' + esc(dateTxt) + "</p>" +
+        '<div class="results-hero__actions">' +
+          '<a class="btn btn--primary btn--sm" href="exam.html?id=' + encodeURIComponent(latest.id) + '">再练一次</a>' +
+          '<span class="results-hero__soon btn btn--ghost btn--sm" title="AI 错题讲解即将上线">查看错题（即将上线）</span>' +
+        "</div></div>" +
+      '<div class="results-hero__stats">' +
+        '<div class="results-hero__stat"><b>' + esc(scoreTxt) + '</b><span>最近得分</span></div>' +
+        '<div class="results-hero__stat' + (latestBand != null ? " results-hero__stat--band" : "") + '">' +
+          '<b>' + (latestBand != null ? esc(String(latestBand)) : "—") + '</b><span>Band 预估</span></div>' +
+        '<div class="results-hero__stat"><b>' + rows.length + '</b><span>累计记录</span></div>' +
+      "</div></section>";
+  }
+
   function searchItems(items, query) {
     var q = String(query || "").toLowerCase().trim();
     if (!q) return items || [];
@@ -586,7 +615,7 @@ window.YYSD = (function () {
 
   function resultsBandTimelineHTML(rows) {
     var pts = (rows || []).filter(function (r) { return r.band != null; }).slice(0, 10);
-    if (pts.length < 2) return "";
+    if (!pts.length) return "";
     pts = pts.slice().reverse();
     var maxBand = 9;
     var bars = pts.map(function (r, i) {
@@ -623,6 +652,7 @@ window.YYSD = (function () {
     cambridgeCatalogHTML: cambridgeCatalogHTML, searchItems: searchItems,
     recentActivity: recentActivity, continueStripHTML: continueStripHTML,
     journeyStats: journeyStats, homeJourneyHTML: homeJourneyHTML, homeDashboardHTML: homeDashboardHTML,
+    resultsSummaryHTML: resultsSummaryHTML,
     resultsBandTimelineHTML: resultsBandTimelineHTML,
     searchResultsHTML: searchResultsHTML, compactItemRowHTML: compactItemRowHTML,
     VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,

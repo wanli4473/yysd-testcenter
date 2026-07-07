@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260707b">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260707d">
 </head>
 <body class="home-minimal">
 
@@ -42,6 +42,7 @@
     <div class="section__head section__head--actions">
       <button class="btn btn--ghost btn--sm" id="clear-btn">清空记录</button>
     </div>
+    <div id="results-summary"></div>
     <div id="results-timeline"></div>
     <div id="results-area"></div>
   </main>
@@ -67,7 +68,7 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260707b"></script>
+  <script src="assets/js/config.js?v=20260707d"></script>
   <script src="assets/js/auth.js?v=20260707b"></script>
   <script src="assets/js/nav.js?v=20260707b"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
@@ -75,6 +76,7 @@
   (function () {
     var Y = window.YYSD;
     var area = document.getElementById("results-area");
+    var summaryEl = document.getElementById("results-summary");
     var timelineEl = document.getElementById("results-timeline");
 
     function render() {
@@ -82,23 +84,35 @@
       var rows = Object.keys(store).map(function (k) { return store[k]; })
         .sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
 
+      if (summaryEl) {
+        summaryEl.innerHTML = rows.length ? Y.resultsSummaryHTML(rows, "") : "";
+      }
+
       if (timelineEl) {
         timelineEl.innerHTML = Y.resultsBandTimelineHTML(rows);
         if (window.YYSD_UI_REVEAL) {
           window.YYSD_UI_REVEAL(timelineEl.querySelectorAll(".reveal"));
         }
       }
+      if (summaryEl && window.YYSD_UI_REVEAL) {
+        window.YYSD_UI_REVEAL(summaryEl.querySelectorAll(".reveal"));
+      }
 
       if (!rows.length) {
         if (timelineEl) timelineEl.innerHTML = "";
-        area.innerHTML = '<div class="state"><h3>还没有成绩记录</h3>' +
-          '<p>去完成一份模考或练习吧，交卷后成绩会自动记录在这里。</p>' +
-          '<p style="margin-top:14px"><a class="btn btn--primary btn--sm" href="index.html">前往学习中心 →</a></p></div>';
+        if (summaryEl) summaryEl.innerHTML = "";
+        area.innerHTML = '<div class="state state--brand results-empty">' +
+          '<h3>还没有成绩记录</h3>' +
+          '<p>完成一份剑桥模考并交卷后，得分和 Band 预估会自动出现在这里。</p>' +
+          '<div class="results-empty__actions">' +
+          '<a class="btn btn--primary pressable" href="zone.html?zone=mock&s=ielts">去做第一套模考 →</a>' +
+          '<a class="btn btn--ghost" href="zone.html?zone=study">先去学习区</a>' +
+          '</div></div>';
         return;
       }
 
       var html = '<div class="table-wrap"><table class="data"><thead><tr>' +
-        '<th>内容</th><th>板块</th><th>科目</th><th>得分</th><th>等级</th><th>完成时间</th><th></th>' +
+        '<th>内容</th><th>板块</th><th>科目</th><th>得分</th><th>等级</th><th>完成时间</th><th>操作</th>' +
         '</tr></thead><tbody>';
       rows.forEach(function (r) {
         var score = (r.score != null) ? (r.score + (r.total != null ? " / " + r.total : "")) : "—";
@@ -112,8 +126,10 @@
           '<td><span class="score-pill">' + Y.esc(score) + '</span></td>' +
           '<td>' + (r.band != null ? Y.esc(r.band) : "—") + '</td>' +
           '<td>' + Y.esc(date) + '</td>' +
-          '<td><a class="btn btn--ghost btn--sm" href="exam.html?id=' + encodeURIComponent(r.id) + '">重做</a></td>' +
-          '</tr>';
+          '<td class="results-actions">' +
+          '<a class="btn btn--ghost btn--sm" href="exam.html?id=' + encodeURIComponent(r.id) + '">再练一次</a>' +
+          '<span class="btn btn--ghost btn--sm is-disabled" title="AI 错题讲解即将上线">查看错题</span>' +
+          '</td></tr>';
       });
       html += '</tbody></table></div>';
       area.innerHTML = html;
