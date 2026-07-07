@@ -17,7 +17,7 @@
   if (navLink) navLink.classList.add("is-active");
   document.getElementById("year").textContent = new Date().getFullYear();
 
-  var ACTIVE_BOOKS = { gaozhong: true, cet4: false, special: false };
+  var ACTIVE_BOOKS = { gaozhong: true, cet4: true, special: false };
 
   function fail(msg) {
     contentEl.innerHTML = '<div class="state"><h3>无法打开</h3><p>' + Y.esc(msg) +
@@ -27,8 +27,9 @@
   if (!book) { fail("无效的错题本类型。"); return; }
   if (!ACTIVE_BOOKS[bookKey]) {
     contentEl.innerHTML = '<div class="state"><h3>即将上线</h3><p>' + Y.esc(book.label) +
-      ' 错题本正在制作中，请先使用高中词汇错题本。</p>' +
+      ' 错题本正在制作中，请先使用高中或四级词汇错题本。</p>' +
       '<p><a class="btn btn--primary btn--sm" href="wrong-words.html?book=gaozhong">前往高中错题本</a> ' +
+      '<a class="btn btn--ghost btn--sm" href="wrong-words.html?book=cet4">四级错题本</a> ' +
       '<a class="btn btn--ghost btn--sm" href="zone.html?zone=study&s=vocab">返回学习区</a></p></div>';
     document.title = "单词错题本 · 优益思达国际课程中心";
     return;

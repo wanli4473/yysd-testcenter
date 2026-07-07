@@ -198,7 +198,7 @@
   }
 
   function injectVocabBridge() {
-    if (!item || item.subject !== "vocab") return;
+    if (!item || !Y.isVocabListSubject(item.subject)) return;
     var doc = frame.contentDocument;
     if (!doc || !doc.body || doc.getElementById("yysd-vocab-bridge-js")) return;
 
