@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>C11 T3 P1长难句分析</title>
+    <meta name="exam:title"       content="C11 T3 P1长难句分析">
+    <meta name="exam:zone"        content="practice">
+    <meta name="exam:subject"     content="changnanju">
+    <meta name="exam:duration"    content="0">
+    <meta name="exam:description" content="剑桥雅思11 Test 3 Passage 1（THE STORY OF SILK）共8个长难句，拆解主干与附属成分并对照参考译文。">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px; color: #1e2a3a; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #2c3e66; color: white; padding: 20px 24px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .header h1 { margin: 0 0 8px 0; font-size: 1.8rem; }
+        .header p { margin: 0; opacity: 0.85; }
+        .section-card { background: white; border-radius: 24px; padding: 24px; margin-bottom: 30px; box-shadow: 0 4px 14px rgba(0,0,0,0.04); }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-top: 0; margin-bottom: 20px; color: #1f3a5f; border-left: 6px solid #ffb347; padding-left: 20px; }
+        .sentence-card { background: #f8f9ff; border-radius: 20px; padding: 20px; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+        .sentence-text { background: #f1f3f8; padding: 14px; border-radius: 16px; font-style: italic; font-weight: 500; margin-bottom: 20px; }
+        .analysis-row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+        .analysis-box { flex: 1; min-width: 220px; }
+        .analysis-box label { font-weight: 700; display: block; margin-bottom: 6px; color: #2c3e66; }
+        textarea { width: 100%; border-radius: 14px; border: 1px solid #cbd5e1; padding: 10px; font-family: 'Segoe UI', monospace; font-size: 0.85rem; resize: vertical; min-height: 70px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+        .check-btn { background: #4c6a9e; color: white; border: none; border-radius: 30px; padding: 8px 20px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .check-btn:hover { background: #3a5880; }
+        .check-btn.struct-btn { background: #4c6a9e; }
+        .check-btn.trans-btn { background: #9b7b5c; }
+        .check-btn.trans-btn:hover { background: #7d6248; }
+        .ref-answer { background: #eaeef5; padding: 14px 16px; border-radius: 14px; margin-top: 12px; font-size: 0.9rem; display: none; border-left: 4px solid #4c6a9e; }
+        .ref-answer .label { font-weight: 700; color: #2c3e66; }
+        .ref-answer .main-part { color: #1a6b3c; }
+        .ref-answer .sub-part { color: #a0522d; }
+        .ref-answer .trans-part { color: #2c3e66; }
+        footer { text-align: center; margin-top: 30px; color: #6c86a3; font-size: 0.9rem; }
+        .sentence-count { background: #eef2fa; padding: 4px 14px; border-radius: 30px; font-size: 0.8rem; color: #4c6a9e; display: inline-block; margin-bottom: 12px; }
+        @media (max-width: 700px) { .analysis-row { flex-direction: column; } }
+        .highlight { background-color: #ffeb3b; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📐 THE STORY OF SILK · 长难句分析</h1>
+        <p>先尝试自己拆解句子结构，再对照参考答案 · 共8个长难句</p>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">📌 句子拆解练习</div>
+        <div id="sentencesArea"></div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">📖 长难句学习要点</div>
+        <ul style="line-height:1.8; color:#3a4a5a;">
+            <li><strong>主干部分</strong>：句子的核心成分，通常包括主语、谓语动词和主要宾语，去掉修饰成分后句子仍然成立。</li>
+            <li><strong>附属成分</strong>：包括定语从句、状语从句、分词短语、介词短语、同位语等修饰性成分。</li>
+            <li><strong>翻译要点</strong>：注意从句的语序调整，将长句按意群拆分为短句理解。</li>
+        </ul>
+    </div>
+
+    <footer>基于剑桥雅思真题11 Test 3 Passage 1 制作 | 禁止复制粘贴，请手动输入分析</footer>
+</div>
+
+<script>
+    // ======================= 长难句数据 =======================
+    // 包含原文5个句子 + 用户指定的3个句子
+    const longSentences = [
+        // 原文句子1
+        {
+            text: 'Legend has it that it was Lei Tzu, wife of the Yellow Emperor, ruler of China in about 3000 BC, who discovered silkworms.',
+            mainPart: 'Legend has it that it was Lei Tzu who discovered silkworms',
+            subordinate: 'wife of the Yellow Emperor, ruler of China in about 3000 BC (插入语/同位语)',
+            translation: '传说中，是黄帝的妻子嫘祖——约公元前3000年中国统治者——发现了蚕。'
+        },
+        // 原文句子2
+        {
+            text: 'It just so happened that while she was sipping some tea, one of the cocoons that she had collected landed in the hot tea and started to unravel into a fine thread.',
+            mainPart: 'one of the cocoons landed in the hot tea and started to unravel into a fine thread',
+            subordinate: 'while she was sipping some tea (时间状语从句); that she had collected (定语从句修饰cocoons)',
+            translation: '恰巧在她喝茶时，她收集的一个蚕茧掉进热茶里，开始散开成一根细丝。'
+        },
+        // 原文句子3
+        {
+            text: 'She also devised a special reel to draw the fibres from the cocoon into a single thread so that they would be strong enough to be woven into fabric.',
+            mainPart: 'She also devised a special reel to draw the fibres from the cocoon into a single thread',
+            subordinate: 'so that they would be strong enough to be woven into fabric (目的状语从句)',
+            translation: '她还设计了一种特殊的卷线轴，将蚕茧中的纤维抽成单根丝线，使其足够结实以便织成织物。'
+        },
+        // 原文句子4
+        {
+            text: 'Demand for this exotic fabric eventually created the lucrative trade route now known as the Silk Road, taking silk westward and bringing gold, silver and wool to the East.',
+            mainPart: 'Demand created the lucrative trade route',
+            subordinate: 'now known as the Silk Road (过去分词短语作定语); taking silk westward and bringing... (现在分词短语作伴随状语)',
+            translation: '对这种异域织物的需求最终创造了利润丰厚的贸易路线，即现在的丝绸之路，将丝绸运往西方，将黄金、白银和羊毛带回东方。'
+        },
+        // 原文句子5
+        {
+            text: 'The secret of silk-making eventually reached the rest of the world via the Byzantine Empire, which ruled over the Mediterranean region of southern Europe, North Africa and the Middle East during the period 330-1453 AD.',
+            mainPart: 'The secret reached the rest of the world via the Byzantine Empire',
+            subordinate: 'which ruled over the Mediterranean region... (非限制性定语从句)',
+            translation: '丝绸制作的秘密最终通过拜占庭帝国传到世界其他地方，该帝国在公元330-1453年间统治着南欧、北非和中东的地中海地区。'
+        },
+        // ===== 用户指定的3个新句子 =====
+        {
+            text: 'Originally, silkworm farming was solely restricted to women, and it was they who were responsible for the growing, harvesting and weaving.',
+            mainPart: 'silkworm farming was solely restricted to women, and it was they who were responsible for the growing, harvesting and weaving',
+            subordinate: 'who were responsible for... (定语从句，强调句型 it was they who...)',
+            translation: '最初，养蚕完全由女性负责，正是她们承担了种植、收获和纺织工作。'
+        },
+        {
+            text: 'The earliest indication of silk paper being used was discovered in the tomb of a noble who is estimated to have died around 168 AD.',
+            mainPart: 'The earliest indication was discovered in the tomb of a noble',
+            subordinate: 'of silk paper being used (介词短语作定语); who is estimated to have died around 168 AD (定语从句修饰noble)',
+            translation: '最早使用丝绸纸张的证据是在一位贵族的墓中发现的，据估计该贵族死于公元168年左右。'
+        },
+        {
+            text: 'Cheaper Japanese silk, trade in which was greatly facilitated by the opening of the Suez Canal, was one of the many factors driving the trend.',
+            mainPart: 'Cheaper Japanese silk was one of the many factors',
+            subordinate: 'trade in which was greatly facilitated by the opening of the Suez Canal (非限制性定语从句); driving the trend (现在分词短语作定语)',
+            translation: '更便宜的日本丝绸——其贸易因苏伊士运河的开通而大大便利——是推动这一趋势的众多因素之一。'
+        }
+    ];
+
+    // ======================= 渲染长难句 =======================
+    function renderLongSentences() {
+        let html = '';
+        longSentences.forEach((s, idx) => {
+            html += `
+                <div class="sentence-card">
+                    <div class="sentence-text">📌 ${idx+1}. ${s.text}</div>
+                    <div class="analysis-row">
+                        <div class="analysis-box">
+                            <label>🌿 主干部分（你标记）</label>
+                            <textarea id="main_${idx}" placeholder="写出句子主干（去掉所有修饰成分）..."></textarea>
+                        </div>
+                        <div class="analysis-box">
+                            <label>🍃 附属部分（你标记）</label>
+                            <textarea id="sub_${idx}" placeholder="写出从句、状语、定语等修饰成分..."></textarea>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="check-btn struct-btn" data-idx="${idx}">🔎 提交结构并对照</button>
+                        <button class="check-btn trans-btn" data-idx="${idx}">🌏 提交翻译并对照</button>
+                    </div>
+                    <div id="structResult_${idx}" class="ref-answer"></div>
+                    <div style="margin-top:12px;">
+                        <textarea id="trans_${idx}" placeholder="请输入本句的中文翻译..." rows="2"></textarea>
+                    </div>
+                    <div id="transResult_${idx}" class="ref-answer"></div>
+                </div>
+            `;
+        });
+        document.getElementById("sentencesArea").innerHTML = html;
+
+        // 绑定结构检查按钮
+        document.querySelectorAll('.struct-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = this.getAttribute('data-idx');
+                const userMain = document.getElementById(`main_${idx}`).value.trim();
+                const userSub = document.getElementById(`sub_${idx}`).value.trim();
+                if (!userMain && !userSub) {
+                    alert('请先填写你的主干或附属分析！');
+                    return;
+                }
+                const ref = longSentences[idx];
+                const resultDiv = document.getElementById(`structResult_${idx}`);
+                resultDiv.innerHTML = `
+                    <div><span class="label">📖 参考答案主干：</span><span class="main-part">${ref.mainPart}</span></div>
+                    <div><span class="label">📖 参考答案附属：</span><span class="sub-part">${ref.subordinate}</span></div>
+                    <div style="margin-top:8px; border-top:1px solid #d4dde8; padding-top:8px;">
+                        <span class="label">✨ 你的分析：</span>
+                        主干「${userMain || '未填'}」 | 附属「${userSub || '未填'}」
+                    </div>
+                    <div style="margin-top:6px; color:#6b7c8e; font-size:0.85rem;">💡 请对照参考答案完善句子结构拆解。</div>
+                `;
+                resultDiv.style.display = 'block';
+                // 自动滚动到结果区域
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+
+        // 绑定翻译检查按钮
+        document.querySelectorAll('.trans-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = this.getAttribute('data-idx');
+                const userTrans = document.getElementById(`trans_${idx}`).value.trim();
+                if (!userTrans) {
+                    alert('请先填写你的中文翻译！');
+                    return;
+                }
+                const ref = longSentences[idx];
+                const resultDiv = document.getElementById(`transResult_${idx}`);
+                resultDiv.innerHTML = `
+                    <div><span class="label">📖 参考译文：</span><span class="trans-part">${ref.translation}</span></div>
+                    <div style="margin-top:8px; border-top:1px solid #d4dde8; padding-top:8px;">
+                        <span class="label">🔍 你的译文：</span>${userTrans}
+                    </div>
+                    <div style="margin-top:6px; color:#6b7c8e; font-size:0.85rem;">💡 注意语序和从句的准确转换。</div>
+                `;
+                resultDiv.style.display = 'block';
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+
+        // 禁止复制粘贴（所有textarea）
+        document.querySelectorAll('.sentence-card textarea').forEach(ta => {
+            ta.addEventListener('paste', e => { e.preventDefault(); alert('禁止复制粘贴，请手动输入。'); });
+            ta.addEventListener('copy', e => e.preventDefault());
+            ta.addEventListener('cut', e => e.preventDefault());
+            ta.addEventListener('contextmenu', e => e.preventDefault());
+        });
+    }
+
+    // ======================= 页面加载 =======================
+    window.onload = () => {
+        renderLongSentences();
+    };
+</script>
+</body>
+</html>
