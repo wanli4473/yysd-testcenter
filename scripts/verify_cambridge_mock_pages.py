@@ -8,21 +8,114 @@ because TEST data and the embedded renderer disagree on field names.
 from __future__ import annotations
 
 import json
-import re
+import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TEST_RE = re.compile(r"const TEST = (\{.*?\n\});", re.S)
+
+NODE_HELPER = r"""
+const fs = require("fs");
+const src = fs.readFileSync(0, "utf8");
+function ans(...values) { return values.flat(); }
+function explain(...values) { return values.join(" / "); }
+try {
+  const test = Function("ans", "explain", '"use strict"; return (' + src + ');')(ans, explain);
+  process.stdout.write(JSON.stringify(test));
+} catch (err) {
+  console.error(err && err.stack ? err.stack : String(err));
+  process.exit(1);
+}
+"""
+
+
+def find_node() -> str:
+    for key in ("YYSD_NODE", "NODE_BINARY"):
+        value = os.environ.get(key)
+        if value:
+            return value
+    node = shutil.which("node")
+    if node:
+        return node
+    raise RuntimeError("node executable not found; install Node.js or set YYSD_NODE")
+
+
+def extract_test_object(text: str) -> str:
+    marker = "const TEST"
+    pos = text.find(marker)
+    if pos < 0:
+        raise ValueError("missing const TEST block")
+    eq = text.find("=", pos)
+    start = text.find("{", eq)
+    if eq < 0 or start < 0:
+        raise ValueError("malformed const TEST assignment")
+
+    depth = 0
+    state = "code"
+    escaped = False
+    i = start
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+
+        if state == "line_comment":
+            if ch == "\n":
+                state = "code"
+        elif state == "block_comment":
+            if ch == "*" and nxt == "/":
+                state = "code"
+                i += 1
+        elif state in {"single", "double", "template"}:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif (
+                (state == "single" and ch == "'")
+                or (state == "double" and ch == '"')
+                or (state == "template" and ch == "`")
+            ):
+                state = "code"
+        else:
+            if ch == "/" and nxt == "/":
+                state = "line_comment"
+                i += 1
+            elif ch == "/" and nxt == "*":
+                state = "block_comment"
+                i += 1
+            elif ch == "'":
+                state = "single"
+            elif ch == '"':
+                state = "double"
+            elif ch == "`":
+                state = "template"
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return text[start : i + 1]
+        i += 1
+
+    raise ValueError("unterminated const TEST object")
 
 
 def load_test(path: Path) -> dict:
-    text = path.read_text()
-    match = TEST_RE.search(text)
-    if not match:
-        raise ValueError("missing const TEST block")
-    return json.loads(match.group(1))
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    obj = extract_test_object(text)
+    proc = subprocess.run(
+        [find_node(), "-e", NODE_HELPER],
+        input=obj,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode:
+        raise ValueError(proc.stderr.strip() or "node failed to evaluate TEST")
+    return json.loads(proc.stdout)
 
 
 def groups(test: dict):
@@ -62,7 +155,7 @@ def check_page(path: Path) -> list[str]:
     if is_objective and total_questions != 40:
         errors.append(f"{path}: expected 40 objective questions, found {total_questions}")
 
-    if table_groups:
+    if any("columns" in group and "cols" not in group for group in table_groups):
         # Older copies of the renderer only used g.cols, while generated data may
         # use columns. A page with table data must support both names.
         if "g.cols || g.columns" not in text:

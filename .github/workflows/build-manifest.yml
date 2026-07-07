@@ -9,6 +9,7 @@ on:
     paths:
       - "library/**"
       - "scripts/build_manifest.py"
+      - "scripts/verify_cambridge_mock_pages.py"
       - ".github/workflows/build-manifest.yml"
   workflow_dispatch: {}
 
@@ -32,6 +33,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify Cambridge mock pages
+        run: python scripts/verify_cambridge_mock_pages.py
 
       - name: Rebuild manifest
         run: python scripts/build_manifest.py
