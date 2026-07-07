@@ -11,10 +11,30 @@ body.yysd-embedded {
   padding-bottom: 48px !important;
 }
 
-/* Hide iframe header/timer — outer viewer-bar is the chrome */
+/* Hide duplicate logo/chrome only — vocab LIST mode tabs live in .header */
+body.yysd-embedded > .header .logo,
+body.yysd-embedded > header.header .logo,
+body.yysd-embedded > .header .word-count-badge,
+body.yysd-embedded > header.header .word-count-badge {
+  display: none !important;
+}
+
 body.yysd-embedded > .header,
 body.yysd-embedded > header.header {
-  display: none !important;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 0 rgba(7, 25, 47, .06);
+}
+
+body.yysd-embedded > .header .header-inner,
+body.yysd-embedded > header.header .header-inner {
+  justify-content: center !important;
+}
+
+body.yysd-embedded > .header .nav-tabs,
+body.yysd-embedded > header.header .nav-tabs {
+  display: flex !important;
 }
 
 body.yysd-embedded .header .timer,

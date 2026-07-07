@@ -6,7 +6,8 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260707b";
+  var CONTENT_VER = "20260707d";
+  var WRONG_WORDS_KEY = "yysd:wrong-words";
 
   // Homepage display order: 学习区 → 练习区 → 模考区
   var ZONES = ["study", "practice", "mock"];
@@ -93,6 +94,111 @@ window.YYSD = (function () {
   function results() {
     try { return JSON.parse(localStorage.getItem("yysd:results") || "{}"); }
     catch (e) { return {}; }
+  }
+
+  function wrongWordsStore() {
+    try { return JSON.parse(localStorage.getItem(WRONG_WORDS_KEY) || "{}"); }
+    catch (e) { return {}; }
+  }
+
+  function vocabBookOfSubject(subject) {
+    if (subject === "vocab") return "gaozhong";
+    if (subject === "vocab-cet4") return "cet4";
+    if (isVocabSpecial(subject)) return "special";
+    return null;
+  }
+
+  function wrongWords(book) {
+    var bucket = wrongWordsStore()[book] || {};
+    return Object.keys(bucket).map(function (k) { return bucket[k]; })
+      .sort(function (a, b) { return String(b.lastWrongAt || "").localeCompare(String(a.lastWrongAt || "")); });
+  }
+
+  function wrongWordCount(book) {
+    return Object.keys(wrongWordsStore()[book] || {}).length;
+  }
+
+  function mergeWrongWords(book, words, source) {
+    if (!book || !words || !words.length) return 0;
+    var store = wrongWordsStore();
+    if (!store[book]) store[book] = {};
+    var bucket = store[book];
+    var now = new Date().toISOString();
+    var n = 0;
+    words.forEach(function (w) {
+      var key = String(w.word || "").toLowerCase();
+      if (!key) return;
+      if (!bucket[key]) {
+        bucket[key] = {
+          word: w.word, ipa: w.ipa || "", meaning: w.meaning || "",
+          acceptCN: w.acceptCN || [], sources: [], wrongCount: 0,
+          lastWrongAt: now, lastAttempt: null
+        };
+      }
+      var entry = bucket[key];
+      entry.wrongCount = (entry.wrongCount || 0) + 1;
+      entry.lastWrongAt = now;
+      entry.lastAttempt = {
+        userSpelling: w.userSpelling || "",
+        userMeaning: w.userMeaning || "",
+        spellingCorrect: !!w.spellingCorrect,
+        meaningCorrect: !!w.meaningCorrect
+      };
+      if (w.acceptCN && w.acceptCN.length) entry.acceptCN = w.acceptCN;
+      if (source && source.id) {
+        var seen = entry.sources.some(function (s) { return s.id === source.id; });
+        if (!seen) entry.sources.push({ id: source.id, title: source.title || "", subject: source.subject || "" });
+      }
+      n++;
+    });
+    localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store));
+    return n;
+  }
+
+  function removeWrongWord(book, wordKey) {
+    var store = wrongWordsStore();
+    if (!store[book]) return;
+    delete store[book][String(wordKey || "").toLowerCase()];
+    localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store));
+  }
+
+  function clearWrongWords(book) {
+    var store = wrongWordsStore();
+    delete store[book];
+    localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store));
+  }
+
+  function wrongWordsStripHTML(prefix) {
+    var p = prefix || "";
+    var books = [
+      { key: "gaozhong", label: "高中词汇", active: true },
+      { key: "cet4", label: "四级词汇", active: false },
+      { key: "special", label: "雅思专项", active: false }
+    ];
+    var cards = books.map(function (b) {
+      var n = wrongWordCount(b.key);
+      if (!b.active) {
+        return '<div class="wrong-notebook-card is-soon" title="即将上线">' +
+          '<span class="wrong-notebook-card__ico" aria-hidden="true">📕</span>' +
+          '<span class="wrong-notebook-card__body">' +
+            '<b>' + esc(b.label) + '</b>' +
+            '<span>错题本 · 即将上线</span>' +
+          '</span></div>';
+      }
+      return '<a class="wrong-notebook-card' + (n ? " has-items" : "") + '" href="' + p +
+        'wrong-words.html?book=' + encodeURIComponent(b.key) + '">' +
+        '<span class="wrong-notebook-card__ico" aria-hidden="true">📕</span>' +
+        '<span class="wrong-notebook-card__body">' +
+          '<b>' + esc(b.label) + ' · 错题本</b>' +
+          '<span>' + (n ? n + ' 个错词待复习' : '暂无错词，做完测试会自动收录') + '</span>' +
+        '</span>' +
+        (n ? '<span class="wrong-notebook-card__badge">' + n + '</span>' : '<span class="wrong-notebook-card__go">进入 ›</span>') +
+      '</a>';
+    }).join("");
+    return '<div class="wrong-notebook-strip" aria-label="单词错题本">' +
+      '<div class="wrong-notebook-strip__head"><h3>单词错题本</h3>' +
+      '<span class="wrong-notebook-strip__hint">测试中拼写和释义未全对的单词会自动收录</span></div>' +
+      '<div class="wrong-notebook-strip__grid">' + cards + '</div></div>';
   }
 
   // Resolve the manifest path relative to the current page (root or /admin etc.)
@@ -657,6 +763,9 @@ window.YYSD = (function () {
     searchResultsHTML: searchResultsHTML, compactItemRowHTML: compactItemRowHTML,
     VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,
     vocabListNo: vocabListNo, vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
-    vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML
+    vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML,
+    vocabBookOfSubject: vocabBookOfSubject,
+    wrongWords: wrongWords, wrongWordCount: wrongWordCount, mergeWrongWords: mergeWrongWords,
+    removeWrongWord: removeWrongWord, clearWrongWords: clearWrongWords, wrongWordsStripHTML: wrongWordsStripHTML
   };
 })();

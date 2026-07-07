@@ -219,9 +219,10 @@
         : '<div class="soon-box">暂无剑桥真题，老师上传后会显示在这里。</div>';
     } else if (cat.key === "vocab") {
       var vbooks = Y.vocabBooksForZone(allItems);
-      body = vbooks.length
+      body = Y.wrongWordsStripHTML("") +
+        (vbooks.length
         ? '<div class="vol-grid">' + vbooks.map(function (s) { return Y.vocabBookCardHTML(s, ""); }).join("") + "</div>"
-        : '<div class="soon-box">暂无单词内容，上传后会显示在这里。</div>';
+        : '<div class="soon-box">暂无单词内容，上传后会显示在这里。</div>');
     } else if (cat.children) {
       body = '<div class="leaf-wrap">' + cat.children.map(nodeBlockHTML).join("") + "</div>";
     } else {

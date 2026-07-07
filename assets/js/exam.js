@@ -72,6 +72,7 @@
     var heading = isStudy ? "学习进度已保存" : "成绩已保存";
     var sub = "记录保存在本浏览器，可在「我的成绩」查看";
     var scoreLine = "";
+    var wrongN = payload.wrongWords && payload.wrongWords.length;
 
     if (payload.score != null) {
       scoreLine = String(payload.score);
@@ -79,6 +80,9 @@
       if (payload.band != null) scoreLine += " · Band " + payload.band;
     } else if (isStudy) {
       scoreLine = "已完成";
+    }
+    if (wrongN) {
+      sub = "本次新增 " + wrongN + " 个错词，可在学习区错题本复习";
     }
 
     toastHost.innerHTML =
@@ -89,7 +93,9 @@
           (scoreLine ? '<span class="score-toast__score">' + Y.esc(scoreLine) + '</span>' : '') +
           '<span class="score-toast__sub">' + Y.esc(sub) + '</span>' +
         '</div>' +
-        '<a class="score-toast__link" href="results.html">查看 →</a>' +
+        (wrongN
+          ? '<a class="score-toast__link" href="wrong-words.html?book=' + encodeURIComponent(payload.book || "gaozhong") + '">错题本 →</a>'
+          : '<a class="score-toast__link" href="results.html">查看 →</a>') +
         '<button type="button" class="score-toast__close" aria-label="关闭">×</button>' +
       '</div>';
 
@@ -191,9 +197,26 @@
     doc.body.appendChild(script);
   }
 
+  function injectVocabBridge() {
+    if (!item || item.subject !== "vocab") return;
+    var doc = frame.contentDocument;
+    if (!doc || !doc.body || doc.getElementById("yysd-vocab-bridge-js")) return;
+
+    var v = encodeURIComponent(Y.CONTENT_VER || "1");
+    var base = new URL("./", location.href).href;
+    var book = Y.vocabBookOfSubject(item.subject) || "gaozhong";
+
+    var script = doc.createElement("script");
+    script.id = "yysd-vocab-bridge-js";
+    script.src = base + "assets/js/vocab-bridge.js?v=" + v;
+    script.dataset.book = book;
+    doc.body.appendChild(script);
+  }
+
   function onFrameLoad() {
     injectExamShell();
     injectReadingTools();
+    injectVocabBridge();
   }
 
   function startTimer(seconds) {
@@ -232,6 +255,16 @@
       date: new Date().toISOString()
     };
     localStorage.setItem("yysd:results", JSON.stringify(store));
+
+    if (d.wrongWords && d.wrongWords.length && item.zone === "study") {
+      var book = d.book || Y.vocabBookOfSubject(item.subject);
+      if (book) {
+        Y.mergeWrongWords(book, d.wrongWords, {
+          id: item.id, title: item.title, subject: item.subject
+        });
+      }
+    }
+
     showScoreToast(store[item.id], d);
 
     if (timerHandle) {
