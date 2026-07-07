@@ -1,7 +1,7 @@
 /* =========================================================================
    vocab-bridge.js — injected into vocab LIST iframes by exam.js
    Posts score + wrong words when #testResults becomes visible.
-   ponytail: DOM scrape — gaozhong/cet4 keep test state inside IIFEs.
+   ponytail: DOM scrape — test state lives inside IIFEs.
    ========================================================================= */
 (function () {
   "use strict";
@@ -32,9 +32,7 @@
     return out;
   }
 
-  function collectWrongWordsFromDom() {
-    var tbody = document.getElementById("resultsTableBody");
-    if (!tbody) return [];
+  function collectFromGaozhongTable(tbody) {
     var out = [];
     tbody.querySelectorAll("tr.row-wrong").forEach(function (tr) {
       var cells = tr.querySelectorAll("td");
@@ -62,7 +60,80 @@
     return out;
   }
 
+  function parseSpecialWrongRow(question, correct, userAnswer) {
+    question = String(question || "").replace(/<[^>]+>/g, "").trim();
+    correct = String(correct || "").trim();
+    userAnswer = String(userAnswer || "").trim();
+    if (userAnswer === "未作答") userAnswer = "";
+
+    var word = "";
+    var meaning = "";
+    var dict = question.match(/听写[：:]\s*(.+)/);
+    if (dict) word = dict[1].trim();
+
+    var correctParts = correct.split(/\s*[—–]\s*/);
+    if (!word && correctParts[0]) word = correctParts[0].trim();
+    if (correctParts.length > 1) meaning = correctParts.slice(1).join(" — ").trim();
+
+    if (!meaning) {
+      var meanM = question.match(/[「『](.+?)[」』]/);
+      if (meanM) meaning = meanM[1];
+    }
+
+    var userSpelling = "";
+    var userMeaning = "";
+    var spellM = userAnswer.match(/拼写[：:]\s*([^/]+)/);
+    var meanM2 = userAnswer.match(/含义[：:]\s*(.+)/);
+    if (spellM) userSpelling = spellM[1].trim();
+    if (meanM2) userMeaning = meanM2[1].trim();
+    if (!userSpelling && !userMeaning && userAnswer) userSpelling = userAnswer;
+
+    if (!word) word = (correctParts[0] || correct).trim();
+    if (!meaning) meaning = question.replace(/^辨析[：:]\s*/, "");
+
+    if (!word) return null;
+
+    return {
+      word: word, ipa: "", meaning: meaning, acceptCN: [],
+      userSpelling: userSpelling, userMeaning: userMeaning,
+      spellingCorrect: false, meaningCorrect: false
+    };
+  }
+
+  function collectFromSpecialTables(root) {
+    var out = [];
+    var seen = {};
+    root.querySelectorAll("tr.row-wrong, tr.row-unanswered").forEach(function (tr) {
+      if (tr.querySelector("td[colspan]")) return;
+      var cells = tr.querySelectorAll("td");
+      if (cells.length < 4) return;
+      var parsed = parseSpecialWrongRow(cells[1].textContent, cells[3].textContent, cells[2].textContent);
+      if (!parsed) return;
+      var key = parsed.word.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(parsed);
+    });
+    return out;
+  }
+
+  function collectWrongWordsFromDom() {
+    var tbody = document.getElementById("resultsTableBody");
+    if (tbody) return collectFromGaozhongTable(tbody);
+    var stage = document.getElementById("stageResults");
+    if (stage) return collectFromSpecialTables(stage);
+    return [];
+  }
+
   function parseScore() {
+    var summary = document.getElementById("summary");
+    if (summary) {
+      var num = summary.querySelector(".item .num");
+      if (num) {
+        var sm = String(num.textContent || "").match(/(\d+)\s*\/\s*(\d+)/);
+        if (sm) return { score: Number(sm[1]), total: Number(sm[2]) };
+      }
+    }
     var scoreEl = document.getElementById("resultsScore");
     if (scoreEl) {
       var m = String(scoreEl.textContent || "").match(/(\d+)\s*\/\s*(\d+)/);
@@ -120,9 +191,22 @@
     return true;
   }
 
+  function hookShowResults() {
+    if (typeof showResults !== "function" || showResults.__yysdHooked) return false;
+    var orig = showResults;
+    showResults = function () {
+      var ret = orig.apply(this, arguments);
+      onResultsVisible();
+      return ret;
+    };
+    showResults.__yysdHooked = true;
+    return true;
+  }
+
   function boot() {
     watchResultsPanel();
     hookShowFinalResults();
+    hookShowResults();
   }
 
   if (document.readyState === "loading") {

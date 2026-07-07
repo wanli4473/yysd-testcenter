@@ -17,7 +17,7 @@
   if (navLink) navLink.classList.add("is-active");
   document.getElementById("year").textContent = new Date().getFullYear();
 
-  var ACTIVE_BOOKS = { gaozhong: true, cet4: true, special: false };
+  var ACTIVE_BOOKS = { gaozhong: true, cet4: true, special: true };
 
   function fail(msg) {
     contentEl.innerHTML = '<div class="state"><h3>无法打开</h3><p>' + Y.esc(msg) +
@@ -48,7 +48,12 @@
     if (!src) return "";
     var t = src.title || "";
     var m = t.match(/LIST\s*0*(\d+)/i);
-    return m ? "LIST " + m[1] : t;
+    if (m) return "LIST " + m[1];
+    m = t.match(/第\s*0*(\d+)\s*篇/);
+    if (m) return "第" + m[1] + "篇";
+    m = t.match(/单元\s*0*(\d+)/);
+    if (m) return "单元" + m[1];
+    return t;
   }
 
   function meaningCorrect(userMeaning, w) {
@@ -82,7 +87,7 @@
         : '暂无错词 · 完成单词检测后会自动收录') + '</div>' +
       '<div class="vocab-hero__actions">' +
         (count ? '<button type="button" class="btn btn--primary btn--sm" id="btn-retest">错题重测</button>' : '') +
-        '<a class="btn btn--ghost btn--sm" href="vocab.html?book=' + encodeURIComponent(bookKey === "gaozhong" ? "gaozhong" : bookKey) + '">去背单词</a>' +
+        '<a class="btn btn--ghost btn--sm" href="vocab.html?book=' + encodeURIComponent(bookKey) + '">去背单词</a>' +
         (count ? '<button type="button" class="btn btn--ghost btn--sm" id="btn-clear">清空错题本</button>' : '') +
       '</div></div></div>';
   }

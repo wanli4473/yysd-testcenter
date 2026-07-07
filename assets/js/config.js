@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260707e";
+  var CONTENT_VER = "20260707f";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
 
   // Homepage display order: 学习区 → 练习区 → 模考区
@@ -173,7 +173,7 @@ window.YYSD = (function () {
     var books = [
       { key: "gaozhong", label: "高中词汇", active: true },
       { key: "cet4", label: "四级词汇", active: true },
-      { key: "special", label: "雅思专项", active: false }
+      { key: "special", label: "雅思专项", active: true }
     ];
     var cards = books.map(function (b) {
       var n = wrongWordCount(b.key);
