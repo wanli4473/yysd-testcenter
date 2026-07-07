@@ -10,6 +10,7 @@ on:
       - "library/**"
       - "scripts/build_manifest.py"
       - "scripts/verify_cambridge_mock_pages.py"
+      - "scripts/verify_vocab_wrongword_hooks.py"
       - ".github/workflows/build-manifest.yml"
   workflow_dispatch: {}
 
@@ -41,6 +42,9 @@ jobs:
 
       - name: Verify Cambridge mock pages
         run: python scripts/verify_cambridge_mock_pages.py
+
+      - name: Verify vocab wrong-word hooks
+        run: python scripts/verify_vocab_wrongword_hooks.py
 
       - name: Rebuild manifest
         run: python scripts/build_manifest.py

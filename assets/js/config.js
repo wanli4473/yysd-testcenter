@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260707f";
+  var CONTENT_VER = "20260707g";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
 
   // Homepage display order: 学习区 → 练习区 → 模考区
@@ -280,6 +280,10 @@ window.YYSD = (function () {
 
   function isVocabSpecial(subject) {
     return String(subject || "").indexOf("vocab-special-") === 0;
+  }
+
+  function needsVocabBridge(subject) {
+    return isVocabListSubject(subject) || isVocabSpecial(subject);
   }
 
   function vocabListNo(item) {
@@ -762,6 +766,7 @@ window.YYSD = (function () {
     resultsBandTimelineHTML: resultsBandTimelineHTML,
     searchResultsHTML: searchResultsHTML, compactItemRowHTML: compactItemRowHTML,
     VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,
+    needsVocabBridge: needsVocabBridge,
     vocabListNo: vocabListNo, vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
     vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML,
     vocabBookOfSubject: vocabBookOfSubject,

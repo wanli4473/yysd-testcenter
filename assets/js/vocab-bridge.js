@@ -1,13 +1,19 @@
 /* =========================================================================
    vocab-bridge.js — injected into vocab LIST iframes by exam.js
-   Posts score + wrong words when #testResults becomes visible.
-   ponytail: DOM scrape — test state lives inside IIFEs.
+   Posts score + wrong words when the test results panel becomes visible.
+   ponytail: DOM scrape — works for new LISTs that follow template hooks;
+   upgrade path: add ids/classes listed in scripts/verify_vocab_wrongword_hooks.py
    ========================================================================= */
 (function () {
   "use strict";
   var script = document.currentScript;
   var book = (script && script.dataset.book) || "gaozhong";
   var posted = false;
+
+  function resultsPanel() {
+    return document.getElementById("testResults") ||
+      document.querySelector(".test-results");
+  }
 
   function collectWrongWordsFromData() {
     if (typeof testResultsData === "undefined" || !Array.isArray(testResultsData)) return null;
@@ -32,30 +38,44 @@
     return out;
   }
 
+  function parseGaozhongRow(tr) {
+    var cells = tr.querySelectorAll("td");
+    if (cells.length < 4) return null;
+    var wordCell = cells[1];
+    var strong = wordCell.querySelector("strong");
+    var word = strong ? strong.textContent.trim() : "";
+    if (!word) {
+      var line = wordCell.textContent.trim().split("\n")[0].trim();
+      word = line.split(/\s+/)[0] || "";
+    }
+    if (!word) return null;
+    var spans = wordCell.querySelectorAll("span");
+    var ipa = spans[0] ? spans[0].textContent.trim() : "";
+    var meaning = spans[1] ? spans[1].textContent.trim() : "";
+    if (!meaning && spans.length === 1) meaning = "";
+    if (!meaning) {
+      var parts = wordCell.textContent.trim().split("\n");
+      if (parts.length > 1) meaning = parts[parts.length - 1].trim();
+    }
+    var userSpelling = cells[2].textContent.trim();
+    var userMeaning = cells[3].textContent.trim();
+    if (userSpelling === "—") userSpelling = "";
+    if (userMeaning === "—") userMeaning = "";
+    var spellColor = cells[2].style.color || "";
+    var meanColor = cells[3].style.color || "";
+    return {
+      word: word, ipa: ipa, meaning: meaning, acceptCN: [],
+      userSpelling: userSpelling, userMeaning: userMeaning,
+      spellingCorrect: spellColor.indexOf("3a7d5a") >= 0,
+      meaningCorrect: meanColor.indexOf("3a7d5a") >= 0
+    };
+  }
+
   function collectFromGaozhongTable(tbody) {
     var out = [];
     tbody.querySelectorAll("tr.row-wrong").forEach(function (tr) {
-      var cells = tr.querySelectorAll("td");
-      if (cells.length < 4) return;
-      var wordCell = cells[1];
-      var strong = wordCell.querySelector("strong");
-      var word = strong ? strong.textContent.trim() : "";
-      if (!word) return;
-      var spans = wordCell.querySelectorAll("span");
-      var ipa = spans[0] ? spans[0].textContent.trim() : "";
-      var meaning = spans[1] ? spans[1].textContent.trim() : "";
-      var userSpelling = cells[2].textContent.trim();
-      var userMeaning = cells[3].textContent.trim();
-      if (userSpelling === "—") userSpelling = "";
-      if (userMeaning === "—") userMeaning = "";
-      var spellColor = cells[2].style.color || "";
-      var meanColor = cells[3].style.color || "";
-      out.push({
-        word: word, ipa: ipa, meaning: meaning, acceptCN: [],
-        userSpelling: userSpelling, userMeaning: userMeaning,
-        spellingCorrect: spellColor.indexOf("3a7d5a") >= 0,
-        meaningCorrect: meanColor.indexOf("3a7d5a") >= 0
-      });
+      var row = parseGaozhongRow(tr);
+      if (row) out.push(row);
     });
     return out;
   }
@@ -120,9 +140,20 @@
   function collectWrongWordsFromDom() {
     var tbody = document.getElementById("resultsTableBody");
     if (tbody) return collectFromGaozhongTable(tbody);
+
     var stage = document.getElementById("stageResults");
     if (stage) return collectFromSpecialTables(stage);
-    return [];
+
+    var panel = resultsPanel();
+    if (!panel) return [];
+
+    var merged = [];
+    panel.querySelectorAll("table.results-table tbody, #resultsTableBody").forEach(function (tb) {
+      merged = merged.concat(collectFromGaozhongTable(tb));
+    });
+    if (merged.length) return merged;
+
+    return collectFromSpecialTables(panel);
   }
 
   function parseScore() {
@@ -169,7 +200,7 @@
   }
 
   function watchResultsPanel() {
-    var panel = document.getElementById("testResults");
+    var panel = resultsPanel();
     if (!panel) return false;
     if (panel.classList.contains("visible")) onResultsVisible();
     new MutationObserver(function () {

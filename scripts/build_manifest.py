@@ -15,6 +15,10 @@ CLASSIFICATION IS BY FOLDER. The folder a file lives in decides its category:
 e.g. library/study/vocab/xxx.html  ->  zone=study, subject=vocab
 The admin just drops a file into the matching folder — no tags required.
 
+Study vocab LISTs opened via exam.html auto-sync test wrong words to the
+matching wrong-word notebook (gaozhong / cet4 / special) when they include
+the standard result DOM hooks checked by verify_vocab_wrongword_hooks.py.
+
 Metadata per file (priority order):
   - zone / subject : the folder path (library/<zone>/<subject>/). If a file
     sits loose in library/ root, fall back to <meta> tags / keyword guessing.
