@@ -1040,10 +1040,13 @@ function backToCover(){
 
 /* ===== YYSD 成绩同步（由学习中心自动添加，不改动原批改逻辑） ===== */
 (function(){
+  var posted=false;
   function report(){
+    if(posted) return;
     var rc=document.getElementById('resCorrect'); if(!rc) return;
-    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m) return;
+    var m=(rc.textContent||'').match(/(\d+)\s*\/\s*(\d+)/); if(!m||m[2]==='0') return;
     var bandEl=document.getElementById('resBand'); var band=bandEl?parseFloat(bandEl.textContent):NaN;
+    posted=true;
     try{ window.parent.postMessage({type:'yysd:score', score:+m[1], total:+m[2], band:isNaN(band)?null:band}, '*'); }catch(e){}
   }
   var rc=document.getElementById('resCorrect');

@@ -34,12 +34,16 @@
   function fail(msg) {
     titleEl.textContent = "无法打开";
     frame.removeAttribute("src");
-    var doc = frame.contentDocument;
-    doc.open();
-    doc.write('<div style="font-family:sans-serif;padding:60px;text-align:center;color:#6b7589">' +
-      '<h2 style="color:#14213d">😕 ' + Y.esc(msg) + '</h2>' +
-      '<p><a href="index.html" style="color:#c8102e">← 返回首页</a></p></div>');
-    doc.close();
+    try {
+      var doc = frame.contentDocument;
+      doc.open();
+      doc.write('<div style="font-family:sans-serif;padding:60px;text-align:center;color:#6b7589">' +
+        '<h2 style="color:#14213d">😕 ' + Y.esc(msg) + '</h2>' +
+        '<p><a href="index.html" style="color:#c8102e">← 返回首页</a></p></div>');
+      doc.close();
+    } catch (e) {
+      metaEl.textContent = msg;
+    }
   }
 
   function parseBadges(it) {
@@ -69,7 +73,8 @@
     clearTimeout(toastTimer);
 
     var isStudy = item.zone === "study";
-    var heading = isStudy ? "学习进度已保存" : "成绩已保存";
+    var isWriting = item.subject === "cambridge-writing" || payload.completed;
+    var heading = isStudy ? "学习进度已保存" : (isWriting ? "写作练习已保存" : "成绩已保存");
     var sub = "记录保存在本浏览器，可在「我的成绩」查看";
     var scoreLine = "";
     var wrongN = payload.wrongWords && payload.wrongWords.length;
@@ -78,6 +83,8 @@
       scoreLine = String(payload.score);
       if (payload.total != null) scoreLine += " / " + payload.total;
       if (payload.band != null) scoreLine += " · Band " + payload.band;
+    } else if (isWriting) {
+      scoreLine = payload.writingWords ? payload.writingWords + " 词" : "已完成";
     } else if (isStudy) {
       scoreLine = "已完成";
     }
@@ -213,10 +220,26 @@
     doc.body.appendChild(script);
   }
 
+  function injectExamBridge() {
+    if (!item || item.zone !== "mock") return;
+    var doc = frame.contentDocument;
+    if (!doc || !doc.body || doc.getElementById("yysd-exam-bridge-js")) return;
+
+    var v = encodeURIComponent(Y.CONTENT_VER || "1");
+    var base = new URL("./", location.href).href;
+
+    var script = doc.createElement("script");
+    script.id = "yysd-exam-bridge-js";
+    script.src = base + "assets/js/exam-bridge.js?v=" + v;
+    script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
+    doc.body.appendChild(script);
+  }
+
   function onFrameLoad() {
     injectExamShell();
     injectReadingTools();
     injectVocabBridge();
+    injectExamBridge();
   }
 
   function startTimer(seconds) {
@@ -241,31 +264,50 @@
     timerHandle = setInterval(tick, 1000);
   }
 
+  function scoreKeyOf(d) {
+    return [d.score, d.total, d.band, d.completed, d.writingWords].join("|");
+  }
+
+  function saveResults(store) {
+    try { localStorage.setItem("yysd:results", JSON.stringify(store)); } catch (err) {}
+  }
+
   window.addEventListener("message", function (e) {
     var d = e.data;
     if (!d || d.type !== "yysd:score" || !item) return;
+    if (!frame.contentWindow || e.source !== frame.contentWindow) return;
 
+    var key = scoreKeyOf(d);
     var store = {};
     try { store = JSON.parse(localStorage.getItem("yysd:results") || "{}"); } catch (err) {}
-    store[item.id] = {
-      id: item.id, title: item.title, zone: item.zone, subject: item.subject,
-      score: (d.score != null ? d.score : null),
-      total: (d.total != null ? d.total : null),
-      band: (d.band != null ? d.band : null),
-      date: new Date().toISOString()
-    };
-    localStorage.setItem("yysd:results", JSON.stringify(store));
+    var prev = store[item.id];
+    var isDup = prev && prev._scoreKey === key;
 
-    if (d.wrongWords && d.wrongWords.length && item.zone === "study") {
-      var book = d.book || Y.vocabBookOfSubject(item.subject);
-      if (book) {
-        Y.mergeWrongWords(book, d.wrongWords, {
-          id: item.id, title: item.title, subject: item.subject
-        });
+    if (!isDup) {
+      store[item.id] = {
+        id: item.id, title: item.title, zone: item.zone, subject: item.subject,
+        score: (d.score != null ? d.score : null),
+        total: (d.total != null ? d.total : null),
+        band: (d.band != null ? d.band : null),
+        writingWords: d.writingWords || null,
+        date: new Date().toISOString(),
+        _scoreKey: key
+      };
+      saveResults(store);
+
+      if (d.wrongWords && d.wrongWords.length && item.zone === "study") {
+        var book = d.book || Y.vocabBookOfSubject(item.subject);
+        if (book) {
+          Y.mergeWrongWords(book, d.wrongWords, {
+            id: item.id, title: item.title, subject: item.subject
+          });
+        }
       }
     }
 
-    showScoreToast(store[item.id], d);
+    if (!isDup) {
+      showScoreToast(store[item.id], d);
+    }
 
     if (timerHandle) {
       clearInterval(timerHandle);
