@@ -6,6 +6,7 @@ window.YYSD_AUTH = (function () {
 
   var API_BASE = "https://api.youyisida.com";
   var TOKEN_KEY = "yysd:auth:token";
+  var USER_KEY = "yysd:auth:user";
   // 备案通过后把下面改成真实备案号，例如：皖ICP备XXXXXXXX号-1
   var ICP_TEXT = "";
 
@@ -18,6 +19,19 @@ window.YYSD_AUTH = (function () {
       if (t) localStorage.setItem(TOKEN_KEY, t);
       else localStorage.removeItem(TOKEN_KEY);
     } catch (e) {}
+    if (!t) setUser(null);
+  }
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || "{}"); } catch (e) { return {}; }
+  }
+
+  function setUser(u) {
+    try {
+      if (u && u.phone) localStorage.setItem(USER_KEY, JSON.stringify({ phone: u.phone }));
+      else localStorage.removeItem(USER_KEY);
+    } catch (e) {}
+    bindNav();
   }
 
   function authHeaders() {
@@ -46,10 +60,23 @@ window.YYSD_AUTH = (function () {
     if (!el) return;
     if (getToken()) {
       el.href = "profile.html";
-      el.textContent = "个人中心";
+      var phone = (getUser().phone || "").trim();
+      if (phone.length >= 4) {
+        el.classList.add("is-logged-in");
+        el.innerHTML =
+          '<span class="nav-auth__avatar" aria-hidden="true">' + phone.slice(-4) + "</span>" +
+          '<span class="nav-auth__label">我的</span>';
+        el.setAttribute("aria-label", "个人中心，尾号 " + phone.slice(-4));
+      } else {
+        el.classList.remove("is-logged-in");
+        el.textContent = "个人中心";
+        el.removeAttribute("aria-label");
+      }
     } else {
       el.href = "login.html";
+      el.classList.remove("is-logged-in");
       el.textContent = "登录";
+      el.removeAttribute("aria-label");
     }
   }
 
@@ -84,6 +111,8 @@ window.YYSD_AUTH = (function () {
     ICP_TEXT: ICP_TEXT,
     getToken: getToken,
     setToken: setToken,
+    getUser: getUser,
+    setUser: setUser,
     api: api,
     bindNav: bindNav,
     requireLogin: requireLogin,

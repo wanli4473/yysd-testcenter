@@ -9,6 +9,8 @@
   var frame = document.getElementById("exam-frame");
   var titleEl = document.getElementById("v-title");
   var metaEl = document.getElementById("v-meta");
+  var badgesEl = document.getElementById("v-badges");
+  var hintEl = document.getElementById("v-hint");
   var timerEl = document.getElementById("timer");
   var backBtn = document.getElementById("back-btn");
   var toastHost = document.getElementById("score-toast-host");
@@ -38,6 +40,28 @@
       '<h2 style="color:#14213d">😕 ' + Y.esc(msg) + '</h2>' +
       '<p><a href="index.html" style="color:#c8102e">← 返回首页</a></p></div>');
     doc.close();
+  }
+
+  function parseBadges(it) {
+    var m = (it.id || "").match(/cambridge-(\d+)-test-(\d+)/);
+    if (!m) return null;
+    return {
+      vol: "剑" + m[1],
+      test: "Test " + m[2],
+      skill: (Y.SUBJECT[it.subject] || {}).label || ""
+    };
+  }
+
+  function renderBadges(badges) {
+    if (!badgesEl || !badges) {
+      if (badgesEl) badgesEl.hidden = true;
+      return;
+    }
+    badgesEl.hidden = false;
+    badgesEl.innerHTML =
+      '<span class="v-badge v-badge--vol">' + Y.esc(badges.vol) + "</span>" +
+      '<span class="v-badge v-badge--test">' + Y.esc(badges.test) + "</span>" +
+      (badges.skill ? '<span class="v-badge v-badge--skill">' + Y.esc(badges.skill) + "</span>" : "");
   }
 
   function showScoreToast(record, payload) {
@@ -85,11 +109,27 @@
     var zoneLabel = (Y.ZONE[item.zone] || {}).label || "";
     var subjLabel = (Y.SUBJECT[item.subject] || {}).label || "";
     var isStudy = item.zone === "study";
+    var badges = parseBadges(item);
 
     titleEl.textContent = item.title;
     document.title = item.title + " · 优益思达学习中心";
-    metaEl.textContent = [subjLabel, zoneLabel,
-      (!isStudy && item.duration ? item.duration + " 分钟" : "")].filter(Boolean).join(" · ");
+    renderBadges(badges);
+
+    if (badges) {
+      metaEl.textContent = [
+        zoneLabel,
+        (!isStudy && item.duration ? item.duration + " 分钟" : "")
+      ].filter(Boolean).join(" · ");
+    } else {
+      metaEl.textContent = [subjLabel, zoneLabel,
+        (!isStudy && item.duration ? item.duration + " 分钟" : "")].filter(Boolean).join(" · ");
+    }
+
+    if (hintEl && Y.isReadingExam(item)) {
+      hintEl.hidden = false;
+      hintEl.textContent = "选中文字可高亮 · 右键做笔记";
+    }
+
     backBtn.textContent = isStudy ? "← 返回单词" : "← 退出考场";
     if (isStudy && Y.isVocabListSubject(item.subject)) {
       backBtn.href = "vocab.html?book=" + (item.subject === "vocab" ? "gaozhong" : "cet4");
@@ -104,13 +144,29 @@
 
     frame.src = "library/" + item.file + "?v=" + encodeURIComponent(Y.CONTENT_VER || "1");
 
-    frame.addEventListener("load", injectReadingTools);
+    frame.addEventListener("load", onFrameLoad);
 
     if (!isStudy && item.duration > 0) startTimer(item.duration * 60);
 
     backBtn.addEventListener("click", function (e) {
       if (!isStudy && !confirm("确定退出吗？未交卷的作答可能不会被保存。")) e.preventDefault();
     });
+  }
+
+  function injectExamShell() {
+    var doc = frame.contentDocument;
+    if (!doc || !doc.body || doc.getElementById("yysd-exam-shell-css")) return;
+
+    var v = encodeURIComponent(Y.CONTENT_VER || "1");
+    var base = new URL("./", location.href).href;
+
+    var link = doc.createElement("link");
+    link.id = "yysd-exam-shell-css";
+    link.rel = "stylesheet";
+    link.href = base + "assets/css/exam-shell.css?v=" + v;
+    doc.head.appendChild(link);
+
+    doc.body.classList.add("yysd-embedded");
   }
 
   function injectReadingTools() {
@@ -135,12 +191,20 @@
     doc.body.appendChild(script);
   }
 
+  function onFrameLoad() {
+    injectExamShell();
+    injectReadingTools();
+  }
+
   function startTimer(seconds) {
     timerEl.hidden = false;
     function tick() {
       var m = Math.floor(seconds / 60), s = seconds % 60;
       timerEl.textContent = (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-      if (seconds <= 60) timerEl.classList.add("is-low");
+      timerEl.classList.remove("is-warn", "is-low", "is-danger");
+      if (seconds <= 60) timerEl.classList.add("is-danger");
+      else if (seconds <= 300) timerEl.classList.add("is-low");
+      else if (seconds <= 600) timerEl.classList.add("is-warn");
       if (seconds <= 0) {
         clearInterval(timerHandle);
         timerEl.textContent = "时间到";
@@ -173,7 +237,7 @@
     if (timerHandle) {
       clearInterval(timerHandle);
       timerHandle = null;
-      timerEl.classList.remove("is-low");
+      timerEl.classList.remove("is-warn", "is-low", "is-danger");
     }
   });
 })();
