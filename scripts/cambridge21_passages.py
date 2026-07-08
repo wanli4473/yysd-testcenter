@@ -7,7 +7,7 @@ from pathlib import Path
 
 import fitz
 
-PDF = Path("/Users/frankman/Desktop/剑21完整/剑桥雅思21（A类）.pdf")
+PDF = Path("/Users/frankman/Desktop/剑21/剑桥雅思21（A类）.pdf")
 
 # ponytail: hard-coded page ranges — upgrade path: scan for PASSAGE markers dynamically
 PASSAGE_PAGES: dict[int, list[tuple[int, int]]] = {
