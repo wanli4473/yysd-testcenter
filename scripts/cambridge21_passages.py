@@ -23,6 +23,14 @@ SKIP = re.compile(
 )
 
 BYLINE = re.compile(r"^A review of .+ book ", re.I)
+_FOOTNOTE_LINE = re.compile(r"^[•\*]{1,3}\s|^\*\*\*")
+_INLINE_FOOTNOTE = re.compile(
+    r"\s*[•\*]{1,3}\s*(?:philanthropic|Old Master|Impressionist)[^A-Z]*(?=[A-Z]|\Z)",
+    re.I,
+)
+
+# ponytail: cap para length for readability — upgrade path: PDF block geometry
+_MAX_PARA_CHARS = 1100
 
 # Section label: A–G + space + word (uppercase + lowercase), not “A I …” / “a single …”
 _LABEL = re.compile(r"^([A-G])\s+([A-Z][a-z].*)")
@@ -61,7 +69,34 @@ _EXT_UNLABELED_SPLIT = re.compile(
     r"Experts believe|But finding evidence|That said|But because|"
     r"Mapungubwe|Located|While there|Gwendoline|Between 1908|Studies using|"
     r"Do animals|There's some evidence|But finding evidence|In 2008|"
-    r"Water hyacinth|For the women|In east Africa|Some years ago"
+    r"Water hyacinth|For the women|In east Africa|Some years ago|"
+    r"Their religious upbringing|The sisters began to make|The sisters' journals|"
+    r"However, it was only|The First World War|Yet on one of numerous|"
+    r"Commentators have often|Gwendoline made her final|In 1907, when|Over the next|"
+    r"Later in the conflict|Here she acquired|Much is made of|By the early 1920s|"
+    r"Whatever the precise|Their initial response|It was tedious"
+    r"))"
+)
+
+_LONG_SPLIT = re.compile(
+    r"(?<=\.)\s+(?="
+    r"(?:Their |The sisters|The First World War|Yet on one|Commentators have|"
+    r"Gwendoline made|However, it was|While there was|Although they|In 1907|"
+    r"Over the next|Later in the|Here she |Much is made|By the early|Whatever the|"
+    r"Their initial response|It was tedious|For example,|In contrast|That said|"
+    r"But finding|Poaching reached|Another threat|Climate change|Some years ago|"
+    r"For the women|In east Africa|Using solid fuels|Not one to be|The first surprise|"
+    r"Nearly two millennia|Even his trips|Having already tested|They intend to look|"
+    r"The project has already|Our findings don't|However, I do|Let's |Art also |"
+    r"To say these|In a sense|One way or another|Perhaps the most |It seems that the more |"
+    r"Bosma's discussion|The book provides|The World of Sugar is also|This is also a history|"
+    r"But sugar production|Where once only|The crowded|A team of|Each year across India|"
+    r"Tsimpli and her colleagues|She explains that|While the preliminary results|"
+    r"Although the findings|While the preliminary results show|"
+    r"In many countries|While it is undeniable|Similarly,|Many researchers|If we are to reap|"
+    r"Water hyacinth|For the women who|In east Africa the|Some years ago, on|"
+    r"Even his trips|In the process|Having decided|At the same time|"
+    r"Today, the saiga|Legal protection|Male saiga are|Physical barriers|In 2015|Experts believe"
     r"))"
 )
 
@@ -182,14 +217,66 @@ def _join_wrapped(lines: list[str]) -> str:
     return cur
 
 
+def _clean_para(p: str) -> str:
+    p = _INLINE_FOOTNOTE.sub(" ", p)
+    return re.sub(r"\s+", " ", p).strip()
+
+
+def _to_plain(p: str) -> str:
+    p = re.sub(r'<span class="para-label">([A-G])</span>\s*', r"\1 ", p)
+    return _clean_para(p)
+
+
+def _chunk_sentences(p: str, max_len: int = _MAX_PARA_CHARS) -> list[str]:
+    sents = re.split(r"(?<=\.)\s+(?=[A-Z\"'])", p)
+    chunks: list[str] = []
+    buf = ""
+    for s in sents:
+        if not buf:
+            buf = s
+        elif len(buf) + 1 + len(s) <= max_len:
+            buf += " " + s
+        else:
+            chunks.append(buf.strip())
+            buf = s
+    if buf.strip():
+        chunks.append(buf.strip())
+    return chunks if chunks else [p]
+
+
+def _resplit_long(paras: list[str], max_len: int = _MAX_PARA_CHARS) -> list[str]:
+    out: list[str] = []
+    for p in paras:
+        p = _clean_para(p)
+        if not p:
+            continue
+        if len(p) <= max_len:
+            out.append(p)
+            continue
+        parts = [x.strip() for x in _LONG_SPLIT.split(p) if x.strip()]
+        if len(parts) <= 1:
+            parts = _chunk_sentences(p, max_len)
+        else:
+            parts = _resplit_long(parts, max_len)
+        out.extend(parts)
+    return out
+
+
 def _split_unlabeled(text: str) -> list[str]:
+    text = _clean_para(text)
     core = [p.strip() for p in _CORE_UNLABELED_SPLIT.split(text) if p.strip()]
-    if len(core) >= 4:
-        return core
     ext = [p.strip() for p in _EXT_UNLABELED_SPLIT.split(text) if p.strip()]
-    if len(ext) > len(core):
-        return ext
-    return core if core else ([text] if text else [])
+
+    def worst(parts: list[str]) -> int:
+        return max((len(p) for p in parts), default=0)
+
+    if not core and not ext:
+        return [text] if text else []
+    if worst(ext) < worst(core) or (worst(core) > _MAX_PARA_CHARS and len(ext) >= len(core)):
+        parts = ext
+    else:
+        parts = core
+    return _resplit_long([_clean_para(p) for p in parts])
 
 
 def _merge_unlabeled(lines: list[str]) -> list[str]:
@@ -231,7 +318,7 @@ def passages_for_test(test_no: int) -> list[dict]:
         lines: list[str] = []
         for ln in raw:
             ln = ln.strip()
-            if not ln or SKIP.match(ln):
+            if not ln or SKIP.match(ln) or _FOOTNOTE_LINE.match(ln):
                 continue
             lines.append(ln)
         lines = _normalize_lines(lines)
@@ -239,7 +326,8 @@ def passages_for_test(test_no: int) -> list[dict]:
         if not title and body:
             title = body[0]
             body = body[1:]
-        paras = [_label_para(p) for p in _merge(body)]
+        plain = [_to_plain(p) for p in _merge(body)]
+        paras = [_label_para(p) for p in _resplit_long(plain)]
         out.append(
             {
                 "id": idx,
@@ -276,6 +364,11 @@ def _self_check() -> None:
     for (test, pid), need in _EXACT_PARAS.items():
         got = len(passages_for_test(test)[pid - 1]["passage"]["paras"])
         assert got == need, f"T{test} P{pid}: {got} paras, need exactly {need}"
+    for test in range(1, 5):
+        for p in passages_for_test(test):
+            paras = p["passage"]["paras"]
+            mx = max(len(_to_plain(x)) for x in paras)
+            assert mx <= _MAX_PARA_CHARS, f"T{test} P{p['id']}: max para {mx} chars"
 
 
 if __name__ == "__main__":
