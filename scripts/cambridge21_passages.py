@@ -40,7 +40,42 @@ def _split_inlined_labels(p: str) -> list[str]:
     return out
 
 
+def _join_wrapped(lines: list[str]) -> str:
+    cur = ""
+    for ln in lines:
+        if not cur:
+            cur = ln
+        elif ln[0].islower() or cur.rstrip().endswith("-"):
+            if cur.rstrip().endswith("-"):
+                # ponytail: soft line-break hyphen vs real compound (e.g. artwork- / on)
+                cur = (
+                    cur.rstrip()[:-1] + " " + ln.lstrip()
+                    if len(ln.split()[0]) <= 3
+                    else cur.rstrip() + ln.lstrip()
+                )
+            else:
+                cur += " " + ln
+        else:
+            cur += " " + ln
+    return cur
+
+
+# ponytail: PDF line wraps have no A–G labels; split on distinctive openers only
+_UNLABELED_PARA = re.compile(
+    r"(?<=\.)\s+(?=However, I do|Let's |Art also |To say these|In a sense,|"
+    r"One way or another,|Perhaps the most |It seems that the more )"
+)
+
+
+def _merge_unlabeled(lines: list[str]) -> list[str]:
+    text = _join_wrapped(lines)
+    parts = _UNLABELED_PARA.split(text)
+    return [p.strip() for p in parts if p.strip()]
+
+
 def _merge(lines: list[str]) -> list[str]:
+    if not any(re.match(r"^[A-G]\s", ln) for ln in lines):
+        return _merge_unlabeled(lines)
     paras: list[str] = []
     cur = ""
     for ln in lines:
