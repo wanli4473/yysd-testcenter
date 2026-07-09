@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260709p9";
+  var CONTENT_VER = "20260709p10";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
 
   // Homepage display order: 学习区 → 练习区 → 模考区

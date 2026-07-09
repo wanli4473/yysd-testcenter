@@ -3,9 +3,22 @@
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 import fitz
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.reading_paras import (
+    MAX_PARA_CHARS as _MAX_PARA_CHARS,
+    clean_para as _clean_para,
+    label_para as _label_para,
+    resplit_long as _resplit_long,
+    to_plain as _to_plain,
+)
 
 PDF = Path("/Users/frankman/Desktop/剑21/剑桥雅思21（A类）.pdf")
 
@@ -24,13 +37,6 @@ SKIP = re.compile(
 
 BYLINE = re.compile(r"^A review of .+ book ", re.I)
 _FOOTNOTE_LINE = re.compile(r"^[•\*]{1,3}\s|^\*\*\*")
-_INLINE_FOOTNOTE = re.compile(
-    r"\s*[•\*]{1,3}\s*(?:philanthropic|Old Master|Impressionist)[^A-Z]*(?=[A-Z]|\Z)",
-    re.I,
-)
-
-# ponytail: cap para length for readability — upgrade path: PDF block geometry
-_MAX_PARA_CHARS = 1100
 
 # Section label: A–G + space + word (uppercase + lowercase), not “A I …” / “a single …”
 _LABEL = re.compile(r"^([A-G])\s+([A-Z][a-z].*)")
@@ -77,35 +83,6 @@ _EXT_UNLABELED_SPLIT = re.compile(
     r"Whatever the precise|Their initial response|It was tedious"
     r"))"
 )
-
-_LONG_SPLIT = re.compile(
-    r"(?<=\.)\s+(?="
-    r"(?:Their |The sisters|The First World War|Yet on one|Commentators have|"
-    r"Gwendoline made|However, it was|While there was|Although they|In 1907|"
-    r"Over the next|Later in the|Here she |Much is made|By the early|Whatever the|"
-    r"Their initial response|It was tedious|For example,|In contrast|That said|"
-    r"But finding|Poaching reached|Another threat|Climate change|Some years ago|"
-    r"For the women|In east Africa|Using solid fuels|Not one to be|The first surprise|"
-    r"Nearly two millennia|Even his trips|Having already tested|They intend to look|"
-    r"The project has already|Our findings don't|However, I do|Let's |Art also |"
-    r"To say these|In a sense|One way or another|Perhaps the most |It seems that the more |"
-    r"Bosma's discussion|The book provides|The World of Sugar is also|This is also a history|"
-    r"But sugar production|Where once only|The crowded|A team of|Each year across India|"
-    r"Tsimpli and her colleagues|She explains that|While the preliminary results|"
-    r"Although the findings|While the preliminary results show|"
-    r"In many countries|While it is undeniable|Similarly,|Many researchers|If we are to reap|"
-    r"Water hyacinth|For the women who|In east Africa the|Some years ago, on|"
-    r"Even his trips|In the process|Having decided|At the same time|"
-    r"Today, the saiga|Legal protection|Male saiga are|Physical barriers|In 2015|Experts believe"
-    r"))"
-)
-
-
-def _label_para(p: str) -> str:
-    m = _LABEL.match(p)
-    if m and m.group(2):
-        return f'<span class="para-label">{m.group(1)}</span>{m.group(2)}'
-    return p
 
 
 def _split_inlined_labels(p: str) -> list[str]:
@@ -215,51 +192,6 @@ def _join_wrapped(lines: list[str]) -> str:
         else:
             cur += " " + ln
     return cur
-
-
-def _clean_para(p: str) -> str:
-    p = _INLINE_FOOTNOTE.sub(" ", p)
-    return re.sub(r"\s+", " ", p).strip()
-
-
-def _to_plain(p: str) -> str:
-    p = re.sub(r'<span class="para-label">([A-G])</span>\s*', r"\1 ", p)
-    return _clean_para(p)
-
-
-def _chunk_sentences(p: str, max_len: int = _MAX_PARA_CHARS) -> list[str]:
-    sents = re.split(r"(?<=\.)\s+(?=[A-Z\"'])", p)
-    chunks: list[str] = []
-    buf = ""
-    for s in sents:
-        if not buf:
-            buf = s
-        elif len(buf) + 1 + len(s) <= max_len:
-            buf += " " + s
-        else:
-            chunks.append(buf.strip())
-            buf = s
-    if buf.strip():
-        chunks.append(buf.strip())
-    return chunks if chunks else [p]
-
-
-def _resplit_long(paras: list[str], max_len: int = _MAX_PARA_CHARS) -> list[str]:
-    out: list[str] = []
-    for p in paras:
-        p = _clean_para(p)
-        if not p:
-            continue
-        if len(p) <= max_len:
-            out.append(p)
-            continue
-        parts = [x.strip() for x in _LONG_SPLIT.split(p) if x.strip()]
-        if len(parts) <= 1:
-            parts = _chunk_sentences(p, max_len)
-        else:
-            parts = _resplit_long(parts, max_len)
-        out.extend(parts)
-    return out
 
 
 def _split_unlabeled(text: str) -> list[str]:
