@@ -2816,6 +2816,50 @@ table.data tr:last-child td { border-bottom: 0; }
   .viewer-bar a.back { font-size: 13px; }
 }
 
+/* Mock exam lock — parent shell (exam.html) */
+body.viewer.is-exam-locked .viewer-bar a.back {
+  opacity: .45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+#yysd-parent-exam-lock {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(7, 25, 47, .97);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+#yysd-parent-exam-lock.is-visible { display: flex; }
+#yysd-parent-exam-lock h2,
+#yysd-parent-exam-lock p,
+#yysd-parent-exam-lock button {
+  text-shadow: none;
+}
+#yysd-parent-exam-lock h2 { margin: 0 0 12px; font-size: 22px; font-weight: 800; }
+#yysd-parent-exam-lock p { margin: 0 0 20px; opacity: .92; line-height: 1.65; max-width: 440px; font-size: 15px; }
+#yysd-parent-exam-lock button {
+  background: #c7a45d; color: #07192f; border: none; padding: 12px 28px;
+  border-radius: 8px; font-weight: 700; font-size: 16px; cursor: pointer;
+  box-shadow: none;
+}
+#yysd-parent-exam-lock .yysd-exam-lock-actions {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+}
+#yysd-parent-exam-lock .yysd-exam-lock-exit {
+  background: #fff; color: #07192f; border: 1px solid #cbd5e1;
+}
+#yysd-parent-exam-lock .yysd-exam-lock-restart {
+  background: #27ae60; color: #fff; border: none;
+}
+#yysd-parent-exam-lock .yysd-exam-lock-restart:hover {
+  background: #2ecc71;
+}
+
 /* ==========================================================================
    P0 — Mobile navigation (drawer + bottom tabs)
    ========================================================================== */

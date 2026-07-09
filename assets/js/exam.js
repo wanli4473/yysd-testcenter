@@ -18,6 +18,13 @@
   var item = null;
   var timerHandle = null;
   var toastTimer = null;
+  var examLockOn = false;
+  var examLockVoided = false;
+  var examLockBound = null;
+  var parentVoidTimer = null;
+  var parentVoidPausedUntil = 0;
+  var parentSavedConfirm = null;
+  var parentSavedAlert = null;
 
   if (!id) { fail("缺少内容编号。"); return; }
 
@@ -118,6 +125,151 @@
     clearTimeout(toastTimer);
   }
 
+  function parentPauseVoid(ms) {
+    parentVoidPausedUntil = Date.now() + ms;
+    clearTimeout(parentVoidTimer);
+  }
+
+  function parentPatchDialogs() {
+    if (parentSavedConfirm) return;
+    parentSavedConfirm = window.confirm;
+    parentSavedAlert = window.alert;
+    window.confirm = function () {
+      parentPauseVoid(12000);
+      return parentSavedConfirm.apply(window, arguments);
+    };
+    window.alert = function () {
+      parentPauseVoid(8000);
+      return parentSavedAlert.apply(window, arguments);
+    };
+  }
+
+  function parentUnpatchDialogs() {
+    if (parentSavedConfirm) window.confirm = parentSavedConfirm;
+    if (parentSavedAlert) window.alert = parentSavedAlert;
+    parentSavedConfirm = parentSavedAlert = null;
+  }
+
+  function parentFocusLost() {
+    if (!examLockOn || examLockVoided || Date.now() < parentVoidPausedUntil) return false;
+    return document.hidden || !document.hasFocus();
+  }
+
+  function scheduleParentVoidCheck() {
+    clearTimeout(parentVoidTimer);
+    parentVoidTimer = setTimeout(function () {
+      if (parentFocusLost()) triggerParentVoid();
+    }, 400);
+  }
+
+  function showParentVoidLock() {
+    var el = document.getElementById("yysd-parent-exam-lock");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "yysd-parent-exam-lock";
+      document.body.appendChild(el);
+    }
+    el.innerHTML =
+      '<div><h2>模考已中止</h2>' +
+      '<p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答。</p>' +
+      '<div class="yysd-exam-lock-actions">' +
+      '<button type="button" class="yysd-exam-lock-exit">强制退出</button>' +
+      '<button type="button" class="yysd-exam-lock-restart">重新开始</button>' +
+      '</div></div>';
+    el.querySelector(".yysd-exam-lock-exit").onclick = forceExitExam;
+    el.querySelector(".yysd-exam-lock-restart").onclick = forceRestartExam;
+    el.classList.add("is-visible");
+  }
+
+  function hideParentExamLock() {
+    var el = document.getElementById("yysd-parent-exam-lock");
+    if (el) el.classList.remove("is-visible");
+  }
+
+  function forceExitExam() {
+    setExamLock(false);
+    location.href = backBtn.href || "zone.html?zone=mock&s=ielts";
+  }
+
+  function forceRestartExam() {
+    setExamLock(false);
+    try { frame.contentWindow.postMessage({ type: "yysd:exam-restart" }, "*"); } catch (e) {}
+  }
+
+  function triggerParentVoid() {
+    examLockVoided = true;
+    document.body.classList.remove("is-exam-locked");
+    showParentVoidLock();
+    try { frame.contentWindow.postMessage({ type: "yysd:exam-void" }, "*"); } catch (e) {}
+  }
+
+  function bindParentExamLock() {
+    if (examLockBound) return;
+    function onVis() {
+      if (!examLockOn || examLockVoided) return;
+      if (document.hidden) triggerParentVoid();
+      else clearTimeout(parentVoidTimer);
+    }
+    function onBlur() {
+      if (!examLockOn || examLockVoided) return;
+      scheduleParentVoidCheck();
+    }
+    function onFocus() {
+      clearTimeout(parentVoidTimer);
+    }
+    function onPageHide() {
+      if (!examLockOn || examLockVoided) return;
+      triggerParentVoid();
+    }
+    function onUnload(e) {
+      if (!examLockOn || examLockVoided) return;
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("beforeunload", onUnload);
+    parentPatchDialogs();
+    examLockBound = { onVis: onVis, onBlur: onBlur, onFocus: onFocus, onPageHide: onPageHide, onUnload: onUnload };
+  }
+
+  function unbindParentExamLock() {
+    if (!examLockBound) return;
+    document.removeEventListener("visibilitychange", examLockBound.onVis);
+    window.removeEventListener("blur", examLockBound.onBlur);
+    window.removeEventListener("focus", examLockBound.onFocus);
+    window.removeEventListener("pagehide", examLockBound.onPageHide);
+    window.removeEventListener("beforeunload", examLockBound.onUnload);
+    clearTimeout(parentVoidTimer);
+    parentUnpatchDialogs();
+    examLockBound = null;
+  }
+
+  function setExamLock(active, voided) {
+    if (voided) examLockVoided = true;
+    else if (!active) examLockVoided = false;
+    examLockOn = !!active && !examLockVoided;
+    document.body.classList.toggle("is-exam-locked", examLockOn);
+    if (voided) {
+      unbindParentExamLock();
+      showParentVoidLock();
+      return;
+    }
+    if (examLockOn) {
+      bindParentExamLock();
+      hideParentExamLock();
+      try {
+        document.documentElement.requestFullscreen().catch(function () {});
+      } catch (e) { /* ponytail: fullscreen denied */ }
+    } else {
+      unbindParentExamLock();
+      hideParentExamLock();
+      if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
+    }
+  }
+
   function start() {
     var zoneLabel = (Y.ZONE[item.zone] || {}).label || "";
     var subjLabel = (Y.SUBJECT[item.subject] || {}).label || "";
@@ -162,10 +314,19 @@
     if (!isStudy && item.duration > 0) startTimer(item.duration * 60);
 
     backBtn.addEventListener("click", function (e) {
-      if (!isStudy && item.zone === "mock" && item.subject !== "cambridge-writing") {
-        if (!confirm("确定退出吗？已作答的内容会自动保存，下次打开可继续练习。")) e.preventDefault();
-      } else if (!isStudy && item.subject === "cambridge-writing") {
+      if (examLockVoided) {
+        e.preventDefault();
+        return;
+      }
+      if (examLockOn) {
+        alert("模考进行中，请先提交试卷并查看成绩后再退出。");
+        e.preventDefault();
+        return;
+      }
+      if (!isStudy && item.zone === "mock" && item.subject === "cambridge-writing") {
         if (!confirm("确定退出吗？写作内容已自动保存草稿。")) e.preventDefault();
+      } else if (!isStudy && item.zone === "mock") {
+        if (!confirm("确定退出吗？已作答的内容会自动保存，下次打开可继续练习。")) e.preventDefault();
       } else if (!isStudy) {
         if (!confirm("确定退出吗？未交卷的作答可能不会被保存。")) e.preventDefault();
       }
@@ -281,8 +442,20 @@
 
   window.addEventListener("message", function (e) {
     var d = e.data;
-    if (!d || d.type !== "yysd:score" || !item) return;
-    if (!frame.contentWindow || e.source !== frame.contentWindow) return;
+    if (!d || !frame.contentWindow || e.source !== frame.contentWindow) return;
+
+    if (d.type === "yysd:exam-lock") {
+      setExamLock(d.active, d.voided);
+      return;
+    }
+
+    if (d.type === "yysd:exam-action") {
+      if (d.action === "exit") forceExitExam();
+      else if (d.action === "restart") forceRestartExam();
+      return;
+    }
+
+    if (d.type !== "yysd:score" || !item) return;
 
     var key = scoreKeyOf(d);
     var store = {};
@@ -321,5 +494,7 @@
       timerHandle = null;
       timerEl.classList.remove("is-warn", "is-low", "is-danger");
     }
+
+    setExamLock(false);
   });
 })();
