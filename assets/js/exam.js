@@ -162,7 +162,13 @@
     if (!isStudy && item.duration > 0) startTimer(item.duration * 60);
 
     backBtn.addEventListener("click", function (e) {
-      if (!isStudy && !confirm("确定退出吗？未交卷的作答可能不会被保存。")) e.preventDefault();
+      if (!isStudy && item.zone === "mock" && item.subject !== "cambridge-writing") {
+        if (!confirm("确定退出吗？已作答的内容会自动保存，下次打开可继续练习。")) e.preventDefault();
+      } else if (!isStudy && item.subject === "cambridge-writing") {
+        if (!confirm("确定退出吗？写作内容已自动保存草稿。")) e.preventDefault();
+      } else if (!isStudy) {
+        if (!confirm("确定退出吗？未交卷的作答可能不会被保存。")) e.preventDefault();
+      }
     });
   }
 
@@ -232,6 +238,7 @@
     script.id = "yysd-exam-bridge-js";
     script.src = base + "assets/js/exam-bridge.js?v=" + v;
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
+    script.dataset.examId = item.id;
     doc.body.appendChild(script);
   }
 
