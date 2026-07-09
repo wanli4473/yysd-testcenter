@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>听力精听：剑雅20 Test 1 · Section 1（口语复述）</title>
+<title>听力精听：剑雅20 Test 1 · Section 1（完整版）</title>
 
-<!-- 学习中心元数据 -->
-<meta name="exam:title"       content="听力精听：剑雅20 Test 1 · Section 1（口语复述）">
+<meta name="exam:title"       content="听力精听：剑雅20 Test 1 · Section 1（完整版）">
 <meta name="exam:zone"        content="practice">
 <meta name="exam:subject"     content="jingting">
 <meta name="exam:duration"    content="0">
-<meta name="exam:description" content="一句一句听，对着麦克风复述，AI 判断主谓宾与语法；通过后翻译句子。原文可随时显示/隐藏。">
+<meta name="exam:description" content="剑雅20 Test 1 Section 1 跟读模式：盲听复述，AI 逐词标绿/红/灰，准确率≥85%过关。">
 
 <style>
   :root{ --red:#c8102e; --navy:#14213d; --ink:#1f2a3a; --muted:#667085; --line:#e4e8ef;
@@ -18,25 +17,26 @@
   *{ box-sizing:border-box; }
   body{ margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink);
         background:var(--bg); line-height:1.7; }
-  .wrap{ max-width:820px; margin:0 auto; padding:22px 18px 60px; }
+  .wrap{ max-width:900px; margin:0 auto; padding:22px 18px 60px; }
   .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; margin-bottom:18px; }
   h1{ font-size:21px; color:var(--navy); margin:0 0 4px; }
   .lead{ color:var(--muted); margin:0 0 4px; font-size:14px; }
+  .progress-bar{ height:8px; background:#e8ecf3; border-radius:6px; overflow:hidden; margin-top:12px; }
+  .progress-bar .fill{ height:100%; background:linear-gradient(90deg,var(--purple),var(--green)); width:0; transition:width .35s; }
+  .progress-text{ font-size:13px; color:var(--muted); margin-top:6px; }
 
-  /* sentence list */
-  .layout{ display:grid; grid-template-columns:200px 1fr; gap:18px; }
+  .layout{ display:grid; grid-template-columns:220px 1fr; gap:18px; }
   @media(max-width:680px){ .layout{ grid-template-columns:1fr; } }
-  .list{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:10px; height:max-content; }
-  .list h3{ font-size:13px; color:var(--muted); margin:6px 8px 10px; font-weight:600; letter-spacing:.03em; }
-  .sent-item{ display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:9px; cursor:pointer;
-              font-size:14px; color:var(--ink); }
+  .list{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:10px;
+         max-height:72vh; overflow-y:auto; position:sticky; top:12px; }
+  .list h3{ font-size:13px; color:var(--muted); margin:6px 8px 10px; font-weight:600; }
+  .sent-item{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:9px; cursor:pointer; font-size:13px; }
   .sent-item:hover{ background:#f4f6fb; }
   .sent-item.active{ background:#eef0fb; color:var(--purple); font-weight:600; }
-  .sent-item .dot{ width:9px; height:9px; border-radius:50%; background:#cfd6e4; flex:0 0 auto; }
+  .sent-item .dot{ width:8px; height:8px; border-radius:50%; background:#cfd6e4; flex:0 0 auto; }
   .sent-item.done .dot{ background:var(--green); }
   .sent-item.active .dot{ background:var(--purple); }
 
-  /* controls */
   .row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   .btn{ background:var(--red); color:#fff; border:0; border-radius:10px; padding:11px 20px; font-size:15px;
         font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
@@ -47,79 +47,102 @@
   .btn.rec.on{ background:#a32d2d; animation:pulse 1.1s infinite; }
   @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(163,45,45,.4);} 50%{ box-shadow:0 0 0 8px rgba(163,45,45,0);} }
   .toggle{ font-size:14px; color:var(--purple); cursor:pointer; user-select:none; }
+  .speaker{ font-size:12px; font-weight:700; padding:2px 9px; border-radius:12px; background:#eef0fb; color:var(--purple); }
 
   .stage-tag{ display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px;
               background:#eef0fb; color:var(--purple); margin-bottom:10px; }
-
   .transcript{ background:#f7f9fc; border:1px dashed var(--line); border-radius:10px; padding:18px;
                min-height:64px; font-size:17px; text-align:center; color:var(--ink); }
   .transcript.hidden-text{ color:var(--purple); cursor:pointer; font-size:15px; }
-
   .heard{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px;
-          font-size:15px; color:var(--ink); min-height:46px; }
+          font-size:15px; min-height:46px; }
   .heard .ph{ color:var(--muted); }
-
   .verdict{ margin-top:12px; border-radius:10px; padding:13px 15px; font-size:14.5px; display:none; }
   .verdict.show{ display:block; }
   .verdict.ok{ background:#e9f8f1; border:1px solid #b9e6d2; color:#14633f; }
   .verdict.no{ background:#fdecec; border:1px solid #f3c9c9; color:#9a2828; }
-  .verdict b{ font-weight:700; }
   .chips{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
   .chip{ font-size:12.5px; padding:3px 10px; border-radius:20px; background:#fff; border:1px solid var(--line); }
   .chip.y{ color:#14633f; border-color:#b9e6d2; background:#e9f8f1; }
   .chip.n{ color:#9a2828; border-color:#f3c9c9; background:#fdecec; }
-
+  .svo-box{ margin-top:12px; padding:12px 14px; background:#fff; border-radius:10px; border:1px solid rgba(0,0,0,.06); }
+  .svo-label{ font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px; letter-spacing:.04em; }
+  .svo-sent{ font-size:16px; line-height:1.85; color:var(--navy); }
+  .svo-sent mark{ border-radius:5px; padding:1px 5px; font-weight:600; }
+  mark.hl-subj{ background:#dbeafe; color:#1e40af; }
+  mark.hl-verb{ background:#dcfce7; color:#166534; }
+  mark.hl-obj{ background:#ffedd5; color:#9a3412; }
+  .svo-legend{ margin-top:10px; display:flex; gap:12px; flex-wrap:wrap; font-size:12px; }
+  .svo-legend .lg{ padding:2px 10px; border-radius:12px; font-weight:600; }
+  .lg-s{ background:#dbeafe; color:#1e40af; }
+  .lg-v{ background:#dcfce7; color:#166534; }
+  .lg-o{ background:#ffedd5; color:#9a3412; }
+  .svo-parts{ margin-top:8px; font-size:13px; color:var(--ink); line-height:1.6; }
+  .svo-parts b{ font-weight:700; }
+  .svo-parts .p-s{ color:#1e40af; } .svo-parts .p-v{ color:#166534; } .svo-parts .p-o{ color:#9a3412; }
+  .word-diff{ margin-top:12px; padding:12px 14px; background:#fff; border-radius:10px; border:1px solid rgba(0,0,0,.06); }
+  .word-diff-hd{ font-size:13px; font-weight:700; color:var(--navy); margin-bottom:10px; }
+  .word-row{ display:flex; flex-wrap:wrap; gap:6px; line-height:2; }
+  .w-tok{ display:inline-block; padding:3px 9px; border-radius:8px; font-size:15px; font-weight:600; border:2px solid transparent; }
+  .w-ok{ background:#dcfce7; color:#166534; border-color:#86efac; }
+  .w-bad{ background:#fee2e2; color:#b91c1c; border-color:#fca5a5; }
+  .w-miss{ background:#f1f5f9; color:#64748b; border-color:#cbd5e1; border-style:dashed; }
+  .w-extra{ background:#fee2e2; color:#991b1b; border-color:#f87171; text-decoration:line-through; }
+  .word-legend{ margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; font-size:12px; }
+  .word-legend span{ padding:2px 8px; border-radius:10px; font-weight:600; }
+  .heard-echo{ margin-top:10px; font-size:13px; color:var(--muted); }
+  .heard-echo b{ color:var(--ink); }
+  .post-actions{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+  .blind-panel{ background:#f7f9fc; border:1px dashed var(--line); border-radius:10px; padding:18px;
+                min-height:64px; font-size:15px; text-align:center; color:var(--purple); }
   textarea{ width:100%; border:1px solid var(--line); border-radius:10px; padding:12px; font-size:15px;
             font-family:inherit; resize:vertical; min-height:64px; }
   .hint{ font-size:12.5px; color:var(--muted); margin-top:6px; }
   .mode-banner{ font-size:12.5px; background:#fff7e6; border:1px solid #f3e0b3; color:#8a6500;
-                border-radius:8px; padding:7px 11px; margin-bottom:14px; }
+                border-radius:8px; padding:7px 11px; margin-bottom:0; }
   .sr-note{ font-size:12.5px; color:var(--muted); margin-top:10px; }
   .divider{ height:1px; background:var(--line); margin:16px 0; }
+  .finish-card{ text-align:center; padding:28px 20px; }
+  .finish-card h2{ color:var(--navy); margin:0 0 8px; font-size:22px; }
+  .finish-card p{ color:var(--muted); margin:0 0 18px; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="card">
-    <h1>听力精听 · 口语复述训练</h1>
-    <p class="lead">剑雅20 Test 1 — Section 1</p>
+    <h1>听力精听 · AI 跟读模式</h1>
+    <p class="lead">剑雅20 Test 1 — Section 1 · 盲听跟读 · 逐词反馈（共 75 句）</p>
     <div id="modeBanner" class="mode-banner"></div>
+    <div class="progress-bar"><div class="fill" id="progFill"></div></div>
+    <div class="progress-text" id="progText">进度 0 / 75</div>
   </div>
 
   <div class="layout">
-    <!-- sentence list -->
     <aside class="list">
       <h3>句子列表</h3>
       <div id="sentList"></div>
     </aside>
 
-    <!-- main stage -->
-    <section>
-      <!-- Stage 1: listen + repeat -->
+    <section id="mainStage">
       <div class="card" id="stageRepeat">
-        <span class="stage-tag">第 1 步 · 听 & 复述</span>
+        <span class="stage-tag">跟读测试 · 盲听复述</span>
         <div class="row" style="margin-bottom:12px;">
+          <span class="speaker" id="speakerTag">—</span>
           <button class="btn" id="playBtn">▶ 播放例句</button>
-          <span class="toggle" id="toggleText">👁 显示原文</span>
         </div>
-
-        <div class="transcript hidden-text" id="transcript">点击「显示原文」查看英文（建议先盲听）</div>
-
+        <div class="blind-panel" id="transcript">🔒 测试期间不显示原文 · 请先听清再复述</div>
         <div class="divider"></div>
-
         <div class="row">
-          <button class="btn rec" id="recBtn">🎙 按住说 / 点击开始复述</button>
-          <button class="btn ghost" id="stopBtn" disabled>■ 停止</button>
+          <button class="btn rec" id="recBtn">🎙 点击开始复述</button>
+          <button class="btn ghost" id="stopBtn" disabled>■ 说完点停止</button>
         </div>
         <div class="heard" id="heard"><span class="ph">你复述的内容会显示在这里…</span></div>
-
         <div class="verdict" id="verdict"></div>
         <p class="sr-note" id="srNote"></p>
       </div>
 
-      <!-- Stage 2: translate (hidden until pass) -->
-      <div class="card" id="stageTranslate" style="display:none;">
+      <div class="card" id="stageTranslate" style="display:none !important;" hidden>
         <span class="stage-tag" style="background:#e1f5ee;color:#0f6e56;">第 2 步 · 翻译这句话</span>
         <p class="lead" id="translatePrompt"></p>
         <textarea id="zhInput" placeholder="在这里输入这句话的中文翻译…"></textarea>
@@ -129,31 +152,109 @@
         </div>
         <div class="verdict" id="zhVerdict"></div>
       </div>
+
+      <div class="card finish-card" id="stageFinish" style="display:none;">
+        <h2>🎉 Section 1 精听完成！</h2>
+        <p id="finishSummary">你已完成全部句子。</p>
+        <button class="btn" id="restartBtn">从头再练一遍</button>
+      </div>
     </section>
   </div>
 </div>
 
 <script>
-/* ============================================================
-   配置：服务器后端地址。配好阿里云 https 后，把下面改成
-   你的服务器地址（例如 "https://47.100.160.186"）。
-   留空 "" = 本地体验模式（不连服务器，用简单规则演示流程）。
-   ============================================================ */
-var API_BASE = "";   // ← 接好服务器后改成 "https://你的服务器地址"
+var API_BASE = (location.hostname === "127.0.0.1" || location.hostname === "localhost") && location.port === "8080"
+  ? "http://127.0.0.1:3000" : "";
 
-/* ---- 例句数据（demo 先放 1 句，以后可继续往数组里加）---- */
 var SENTENCES = [
-  {
-    en: "I'd like to find out some information about cookery classes.",
-    zh: "我想了解一些关于烹饪课程的信息。",
-    subject: "I", verb: "like (find out)", object: "information about cookery classes"
-  }
+  {who:"W",en:"I've been meaning to ask you for some advice about restaurants.",zh:"我一直想请教你一些关于餐厅的建议。"},
+  {who:"W",en:"I need to book somewhere to celebrate my sister's 30th birthday,",zh:"我得订个地方，给我姐姐过30岁生日，"},
+  {who:"W",en:"and I liked the sound of that place you went to for your mum's 50th.",zh:"而且你给你妈办50岁生日宴的那家店，听起来很不错。"},
+  {who:"M",en:"The Junction.",zh:"The Junction 餐厅。"},
+  {who:"M",en:"Yeah, I'd definitely recommend that for a special occasion.",zh:"对，这种特殊场合我肯定推荐那家。"},
+  {who:"M",en:"We had a great time there.",zh:"我们在那儿过得特别开心。"},
+  {who:"M",en:"Everyone really enjoyed it.",zh:"大家都很喜欢。"},
+  {who:"W",en:"Where is it again? I can't remember.",zh:"它又在哪儿来着？我记不清了。"},
+  {who:"M",en:"It's on Greyson Street, only about a 2-minute walk from the station.",zh:"在 Greyson 街上，离车站走路大约只要两分钟。"},
+  {who:"W",en:"Oh that's good.",zh:"哦，那挺好。"},
+  {who:"W",en:"I prefer not to have to drive anywhere but I don't want to have to walk too far either.",zh:"我不太想开车去太远的地方，但也不想走太远。"},
+  {who:"M",en:"Yes, the location's perfect, but that's not necessarily why I'd recommend it.",zh:"是啊，位置确实很好，但这不是我推荐它的主要原因。"},
+  {who:"M",en:"The food's amazing.",zh:"菜特别棒。"},
+  {who:"M",en:"If you like fish, it's probably the best restaurant in town for that.",zh:"要是你喜欢鱼，它大概是城里吃鱼的最好的餐厅。"},
+  {who:"M",en:"It's always really fresh and there are lots of interesting dishes to choose from.",zh:"鱼一直很新鲜，而且有很多有意思的菜品可选。"},
+  {who:"M",en:"But all the food is good there.",zh:"不过那里的菜整体都很好。"},
+  {who:"W",en:"Is it really expensive?",zh:"是不是很贵？"},
+  {who:"M",en:"It's certainly not cheap, but for a special occasion I think it's fine.",zh:"肯定不算便宜，但我觉得特殊场合还是值得的。"},
+  {who:"M",en:"It's got a great atmosphere and before dinner you can go up on the roof and have a drink.",zh:"氛围很好，晚饭前你还可以上楼顶喝一杯。"},
+  {who:"M",en:"It's really nice up there, but you need to book.",zh:"楼上很舒服，但需要预订。"},
+  {who:"M",en:"It's very popular as the views are spectacular.",zh:"那儿很受欢迎，因为景色特别壮观。"},
+  {who:"W",en:"Hmm... sounds good.",zh:"嗯……听起来不错。"},
+  {who:"W",en:"So that's definitely a possibility then.",zh:"那这肯定是一个可以考虑的选择。"},
+  {who:"W",en:"Is there anywhere else you can think of?",zh:"你还能想到别的地方吗？"},
+  {who:"M",en:"Hmm... if you want somewhere a bit less formal, then you could try Paloma.",zh:"嗯……要是你想找稍微不那么正式的地方，可以试试 Paloma。"},
+  {who:"W",en:"Where's that? I haven't heard of it.",zh:"在哪儿？我没听说过。"},
+  {who:"M",en:"No, it's quite new.",zh:"对，它挺新的。"},
+  {who:"M",en:"It's only been open a few months, but it's got a great reputation already.",zh:"才开业几个月，但口碑已经很好了。"},
+  {who:"M",en:"It's in a really beautiful old building on Bow Street.",zh:"在 Bow 街上的一栋很漂亮的老建筑里。"},
+  {who:"W",en:"Oh, I think I know where you mean, right beside the cinema.",zh:"哦，我想我知道你说哪儿了，就在电影院旁边。"},
+  {who:"M",en:"Yes, that's it.",zh:"对，就是那儿。"},
+  {who:"M",en:"I've only been there a couple of times, but I was really impressed.",zh:"我只去过几次，但印象特别深。"},
+  {who:"M",en:"The chef used to work at Don Felipe's, apparently.",zh:"据说主厨以前在 Don Felipe's 工作。"},
+  {who:"M",en:"I was really sorry when that closed down.",zh:"它关门的时候我挺遗憾的。"},
+  {who:"W",en:"So is all the food they serve Spanish, then?",zh:"那他们供应的都是西班牙菜吗？"},
+  {who:"M",en:"Yeah, you can get lots of small dishes to share, which always works really well if you're in a group.",zh:"对，你可以点很多小菜一起分享，人多的话总是特别合适。"},
+  {who:"W",en:"Hmm... worth thinking about.",zh:"嗯……值得考虑一下。"},
+  {who:"M",en:"Yeah, there's a lively atmosphere and the waiters are really friendly.",zh:"对，那儿气氛很热闹，服务员也特别友好。"},
+  {who:"M",en:"The only thing is that you need to pay a £50 deposit to book a table.",zh:"唯一的问题是订位要先付50英镑押金。"},
+  {who:"W",en:"A lot of restaurants are doing that these days.",zh:"现在很多餐厅都这么做。"},
+  {who:"W",en:"I should have a look at the menu to check there is a good choice of vegetarian dishes.",zh:"我得看看菜单，确认有没有足够多的素食可选。"},
+  {who:"W",en:"A couple of my friends have stopped eating meat.",zh:"我有几个朋友已经不吃肉了。"},
+  {who:"M",en:"Not sure, I'd say the selection of those would be quite limited.",zh:"不好说，我觉得那方面的选择会比较有限。"},
+  {who:"M",en:"I've just thought of another idea.",zh:"我刚想到另一个主意。"},
+  {who:"M",en:"Have you been to the Audley?",zh:"你去过 Audley 吗？"},
+  {who:"W",en:"No, don't think I've heard of it.",zh:"没有，我好像没听说过。"},
+  {who:"W",en:"How's it spelt?",zh:"怎么拼写？"},
+  {who:"M",en:"A-U-D-L-E-Y.",zh:"A-U-D-L-E-Y。"},
+  {who:"M",en:"You must have heard of it.",zh:"你肯定听说过。"},
+  {who:"M",en:"There's been a lot about it in the press.",zh:"媒体上报道过很多。"},
+  {who:"W",en:"I don't tend to pay much attention to that kind of thing.",zh:"我通常不太关注这类消息。"},
+  {who:"W",en:"So where is it exactly?",zh:"那它具体在哪儿？"},
+  {who:"M",en:"It's in that hotel near Baxter Bridge, on the top floor.",zh:"在 Baxter Bridge 附近那家酒店的顶楼。"},
+  {who:"W",en:"Oh, the views would be incredible from up there.",zh:"哦，从那儿看风景一定很棒。"},
+  {who:"W",en:"Yeah, I'd love to go.",zh:"是啊，我很想去。"},
+  {who:"W",en:"I can't think of the chef's name, but she was a judge on that TV cookery show recently.",zh:"我想不起主厨的名字了，不过她最近在那个美食电视节目里当过评委。"},
+  {who:"W",en:"And she's written a couple of cookery books.",zh:"而且她还写过几本烹饪书。"},
+  {who:"M",en:"Oh, Angela Frayne.",zh:"哦，Angela Frayne。"},
+  {who:"M",en:"That's the one.",zh:"就是她。"},
+  {who:"M",en:"Anyway, it's had excellent reviews from all the newspapers.",zh:"总之，各家报纸对它的评价都非常好。"},
+  {who:"W",en:"That would be a memorable place for a celebration.",zh:"那倒是个值得纪念的庆祝地点。"},
+  {who:"M",en:"Definitely!",zh:"绝对没错！"},
+  {who:"M",en:"Obviously it's worth going there just for the view, but the food is supposed to be really special.",zh:"显然，就算只为风景也值得去，但据说菜也特别出色。"},
+  {who:"W",en:"She only likes cooking with local products, doesn't she?",zh:"她只喜欢用本地食材做菜，对吧？"},
+  {who:"M",en:"Yes. Everything at the restaurant has to be sourced within a short distance, and absolutely nothing flown in from abroad.",zh:"对。餐厅所有食材都必须来自短距离范围内，绝对不能有空运进口的。"},
+  {who:"W",en:"I imagine it's really expensive though.",zh:"不过我想应该很贵吧。"},
+  {who:"M",en:"Well, you could go for the set lunch.",zh:"嗯，你可以选套餐午餐。"},
+  {who:"M",en:"That's quite reasonable for a top class restaurant, £30 a head.",zh:"对顶级餐厅来说挺合理，每人30英镑。"},
+  {who:"M",en:"In the evening, I think it would be more like £50.",zh:"晚上的话，我觉得大概要50英镑左右。"},
+  {who:"M",en:"At least that I should think, but I'm sure everyone would enjoy it.",zh:"至少我是这么想的，不过我相信大家都会喜欢。"},
+  {who:"W",en:"It's not the kind of place you leave feeling hungry though, is it?",zh:"不过那种地方吃完不会觉得饿吧？"},
+  {who:"W",en:"With tiny portions.",zh:"份量那么小。"},
+  {who:"M",en:"No, the reviews I've read didn't mention that.",zh:"没有，我看到的评价没提到这一点。"},
+  {who:"M",en:"I imagine they'd be average.",zh:"我觉得份量应该是中等水平。"},
+  {who:"W",en:"Well, that's all great...",zh:"嗯，这些都太好了……"}
 ];
 
-var cur = 0;
-var done = [];
+var cur = 0, done = [];
+var PASS_THRESH = 0.85;
+var PASS_THRESH_SHORT = 0.9;
 
-/* ---------- 渲染句子列表 ---------- */
+function countDone(){ return done.filter(Boolean).length; }
+function updateProgress(){
+  var n = countDone(), total = SENTENCES.length;
+  document.getElementById('progFill').style.width = (n / total * 100) + '%';
+  document.getElementById('progText').textContent = '进度 ' + n + ' / ' + total;
+}
+
 var sentList = document.getElementById('sentList');
 function renderList(){
   sentList.innerHTML = SENTENCES.map(function(s, i){
@@ -163,169 +264,241 @@ function renderList(){
   Array.prototype.forEach.call(sentList.querySelectorAll('.sent-item'), function(el){
     el.onclick = function(){ goTo(+el.dataset.i); };
   });
+  updateProgress();
 }
-function goTo(i){ cur = i; resetStage(); renderList(); }
 
-/* ---------- 显示/隐藏原文 ---------- */
+function goTo(i){
+  cur = i;
+  document.getElementById('stageFinish').style.display = 'none';
+  document.getElementById('stageRepeat').style.display = '';
+  resetStage();
+  renderList();
+  var active = sentList.querySelector('.sent-item.active');
+  if(active) active.scrollIntoView({block:'nearest', behavior:'smooth'});
+}
+
 var transcript = document.getElementById('transcript');
-var textShown = false;
 function paintTranscript(){
-  if(textShown){
-    transcript.classList.remove('hidden-text');
-    transcript.textContent = SENTENCES[cur].en;
-  } else {
-    transcript.classList.add('hidden-text');
-    transcript.textContent = '点击「显示原文」查看英文（建议先盲听）';
-  }
+  var s = SENTENCES[cur];
+  document.getElementById('speakerTag').textContent = s.who === 'W' ? 'WOMAN' : 'MAN';
+  transcript.textContent = '🔒 测试期间不显示原文 · 请先听清再复述';
 }
-document.getElementById('toggleText').onclick = function(){
-  textShown = !textShown;
-  this.textContent = textShown ? '🙈 隐藏原文' : '👁 显示原文';
-  paintTranscript();
-};
-transcript.onclick = function(){ if(!textShown) document.getElementById('toggleText').click(); };
 
-/* ---------- 播放例句（用浏览器朗读，无需音频文件）---------- */
 document.getElementById('playBtn').onclick = function(){
   try{
     window.speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(SENTENCES[cur].en);
-    u.lang = 'en-US'; u.rate = 0.92;
+    u.lang = 'en-GB'; u.rate = 0.9;
     window.speechSynthesis.speak(u);
   }catch(e){ alert('当前浏览器不支持朗读，请换 Chrome。'); }
 };
 
-/* ---------- 录音 / 语音识别（浏览器，英文）---------- */
-var heard = document.getElementById('heard');
-var verdict = document.getElementById('verdict');
-var srNote = document.getElementById('srNote');
-var recBtn = document.getElementById('recBtn');
+var heard = document.getElementById('heard'), verdict = document.getElementById('verdict');
+var srNote = document.getElementById('srNote'), recBtn = document.getElementById('recBtn');
 var stopBtn = document.getElementById('stopBtn');
 var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-var recog = null, lastHeard = '';
+var recog = null, lastHeard = '', wantRec = false;
 
 if(!SR){
-  srNote.textContent = '⚠️ 当前浏览器不支持语音识别，请用电脑版 Chrome 打开。';
+  srNote.textContent = '⚠️ 请用电脑版 Chrome 打开以使用语音识别。';
   recBtn.disabled = true;
 }
 
-function startRec(){
-  if(!SR) return;
-  lastHeard = '';
-  heard.innerHTML = '<span class="ph">🎙 正在听… 请清晰地说出这句话</span>';
-  verdict.classList.remove('show');
-  recog = new SR();
-  recog.lang = 'en-US'; recog.interimResults = true; recog.maxAlternatives = 1;
-  recog.onresult = function(ev){
-    var txt = '';
-    for(var i=0;i<ev.results.length;i++) txt += ev.results[i][0].transcript;
-    lastHeard = txt.trim();
-    heard.textContent = lastHeard || '…';
-  };
-  recog.onerror = function(ev){ srNote.textContent = '识别出错：'+ev.error+'（请检查麦克风权限）'; };
-  recog.onend = function(){ recBtn.classList.remove('on'); stopBtn.disabled = true; recBtn.disabled = false;
-                            if(lastHeard) judge(lastHeard); };
-  recog.start();
-  recBtn.classList.add('on'); recBtn.disabled = true; stopBtn.disabled = false;
-}
-function stopRec(){ if(recog) recog.stop(); }
-recBtn.onclick = startRec;
-stopBtn.onclick = stopRec;
-
-/* ---------- 判断主谓宾 + 语法 ---------- */
-function judge(text){
-  verdict.className = 'verdict show';
-  verdict.innerHTML = '⏳ 正在判断主谓宾与语法…';
-  var s = SENTENCES[cur];
-
-  if(API_BASE){
-    fetch(API_BASE + '/api/jingting/judge', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ heard:text, target:s.en })
-    }).then(function(r){ return r.json(); })
-      .then(function(d){ showVerdict(d); })
-      .catch(function(){ showVerdict(localJudge(text, s)); verdict.innerHTML += '<div class="hint">（未连上服务器，已用本地规则判断）</div>'; });
+function setRecUi(on){
+  if(on){
+    recBtn.classList.add('on'); recBtn.disabled = true; stopBtn.disabled = false;
   } else {
-    showVerdict(localJudge(text, s));
+    recBtn.classList.remove('on'); recBtn.disabled = false; stopBtn.disabled = true;
   }
 }
 
-/* 本地体验模式：用简单规则近似判断（接服务器后由 AI 取代）*/
-function localJudge(text, s){
-  var t = text.toLowerCase().replace(/[^a-z' ]/g,' ');
-  function has(w){ return t.indexOf(w.toLowerCase()) > -1; }
-  var subj = has(" i ") || t.indexOf("i ")===0 || has("i'd") || has("i would");
-  var verb = has("like") || has("find") || has("want");
-  var obj  = has("information") || has("cookery") || has("class");
-  var grammar = text.trim().split(/\s+/).length >= 4;
-  return { subject:subj, verb:verb, object:obj, grammar:grammar,
-           pass:(subj&&verb&&obj&&grammar),
-           comment: (subj&&verb&&obj) ? '主谓宾齐全，语法基本正确。' : '没有完全捕捉到主谓宾，再听一遍试试。' };
+function startRec(){
+  if(!SR || wantRec) return;
+  window.speechSynthesis.cancel();
+  lastHeard = '';
+  wantRec = true;
+  heard.innerHTML = '<span class="ph">🎙 正在听… 说完整句后点「说完点停止」</span>';
+  verdict.classList.remove('show');
+  srNote.textContent = '';
+  recog = new SR();
+  recog.lang = 'en-GB';
+  recog.continuous = true;
+  recog.interimResults = true;
+  recog.maxAlternatives = 1;
+  recog.onresult = function(ev){
+    var txt = '';
+    for(var i = 0; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
+    lastHeard = txt.trim();
+    heard.textContent = lastHeard || '…';
+  };
+  recog.onerror = function(ev){
+    if(ev.error === 'no-speech' || ev.error === 'aborted') return;
+    wantRec = false;
+    setRecUi(false);
+    var msg = { 'not-allowed': '请允许麦克风权限（地址栏左侧锁图标）', 'network': '网络错误', 'service-not-allowed': '请用 Chrome 直接打开本页，或从考场页重新进入' };
+    srNote.textContent = '识别出错：' + (msg[ev.error] || ev.error);
+  };
+  recog.onend = function(){
+    if(wantRec){
+      try { recog.start(); } catch(e) {}
+      return;
+    }
+    setRecUi(false);
+  };
+  try {
+    recog.start();
+    setRecUi(true);
+  } catch(e) {
+    wantRec = false;
+    setRecUi(false);
+    srNote.textContent = '无法启动麦克风，请检查权限并用 Chrome 打开。';
+  }
 }
+recBtn.onclick = startRec;
+stopBtn.onclick = function(){
+  if(!wantRec) return;
+  wantRec = false;
+  if(recog) try { recog.stop(); } catch(e) {}
+  setRecUi(false);
+  if(lastHeard) shadowCheck(lastHeard);
+  else {
+    heard.innerHTML = '<span class="ph">未识别到语音，请再试一次</span>';
+    srNote.textContent = '提示：等播放完再复述，说完后再点停止。';
+  }
+};
 
-function showVerdict(d){
-  var pass = d.pass;
-  verdict.className = 'verdict show ' + (pass ? 'ok' : 'no');
-  verdict.innerHTML =
-    '<b>'+(pass ? '✅ 通过！' : '❌ 再试一次')+'</b> '+ (d.comment||'') +
-    '<div class="chips">'+
-      chip('主语', d.subject)+ chip('谓语', d.verb)+ chip('宾语', d.object)+ chip('语法', d.grammar)+
-    '</div>';
-  if(pass){ openTranslate(); markDone(); }
-}
-function chip(label, ok){ return '<span class="chip '+(ok?'y':'n')+'">'+label+'：'+(ok?'✓':'✗')+'</span>'; }
-
-/* ---------- 第 2 步：翻译 ---------- */
-var stageTranslate = document.getElementById('stageTranslate');
-var zhVerdict = document.getElementById('zhVerdict');
-function openTranslate(){
-  stageTranslate.style.display = '';
-  document.getElementById('translatePrompt').textContent = '英文原句：' + SENTENCES[cur].en;
-  document.getElementById('zhInput').value = '';
-  zhVerdict.classList.remove('show');
-  document.getElementById('nextBtn').style.display = SENTENCES.length>1 ? '' : 'none';
-  stageTranslate.scrollIntoView({behavior:'smooth'});
-}
-document.getElementById('checkZhBtn').onclick = function(){
-  var zh = document.getElementById('zhInput').value.trim();
-  if(!zh){ return; }
-  zhVerdict.className = 'verdict show';
-  zhVerdict.innerHTML = '⏳ 正在批改翻译…';
+function shadowCheck(text){
+  verdict.className = 'verdict show';
+  verdict.innerHTML = '⏳ 正在逐词分析跟读…';
   var s = SENTENCES[cur];
   if(API_BASE){
-    fetch(API_BASE + '/api/jingting/translate', {
+    fetch(API_BASE + '/api/jingting/shadow', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ en:s.en, zh:zh, reference:s.zh })
+      body: JSON.stringify({ heard:text, target:s.en })
     }).then(function(r){ return r.json(); })
-      .then(function(d){ showZh(d); })
-      .catch(function(){ showZh(localZh(zh,s)); });
-  } else { showZh(localZh(zh,s)); }
-};
-function localZh(zh, s){
-  var ok = zh.length >= 4;
-  return { pass:ok, comment: ok ? '翻译大意正确。参考译文：'+s.zh : '翻译太短了，请完整翻译。' };
+      .then(function(d){
+        if(d.error){ verdict.className='verdict show no'; verdict.innerHTML='<b>❌</b> '+d.error; return; }
+        showShadowResult(d, text);
+      })
+      .catch(function(){
+        showShadowResult(localShadow(s.en, text), text);
+      });
+  } else { showShadowResult(localShadow(s.en, text), text); }
 }
-function showZh(d){
-  zhVerdict.className = 'verdict show ' + (d.pass ? 'ok' : 'no');
-  zhVerdict.innerHTML = '<b>'+(d.pass?'✅ 翻译不错':'✏️ 再改改')+'</b> '+(d.comment||'');
-}
-document.getElementById('nextBtn').onclick = function(){
-  if(cur < SENTENCES.length-1) goTo(cur+1);
-};
 
-/* ---------- 进度 / 重置 ---------- */
-function markDone(){ done[cur] = true; renderList(); }
-function resetStage(){
-  textShown = false; document.getElementById('toggleText').textContent = '👁 显示原文'; paintTranscript();
+function tokenize(s){
+  return String(s).toLowerCase().replace(/[^a-z0-9'\s-]/gi,' ').split(/\s+/).filter(Boolean);
+}
+
+function localShadow(target, heard){
+  var tgt = tokenize(target), h = tokenize(heard);
+  var hi = 0, words = [], ok = 0;
+  tgt.forEach(function(t){
+    var idx = -1;
+    for(var j = hi; j < h.length; j++){ if(h[j] === t){ idx = j; break; } }
+    if(idx >= 0){
+      words.push({ target: t, heard: h[idx], status: 'correct' });
+      ok++; hi = idx + 1;
+    } else {
+      words.push({ target: t, heard: '', status: 'missing' });
+    }
+  });
+  var extras = h.slice(hi);
+  var acc = tgt.length ? ok / tgt.length : 0;
+  var thresh = tgt.length <= 5 ? PASS_THRESH_SHORT : PASS_THRESH;
+  return { words: words, extras: extras, accuracy: acc, pass: acc >= thresh,
+    comment: '本地简易对比。连接 AI 服务器可获得更准确的逐词分析。' };
+}
+
+function buildWordDiff(d, heardRaw){
+  var words = d.words || [];
+  var acc = Math.round((d.accuracy || 0) * 100);
+  var row = words.map(function(w){
+    var cls = w.status === 'correct' ? 'w-ok' : (w.status === 'missing' ? 'w-miss' : 'w-bad');
+    var tip = '';
+    if(w.status === 'wrong' && w.heard) tip = ' title="你说成了：'+w.heard+'"';
+    if(w.status === 'missing') tip = ' title="漏读"';
+    return '<span class="w-tok '+cls+'"'+tip+'>'+escHtml(w.target)+'</span>';
+  }).join('');
+  var extras = (d.extras || []).map(function(e){
+    return '<span class="w-tok w-extra" title="多余的词">'+escHtml(e)+'</span>';
+  }).join('');
+  return '<div class="word-diff"><div class="word-diff-hd">📊 跟读逐词对照 · 准确率 '+acc+'%</div>'+
+    '<div class="word-row">'+row+(extras ? ' '+extras : '')+'</div>'+
+    '<div class="word-legend"><span class="w-ok">绿色=正确</span><span class="w-bad">红色=错误</span><span class="w-miss">灰色=漏读</span></div>'+
+    '<div class="heard-echo"><b>你说的：</b>'+escHtml(heardRaw)+'</div></div>';
+}
+
+function postActionButtons(passed){
+  if(passed){
+    return '<div class="post-actions">'+
+      (cur < SENTENCES.length - 1
+        ? '<button class="btn" id="nextSentBtn">下一句 →</button>'
+        : '<button class="btn" id="finishBtn">完成本节 →</button>')+
+      '</div>';
+  }
+  return '<div class="post-actions"><button class="btn" id="retryBtn">🔄 再听一遍，重试</button></div>';
+}
+
+function showShadowResult(d, heardRaw){
+  var pass = !!d.pass;
+  verdict.className = 'verdict show ' + (pass ? 'ok' : 'no');
+  verdict.innerHTML = '<b>'+(pass?'✅ 过关！':'❌ 未达标，请重试')+'</b> '+(d.comment||'')+
+    buildWordDiff(d, heardRaw) + postActionButtons(pass);
+  var retry = document.getElementById('retryBtn');
+  if(retry) retry.onclick = function(){ resetAttempt(); };
+  var next = document.getElementById('nextSentBtn');
+  if(next) next.onclick = function(){ done[cur]=true; renderList(); goTo(cur+1); };
+  var fin = document.getElementById('finishBtn');
+  if(fin) fin.onclick = function(){ done[cur]=true; renderList(); showFinish(); };
+  if(pass){ done[cur]=true; renderList(); }
+}
+
+function resetAttempt(){
   heard.innerHTML = '<span class="ph">你复述的内容会显示在这里…</span>';
-  verdict.classList.remove('show'); srNote.textContent = '';
-  stageTranslate.style.display = 'none';
+  verdict.classList.remove('show');
+  srNote.textContent = '';
+  lastHeard = '';
 }
 
-/* ---------- 初始化 ---------- */
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showFinish(){
+  document.getElementById('stageRepeat').style.display = 'none';
+  document.getElementById('stageFinish').style.display = '';
+  var n = countDone();
+  document.getElementById('finishSummary').textContent =
+    '你完成了 ' + n + ' / ' + SENTENCES.length + ' 句跟读过关。';
+  try{
+    window.parent.postMessage({ type:'yysd:score', score:n, total:SENTENCES.length }, '*');
+  }catch(e){}
+  document.getElementById('stageFinish').scrollIntoView({behavior:'smooth'});
+}
+
+document.getElementById('restartBtn').onclick = function(){
+  cur = 0; done = [];
+  document.getElementById('stageFinish').style.display = 'none';
+  document.getElementById('stageRepeat').style.display = '';
+  resetStage(); renderList();
+};
+
+function resetStage(){
+  wantRec = false;
+  if(recog) try { recog.stop(); } catch(e) {}
+  setRecUi(false);
+  paintTranscript();
+  heard.innerHTML = '<span class="ph">你复述的内容会显示在这里…</span>';
+  verdict.classList.remove('show');
+  srNote.textContent = '';
+  lastHeard = '';
+}
+
 document.getElementById('modeBanner').textContent = API_BASE
-  ? '已连接 AI 服务器：将由 AI 判断主谓宾、语法并批改翻译。'
-  : '当前为「本地体验模式」：可完整体验流程，但主谓宾/语法/翻译判断为简易规则。接好阿里云服务器后将由 AI 智能判断。';
+  ? '跟读模式 · 已连接 AI · 盲听复述，逐词标绿/红/灰，准确率≥85%过关（短句≥90%）。'
+  : '跟读模式 · 本地体验：请连接 AI 服务器获得逐词智能分析。';
+
 renderList(); resetStage();
 </script>
 </body>

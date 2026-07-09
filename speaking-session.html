@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>口语练习 · 实战 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260709d">
+  <link rel="stylesheet" href="assets/css/speaking.css?v=20260709d">
+</head>
+<body class="home-minimal spk-page">
+
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="speaking.html" class="minimal-brand">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text"><b>优益思达</b><span>口语实战</span></span>
+      </a>
+    </div>
+  </header>
+
+  <main class="minimal-shell" style="padding-top:16px">
+    <div class="spk-session-top">
+      <div>
+        <span class="spk-badge">P1</span>
+        <b style="margin-left:8px">Part 1：日常话题问答</b>
+      </div>
+      <button type="button" class="spk-end-btn" id="end-btn">结束练习</button>
+    </div>
+
+    <div class="spk-session">
+      <aside class="spk-side">
+        <div class="spk-examiner">
+          <div class="spk-examiner__avatar">JS</div>
+          <div><b>John Smith</b><span>IELTS Examiner</span></div>
+        </div>
+        <dl>
+          <dt>当前阶段</dt><dd id="side-stage">基础问答</dd>
+          <dt>当前话题</dt><dd id="side-topic">—</dd>
+          <dt>当前题目</dt><dd id="side-qnum">—</dd>
+        </dl>
+        <div class="spk-timer">
+          <div style="font-size:0.8rem;color:#6b7c90">Part 1 限时</div>
+          <b id="timer-text">4:30 / 4:30</b>
+          <div class="spk-timer__bar"><div class="spk-timer__fill" id="timer-fill" style="width:100%"></div></div>
+        </div>
+        <div class="spk-tip" id="side-tip">请根据你的实际情况回答。说完后点「停止录音」，再点「下一题」。</div>
+      </aside>
+
+      <section class="spk-main">
+        <div class="spk-qbox">
+          <div class="spk-qbox__label">考官提问</div>
+          <p class="spk-qbox__text" id="question-text">加载中…</p>
+          <button type="button" class="spk-qbox__replay" id="replay-btn">🔊 重播题目</button>
+        </div>
+
+        <div class="spk-answer">
+          <div class="spk-answer__label">你的回答</div>
+          <div class="spk-answer__area">
+            <div class="spk-answer__transcript" id="transcript">点击下方按钮开始录音</div>
+            <div class="spk-answer__status" id="rec-status"></div>
+          </div>
+          <div class="spk-rec-controls">
+            <button type="button" class="spk-rec-btn spk-rec-btn--start" id="rec-start">🎙 开始录音</button>
+            <button type="button" class="spk-rec-btn spk-rec-btn--stop" id="rec-stop" disabled>停止录音</button>
+            <button type="button" class="spk-rec-btn" id="next-btn" disabled style="background:#c7a45d;color:#102a4c">下一题 →</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="spk-loading" id="loading" hidden>
+    <div class="spinner spinner--brand"></div>
+    <p id="loading-msg">正在生成评分报告…</p>
+  </div>
+
+  <script src="assets/js/speaking-common.js?v=20260709d"></script>
+  <script>
+  (function () {
+    var S = window.YYSD_SPEAKING;
+    var pending = S.getPending();
+    if (!pending || !pending.topics || !pending.topics.length) {
+      location.replace("speaking-select.html");
+      return;
+    }
+
+    var queue = [];
+    var step = 0;
+    var answers = [];
+    var timeLeft = S.PART1_LIMIT_SEC;
+    var timerId = null;
+    var finished = false;
+
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var recog = null;
+    var wantRec = false;
+    var lastHeard = "";
+    var hasAnswer = false;
+
+    var qText = document.getElementById("question-text");
+    var transcript = document.getElementById("transcript");
+    var recStatus = document.getElementById("rec-status");
+    var recStart = document.getElementById("rec-start");
+    var recStop = document.getElementById("rec-stop");
+    var nextBtn = document.getElementById("next-btn");
+    var replayBtn = document.getElementById("replay-btn");
+    var timerText = document.getElementById("timer-text");
+    var timerFill = document.getElementById("timer-fill");
+    var loading = document.getElementById("loading");
+
+    function fmt(sec) {
+      var m = Math.floor(sec / 60);
+      var s = sec % 60;
+      return m + ":" + String(s).padStart(2, "0");
+    }
+
+    function updateTimer() {
+      timerText.textContent = fmt(timeLeft) + " / " + fmt(S.PART1_LIMIT_SEC);
+      timerFill.style.width = (timeLeft / S.PART1_LIMIT_SEC * 100) + "%";
+    }
+
+    function startTimer() {
+      updateTimer();
+      timerId = setInterval(function () {
+        if (finished) return;
+        timeLeft--;
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          updateTimer();
+          finishSession();
+          return;
+        }
+        updateTimer();
+      }, 1000);
+    }
+
+    function currentItem() { return queue[step]; }
+
+    function updateSide() {
+      var item = currentItem();
+      if (!item) return;
+      document.getElementById("side-topic").textContent = item.topicTitle;
+      document.getElementById("side-qnum").textContent = "第 " + (step + 1) + " / " + queue.length + " 题";
+    }
+
+    function playQuestion(cb) {
+      var item = currentItem();
+      if (!item) return;
+      var text = (item.opener ? item.opener + " " : "") + item.question;
+      qText.textContent = item.question;
+      updateSide();
+      recStart.disabled = false;
+      nextBtn.disabled = true;
+      hasAnswer = false;
+      lastHeard = "";
+      transcript.textContent = "听清题目后，点击「开始录音」作答";
+      recStatus.textContent = "可点 🔊 重播题目";
+      S.speak(text, function () {});
+      if (cb) cb();
+    }
+
+    function setRecUi(on) {
+      recStart.disabled = on;
+      recStop.disabled = !on;
+      recStart.classList.toggle("is-recording", on);
+    }
+
+    function startRec() {
+      if (!SR) {
+        recStatus.textContent = "请用 Chrome 浏览器并允许麦克风权限";
+        return;
+      }
+      if (wantRec) return;
+      window.speechSynthesis.cancel();
+      wantRec = true;
+      lastHeard = "";
+      transcript.textContent = "🎙 正在听…";
+      recStatus.textContent = "说完后点「停止录音」";
+      recog = new SR();
+      recog.lang = "en-GB";
+      recog.continuous = true;
+      recog.interimResults = true;
+      recog.onresult = function (ev) {
+        var txt = "";
+        for (var i = 0; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
+        lastHeard = txt.trim();
+        transcript.textContent = lastHeard || "…";
+      };
+      recog.onerror = function (ev) {
+        if (ev.error === "no-speech" || ev.error === "aborted") return;
+        wantRec = false;
+        setRecUi(false);
+        recStatus.textContent = "识别出错：" + ev.error;
+      };
+      recog.onend = function () {
+        if (wantRec) { try { recog.start(); } catch (e) {} return; }
+        setRecUi(false);
+      };
+      try {
+        recog.start();
+        setRecUi(true);
+      } catch (e) {
+        wantRec = false;
+        recStatus.textContent = "无法启动麦克风";
+      }
+    }
+
+    function stopRec() {
+      if (!wantRec) return;
+      wantRec = false;
+      if (recog) try { recog.stop(); } catch (e) {}
+      setRecUi(false);
+      if (lastHeard) {
+        hasAnswer = true;
+        nextBtn.disabled = false;
+        recStatus.textContent = "已记录，可点「下一题」继续";
+      } else {
+        transcript.textContent = "未识别到语音，请再试";
+        recStatus.textContent = "提示：等题目播完再答，尽量说满 15 秒以上";
+      }
+    }
+
+    function saveCurrentAnswer() {
+      var item = currentItem();
+      if (!item || !hasAnswer || !lastHeard) return;
+      answers.push({
+        question: item.question,
+        transcript: lastHeard,
+        topicId: item.topicId,
+        topicTitle: item.topicTitle
+      });
+    }
+
+    function nextStep() {
+      saveCurrentAnswer();
+      step++;
+      if (step >= queue.length) {
+        finishSession();
+        return;
+      }
+      playQuestion();
+    }
+
+    function finishSession() {
+      if (finished) return;
+      finished = true;
+      clearInterval(timerId);
+      saveCurrentAnswer();
+      window.speechSynthesis.cancel();
+      if (wantRec) stopRec();
+
+      if (!answers.length) {
+        alert("没有有效回答，请重新开始练习。");
+        location.href = "speaking-select.html";
+        return;
+      }
+
+      loading.hidden = false;
+      var topicNames = pending.topics.map(function (t) { return t.topic; });
+
+      S.grade("part1", topicNames, answers)
+        .then(function (report) {
+          var rec = {
+            id: S.uuid(),
+            type: "practice",
+            part: "part1",
+            topics: topicNames,
+            createdAt: new Date().toISOString(),
+            overallBand: report.overallBand,
+            detailedScores: report.detailedScores,
+            strengths: report.strengths,
+            weaknesses: report.weaknesses,
+            generalAdvice: report.generalAdvice,
+            questionFeedbacks: report.questionFeedbacks
+          };
+          S.saveRecord(rec);
+          S.clearPending();
+          location.href = "speaking.html?report=" + encodeURIComponent(rec.id);
+        })
+        .catch(function (err) {
+          loading.hidden = true;
+          var msg = err && err.name === "AbortError"
+            ? "评分超时（90秒），请确认 API 已启动后重试"
+            : (err.message || "评分失败");
+          alert(msg);
+        });
+    }
+
+    recStart.onclick = startRec;
+    recStop.onclick = stopRec;
+    nextBtn.onclick = nextStep;
+    replayBtn.onclick = function () {
+      var item = currentItem();
+      if (item) S.speak((item.opener ? item.opener + " " : "") + item.question);
+    };
+    document.getElementById("end-btn").onclick = function () {
+      if (confirm("确定结束练习？已答题目将提交评分。")) finishSession();
+    };
+
+    if (!SR) {
+      recStatus.textContent = "⚠️ 请用电脑版 Chrome 以使用语音识别";
+      recStart.disabled = true;
+    }
+    if (!S.API_BASE) {
+      document.getElementById("side-tip").textContent =
+        "AI 评分需连接服务器，请检查网络后重试。";
+    }
+
+    fetch("data/speaking/part1-fixed.json")
+      .then(function (r) { return r.json(); })
+      .then(function (fixed) {
+        queue = S.buildPart1Queue(fixed, pending.topics);
+        step = 0;
+        startTimer();
+        playQuestion();
+      })
+      .catch(function () {
+        alert("加载题目失败");
+        location.href = "speaking-select.html";
+      });
+  })();
+  </script>
+</body>
+</html>

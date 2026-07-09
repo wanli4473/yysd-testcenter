@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>口语练习 · 选题 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260709d">
+  <link rel="stylesheet" href="assets/css/speaking.css?v=20260709d">
+</head>
+<body class="home-minimal spk-page" style="padding-bottom:80px">
+
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="speaking.html" class="minimal-brand" aria-label="口语首页">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text"><b>优益思达</b><span>雅思口语练习</span></span>
+      </a>
+      <nav class="minimal-nav">
+        <a href="speaking.html">口语首页</a>
+        <a href="zone.html?zone=practice">练习区</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="minimal-shell">
+    <div class="spk-hero" style="margin-top:20px">
+      <span class="spk-badge">雅思全真模拟环境</span>
+      <h1>口语练习</h1>
+      <p>点击卡片勾选练习话题，选满后即可进入实战演练。</p>
+    </div>
+
+    <div class="spk-select-head">
+      <div>
+        <div class="spk-tabs">
+          <button type="button" class="spk-tab is-active" id="tab-p1">Part 1</button>
+          <button type="button" class="spk-tab" id="tab-p2" disabled title="Phase 2 上线">Part 2 &amp; 3</button>
+        </div>
+        <p style="margin:10px 0 0;font-size:0.88rem;color:#6b7c90">日常对话：4–5 分钟，围绕生活、工作学习等日常话题交流</p>
+      </div>
+      <div class="spk-progress">
+        <div>Part 1 选题进度</div>
+        <b id="prog-text">已选 0 / 2</b>
+        <span id="prog-hint">还需选择 2 个话题</span>
+      </div>
+    </div>
+
+    <div class="spk-toolbar">
+      <label class="spk-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" id="search" placeholder="搜索话题 title..." autocomplete="off">
+      </label>
+    </div>
+
+    <div class="spk-grid" id="grid"></div>
+    <div class="spk-empty" id="empty" hidden>没有匹配的话题</div>
+  </main>
+
+  <div class="spk-start-bar" id="start-bar">
+    <button type="button" class="btn btn--primary pressable" id="start-btn">开始测试</button>
+  </div>
+
+  <script src="assets/js/speaking-common.js?v=20260709d"></script>
+  <script>
+  (function () {
+    var S = window.YYSD_SPEAKING;
+    var topics = [];
+    var selected = [];
+    var REQUIRED = 2;
+    var query = "";
+
+    var grid = document.getElementById("grid");
+    var startBar = document.getElementById("start-bar");
+    var startBtn = document.getElementById("start-btn");
+    var progText = document.getElementById("prog-text");
+    var progHint = document.getElementById("prog-hint");
+    var emptyEl = document.getElementById("empty");
+
+    function updateProgress() {
+      progText.textContent = "已选 " + selected.length + " / " + REQUIRED;
+      var left = REQUIRED - selected.length;
+      progHint.textContent = left > 0 ? "还需选择 " + left + " 个话题" : "可以开始测试了";
+      startBar.classList.toggle("is-visible", selected.length >= REQUIRED);
+    }
+
+    function filtered() {
+      if (!query) return topics;
+      var q = query.toLowerCase();
+      return topics.filter(function (t) {
+        return t.topic.toLowerCase().indexOf(q) >= 0 || t.title.toLowerCase().indexOf(q) >= 0;
+      });
+    }
+
+    function render() {
+      var list = filtered();
+      emptyEl.hidden = !!list.length;
+      grid.innerHTML = list.map(function (t, idx) {
+        var sel = selected.indexOf(t.id) >= 0;
+        var hf = (t.tags || []).indexOf("high-frequency") >= 0
+          ? '<span class="spk-tag-hf">🔥 高频考题</span>' : "";
+        return '<div role="button" tabindex="0" class="spk-card' + (sel ? " is-selected" : "") + '" data-id="' + S.esc(t.id) + '">' +
+          '<button type="button" class="spk-card__play" data-play="' + S.esc(t.id) + '" aria-label="试听开场">▶</button>' +
+          '<div class="spk-card__num">话题 ' + String(idx + 1).padStart(2, "0") + '</div>' +
+          '<div class="spk-card__title">' + S.esc(t.topic) + '</div>' +
+          '<p class="spk-card__intro">' + S.esc(t.title) + '</p>' +
+          '<div class="spk-card__foot"><span>≈ ' + (t.estMinutes || 2) + ' mins</span>' + hf + '</div></div>';
+      }).join("");
+
+      grid.querySelectorAll(".spk-card").forEach(function (card) {
+        function toggle() {
+          var id = card.getAttribute("data-id");
+          var i = selected.indexOf(id);
+          if (i >= 0) selected.splice(i, 1);
+          else {
+            if (selected.length >= REQUIRED) return;
+            selected.push(id);
+          }
+          updateProgress();
+          render();
+        }
+        card.onclick = function (e) {
+          if (e.target.closest(".spk-card__play")) return;
+          toggle();
+        };
+        card.onkeydown = function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+        };
+      });
+      grid.querySelectorAll(".spk-card__play").forEach(function (btn) {
+        btn.onclick = function (e) {
+          e.stopPropagation();
+          var t = topics.find(function (x) { return x.id === btn.getAttribute("data-play"); });
+          if (t) S.speak(t.title);
+        };
+      });
+    }
+
+    startBtn.addEventListener("click", function () {
+      if (selected.length < REQUIRED) return;
+      var picked = topics.filter(function (t) { return selected.indexOf(t.id) >= 0; });
+      if (!picked.length) return;
+      S.setPending({ part: "part1", topics: picked });
+      location.href = "speaking-session.html";
+    });
+
+    document.getElementById("search").addEventListener("input", function () {
+      query = this.value.trim();
+      render();
+    });
+
+    fetch("data/speaking/part1-topics.json")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        topics = data;
+        render();
+        updateProgress();
+      })
+      .catch(function () {
+        grid.innerHTML = '<div class="spk-empty">题库加载失败，请刷新重试。</div>';
+      });
+  })();
+  </script>
+</body>
+</html>

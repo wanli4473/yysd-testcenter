@@ -158,6 +158,10 @@
   }
 
   function leafBody(subject) {
+    if (subject === "ielts-speaking") {
+      return '<div class="exam-grid"><a class="spk-zone-card pressable" href="speaking.html">' +
+        '<b>雅思口语专项练习</b><span>Part 1 选题 · 录音作答 · AI 四维评分</span></a></div>';
+    }
     if (Y.isCambridge(subject)) {
       var vols = Y.camVolumes(allItems.filter(function (it) { return it.subject === subject; }));
       if (vols.length) {
@@ -176,6 +180,7 @@
   }
 
   function countOf(subject) {
+    if (subject === "ielts-speaking") return 1;
     if (Y.isCambridge(subject)) return Y.camVolumes(allItems.filter(function (it) { return it.subject === subject; })).length;
     return itemsOf(subject).length;
   }

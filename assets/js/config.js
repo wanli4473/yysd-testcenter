@@ -25,7 +25,7 @@ window.YYSD = (function () {
   var ZONE_SUBJECTS = {
     study:    ["grammar", "vocab", "vocab-cet4",
                "vocab-special-listening", "vocab-special-reading", "vocab-special-writing"],
-    practice: ["changnanju", "jingting", "ielts"],
+    practice: ["changnanju", "jingting", "ielts-speaking", "ielts"],
     mock:     ["cambridge-listening", "cambridge-reading", "ielts",
                "ielts-speaking", "ielts-writing", "alevel", "ap", "toefl", "sat"]
   };
@@ -68,7 +68,8 @@ window.YYSD = (function () {
     ],
     practice: [
       { key: "changnanju", label: "长难句", subject: "changnanju" },
-      { key: "jingting", label: "听力精听", subject: "jingting" }
+      { key: "jingting", label: "听力精听", subject: "jingting" },
+      { key: "ielts-speaking", label: "雅思口语", subject: "ielts-speaking" }
     ],
     mock: [
       { key: "ielts", label: "雅思真题", subject: "ielts", children: [

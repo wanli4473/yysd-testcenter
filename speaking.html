@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>雅思口语 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260709d">
+  <link rel="stylesheet" href="assets/css/speaking.css?v=20260709d">
+</head>
+<body class="home-minimal spk-page">
+
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="index.html" class="minimal-brand" aria-label="首页">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text"><b>优益思达国际课程中心</b><span>YYSD International Course Center</span></span>
+      </a>
+      <nav class="minimal-nav" id="nav" aria-label="主导航">
+        <a href="zone.html?zone=study" data-zone="study">学习区</a>
+        <a href="zone.html?zone=practice" data-zone="practice">练习区</a>
+        <a href="zone.html?zone=mock" data-zone="mock">模考区</a>
+        <a href="results.html" data-nav="results">我的成绩</a>
+        <a href="login.html" id="nav-auth">登录</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="minimal-shell">
+    <div class="minimal-crumb"><a href="index.html">首页</a> <span class="crumb-sep">★</span> <a href="zone.html?zone=practice">练习区</a> <span class="crumb-sep">★</span> <span>雅思口语</span></div>
+
+    <div class="spk-hero">
+      <span class="spk-badge">雅思专项练习</span>
+      <h1>雅思口语</h1>
+      <p>选择话题进入实战演练，AI 将根据雅思官方四维评分标准给出反馈，助你高效提升口语能力。</p>
+    </div>
+
+    <div class="spk-stats" id="stats"></div>
+
+    <div class="spk-actions">
+      <a class="btn btn--primary pressable" href="speaking-select.html">开始新练习</a>
+      <a class="btn btn--ghost pressable" href="zone.html?zone=practice">返回练习区</a>
+    </div>
+
+    <section class="spk-section">
+      <h2>专项练习记录</h2>
+      <div class="spk-records" id="records"></div>
+    </section>
+  </main>
+
+  <footer class="minimal-footer minimal-footer--rich">
+    <div class="minimal-shell minimal-footer__inner">
+      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/config.js?v=20260709d"></script>
+  <script src="assets/js/auth.js?v=20260707b"></script>
+  <script src="assets/js/nav.js?v=20260709d"></script>
+  <script src="assets/js/speaking-common.js?v=20260709d"></script>
+  <script>
+  (function () {
+    var S = window.YYSD_SPEAKING;
+    var st = S.stats();
+    document.getElementById("stats").innerHTML =
+      '<div class="spk-stat"><b>' + (st.averageScore || "—") + '</b><span>平均分</span></div>' +
+      '<div class="spk-stat"><b>' + (st.highestScore || "—") + '</b><span>最高分</span></div>' +
+      '<div class="spk-stat"><b>' + st.practiceCount + '</b><span>练习次数</span></div>';
+
+    var list = S.loadRecords();
+    var el = document.getElementById("records");
+    if (!list.length) {
+      el.innerHTML = '<div class="spk-empty">还没有练习记录，点击「开始新练习」试试吧。</div>';
+    } else {
+      el.innerHTML = list.map(function (r) {
+        var date = r.createdAt ? new Date(r.createdAt).toLocaleString("zh-CN") : "";
+        return '<button type="button" class="spk-record" data-id="' + S.esc(r.id) + '">' +
+          '<span class="spk-record__band">' + S.esc(String(r.overallBand)) + '</span>' +
+          '<span class="spk-record__meta"><b>口语专项练习 · Part 1</b><span>' +
+            S.esc((r.topics || []).join(" · ")) + ' · ' + S.esc(date) + '</span></span></button>';
+      }).join("");
+      el.querySelectorAll(".spk-record").forEach(function (btn) {
+        btn.onclick = function () {
+          var rec = S.getRecord(btn.getAttribute("data-id"));
+          if (rec) S.openReportModal(rec);
+        };
+      });
+    }
+
+    var params = new URLSearchParams(location.search);
+    var reportId = params.get("report");
+    if (reportId) {
+      var rec = S.getRecord(reportId);
+      if (rec) S.openReportModal(rec);
+      history.replaceState(null, "", "speaking.html");
+    }
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+  })();
+  </script>
+</body>
+</html>

@@ -31,7 +31,7 @@ pm2 startup | tail -1 | sudo bash 2>/dev/null || true
 
 echo ""
 echo "==> 下一步（手动）："
-echo "1. 编辑 .env：JWT_SECRET、ALIYUN_ACCESS_KEY_ID、ALIYUN_ACCESS_KEY_SECRET"
+echo "1. 编辑 .env：JWT_SECRET、ALIYUN_ACCESS_KEY_ID、ALIYUN_ACCESS_KEY_SECRET、DASHSCOPE_API_KEY"
 echo "2. 配置 nginx 反向代理 api.youyisida.com -> 127.0.0.1:3000"
 echo "   参考 deploy/nginx-api.conf"
 echo "3. certbot --nginx -d api.youyisida.com"
