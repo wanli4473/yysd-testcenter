@@ -166,4 +166,23 @@
 
   markActive();
   document.addEventListener("DOMContentLoaded", markActive);
+
+  try {
+    if (localStorage.getItem("yysd:mascot-off") === "1") {
+      var foot = document.querySelector(".minimal-footer__copy");
+      if (foot && !foot.querySelector(".mascot-restore-link")) {
+        foot.appendChild(document.createTextNode(" · "));
+        var link = document.createElement("a");
+        link.href = "#";
+        link.className = "mascot-restore-link";
+        link.textContent = "启用思达助手";
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          localStorage.removeItem("yysd:mascot-off");
+          location.reload();
+        });
+        foot.appendChild(link);
+      }
+    }
+  } catch (e) { /* ponytail: storage edge */ }
 })();

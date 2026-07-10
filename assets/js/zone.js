@@ -31,6 +31,7 @@
   var searchInput = document.getElementById("catalog-search");
   var contentEl = document.getElementById("content");
   var allItems = [];
+  var alevelCatalog = null;
 
   function catOfSubject(s) {
     function walk(nodes, top) {
@@ -82,6 +83,9 @@
   }
 
   function catHasContent(cat) {
+    if (cat.key === "alevel") {
+      return window.YYSD_ALEVEL && alevelCatalog && window.YYSD_ALEVEL.hasContent(alevelCatalog);
+    }
     if (cat.key === "ielts") return Y.camVolumes(allItems).length > 0;
     if (cat.key === "vocab") return Y.vocabBooksForZone(allItems).length > 0;
     if (cat.children) {
@@ -213,6 +217,8 @@
       "<h2>" + Y.esc(cat.label) + '</h2><span class="cnt">' +
       (cat.key === "ielts" ? Y.camVolumes(allItems).length + " 册"
         : cat.key === "vocab" ? Y.vocabBooksForZone(allItems).length + " 本"
+        : cat.key === "alevel" && alevelCatalog && window.YYSD_ALEVEL
+          ? window.YYSD_ALEVEL.qpCount(alevelCatalog) + " 套"
         : countOf(cat.subject) + unitOf(cat.subject || "")) +
       "</span></div>";
 
@@ -222,6 +228,14 @@
       body = vols.length
         ? Y.cambridgeCatalogHTML(vols, allItems, "", { tier: camTier, query: searchQuery, collapseLegacy: true })
         : '<div class="soon-box">暂无剑桥真题，老师上传后会显示在这里。</div>';
+    } else if (cat.key === "alevel") {
+      var A = window.YYSD_ALEVEL;
+      var qp = alevelCatalog ? A.qpCount(alevelCatalog) : 0;
+      body = alevelCatalog && A.hasContent(alevelCatalog)
+        ? '<p class="alevel-zone-intro">CAIE 热门科目真题 · 在线预览 · 免费下载 · 已收录 ' + qp + " 套</p>" +
+          A.catalogPreviewHTML(alevelCatalog, "", 6) +
+          '<div class="alevel-zone-more"><a class="btn btn--primary pressable" href="alevel.html">进入 A-Level 题库 →</a></div>'
+        : '<div class="soon-box">A-Level 真题筹备中，敬请期待。</div>';
     } else if (cat.key === "vocab") {
       var vbooks = Y.vocabBooksForZone(allItems);
       body = Y.wrongWordsStripHTML("") +
@@ -258,9 +272,7 @@
 
   buildFilters();
 
-  Y.load().then(function (items) {
-    // ponytail: grammar hidden from study zone UI until re-enabled in NAV.study
-    // ponytail: placement tests hidden from mock zone until re-enabled
+  function finishZoneLoad(items) {
     allItems = items.filter(function (it) {
       if (it.zone !== zone) return false;
       if (zone === "study" && it.subject === "grammar") return false;
@@ -269,6 +281,15 @@
     });
     buildFilters();
     render();
+  }
+
+  var manifestP = Y.load();
+  var catalogP = (zone === "mock" && window.YYSD_ALEVEL)
+    ? window.YYSD_ALEVEL.loadCatalog().then(function (c) { alevelCatalog = c; return c; }).catch(function () { alevelCatalog = null; })
+    : Promise.resolve(null);
+
+  Promise.all([manifestP, catalogP]).then(function (res) {
+    finishZoneLoad(res[0]);
   }).catch(function (err) {
     var msg = location.protocol === "file:"
       ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"

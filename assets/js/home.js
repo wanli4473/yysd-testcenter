@@ -5,10 +5,13 @@
   "use strict";
 
   var Y = window.YYSD;
+  var A = window.YYSD_ALEVEL;
   var HOME_PREVIEW = 4;
   var volumesEl = document.getElementById("home-cambridge-volumes");
   var continueEl = document.getElementById("home-continue");
   var journeyEl = document.getElementById("home-journey");
+  var alevelPreviewEl = document.getElementById("home-alevel-preview");
+  var alevelCountEl = document.getElementById("home-alevel-count");
 
   function skeletonCards(n) {
     var html = "";
@@ -51,7 +54,9 @@
 
   if (volumesEl) volumesEl.innerHTML = skeletonCards(HOME_PREVIEW);
 
-  Y.load().then(function (items) {
+  Promise.all([Y.load(), A.loadCatalog().catch(function () { return null; })]).then(function (res) {
+    var items = res[0];
+    var catalog = res[1];
     var volumes = Y.camVolumes(items);
     setStat("stat-vols", volumes.length);
     setStat("stat-tests", volumes.reduce(function (s, v) { return s + v.tests; }, 0));
@@ -84,6 +89,15 @@
       if (!card) return;
       card.style.setProperty("--reveal-delay", String(i * 70) + "ms");
     });
+
+    if (alevelPreviewEl && catalog && A.hasContent(catalog)) {
+      var qp = A.qpCount(catalog);
+      if (alevelCountEl) alevelCountEl.textContent = String(qp);
+      alevelPreviewEl.innerHTML = A.catalogPreviewHTML(catalog, "", 3);
+    } else if (alevelPreviewEl) {
+      if (alevelCountEl) alevelCountEl.textContent = "0";
+      alevelPreviewEl.innerHTML = '<div class="soon-box">A-Level 真题筹备中，敬请期待。</div>';
+    }
   }).catch(renderError);
 
   var yr = document.getElementById("year");

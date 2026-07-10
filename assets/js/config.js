@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260709p10";
+  var CONTENT_VER = "20260710a";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
 
   // Homepage display order: 学习区 → 练习区 → 模考区
@@ -18,7 +18,7 @@ window.YYSD = (function () {
     practice: { label: "练习区", en: "Practice", icon: "✏️",
                 desc: "长难句、听力精听等专项训练，针对性提分。" },
     mock:     { label: "模考区", en: "Mock Tests", icon: "🎯",
-                desc: "雅思 / A-Level / AP / 托福 / SAT 全真真题，计时模考、自动批改。" }
+                desc: "剑桥雅思 / A-Level 历年真题，在线预览与下载。" }
   };
 
   // ordered subjects per zone (leaf keys used by the manifest / folder classification)
