@@ -5,7 +5,7 @@ window.YYSD_ALEVEL = (function () {
   "use strict";
   var Y = window.YYSD;
 
-  var SEASON_ORDER = { m: 1, s: 2, w: 3 };
+  var SEASON_ORDER = { w: 1, s: 2, m: 3 };
   var _catalogPromise = null;
 
   function catalogUrl() {
@@ -72,7 +72,11 @@ window.YYSD_ALEVEL = (function () {
       var sa = SEASON_ORDER[a.season] || 9;
       var sb = SEASON_ORDER[b.season] || 9;
       if (sa !== sb) return sa - sb;
-      if (a.paper !== b.paper) {
+      var P = window.YYSD_ALEVEL_PAPERS;
+      if (P && P.comparePaper) {
+        var cmp = P.comparePaper(a.code, a.paper, b.paper);
+        if (cmp !== 0) return cmp;
+      } else if (a.paper !== b.paper) {
         return String(a.paper).localeCompare(String(b.paper), undefined, { numeric: true });
       }
       return a.type === "qp" ? -1 : 1;

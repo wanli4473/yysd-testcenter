@@ -32,6 +32,21 @@ SEASON_LABEL = {
     "w": {"en": "Oct/Nov", "zh": "冬季 (Oct/Nov)"},
 }
 
+# 同一年份内：冬季 → 夏季 → 春季（考试日期新→旧）
+SEASON_SORT = {"w": 0, "s": 1, "m": 2}
+
+
+def paper_sort_key(paper):
+    p = str(paper)
+    component = int(p[0]) if p else 0
+    return (component, int(p) if p.isdigit() else 0)
+
+
+def _self_check():
+    assert paper_sort_key("11") < paper_sort_key("21") < paper_sort_key("31")
+    assert paper_sort_key("13") < paper_sort_key("14")
+    assert paper_sort_key("33") < paper_sort_key("37") < paper_sort_key("38")
+
 
 def norm_code(code):
     return str(code).upper()
@@ -120,7 +135,10 @@ def scan():
             parsed["file"] = f"mock/alevel/{board}/{slug}/papers/{fname}"
             items.append(parsed)
     items.sort(key=lambda x: (
-        x["board"], x["code"], -x["year"], x["season"], x["paper"], x["type"]
+        x["board"], x["code"], -x["year"],
+        SEASON_SORT.get(x["season"], 9),
+        paper_sort_key(x["paper"]),
+        0 if x["type"] == "qp" else 1,
     ))
     return items
 
@@ -148,6 +166,7 @@ def build_catalog():
 
 
 def main():
+    _self_check()
     catalog = build_catalog()
     os.makedirs(os.path.dirname(CATALOG_PATH), exist_ok=True)
     with open(CATALOG_PATH, "w", encoding="utf-8") as f:
