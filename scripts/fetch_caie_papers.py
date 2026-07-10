@@ -37,15 +37,15 @@ XP_SUBJECT = {
 }
 SH_SESSION = {"m": "FM", "s": "MJ", "w": "ON"}
 XP_SESSION = {
-    (y, "m"): f"{y}-march" for y in range(2021, 2026)
+    (y, "m"): f"{y}-march" for y in range(2021, 2027)
 }
-for y in range(2021, 2026):
+for y in range(2021, 2027):
     XP_SESSION[(y, "s")] = f"{y}-may-june"
     XP_SESSION[(y, "w")] = f"{y}-oct-nov"
 
 FILE_RE = re.compile(r"([A-Za-z0-9]+_[msw]\d{2}_(?:qp|ms)_\d+\.pdf)", re.I)
 XP_LINK_RE = re.compile(
-    r'href="(https://xtrapapers\.co/papers/caie/as-and-a-level/[^"]+/([A-Za-z0-9]+_[msw]\d{2}_(?:qp|ms)_\d+)\.pdf)/download"'
+    r'href="(https://xtrapapers\.co/papers/caie/as-and-a-level/[^"]+/([A-Za-z0-9]+_[msw]\d{2}_(?:qp|ms)_\d+)\.pdf/download)"'
 )
 
 
@@ -73,7 +73,8 @@ def http_get(url):
 def curl_download(url, dest):
     tmp = dest + ".part"
     r = subprocess.run(
-        ["curl", "-fsSL", "--retry", "3", "--retry-delay", "2", "-A", UA, "-o", tmp, url],
+        ["curl", "-fsSL", "--retry", "3", "--retry-delay", "2", "--max-time", "120",
+         "-A", UA, "-o", tmp, url],
         capture_output=True,
         text=True,
     )
