@@ -5,6 +5,7 @@
 window.YYSD_ALEVEL_PAPERS = (function () {
   "use strict";
 
+  var SEASON_MM = { m: "03", s: "06", w: "11" };
   var SEASON_ZH = { m: "春季", s: "夏季", w: "冬季" };
   var SEASON_SHORT = { m: "春", s: "夏", w: "冬" };
 
@@ -131,6 +132,52 @@ window.YYSD_ALEVEL_PAPERS = (function () {
     return SEASON_SHORT[season] || season;
   }
 
+  function subjectFileTag(name) {
+    return String(name || "").replace(/[^A-Za-z0-9]+/g, "");
+  }
+
+  function displayFilename(type, subjectName, year, season, paper) {
+    return type + "-" + year + (SEASON_MM[season] || "06") + "-" +
+      subjectFileTag(subjectName) + "-P" + paper + ".pdf";
+  }
+
+  function matchesLevel(code, paper, filter) {
+    if (!filter || filter === "all") return true;
+    var lvl = componentMeta(code, paper).level || "";
+    if (filter === "as") return lvl.indexOf("AS") >= 0;
+    if (filter === "a2") return lvl.indexOf("A2") >= 0;
+    return true;
+  }
+
+  // 学为贵：数学/高数按卷别(P1/FP1…)，生物等按 AS/A2
+  function filterMode(code) {
+    var key = String(code).toUpperCase();
+    if (key === "9709" || key === "9231") return "component";
+    if (key === "9700") return "level";
+    return "level";
+  }
+
+  function matchesComponent(code, paper, filter) {
+    if (!filter || filter === "all") return true;
+    return String(paperDigit(paper)) === String(filter);
+  }
+
+  function sortFlatRows(rows) {
+    return rows.slice().sort(function (a, b) {
+      if (b.year !== a.year) return b.year - a.year;
+      var order = { s: 1, w: 2, m: 3 };
+      var sa = order[a.season] || 9;
+      var sb = order[b.season] || 9;
+      if (sa !== sb) return sa - sb;
+      return String(a.paper).localeCompare(String(b.paper), undefined, { numeric: true });
+    });
+  }
+
+  function rowSubtitle(code, paper) {
+    var meta = componentMeta(code, paper);
+    return officialCode(code, paper) + " · " + meta.nameZh + " · " + (meta.level || "");
+  }
+
   function componentTitle(comp) {
     return comp.short + " · " + comp.nameZh;
   }
@@ -224,6 +271,12 @@ window.YYSD_ALEVEL_PAPERS = (function () {
     fileStem: fileStem,
     sessionLine: sessionLine,
     sessionShort: sessionShort,
+    displayFilename: displayFilename,
+    filterMode: filterMode,
+    matchesLevel: matchesLevel,
+    matchesComponent: matchesComponent,
+    sortFlatRows: sortFlatRows,
+    rowSubtitle: rowSubtitle,
     componentTitle: componentTitle,
     rowTitle: rowTitle,
     rowMeta: rowMeta,
