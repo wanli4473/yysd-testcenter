@@ -24,6 +24,7 @@
       <div>
         <span class="spk-badge">P1</span>
         <b style="margin-left:8px">Part 1：日常话题问答</b>
+        <div id="ai-banner" class="spk-ai-banner spk-ai-banner--wait" style="margin-top:8px">正在连接 AI 服务…</div>
       </div>
       <button type="button" class="spk-end-btn" id="end-btn">结束练习</button>
     </div>
@@ -75,7 +76,8 @@
     <p id="loading-msg">正在生成评分报告…</p>
   </div>
 
-  <script src="assets/js/speaking-common.js?v=20260709d"></script>
+  <script src="assets/js/auth.js?v=20260711b"></script>
+  <script src="assets/js/speaking-common.js?v=20260711c"></script>
   <script>
   (function () {
     var S = window.YYSD_SPEAKING;
@@ -306,6 +308,16 @@
       document.getElementById("side-tip").textContent =
         "AI 评分需连接服务器，请检查网络后重试。";
     }
+
+    S.mountAiBanner(document.getElementById("ai-banner")).then(function (r) {
+      if (r.ok && r.ai) {
+        document.getElementById("side-tip").textContent =
+          "AI 已连接。请根据你的实际情况回答，说完后点「停止录音」，再点「下一题」。";
+      } else if (S.API_BASE) {
+        document.getElementById("side-tip").textContent =
+          "AI 连接失败，评分可能不可用，请刷新页面重试。";
+      }
+    });
 
     fetch("data/speaking/part1-fixed.json")
       .then(function (r) { return r.json(); })

@@ -28,6 +28,7 @@
       <span class="spk-badge">雅思全真模拟环境</span>
       <h1>口语练习</h1>
       <p>点击卡片勾选练习话题，选满后即可进入实战演练。</p>
+      <div id="ai-banner" class="spk-ai-banner spk-ai-banner--wait">正在连接 AI 服务…</div>
     </div>
 
     <div class="spk-select-head">
@@ -60,7 +61,8 @@
     <button type="button" class="btn btn--primary pressable" id="start-btn">开始测试</button>
   </div>
 
-  <script src="assets/js/speaking-common.js?v=20260709d"></script>
+  <script src="assets/js/auth.js?v=20260711b"></script>
+  <script src="assets/js/speaking-common.js?v=20260711c"></script>
   <script>
   (function () {
     var S = window.YYSD_SPEAKING;
@@ -135,8 +137,14 @@
       });
     }
 
+    var aiConnected = false;
+
     startBtn.addEventListener("click", function () {
       if (selected.length < REQUIRED) return;
+      if (!aiConnected) {
+        alert("AI 正在连接或连接失败，请稍候或刷新页面后重试");
+        return;
+      }
       var picked = topics.filter(function (t) { return selected.indexOf(t.id) >= 0; });
       if (!picked.length) return;
       S.setPending({ part: "part1", topics: picked });
@@ -146,6 +154,10 @@
     document.getElementById("search").addEventListener("input", function () {
       query = this.value.trim();
       render();
+    });
+
+    S.mountAiBanner(document.getElementById("ai-banner")).then(function (r) {
+      aiConnected = !!(r.ok && r.ai);
     });
 
     fetch("data/speaking/part1-topics.json")

@@ -95,6 +95,46 @@ window.YYSD_SPEAKING = (function () {
     }
   }
 
+  var aiReady = null;
+
+  function probeAi() {
+    if (!API_BASE) {
+      aiReady = false;
+      return Promise.resolve({ ok: false, ai: false });
+    }
+    return fetch(API_BASE + "/api/health", { method: "GET" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        aiReady = !!(d && d.ok && d.ai);
+        return { ok: !!(d && d.ok), ai: aiReady };
+      })
+      .catch(function () {
+        aiReady = false;
+        return { ok: false, ai: false };
+      });
+  }
+
+  function mountAiBanner(el) {
+    if (!el) return probeAi();
+    el.textContent = "正在连接 AI 服务…";
+    el.className = "spk-ai-banner spk-ai-banner--wait";
+    return probeAi().then(function (r) {
+      if (r.ok && r.ai) {
+        el.textContent = "✓ AI 已连接，练习中将自动调用智能评分";
+        el.className = "spk-ai-banner spk-ai-banner--ok";
+      } else if (!API_BASE) {
+        el.textContent = apiUnavailableMsg();
+        el.className = "spk-ai-banner spk-ai-banner--err";
+      } else {
+        el.textContent = "AI 连接失败，请检查网络后刷新页面";
+        el.className = "spk-ai-banner spk-ai-banner--err";
+      }
+      return r;
+    });
+  }
+
+  function isAiReady() { return aiReady === true; }
+
   function grade(part, topics, answers) {
     if (!API_BASE) return Promise.reject(new Error(apiUnavailableMsg()));
     var ctrl = new AbortController();
@@ -227,6 +267,9 @@ window.YYSD_SPEAKING = (function () {
     getPending: getPending,
     clearPending: clearPending,
     speak: speak,
+    probeAi: probeAi,
+    mountAiBanner: mountAiBanner,
+    isAiReady: isAiReady,
     grade: grade,
     renderReportHTML: renderReportHTML,
     openReportModal: openReportModal,

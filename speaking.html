@@ -33,6 +33,7 @@
       <span class="spk-badge">雅思专项练习</span>
       <h1>雅思口语</h1>
       <p>选择话题进入实战演练，AI 将根据雅思官方四维评分标准给出反馈，助你高效提升口语能力。</p>
+      <div id="ai-banner" class="spk-ai-banner spk-ai-banner--wait">正在连接 AI 服务…</div>
     </div>
 
     <div class="spk-stats" id="stats"></div>
@@ -55,9 +56,9 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260709d"></script>
-  <script src="assets/js/auth.js?v=20260707b"></script>
+  <script src="assets/js/auth.js?v=20260711b"></script>
   <script src="assets/js/nav.js?v=20260709d"></script>
-  <script src="assets/js/speaking-common.js?v=20260709d"></script>
+  <script src="assets/js/speaking-common.js?v=20260711c"></script>
   <script>
   (function () {
     var S = window.YYSD_SPEAKING;
@@ -96,6 +97,7 @@
     }
 
     document.getElementById("year").textContent = new Date().getFullYear();
+    S.mountAiBanner(document.getElementById("ai-banner"));
   })();
   </script>
 </body>
