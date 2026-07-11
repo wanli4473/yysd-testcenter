@@ -602,6 +602,38 @@ window.YYSD = (function () {
     return counts;
   }
 
+  function homeIeltsHTML(items, prefix) {
+    var p = prefix || "";
+    var zones = [
+      { step: "01", label: "学习区", sub: "词汇 · 语法 · 课程资料", href: p + "zone.html?zone=study" },
+      { step: "02", label: "练习区", sub: "听力精听 · 专项训练", href: p + "zone.html?zone=practice" },
+      { step: "03", label: "模考区", sub: "剑桥雅思真题", href: p + "zone.html?zone=mock&s=ielts" }
+    ];
+    var zoneCards = zones.map(function (z) {
+      return '<a class="home-ielts__zone pressable" href="' + z.href + '">' +
+        '<span class="home-ielts__zone-step">' + z.step + "</span>" +
+        "<b>" + esc(z.label) + "</b>" +
+        '<span class="home-ielts__zone-sub">' + esc(z.sub) + "</span>" +
+        '<span class="home-ielts__zone-go" aria-hidden="true">→</span></a>';
+    }).join("");
+
+    return '<section class="home-ielts reveal" aria-label="雅思备考">' +
+      '<div class="home-ielts__inner">' +
+        '<div class="home-ielts__head">' +
+          "<div>" +
+            '<span class="home-ielts__eyebrow">IELTS PREPARATION</span>' +
+            "<h2>雅思备考</h2>" +
+            "<p>学习 · 练习 · 模考一站完成 · 剑桥雅思真题 · 词汇语法系统精讲</p>" +
+          "</div>" +
+          '<div class="home-ielts__actions">' +
+            '<a class="btn btn--primary pressable" href="' + p + 'zone.html?zone=study">进入学习区</a>' +
+            '<a class="btn btn--gold pressable" href="' + p + 'zone.html?zone=mock&s=ielts">开始模考</a>' +
+          "</div>" +
+        "</div>" +
+        '<div class="home-ielts__zones">' + zoneCards + "</div>" +
+      "</div></section>";
+  }
+
   function homeJourneyHTML(items, prefix) {
     var counts = journeyStats(items);
     var steps = [
@@ -762,7 +794,7 @@ window.YYSD = (function () {
     camVolumeCardHTML: camVolumeCardHTML, camVolumeProgress: camVolumeProgress,
     cambridgeCatalogHTML: cambridgeCatalogHTML, searchItems: searchItems,
     recentActivity: recentActivity, continueStripHTML: continueStripHTML,
-    journeyStats: journeyStats, homeJourneyHTML: homeJourneyHTML, homeDashboardHTML: homeDashboardHTML,
+    journeyStats: journeyStats, homeIeltsHTML: homeIeltsHTML, homeJourneyHTML: homeJourneyHTML, homeDashboardHTML: homeDashboardHTML,
     resultsSummaryHTML: resultsSummaryHTML,
     resultsBandTimelineHTML: resultsBandTimelineHTML,
     searchResultsHTML: searchResultsHTML, compactItemRowHTML: compactItemRowHTML,

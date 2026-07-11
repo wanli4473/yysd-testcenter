@@ -159,6 +159,100 @@ window.YYSD_ALEVEL = (function () {
     }).join("");
   }
 
+  function boardStats(board) {
+    var subs = board.subjects || [];
+    var active = subs.filter(function (s) { return s.paperCount > 0; });
+    var papers = active.reduce(function (n, s) { return n + s.paperCount; }, 0);
+    return { subjects: active.length, papers: papers };
+  }
+
+  function showcaseSubjectHTML(sub, prefix) {
+    var count = sub.paperCount ? sub.paperCount + " 套" : "即将上线";
+    return '<a class="home-alevel__subject pressable" href="' + subjectHref(sub.board, sub.code, prefix) + '">' +
+      '<span class="home-alevel__subject-ico" aria-hidden="true">' + (sub.icon || "📘") + "</span>" +
+      '<span class="home-alevel__subject-body">' +
+        "<b>" + Y.esc(sub.code) + " " + Y.esc(sub.nameZh) + "</b>" +
+        '<span class="home-alevel__subject-en">' + Y.esc(sub.name) + "</span>" +
+      "</span>" +
+      '<span class="home-alevel__subject-meta">' + Y.esc(count) + "</span>" +
+      '<span class="home-alevel__subject-go" aria-hidden="true">→</span></a>';
+  }
+
+  function homeShowcaseHTML(catalog, prefix) {
+    var p = prefix || "";
+    if (!hasContent(catalog)) {
+      return '<section class="home-alevel home-alevel--empty reveal" aria-label="A-Level 真题库">' +
+        '<div class="home-alevel__inner">' +
+          '<span class="home-alevel__eyebrow">A-LEVEL PAST PAPERS</span>' +
+          "<h2>A-Level 真题库</h2>" +
+          "<p>CAIE · Edexcel · Oxford AQA 真题筹备中，敬请期待。</p>" +
+          '<a class="btn btn--ghost-dark pressable" href="' + hubHref(p) + '">了解更多 →</a>' +
+        "</div></section>";
+    }
+
+    var boards = catalog.boards || [];
+    var qp = qpCount(catalog);
+    var subjectTotal = 0;
+    var featured = [];
+
+    boards.forEach(function (board) {
+      (board.subjects || []).forEach(function (sub) {
+        if (sub.paperCount > 0) {
+          subjectTotal += 1;
+          featured.push(sub);
+        }
+      });
+    });
+
+    featured.sort(function (a, b) { return b.paperCount - a.paperCount; });
+    var topSubjects = featured.slice(0, 6);
+
+    var boardCards = boards.map(function (board) {
+      var stats = boardStats(board);
+      var active = stats.subjects > 0;
+      var cls = "home-alevel__board pressable" + (active ? "" : " is-soon");
+      var href = active
+        ? p + "alevel.html?board=" + encodeURIComponent(board.id)
+        : p + "alevel.html?board=" + encodeURIComponent(board.id);
+      var meta = active
+        ? stats.subjects + " 科目 · " + stats.papers + " 套"
+        : "筹备中";
+      return '<a class="' + cls + '" href="' + href + '">' +
+        '<span class="home-alevel__board-label">' + Y.esc(board.label) + "</span>" +
+        '<span class="home-alevel__board-zh">' + Y.esc(board.labelZh || board.label) + "</span>" +
+        '<span class="home-alevel__board-meta">' + Y.esc(meta) + "</span>" +
+        (active ? '<span class="home-alevel__board-go" aria-hidden="true">→</span>' : "") +
+        "</a>";
+    }).join("");
+
+    var subjectCards = topSubjects.map(function (sub) {
+      return showcaseSubjectHTML(sub, p);
+    }).join("");
+
+    return '<section class="home-alevel reveal" aria-label="A-Level 真题库">' +
+      '<div class="home-alevel__inner">' +
+        '<div class="home-alevel__head">' +
+          "<div>" +
+            '<span class="home-alevel__eyebrow">A-LEVEL PAST PAPERS</span>' +
+            "<h2>A-Level 真题库</h2>" +
+            "<p>三大考试局真题试卷与 Mark Scheme · 在线预览 · 免费下载</p>" +
+          "</div>" +
+          '<a class="btn btn--gold pressable home-alevel__cta" href="' + hubHref(p) + '">进入题库 →</a>' +
+        "</div>" +
+        '<div class="home-alevel__metrics">' +
+          '<div class="home-alevel__metric"><b data-count="' + boards.length + '">' + boards.length + "</b><span>考试局</span></div>" +
+          '<div class="home-alevel__metric"><b data-count="' + qp + '">' + qp + "</b><span>真题套数</span></div>" +
+          '<div class="home-alevel__metric"><b data-count="' + subjectTotal + '">' + subjectTotal + "</b><span>热门科目</span></div>" +
+        "</div>" +
+        '<div class="home-alevel__boards" role="list">' + boardCards + "</div>" +
+        (subjectCards
+          ? '<div class="home-alevel__subjects-head"><h3>热门科目</h3><a class="section-link section-link--light" href="' +
+              hubHref(p) + '">查看全部 →</a></div>' +
+            '<div class="home-alevel__subjects">' + subjectCards + "</div>"
+          : "") +
+      "</div></section>";
+  }
+
   return {
     loadCatalog: loadCatalog,
     hasContent: hasContent,
@@ -177,6 +271,7 @@ window.YYSD_ALEVEL = (function () {
     subjectCardHTML: subjectCardHTML,
     hubBoardHTML: hubBoardHTML,
     paperRowHTML: paperRowHTML,
-    catalogPreviewHTML: catalogPreviewHTML
+    catalogPreviewHTML: catalogPreviewHTML,
+    homeShowcaseHTML: homeShowcaseHTML
   };
 })();
