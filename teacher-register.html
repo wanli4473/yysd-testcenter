@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教师注册 · 优益思达国际课程中心</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260711f">
+</head>
+<body class="home-minimal teacher-auth-page">
+
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="index.html" class="minimal-brand" aria-label="优益思达国际课程中心首页">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text">
+          <b>优益思达国际课程中心</b>
+          <span>Teacher Portal</span>
+        </span>
+      </a>
+      <nav class="minimal-nav" aria-label="教师导航">
+        <a href="index.html">返回学生端</a>
+        <a href="teacher-login.html">教师登录</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="minimal-shell minimal-main auth-main">
+    <div class="auth-layout">
+      <aside class="auth-aside reveal" aria-label="教师端介绍">
+        <div class="auth-aside__logo" aria-hidden="true">
+          <img src="assets/img/logo.svg?v=20260702-logo" alt="">
+        </div>
+        <span class="auth-aside__eyebrow">YYSD · TEACHER</span>
+        <h2 class="auth-aside__title">注册教师账号<br>查看学情</h2>
+        <p class="auth-aside__desc">注册需提供机构专属密钥，注册后可查看全部学生的成绩与模考记录。</p>
+        <ul class="auth-aside__points">
+          <li>专属密钥注册</li>
+          <li>学生成绩汇总</li>
+          <li>模考进度追踪</li>
+        </ul>
+      </aside>
+      <section class="auth-card reveal">
+        <div class="auth-tabs">
+          <a class="auth-tabs__item" href="teacher-login.html">登录</a>
+          <span class="auth-tabs__item is-active">注册</span>
+        </div>
+        <h1 class="auth-card__title">教师注册</h1>
+        <p class="auth-card__desc">请向机构管理员获取教师注册密钥。</p>
+
+        <form class="auth-form" id="register-form" novalidate>
+          <label class="auth-field">
+            <span>姓名（可选）</span>
+            <input type="text" id="name" autocomplete="name" maxlength="40" placeholder="便于识别，如：王老师">
+          </label>
+          <label class="auth-field">
+            <span>手机号</span>
+            <input type="tel" id="phone" inputmode="numeric" autocomplete="tel" maxlength="11" placeholder="11 位中国大陆手机号" required>
+          </label>
+          <label class="auth-field">
+            <span>教师注册密钥</span>
+            <input type="password" id="teacher-key" autocomplete="off" placeholder="机构提供的专属密钥" required>
+          </label>
+          <label class="auth-field">
+            <span>设置密码</span>
+            <input type="password" id="password" autocomplete="new-password" minlength="6" maxlength="64" placeholder="至少 6 位" required>
+          </label>
+          <label class="auth-field">
+            <span>确认密码</span>
+            <input type="password" id="confirm" autocomplete="new-password" minlength="6" maxlength="64" placeholder="再次输入密码" required>
+          </label>
+          <p class="auth-msg" id="msg" role="status" aria-live="polite"></p>
+          <button type="submit" class="btn btn--primary btn--block pressable">注册并进入教师端</button>
+        </form>
+
+        <p class="auth-legal">
+          已有教师账号？<a href="teacher-login.html">去登录</a>
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="minimal-footer minimal-footer--rich">
+    <div class="minimal-shell minimal-footer__inner">
+      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心 · 教师端</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/teacher-auth.js?v=20260711g"></script>
+  <script src="assets/js/ui.js?v=20260702f"></script>
+  <script>
+  (function () {
+    var T = window.YYSD_TEACHER;
+    var form = document.getElementById("register-form");
+    var msgEl = document.getElementById("msg");
+
+    if (T.getToken()) {
+      location.replace("teacher.html");
+      return;
+    }
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    function showMsg(text, ok) {
+      msgEl.textContent = text || "";
+      msgEl.className = "auth-msg" + (ok ? " auth-msg--ok" : text ? " auth-msg--err" : "");
+    }
+
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      showMsg("");
+      T.api("/api/teacher/register", {
+        method: "POST",
+        body: {
+          name: document.getElementById("name").value.trim(),
+          phone: document.getElementById("phone").value.trim(),
+          teacherKey: document.getElementById("teacher-key").value,
+          password: document.getElementById("password").value,
+          confirm: document.getElementById("confirm").value
+        }
+      })
+        .then(function (d) {
+          T.setToken(d.token);
+          T.setTeacher(d.teacher || { phone: document.getElementById("phone").value.trim() });
+          try {
+            localStorage.setItem("yysd:auth:user", JSON.stringify({
+              phone: (d.teacher && d.teacher.phone) || document.getElementById("phone").value.trim(),
+              role: "teacher"
+            }));
+          } catch (e) {}
+          location.href = "teacher.html";
+        })
+        .catch(function (e) { showMsg(e.message); });
+    });
+  })();
+  </script>
+</body>
+</html>

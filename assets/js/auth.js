@@ -1,5 +1,5 @@
 /* =========================================================================
-   auth.js — 登录态、导航、API 调用（优益思达国际课程中心）
+   auth.js — 登录态、导航、API 调用、成绩云端同步（优益思达国际课程中心）
    ========================================================================= */
 window.YYSD_AUTH = (function () {
   "use strict";
@@ -7,19 +7,80 @@ window.YYSD_AUTH = (function () {
   var API_BASE = "https://api.youyisida.com";
   var TOKEN_KEY = "yysd:auth:token";
   var USER_KEY = "yysd:auth:user";
-  // 备案通过后把下面改成真实备案号，例如：皖ICP备XXXXXXXX号-1
-  var ICP_TEXT = "";
+  var TEACHER_TOKEN_KEY = "yysd:teacher:token";
+  var TEACHER_USER_KEY = "yysd:teacher:user";
+  var RESULTS_KEY = "yysd:results";
+  var AUTH_COOKIE = "yysd_auth";
+  var ICP_TEXT = "皖ICP备2026021555号-1";
+  var ICP_URL = "https://beian.miit.gov.cn/";
+  var PUBLIC_PAGES = { "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1, "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1 };
+
+  function pageName() {
+    var parts = location.pathname.split("/").filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : "index.html";
+  }
+
+  function isPublicPage() {
+    return !!PUBLIC_PAGES[pageName()];
+  }
+
+  function setAuthCookie(on) {
+    var secure = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = AUTH_COOKIE + "=" + (on ? "1" : "") +
+      "; path=/; max-age=" + (on ? 2592000 : 0) + "; SameSite=Lax" + secure;
+  }
+
+  function clearSession() {
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(TEACHER_TOKEN_KEY);
+      localStorage.removeItem(TEACHER_USER_KEY);
+    } catch (e) {}
+    setAuthCookie(false);
+  }
 
   function getToken() {
-    try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; }
+    try {
+      return localStorage.getItem(TOKEN_KEY) || localStorage.getItem(TEACHER_TOKEN_KEY) || "";
+    } catch (e) { return ""; }
+  }
+
+  function isTeacher() {
+    try { return !!localStorage.getItem(TEACHER_TOKEN_KEY); } catch (e) { return false; }
   }
 
   function setToken(t) {
+    if (!t) {
+      clearSession();
+      bindNav();
+      return;
+    }
+    try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+    setAuthCookie(true);
+  }
+
+  function applyLogin(d) {
+    var t = (d && d.token) || "";
+    if (!t) { clearSession(); bindNav(); return; }
     try {
-      if (t) localStorage.setItem(TOKEN_KEY, t);
-      else localStorage.removeItem(TOKEN_KEY);
+      localStorage.setItem(TOKEN_KEY, t);
+      if (d.role === "teacher" || d.teacher) {
+        localStorage.setItem(TEACHER_TOKEN_KEY, t);
+        var teacher = d.teacher || {};
+        localStorage.setItem(TEACHER_USER_KEY, JSON.stringify({
+          phone: teacher.phone || "",
+          name: teacher.name || ""
+        }));
+        setUser({ phone: teacher.phone || "", role: "teacher" });
+      } else {
+        localStorage.removeItem(TEACHER_TOKEN_KEY);
+        localStorage.removeItem(TEACHER_USER_KEY);
+        setUser({ phone: (d.user && d.user.phone) || "", role: "student" });
+      }
     } catch (e) {}
-    if (!t) setUser(null);
+    setAuthCookie(true);
+    bindNav();
   }
 
   function getUser() {
@@ -28,8 +89,13 @@ window.YYSD_AUTH = (function () {
 
   function setUser(u) {
     try {
-      if (u && u.phone) localStorage.setItem(USER_KEY, JSON.stringify({ phone: u.phone }));
-      else localStorage.removeItem(USER_KEY);
+      if (u && u.phone) {
+        localStorage.setItem(USER_KEY, JSON.stringify({
+          phone: u.phone,
+          role: u.role || "",
+          displayName: u.displayName || ""
+        }));
+      } else localStorage.removeItem(USER_KEY);
     } catch (e) {}
     bindNav();
   }
@@ -55,21 +121,71 @@ window.YYSD_AUTH = (function () {
     });
   }
 
+  function readLocalResults() {
+    try { return JSON.parse(localStorage.getItem(RESULTS_KEY) || "{}"); }
+    catch (e) { return {}; }
+  }
+
+  function writeLocalResults(store) {
+    try { localStorage.setItem(RESULTS_KEY, JSON.stringify(store)); } catch (e) {}
+  }
+
+  function newerScore(a, b) {
+    if (!b) return a;
+    if (!a) return b;
+    return String(a.date || "") >= String(b.date || "") ? a : b;
+  }
+
+  function mergeScoreStores(local, cloud) {
+    var out = {}, ids = {};
+    Object.keys(local || {}).forEach(function (k) { ids[k] = 1; });
+    Object.keys(cloud || {}).forEach(function (k) { ids[k] = 1; });
+    Object.keys(ids).forEach(function (id) {
+      out[id] = newerScore(local[id], cloud[id]);
+    });
+    return out;
+  }
+
+  function syncScoresFromCloud() {
+    if (!getToken() || isTeacher()) return Promise.resolve();
+    return api("/api/scores").then(function (d) {
+      var cloud = d.scores || {};
+      var local = readLocalResults();
+      var merged = mergeScoreStores(local, cloud);
+      writeLocalResults(merged);
+      var pushes = [];
+      Object.keys(local).forEach(function (id) {
+        var l = local[id], c = cloud[id];
+        if (l && (!c || String(l.date || "") > String(c.date || ""))) pushes.push(l);
+      });
+      return Promise.all(pushes.map(function (r) {
+        return api("/api/scores/" + encodeURIComponent(r.id), { method: "PUT", body: r }).catch(function () {});
+      }));
+    }).catch(function () {});
+  }
+
+  function pushScoreRecord(record) {
+    if (!getToken() || isTeacher() || !record || !record.id) return Promise.resolve();
+    return api("/api/scores/" + encodeURIComponent(record.id), { method: "PUT", body: record }).catch(function () {});
+  }
+
   function bindNav() {
     var el = document.getElementById("nav-auth");
     if (!el) return;
     if (getToken()) {
-      el.href = "profile.html";
-      var phone = (getUser().phone || "").trim();
+      el.href = isTeacher() ? "teacher.html" : "profile.html";
+      var user = getUser();
+      var phone = (user.phone || "").trim();
+      var label = isTeacher() ? "教师" : ((user.displayName || "").trim() || "我的");
       if (phone.length >= 4) {
         el.classList.add("is-logged-in");
         el.innerHTML =
           '<span class="nav-auth__avatar" aria-hidden="true">' + phone.slice(-4) + "</span>" +
-          '<span class="nav-auth__label">我的</span>';
-        el.setAttribute("aria-label", "个人中心，尾号 " + phone.slice(-4));
+          '<span class="nav-auth__label">' + label + "</span>";
+        el.setAttribute("aria-label", label + "，尾号 " + phone.slice(-4));
       } else {
         el.classList.remove("is-logged-in");
-        el.textContent = "个人中心";
+        el.textContent = isTeacher() ? "教师端" : "个人中心";
         el.removeAttribute("aria-label");
       }
     } else {
@@ -83,8 +199,15 @@ window.YYSD_AUTH = (function () {
   function bindIcp() {
     if (!ICP_TEXT) return;
     document.querySelectorAll("[data-icp]").forEach(function (el) {
-      el.textContent = ICP_TEXT;
-      if (el.tagName === "A") el.href = "https://beian.miit.gov.cn/";
+      var link = el.tagName === "A" ? el : document.createElement("a");
+      if (link !== el) {
+        link.className = el.className;
+        el.replaceWith(link);
+      }
+      link.href = ICP_URL;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = ICP_TEXT;
     });
   }
 
@@ -97,13 +220,25 @@ window.YYSD_AUTH = (function () {
   }
 
   function logout() {
-    setToken("");
+    clearSession();
     location.href = "index.html";
   }
 
+  function guardPage() {
+    if (isPublicPage()) return true;
+    if (!getToken()) {
+      location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
+      return false;
+    }
+    setAuthCookie(true);
+    return true;
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
+    if (!guardPage()) return;
     bindNav();
     bindIcp();
+    if (getToken() && !isPublicPage() && !isTeacher()) syncScoresFromCloud();
   });
 
   return {
@@ -111,11 +246,27 @@ window.YYSD_AUTH = (function () {
     ICP_TEXT: ICP_TEXT,
     getToken: getToken,
     setToken: setToken,
+    applyLogin: applyLogin,
+    isTeacher: isTeacher,
     getUser: getUser,
     setUser: setUser,
     api: api,
     bindNav: bindNav,
     requireLogin: requireLogin,
-    logout: logout
+    logout: logout,
+    syncScoresFromCloud: syncScoresFromCloud,
+    pushScoreRecord: pushScoreRecord
   };
+})();
+
+(function () {
+  "use strict";
+  var PUBLIC = { "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1, "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1 };
+  var name = location.pathname.split("/").filter(Boolean).pop() || "index.html";
+  if (PUBLIC[name]) return;
+  try {
+    if (!localStorage.getItem("yysd:auth:token") && !localStorage.getItem("yysd:teacher:token")) {
+      location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
+    }
+  } catch (e) {}
 })();

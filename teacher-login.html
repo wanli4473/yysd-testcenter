@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登录 · 优益思达国际课程中心</title>
+  <title>教师登录 · 优益思达国际课程中心</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260711c">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260711f">
 </head>
-<body class="home-minimal">
+<body class="home-minimal teacher-auth-page">
 
   <header class="minimal-topbar">
     <div class="minimal-shell minimal-topbar__inner">
@@ -18,41 +18,38 @@
         <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
         <span class="minimal-brand__text">
           <b>优益思达国际课程中心</b>
-          <span>YYSD International Course Center</span>
+          <span>Teacher Portal</span>
         </span>
       </a>
-      <nav class="minimal-nav" id="nav" aria-label="主导航">
-        <a href="zone.html?zone=study">学习区</a>
-        <a href="zone.html?zone=practice">练习区</a>
-        <a href="zone.html?zone=mock">模考区</a>
-        <a href="results.html" data-nav="results">我的成绩</a>
-        <a href="login.html" id="nav-auth" class="is-active">登录</a>
+      <nav class="minimal-nav" aria-label="教师导航">
+        <a href="index.html">返回学生端</a>
+        <a href="teacher-login.html" class="is-active">教师登录</a>
       </nav>
     </div>
   </header>
 
   <main class="minimal-shell minimal-main auth-main">
     <div class="auth-layout">
-      <aside class="auth-aside reveal" aria-label="平台介绍">
+      <aside class="auth-aside reveal" aria-label="教师端介绍">
         <div class="auth-aside__logo" aria-hidden="true">
           <img src="assets/img/logo.svg?v=20260702-logo" alt="">
         </div>
-        <span class="auth-aside__eyebrow">YYSD · IELTS</span>
-        <h2 class="auth-aside__title">学习 · 练习 · 模考<br>一站完成</h2>
-        <p class="auth-aside__desc">使用手机号与密码登录；新用户请先注册并设置密码。</p>
+        <span class="auth-aside__eyebrow">YYSD · TEACHER</span>
+        <h2 class="auth-aside__title">教师端<br>学情一览</h2>
+        <p class="auth-aside__desc">查看学生模考与练习成绩，掌握整体备考进度。</p>
         <ul class="auth-aside__points">
-          <li>剑桥雅思真题模考</li>
-          <li>成绩云端同步</li>
-          <li>阅读高亮与笔记</li>
+          <li>学生成绩汇总</li>
+          <li>模考记录追踪</li>
+          <li>按板块筛选</li>
         </ul>
       </aside>
       <section class="auth-card reveal">
         <div class="auth-tabs">
           <span class="auth-tabs__item is-active">登录</span>
-          <a class="auth-tabs__item" href="register.html">注册</a>
+          <a class="auth-tabs__item" href="teacher-register.html">注册</a>
         </div>
-        <h1 class="auth-card__title">账号登录</h1>
-        <p class="auth-card__desc">使用注册时的手机号和密码登录；教师账号也可在此登录。</p>
+        <h1 class="auth-card__title">教师登录</h1>
+        <p class="auth-card__desc">使用教师账号的手机号与密码登录。</p>
 
         <form class="auth-form" id="login-form" novalidate>
           <label class="auth-field">
@@ -65,16 +62,12 @@
           </label>
           <p class="auth-forgot"><a href="forgot-password.html">忘记密码？</a></p>
           <p class="auth-msg" id="msg" role="status" aria-live="polite"></p>
-          <button type="submit" class="btn btn--primary btn--block pressable">登录</button>
+          <button type="submit" class="btn btn--primary btn--block pressable">进入教师端</button>
         </form>
 
         <p class="auth-legal">
-          还没有账号？<a href="register.html">立即注册</a>
-          · <a href="teacher-login.html">教师入口</a>
-          · 登录即表示同意
-          <a href="agreement.html">《用户服务协议》</a>
-          与
-          <a href="privacy.html">《隐私政策》</a>
+          还没有教师账号？<a href="teacher-register.html">注册教师账号</a>
+          · <a href="login.html">学生登录</a>
         </p>
       </section>
     </div>
@@ -82,27 +75,23 @@
 
   <footer class="minimal-footer minimal-footer--rich">
     <div class="minimal-shell minimal-footer__inner">
-      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心
-        <span class="site-icp" data-icp></span>
-      </p>
+      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心 · 教师端</p>
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260707d"></script>
-  <script src="assets/js/auth.js?v=20260711i"></script>
-  <script src="assets/js/nav.js?v=20260707b"></script>
+  <script src="assets/js/teacher-auth.js?v=20260711g"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
-    var A = window.YYSD_AUTH;
+    var T = window.YYSD_TEACHER;
     var form = document.getElementById("login-form");
     var phoneEl = document.getElementById("phone");
     var passwordEl = document.getElementById("password");
     var msgEl = document.getElementById("msg");
-    var next = new URLSearchParams(location.search).get("next") || "index.html";
+    var next = new URLSearchParams(location.search).get("next") || "teacher.html";
 
-    if (A.getToken()) {
-      location.replace(next.indexOf("login") !== -1 ? "index.html" : next);
+    if (T.getToken()) {
+      location.replace(next.indexOf("teacher-login") !== -1 ? "teacher.html" : next);
       return;
     }
 
@@ -113,22 +102,23 @@
       msgEl.className = "auth-msg" + (ok ? " auth-msg--ok" : text ? " auth-msg--err" : "");
     }
 
-    if (new URLSearchParams(location.search).get("reset") === "1") {
-      showMsg("密码已重置，请使用新密码登录。", true);
-    }
-
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       showMsg("");
-      A.api("/api/auth/login", {
+      T.api("/api/teacher/login", {
         method: "POST",
         body: { phone: phoneEl.value.trim(), password: passwordEl.value }
       })
         .then(function (d) {
-          A.applyLogin(d);
-          A.syncScoresFromCloud().finally(function () {
-            location.href = next;
-          });
+          T.setToken(d.token);
+          T.setTeacher(d.teacher || { phone: phoneEl.value.trim() });
+          try {
+            localStorage.setItem("yysd:auth:user", JSON.stringify({
+              phone: (d.teacher && d.teacher.phone) || phoneEl.value.trim(),
+              role: "teacher"
+            }));
+          } catch (e) {}
+          location.href = next;
         })
         .catch(function (e) { showMsg(e.message); });
     });

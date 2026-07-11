@@ -33,6 +33,33 @@
     if (showcaseEl) showcaseEl.innerHTML = html;
   }
 
+  function renderGuestGate() {
+    var next = encodeURIComponent(location.pathname + location.search);
+    var html =
+      '<section class="home-gate reveal" aria-label="登录提示">' +
+        '<div class="home-gate__inner">' +
+          '<span class="home-gate__eyebrow">MEMBERS ONLY</span>' +
+          "<h2>登录后查看全部内容</h2>" +
+          "<p>学习区、练习区、模考区与 A-Level 真题资料需登录后使用。注册只需验证手机号并设置密码。</p>" +
+          '<div class="home-gate__actions">' +
+            '<a class="btn btn--primary pressable" href="login.html?next=' + next + '">登录</a>' +
+            '<a class="btn btn--ghost pressable" href="register.html">注册账号</a>' +
+          "</div>" +
+        "</div>" +
+      "</section>";
+    if (ieltsEl) ieltsEl.innerHTML = html;
+    if (showcaseEl) showcaseEl.innerHTML = "";
+    bindReveal(ieltsEl);
+  }
+
+  var auth = window.YYSD_AUTH;
+  if (!auth || !auth.getToken || !auth.getToken()) {
+    renderGuestGate();
+    var yr = document.getElementById("year");
+    if (yr) yr.textContent = new Date().getFullYear();
+    return;
+  }
+
   Promise.all([Y.load(), A.loadCatalog().catch(function () { return null; })]).then(function (res) {
     if (ieltsEl) {
       ieltsEl.innerHTML = Y.homeIeltsHTML(res[0], "");

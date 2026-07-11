@@ -82,7 +82,7 @@
     var isStudy = item.zone === "study";
     var isWriting = item.subject === "cambridge-writing" || payload.completed;
     var heading = isStudy ? "学习进度已保存" : (isWriting ? "写作练习已保存" : "成绩已保存");
-    var sub = "记录保存在本浏览器，可在「我的成绩」查看";
+    var sub = "已同步至云端，可在「我的成绩」查看";
     var scoreLine = "";
     var wrongN = payload.wrongWords && payload.wrongWords.length;
 
@@ -474,6 +474,7 @@
         _scoreKey: key
       };
       saveResults(store);
+      if (window.YYSD_AUTH && YYSD_AUTH.pushScoreRecord) YYSD_AUTH.pushScoreRecord(store[item.id]);
 
       if (d.wrongWords && d.wrongWords.length && item.zone === "study") {
         var book = d.book || Y.vocabBookOfSubject(item.subject);

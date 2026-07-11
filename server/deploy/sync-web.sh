@@ -22,11 +22,9 @@ if [ ! -d "$REPO_DIR/.git" ]; then
 fi
 
 cd "$REPO_DIR"
-if git fetch origin "$BRANCH" 2>/dev/null && git pull --ff-only origin "$BRANCH" 2>/dev/null; then
-  echo "  ✓ 已从 GitHub 拉取最新代码"
-else
-  echo "  · GitHub 拉取失败，使用本地已有代码继续同步（可稍后重试 pull）"
-fi
+git fetch origin "$BRANCH"
+git checkout "$BRANCH"
+git pull --ff-only origin "$BRANCH"
 
 mkdir -p "$WEB_ROOT"
 

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260707b">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260711h">
 </head>
 <body class="home-minimal">
 
@@ -41,12 +41,44 @@
   <main class="minimal-shell minimal-main">
     <div class="auth-card reveal" id="profile-card">
       <dl class="profile-dl">
+        <dt>用户名</dt>
+        <dd id="p-name-wrap">
+          <form class="profile-name-form" id="name-form">
+            <input type="text" id="display-name" maxlength="20" placeholder="如：李明 / 雅思2班张三" autocomplete="nickname">
+            <button type="submit" class="btn btn--primary btn--sm pressable">保存</button>
+          </form>
+          <p class="auth-msg" id="name-msg" role="status"></p>
+          <p class="profile-hint">设置用户名后，老师可在教师端按姓名查找您的成绩。</p>
+        </dd>
         <dt>手机号</dt><dd id="p-phone">—</dd>
         <dt>注册时间</dt><dd id="p-created">—</dd>
         <dt>最近登录</dt><dd id="p-login">—</dd>
       </dl>
-      <p class="auth-card__desc">云端学习记录与付费解锁功能将在备案完成后陆续开放。</p>
-      <button type="button" class="btn btn--ghost" id="logout-btn">退出登录</button>
+      <section class="profile-section" id="password-section">
+        <h2 class="profile-section__title">修改密码</h2>
+        <form class="auth-form profile-password-form" id="password-form">
+          <label class="auth-field">
+            <span>当前密码</span>
+            <input type="password" id="old-password" autocomplete="current-password" minlength="6" maxlength="64" required>
+          </label>
+          <label class="auth-field">
+            <span>新密码</span>
+            <input type="password" id="new-password" autocomplete="new-password" minlength="6" maxlength="64" required>
+          </label>
+          <label class="auth-field">
+            <span>确认新密码</span>
+            <input type="password" id="confirm-password" autocomplete="new-password" minlength="6" maxlength="64" required>
+          </label>
+          <p class="auth-msg" id="pw-msg" role="status"></p>
+          <button type="submit" class="btn btn--ghost btn--sm pressable">保存新密码</button>
+        </form>
+        <p class="profile-hint">忘记密码？<a href="forgot-password.html">短信重置</a></p>
+      </section>
+      <p class="auth-card__desc" id="profile-note">成绩已与云端同步，可在任意设备登录后查看「我的成绩」。</p>
+      <div class="profile-actions">
+        <a class="btn btn--primary" id="teacher-link" href="teacher.html" hidden>进入教师端</a>
+        <button type="button" class="btn btn--ghost" id="logout-btn">退出登录</button>
+      </div>
     </div>
   </main>
 
@@ -59,7 +91,7 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260707b"></script>
-  <script src="assets/js/auth.js?v=20260707b"></script>
+  <script src="assets/js/auth.js?v=20260711i"></script>
   <script src="assets/js/nav.js?v=20260707b"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
@@ -75,20 +107,77 @@
       } catch (e) { return iso; }
     }
 
+    function showNameMsg(text, ok) {
+      var el = document.getElementById("name-msg");
+      el.textContent = text || "";
+      el.className = "auth-msg" + (ok ? " auth-msg--ok" : text ? " auth-msg--err" : "");
+    }
+
+    function showPwMsg(text, ok) {
+      var el = document.getElementById("pw-msg");
+      el.textContent = text || "";
+      el.className = "auth-msg" + (ok ? " auth-msg--ok" : text ? " auth-msg--err" : "");
+    }
+
     A.api("/api/auth/me")
       .then(function (d) {
         var u = d.user;
         document.getElementById("p-phone").textContent = u.phone;
         document.getElementById("p-created").textContent = fmt(u.createdAt);
         document.getElementById("p-login").textContent = fmt(u.lastLoginAt);
-        A.setUser({ phone: u.phone });
-        document.getElementById("profile-desc").textContent =
-          "欢迎回来。您的账号已登录，可在本站继续学习与模考。";
+        A.setUser({ phone: u.phone, role: u.role || "", displayName: u.displayName || "" });
+        if (u.role === "teacher") {
+          document.getElementById("p-name-wrap").hidden = true;
+          document.getElementById("profile-desc").textContent =
+            "教师账号已登录，可浏览学生端内容，也可进入教师端查看学情。";
+          document.getElementById("profile-note").textContent =
+            "教师做练习/模考时成绩不会写入学生云端记录。";
+          document.getElementById("teacher-link").hidden = false;
+        } else {
+          document.getElementById("display-name").value = u.displayName || "";
+          document.getElementById("profile-desc").textContent =
+            "欢迎回来。请设置用户名，方便老师查找您的学习记录。";
+        }
       })
       .catch(function () {
         A.setToken("");
         location.href = "login.html";
       });
+
+    document.getElementById("name-form").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      showNameMsg("");
+      var name = document.getElementById("display-name").value.trim();
+      A.api("/api/auth/profile", { method: "PATCH", body: { displayName: name } })
+        .then(function (d) {
+          var u = d.user || {};
+          document.getElementById("display-name").value = u.displayName || name;
+          A.setUser({ phone: u.phone || A.getUser().phone, role: "student", displayName: u.displayName || name });
+          showNameMsg("用户名已保存", true);
+        })
+        .catch(function (e) { showNameMsg(e.message); });
+    });
+
+    document.getElementById("password-form").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      showPwMsg("");
+      var oldPw = document.getElementById("old-password").value;
+      var newPw = document.getElementById("new-password").value;
+      var confirmPw = document.getElementById("confirm-password").value;
+      if (newPw !== confirmPw) {
+        showPwMsg("两次新密码不一致");
+        return;
+      }
+      A.api("/api/auth/change-password", {
+        method: "POST",
+        body: { oldPassword: oldPw, password: newPw, confirm: confirmPw }
+      })
+        .then(function () {
+          document.getElementById("password-form").reset();
+          showPwMsg("密码已修改", true);
+        })
+        .catch(function (e) { showPwMsg(e.message); });
+    });
 
     document.getElementById("logout-btn").addEventListener("click", function () {
       A.logout();
