@@ -161,14 +161,20 @@
     });
 
     fetch("data/speaking/part1-topics.json")
-      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        var ct = (r.headers.get("content-type") || "").toLowerCase();
+        if (ct.indexOf("json") < 0) throw new Error("not-json");
+        return r.json();
+      })
       .then(function (data) {
+        if (!Array.isArray(data)) throw new Error("bad-format");
         topics = data;
         render();
         updateProgress();
       })
       .catch(function () {
-        grid.innerHTML = '<div class="spk-empty">题库加载失败，请刷新重试。</div>';
+        grid.innerHTML = '<div class="spk-empty">题库加载失败：服务器上缺少 data/speaking/part1-topics.json。<br>请在 ECS 执行 <code>bash server/deploy/sync-web.sh</code> 同步网站文件后刷新。</div>';
       });
   })();
   </script>
