@@ -311,7 +311,12 @@
 
     frame.addEventListener("load", onFrameLoad);
 
-    if (!isStudy && item.duration > 0) startTimer(item.duration * 60);
+    if (!isStudy && item.duration > 0) {
+      var left = item.duration * 60;
+      var elapsed = practiceDraftElapsed();
+      if (elapsed) left = Math.max(0, left - elapsed);
+      startTimer(left);
+    }
 
     backBtn.addEventListener("click", function (e) {
       if (examLockVoided) {
@@ -410,6 +415,15 @@
     injectExamBridge();
   }
 
+  function practiceDraftElapsed() {
+    if (!item || item.zone !== "mock") return 0;
+    try {
+      var d = JSON.parse(localStorage.getItem("yysd:draft:" + item.id) || "null");
+      if (d && d.mode === "practice" && d.elapsedSec) return d.elapsedSec;
+    } catch (e) { /* ponytail: corrupt draft */ }
+    return 0;
+  }
+
   function startTimer(seconds) {
     timerEl.hidden = false;
     function tick() {
@@ -446,6 +460,13 @@
 
     if (d.type === "yysd:exam-lock") {
       setExamLock(d.active, d.voided);
+      return;
+    }
+
+    if (d.type === "yysd:timer-sync" && item && item.duration > 0) {
+      var remain = Math.max(0, item.duration * 60 - (d.elapsedSec || 0));
+      if (timerHandle) clearInterval(timerHandle);
+      startTimer(remain);
       return;
     }
 

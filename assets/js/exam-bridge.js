@@ -27,9 +27,22 @@
     return ta && getComputedStyle(ta).display !== "none";
   }
 
+  function pageGet(name) {
+    try { return window.eval("typeof " + name + "==='undefined'?undefined:" + name); } catch (e) { return undefined; }
+  }
+
+  function pageSet(name, value) {
+    try {
+      window.eval("var __yysd_v=" + JSON.stringify(value) + ";" + name + "=__yysd_v");
+      return true;
+    } catch (e) { return false; }
+  }
+
   function isTestDone() {
-    if (typeof submitted !== "undefined") return submitted;
-    if (typeof finished !== "undefined") return finished;
+    var s = pageGet("submitted");
+    if (s !== undefined) return !!s;
+    var f = pageGet("finished");
+    if (f !== undefined) return !!f;
     return false;
   }
 
@@ -346,22 +359,39 @@
     return Object.keys(answers || {}).length;
   }
 
+  function ensurePageGlobals() {
+    // ponytail: some papers omit `let timerInterval=null` — clearInterval then throws and skips restore
+    ["timerInterval", "startTime", "submitted", "mode", "selectedSections", "currentPaper"].forEach(function (n) {
+      if (pageGet(n) !== undefined) return;
+      if (n === "selectedSections" || n === "currentPaper") pageSet(n, []);
+      else if (n === "mode") pageSet(n, "practice");
+      else if (n === "submitted") pageSet(n, false);
+      else pageSet(n, n === "timerInterval" ? null : 0);
+    });
+  }
+
   function saveDraft() {
     if (!isTesting()) return;
-    if (typeof submitted !== "undefined" && submitted) return;
-    if (typeof mode !== "undefined" && mode === "exam") return;
+    if (pageGet("submitted")) return;
+    if (pageGet("mode") === "exam") return;
     var answers = collectAnswers();
     if (!countAnswered(answers)) return;
+    var st = pageGet("startTime") || 0;
+    var sections = pageGet("selectedSections");
     var draft = {
-      mode: typeof mode !== "undefined" ? mode : "practice",
-      sections: typeof selectedSections !== "undefined" ? selectedSections.slice() : [],
+      mode: pageGet("mode") || "practice",
+      sections: Array.isArray(sections) ? sections.slice() : [],
       answers: answers,
-      startTime: typeof startTime !== "undefined" ? startTime : 0,
-      elapsedSec: typeof startTime !== "undefined" && startTime
-        ? Math.floor((Date.now() - startTime) / 1000) : 0,
+      startTime: st,
+      elapsedSec: st ? Math.floor((Date.now() - st) / 1000) : 0,
       savedAt: Date.now()
     };
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) {}
+  }
+
+  function saveDraftNow() {
+    clearTimeout(saveTimer);
+    saveDraft();
   }
 
   function debouncedSave() {
@@ -396,25 +426,52 @@
   }
 
   function afterStartRestore() {
-    if (!restorePending) { bindSaveListeners(); saveDraft(); return; }
+    if (!restorePending) { bindSaveListeners(); saveDraft(); syncParentTimer(); return; }
     applyAnswers(restorePending.answers);
-    if (typeof startTime !== "undefined") {
-      if (restorePending.startTime) startTime = restorePending.startTime;
-      else if (restorePending.elapsedSec) startTime = Date.now() - restorePending.elapsedSec * 1000;
-    }
+    if (restorePending.startTime) pageSet("startTime", restorePending.startTime);
+    else if (restorePending.elapsedSec) pageSet("startTime", Date.now() - restorePending.elapsedSec * 1000);
     restorePending = null;
     bindSaveListeners();
     saveDraft();
+    syncParentTimer();
+  }
+
+  function syncParentTimer() {
+    var st = pageGet("startTime");
+    if (!st) return;
+    try {
+      window.parent.postMessage({
+        type: "yysd:timer-sync",
+        elapsedSec: Math.floor((Date.now() - st) / 1000)
+      }, "*");
+    } catch (e) { /* ponytail: iframe edge */ }
   }
 
   function hookStartTest() {
     var fn = window.startTest;
     if (typeof fn !== "function" || fn._yysdHooked) return;
     window.startTest = function (m) {
+      ensurePageGlobals();
       if (m === "exam") examLock.enable();
       else examLock.disable();
-      var ret = fn.apply(this, arguments);
-      setTimeout(afterStartRestore, 0);
+      // ponytail: auto-restore practice draft — exit copy promises autosave/continue
+      if (m === "practice" && !restorePending) {
+        var d = loadDraft();
+        if (d && d.mode === "practice" && countAnswered(d.answers)) {
+          restorePending = d;
+          if (d.sections && d.sections.length) {
+            document.querySelectorAll(".secbox").forEach(function (cb) {
+              cb.checked = d.sections.indexOf(+cb.value) !== -1;
+            });
+          }
+        }
+      }
+      var ret;
+      try {
+        ret = fn.apply(this, arguments);
+      } finally {
+        setTimeout(afterStartRestore, 0);
+      }
       return ret;
     };
     window.startTest._yysdHooked = true;
@@ -442,7 +499,10 @@
         return;
       }
       examLock.disable();
-      return origBackToCover.apply(this, arguments);
+      saveDraftNow();
+      var ret = origBackToCover.apply(this, arguments);
+      setTimeout(showResumeBanner, 0);
+      return ret;
     };
     backToCover._yysdHooked = true;
   }
@@ -466,7 +526,9 @@
     var draft = loadDraft();
     if (!draft || draft.mode === "exam" || !countAnswered(draft.answers)) return;
     var cover = document.getElementById("coverArea");
-    if (!cover || document.getElementById("yysd-resume-bar")) return;
+    if (!cover) return;
+    var old = document.getElementById("yysd-resume-bar");
+    if (old) old.remove();
 
     var n = countAnswered(draft.answers);
     var when = draft.savedAt ? new Date(draft.savedAt).toLocaleString("zh-CN") : "";
@@ -488,6 +550,8 @@
     hookSubmitTest();
     hookBackToCover();
     showResumeBanner();
+    window.addEventListener("pagehide", saveDraftNow);
+    window.addEventListener("beforeunload", saveDraftNow);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initDraft);
