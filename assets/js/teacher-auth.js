@@ -65,8 +65,13 @@ window.YYSD_TEACHER = (function () {
 
   function setTeacher(t) {
     try {
-      if (t && t.phone) localStorage.setItem(TEACHER_KEY, JSON.stringify({ phone: t.phone, name: t.name || "" }));
-      else localStorage.removeItem(TEACHER_KEY);
+      if (t && t.phone) {
+        localStorage.setItem(TEACHER_KEY, JSON.stringify({
+          phone: t.phone,
+          name: t.name || "",
+          avatarUrl: t.avatarUrl || ""
+        }));
+      } else localStorage.removeItem(TEACHER_KEY);
     } catch (e) {}
   }
 

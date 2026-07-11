@@ -70,13 +70,25 @@ window.YYSD_AUTH = (function () {
         var teacher = d.teacher || {};
         localStorage.setItem(TEACHER_USER_KEY, JSON.stringify({
           phone: teacher.phone || "",
-          name: teacher.name || ""
+          name: teacher.name || "",
+          avatarUrl: teacher.avatarUrl || ""
         }));
-        setUser({ phone: teacher.phone || "", role: "teacher" });
+        setUser({
+          phone: teacher.phone || "",
+          role: "teacher",
+          displayName: teacher.name || "",
+          avatarUrl: teacher.avatarUrl || ""
+        });
       } else {
         localStorage.removeItem(TEACHER_TOKEN_KEY);
         localStorage.removeItem(TEACHER_USER_KEY);
-        setUser({ phone: (d.user && d.user.phone) || "", role: "student" });
+        var stu = d.user || {};
+        setUser({
+          phone: stu.phone || "",
+          role: "student",
+          displayName: stu.displayName || "",
+          avatarUrl: stu.avatarUrl || ""
+        });
       }
     } catch (e) {}
     setAuthCookie(true);
@@ -93,11 +105,73 @@ window.YYSD_AUTH = (function () {
         localStorage.setItem(USER_KEY, JSON.stringify({
           phone: u.phone,
           role: u.role || "",
-          displayName: u.displayName || ""
+          displayName: u.displayName || "",
+          avatarUrl: u.avatarUrl || ""
         }));
       } else localStorage.removeItem(USER_KEY);
     } catch (e) {}
     bindNav();
+  }
+
+  function avatarSrc(url) {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url) || url.indexOf("data:") === 0) return url;
+    return API_BASE + url;
+  }
+
+  // ponytail: canvas resize to 256px JPEG; skip crop UI
+  function compressAvatar(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !/^image\/(jpeg|jpg|png|webp|gif)$/i.test(file.type)) {
+        return reject(new Error("请选择 JPG / PNG / WebP 图片"));
+      }
+      if (file.size > 5 * 1024 * 1024) return reject(new Error("图片不能超过 5MB"));
+      var img = new Image();
+      var objectUrl = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(objectUrl);
+        var size = 256;
+        var canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        var ctx = canvas.getContext("2d");
+        var s = Math.min(img.width, img.height);
+        var sx = (img.width - s) / 2;
+        var sy = (img.height - s) / 2;
+        ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("图片读取失败"));
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  function uploadAvatar(file) {
+    return compressAvatar(file).then(function (dataUrl) {
+      return api("/api/auth/avatar", { method: "POST", body: { image: dataUrl } });
+    }).then(function (d) {
+      var u = d.user || {};
+      var next = {
+        phone: u.phone || getUser().phone,
+        role: u.role || getUser().role || "",
+        displayName: u.displayName || u.name || getUser().displayName || "",
+        avatarUrl: d.avatarUrl || u.avatarUrl || ""
+      };
+      setUser(next);
+      if (next.role === "teacher") {
+        try {
+          localStorage.setItem(TEACHER_USER_KEY, JSON.stringify({
+            phone: next.phone,
+            name: next.displayName || "",
+            avatarUrl: next.avatarUrl || ""
+          }));
+        } catch (e) {}
+      }
+      return d;
+    });
   }
 
   function authHeaders() {
@@ -177,12 +251,14 @@ window.YYSD_AUTH = (function () {
       var user = getUser();
       var phone = (user.phone || "").trim();
       var label = isTeacher() ? "教师" : ((user.displayName || "").trim() || "我的");
-      if (phone.length >= 4) {
+      var src = avatarSrc(user.avatarUrl);
+      if (phone.length >= 4 || src) {
         el.classList.add("is-logged-in");
-        el.innerHTML =
-          '<span class="nav-auth__avatar" aria-hidden="true">' + phone.slice(-4) + "</span>" +
-          '<span class="nav-auth__label">' + label + "</span>";
-        el.setAttribute("aria-label", label + "，尾号 " + phone.slice(-4));
+        var avatarHtml = src
+          ? '<img class="nav-auth__avatar nav-auth__avatar--img" src="' + src.replace(/"/g, "") + '" alt="">'
+          : '<span class="nav-auth__avatar" aria-hidden="true">' + (phone.slice(-4) || "·") + "</span>";
+        el.innerHTML = avatarHtml + '<span class="nav-auth__label">' + label + "</span>";
+        el.setAttribute("aria-label", label + (phone.length >= 4 ? "，尾号 " + phone.slice(-4) : ""));
       } else {
         el.classList.remove("is-logged-in");
         el.textContent = isTeacher() ? "教师端" : "个人中心";
@@ -255,7 +331,9 @@ window.YYSD_AUTH = (function () {
     requireLogin: requireLogin,
     logout: logout,
     syncScoresFromCloud: syncScoresFromCloud,
-    pushScoreRecord: pushScoreRecord
+    pushScoreRecord: pushScoreRecord,
+    uploadAvatar: uploadAvatar,
+    avatarSrc: avatarSrc
   };
 })();
 

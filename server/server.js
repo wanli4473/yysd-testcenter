@@ -62,6 +62,12 @@ db.exec(
 
 try { db.exec("ALTER TABLE users ADD COLUMN password_hash TEXT"); } catch (e) { /* already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN display_name TEXT"); } catch (e) { /* already exists */ }
+try { db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT"); } catch (e) { /* already exists */ }
+try { db.exec("ALTER TABLE teachers ADD COLUMN avatar_url TEXT"); } catch (e) { /* already exists */ }
+
+const uploadsRoot = path.join(dataDir, "uploads");
+const avatarsDir = path.join(uploadsRoot, "avatars");
+if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
 
 const stmts = {
   upsertCode: db.prepare(
@@ -70,13 +76,14 @@ const stmts = {
   latestCode: db.prepare(
     "SELECT code, expires_at FROM sms_codes WHERE phone = ? ORDER BY created_at DESC LIMIT 1"
   ),
-  findUser: db.prepare("SELECT id, phone, password_hash, display_name, created_at, last_login_at FROM users WHERE phone = ?"),
+  findUser: db.prepare("SELECT id, phone, password_hash, display_name, avatar_url, created_at, last_login_at FROM users WHERE phone = ?"),
   insertUser: db.prepare(
     "INSERT INTO users (phone, password_hash, created_at, last_login_at) VALUES (?, ?, ?, ?)"
   ),
   setPassword: db.prepare("UPDATE users SET password_hash = ?, last_login_at = ? WHERE phone = ?"),
   setPasswordHash: db.prepare("UPDATE users SET password_hash = ? WHERE phone = ?"),
   setDisplayName: db.prepare("UPDATE users SET display_name = ? WHERE phone = ?"),
+  setUserAvatar: db.prepare("UPDATE users SET avatar_url = ? WHERE phone = ?"),
   touchLogin: db.prepare("UPDATE users SET last_login_at = ? WHERE phone = ?"),
   listScores: db.prepare("SELECT item_id, payload, updated_at FROM user_scores WHERE user_id = ?"),
   upsertScore: db.prepare(
@@ -84,12 +91,13 @@ const stmts = {
     "ON CONFLICT(user_id, item_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at " +
     "WHERE excluded.updated_at >= user_scores.updated_at"
   ),
-  findTeacher: db.prepare("SELECT id, phone, password_hash, name, created_at, last_login_at FROM teachers WHERE phone = ?"),
+  findTeacher: db.prepare("SELECT id, phone, password_hash, name, avatar_url, created_at, last_login_at FROM teachers WHERE phone = ?"),
   insertTeacher: db.prepare(
     "INSERT INTO teachers (phone, password_hash, name, created_at, last_login_at) VALUES (?, ?, ?, ?, ?)"
   ),
   touchTeacherLogin: db.prepare("UPDATE teachers SET last_login_at = ? WHERE phone = ?"),
   setTeacherPasswordHash: db.prepare("UPDATE teachers SET password_hash = ? WHERE phone = ?"),
+  setTeacherAvatar: db.prepare("UPDATE teachers SET avatar_url = ? WHERE phone = ?"),
   listStudents: db.prepare(
     "SELECT u.id, u.phone, u.display_name, u.created_at, u.last_login_at, " +
     "COUNT(s.item_id) AS score_count, MAX(s.updated_at) AS last_score_at " +
@@ -171,9 +179,42 @@ function authUserPayload(user) {
     id: user.id,
     phone: maskPhone(user.phone),
     displayName: user.display_name || "",
+    avatarUrl: user.avatar_url || "",
     createdAt: user.created_at,
     lastLoginAt: user.last_login_at
   };
+}
+
+function teacherPayload(teacher) {
+  return {
+    id: teacher.id,
+    phone: maskPhone(teacher.phone),
+    name: teacher.name || "",
+    avatarUrl: teacher.avatar_url || "",
+    createdAt: teacher.created_at,
+    lastLoginAt: teacher.last_login_at
+  };
+}
+
+// ponytail: client-resized JPEG/PNG base64; switch to multipart+multer if avatars get big
+function saveAvatarDataUrl(prefix, id, dataUrl) {
+  var raw = String(dataUrl || "");
+  var m = raw.match(/^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+/=]+)$/i);
+  if (!m) return { error: "请上传 JPG / PNG / WebP 图片" };
+  var ext = m[1].toLowerCase() === "jpg" ? "jpeg" : m[1].toLowerCase();
+  var buf;
+  try { buf = Buffer.from(m[2], "base64"); } catch (e) { return { error: "图片数据无效" }; }
+  if (!buf.length) return { error: "图片数据无效" };
+  if (buf.length > 220 * 1024) return { error: "图片过大，请换一张更小的" };
+  var fileName = prefix + "-" + id + "." + (ext === "jpeg" ? "jpg" : ext);
+  var abs = path.join(avatarsDir, fileName);
+  // remove old extensions for same user
+  ["jpg", "jpeg", "png", "webp"].forEach(function (e) {
+    var p = path.join(avatarsDir, prefix + "-" + id + "." + e);
+    if (p !== abs && fs.existsSync(p)) try { fs.unlinkSync(p); } catch (err) {}
+  });
+  fs.writeFileSync(abs, buf);
+  return { url: "/uploads/avatars/" + fileName + "?v=" + Date.now() };
 }
 
 function smsClient() {
@@ -245,13 +286,14 @@ function teacherAuthMiddleware(req, res, next) {
 }
 
 const app = express();
-app.use(express.json({ limit: "32kb" }));
+app.use(express.json({ limit: "256kb" }));
 app.use(cors({
   origin: function (origin, cb) {
     if (!origin || ORIGINS.indexOf(origin) !== -1) return cb(null, true);
     return cb(null, false);
   }
 }));
+app.use("/uploads", express.static(uploadsRoot, { maxAge: "7d" }));
 
 var DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY || "";
 var DASHSCOPE_MODEL = process.env.DASHSCOPE_MODEL || "qwen-turbo";
@@ -370,7 +412,7 @@ app.post("/api/auth/login", function (req, res) {
       ok: true,
       token: teacherToken,
       role: "teacher",
-      teacher: { id: teacher.id, phone: maskPhone(phone), name: teacher.name || "" }
+      teacher: teacherPayload(teacher)
     });
   }
 
@@ -445,29 +487,35 @@ app.get("/api/auth/me", authMiddleware, function (req, res) {
     if (!teacher) return res.status(404).json({ error: "用户不存在" });
     return res.json({
       ok: true,
-      user: {
-        id: teacher.id,
-        phone: maskPhone(teacher.phone),
-        name: teacher.name || "",
-        role: "teacher",
-        createdAt: teacher.created_at,
-        lastLoginAt: teacher.last_login_at
-      }
+      user: Object.assign(teacherPayload(teacher), { role: "teacher" })
     });
   }
   var user = stmts.findUser.get(req.user.phone);
   if (!user) return res.status(404).json({ error: "用户不存在" });
   res.json({
     ok: true,
-    user: {
-      id: user.id,
-      phone: maskPhone(user.phone),
-      displayName: user.display_name || "",
-      role: "student",
-      createdAt: user.created_at,
-      lastLoginAt: user.last_login_at
-    }
+    user: Object.assign(authUserPayload(user), { role: "student" })
   });
+});
+
+app.post("/api/auth/avatar", authMiddleware, function (req, res) {
+  var image = (req.body && req.body.image) || "";
+  if (req.user.role === "teacher") {
+    var teacher = stmts.findTeacher.get(req.user.phone);
+    if (!teacher) return res.status(404).json({ error: "账号不存在" });
+    var tSaved = saveAvatarDataUrl("t", teacher.id, image);
+    if (tSaved.error) return res.status(400).json({ error: tSaved.error });
+    stmts.setTeacherAvatar.run(tSaved.url.split("?")[0], req.user.phone);
+    teacher.avatar_url = tSaved.url;
+    return res.json({ ok: true, avatarUrl: tSaved.url, user: Object.assign(teacherPayload(teacher), { role: "teacher" }) });
+  }
+  var user = stmts.findUser.get(req.user.phone);
+  if (!user) return res.status(404).json({ error: "账号不存在" });
+  var saved = saveAvatarDataUrl("u", user.id, image);
+  if (saved.error) return res.status(400).json({ error: saved.error });
+  stmts.setUserAvatar.run(saved.url.split("?")[0], req.user.phone);
+  user.avatar_url = saved.url;
+  res.json({ ok: true, avatarUrl: saved.url, user: Object.assign(authUserPayload(user), { role: "student" }) });
 });
 
 app.patch("/api/auth/profile", authMiddleware, function (req, res) {
@@ -512,7 +560,7 @@ app.post("/api/teacher/register", function (req, res) {
   res.json({
     ok: true,
     token: token,
-    teacher: { id: teacher.id, phone: maskPhone(phone), name: teacher.name || "" }
+    teacher: teacherPayload(teacher)
   });
 });
 
@@ -540,7 +588,7 @@ app.post("/api/teacher/login", function (req, res) {
   res.json({
     ok: true,
     token: token,
-    teacher: { id: teacher.id, phone: maskPhone(phone), name: teacher.name || "" }
+    teacher: teacherPayload(teacher)
   });
 });
 
@@ -549,13 +597,7 @@ app.get("/api/teacher/me", teacherAuthMiddleware, function (req, res) {
   if (!teacher) return res.status(404).json({ error: "教师不存在" });
   res.json({
     ok: true,
-    teacher: {
-      id: teacher.id,
-      phone: maskPhone(teacher.phone),
-      name: teacher.name || "",
-      createdAt: teacher.created_at,
-      lastLoginAt: teacher.last_login_at
-    }
+    teacher: teacherPayload(teacher)
   });
 });
 

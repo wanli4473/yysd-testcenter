@@ -3142,6 +3142,48 @@ table.data tr:last-child td { border-bottom: 0; }
 .profile-dl { display: grid; grid-template-columns: 100px 1fr; gap: 12px 16px; margin: 0 0 20px; }
 .profile-dl dt { color: var(--text-muted); margin: 0; }
 .profile-dl dd { margin: 0; font-weight: 600; }
+.profile-avatar-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 22px;
+}
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--brand-navy, #102a4c);
+  color: var(--brand-gold-light, #f0d78c);
+  font-size: 18px;
+  font-weight: 800;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+  letter-spacing: 0;
+}
+.profile-avatar.has-img { background: transparent; }
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.profile-avatar__meta { min-width: 0; }
+.profile-avatar__btn { cursor: pointer; margin: 0; }
+.teacher-head-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.teacher-head-avatar {
+  width: 64px;
+  height: 64px;
+  margin-top: 6px;
+  font-size: 16px;
+}
+.teacher-head-row h1 { margin-top: 0; }
+.teacher-head-row .minimal-page-desc { margin-bottom: 10px; }
 .profile-name-form {
   display: flex;
   flex-wrap: wrap;
@@ -3379,6 +3421,13 @@ body.viewer.is-exam-locked .viewer-bar a.back {
   display: inline-grid;
   place-items: center;
   letter-spacing: 0;
+  overflow: hidden;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+.nav-auth__avatar--img {
+  padding: 0;
+  background: transparent;
 }
 .nav-auth__label { font-size: 14px; }
 

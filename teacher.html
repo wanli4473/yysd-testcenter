@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260711h">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260711avatar">
 </head>
 <body class="home-minimal teacher-page">
 
@@ -24,6 +24,7 @@
       <nav class="minimal-nav" aria-label="教师导航">
         <a href="index.html">学生端首页</a>
         <a href="teacher.html" class="is-active">学情看板</a>
+        <a href="profile.html">个人中心</a>
         <button type="button" class="btn btn--ghost btn--sm" id="logout-btn">退出</button>
       </nav>
     </div>
@@ -32,8 +33,18 @@
   <section class="minimal-shell minimal-page-head">
     <div class="minimal-crumb"><a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> 教师端</div>
     <div class="minimal-eyebrow">TEACHER DASHBOARD</div>
-    <h1>学生成绩与模考记录</h1>
-    <p class="minimal-page-desc" id="teacher-welcome">加载中…</p>
+    <div class="teacher-head-row">
+      <div class="profile-avatar teacher-head-avatar" id="teacher-avatar" aria-hidden="true">—</div>
+      <div>
+        <h1>学生成绩与模考记录</h1>
+        <p class="minimal-page-desc" id="teacher-welcome">加载中…</p>
+        <label class="btn btn--ghost btn--sm pressable profile-avatar__btn">
+          更换头像
+          <input type="file" id="teacher-avatar-input" accept="image/jpeg,image/png,image/webp" hidden>
+        </label>
+        <p class="auth-msg" id="teacher-avatar-msg" role="status"></p>
+      </div>
+    </div>
   </section>
 
   <main class="minimal-shell minimal-main">
@@ -64,8 +75,9 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260711f"></script>
-  <script src="assets/js/teacher-auth.js?v=20260711g"></script>
+  <script src="assets/js/auth.js?v=20260711avatar"></script>
+  <script src="assets/js/teacher-auth.js?v=20260711avatar"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/teacher.js?v=20260711h"></script>
+  <script src="assets/js/teacher.js?v=20260711avatar"></script>
 </body>
 </html>

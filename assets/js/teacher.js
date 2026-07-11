@@ -43,6 +43,53 @@
     return student.phone || "未命名学生";
   }
 
+  function avatarSrc(url) {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url) || url.indexOf("data:") === 0) return url;
+    return T.API_BASE + url;
+  }
+
+  function renderTeacherAvatar(url, phone) {
+    var box = document.getElementById("teacher-avatar");
+    if (!box) return;
+    var src = avatarSrc(url);
+    if (src) {
+      box.innerHTML = '<img src="' + src.replace(/"/g, "") + '" alt="">';
+      box.classList.add("has-img");
+    } else {
+      box.textContent = (phone || "").replace(/\D/g, "").slice(-4) || "师";
+      box.classList.remove("has-img");
+    }
+  }
+
+  function showAvatarMsg(text, ok) {
+    var el = document.getElementById("teacher-avatar-msg");
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "auth-msg" + (ok ? " auth-msg--ok" : text ? " auth-msg--err" : "");
+  }
+
+  var avatarInput = document.getElementById("teacher-avatar-input");
+  if (avatarInput) {
+    avatarInput.addEventListener("change", function () {
+      var file = this.files && this.files[0];
+      this.value = "";
+      if (!file || !window.YYSD_AUTH || !window.YYSD_AUTH.uploadAvatar) return;
+      showAvatarMsg("上传中…");
+      window.YYSD_AUTH.uploadAvatar(file)
+        .then(function (d) {
+          renderTeacherAvatar(d.avatarUrl, (T.getTeacher() || {}).phone);
+          T.setTeacher({
+            phone: (T.getTeacher() || {}).phone,
+            name: (T.getTeacher() || {}).name || "",
+            avatarUrl: d.avatarUrl || ""
+          });
+          showAvatarMsg("头像已更新", true);
+        })
+        .catch(function (e) { showAvatarMsg(e.message); });
+    });
+  }
+
   function matchesSearch(student) {
     if (!searchQuery) return true;
     var name = (student.displayName || "").toLowerCase();
@@ -146,6 +193,16 @@
       var me = res[0].teacher || {};
       var label = me.name ? me.name + "（" + me.phone + "）" : me.phone;
       welcomeEl.textContent = "欢迎，" + label + "。以下为全部学生的云端成绩与模考记录。";
+      renderTeacherAvatar(me.avatarUrl, me.phone);
+      T.setTeacher({ phone: me.phone, name: me.name || "", avatarUrl: me.avatarUrl || "" });
+      try {
+        localStorage.setItem("yysd:auth:user", JSON.stringify({
+          phone: me.phone || "",
+          role: "teacher",
+          displayName: me.name || "",
+          avatarUrl: me.avatarUrl || ""
+        }));
+      } catch (e) {}
       students = res[1].students || [];
       render();
     }).catch(function (e) {

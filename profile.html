@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260711h">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260711avatar">
 </head>
 <body class="home-minimal">
 
@@ -40,6 +40,17 @@
 
   <main class="minimal-shell minimal-main">
     <div class="auth-card reveal" id="profile-card">
+      <div class="profile-avatar-block">
+        <div class="profile-avatar" id="avatar-preview" aria-hidden="true">—</div>
+        <div class="profile-avatar__meta">
+          <label class="btn btn--ghost btn--sm pressable profile-avatar__btn">
+            更换头像
+            <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" hidden>
+          </label>
+          <p class="profile-hint">支持 JPG / PNG / WebP，自动裁成方形并压缩。</p>
+          <p class="auth-msg" id="avatar-msg" role="status"></p>
+        </div>
+      </div>
       <dl class="profile-dl">
         <dt>用户名</dt>
         <dd id="p-name-wrap">
@@ -91,7 +102,7 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260707b"></script>
-  <script src="assets/js/auth.js?v=20260711i"></script>
+  <script src="assets/js/auth.js?v=20260711avatar"></script>
   <script src="assets/js/nav.js?v=20260707b"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
@@ -119,30 +130,67 @@
       el.className = "auth-msg" + (ok ? " auth-msg--ok" : text ? " auth-msg--err" : "");
     }
 
+    function showAvatarMsg(text, ok) {
+      var el = document.getElementById("avatar-msg");
+      el.textContent = text || "";
+      el.className = "auth-msg" + (ok ? " auth-msg--ok" : text ? " auth-msg--err" : "");
+    }
+
+    function renderAvatar(url, phone) {
+      var box = document.getElementById("avatar-preview");
+      var src = A.avatarSrc(url);
+      if (src) {
+        box.innerHTML = '<img src="' + src.replace(/"/g, "") + '" alt="">';
+        box.classList.add("has-img");
+      } else {
+        box.textContent = (phone || "").slice(-4) || "·";
+        box.classList.remove("has-img");
+      }
+    }
+
     A.api("/api/auth/me")
       .then(function (d) {
         var u = d.user;
         document.getElementById("p-phone").textContent = u.phone;
         document.getElementById("p-created").textContent = fmt(u.createdAt);
         document.getElementById("p-login").textContent = fmt(u.lastLoginAt);
-        A.setUser({ phone: u.phone, role: u.role || "", displayName: u.displayName || "" });
+        A.setUser({
+          phone: u.phone,
+          role: u.role || "",
+          displayName: u.displayName || u.name || "",
+          avatarUrl: u.avatarUrl || ""
+        });
+        renderAvatar(u.avatarUrl, u.phone);
         if (u.role === "teacher") {
           document.getElementById("p-name-wrap").hidden = true;
           document.getElementById("profile-desc").textContent =
-            "教师账号已登录，可浏览学生端内容，也可进入教师端查看学情。";
+            "教师账号已登录，可上传头像、浏览学生端内容，也可进入教师端查看学情。";
           document.getElementById("profile-note").textContent =
             "教师做练习/模考时成绩不会写入学生云端记录。";
           document.getElementById("teacher-link").hidden = false;
         } else {
           document.getElementById("display-name").value = u.displayName || "";
           document.getElementById("profile-desc").textContent =
-            "欢迎回来。请设置用户名，方便老师查找您的学习记录。";
+            "欢迎回来。请设置用户名与头像，方便老师查找您的学习记录。";
         }
       })
       .catch(function () {
         A.setToken("");
         location.href = "login.html";
       });
+
+    document.getElementById("avatar-input").addEventListener("change", function () {
+      var file = this.files && this.files[0];
+      this.value = "";
+      if (!file) return;
+      showAvatarMsg("上传中…");
+      A.uploadAvatar(file)
+        .then(function (d) {
+          renderAvatar(d.avatarUrl, A.getUser().phone);
+          showAvatarMsg("头像已更新", true);
+        })
+        .catch(function (e) { showAvatarMsg(e.message); });
+    });
 
     document.getElementById("name-form").addEventListener("submit", function (ev) {
       ev.preventDefault();
@@ -152,7 +200,12 @@
         .then(function (d) {
           var u = d.user || {};
           document.getElementById("display-name").value = u.displayName || name;
-          A.setUser({ phone: u.phone || A.getUser().phone, role: "student", displayName: u.displayName || name });
+          A.setUser({
+            phone: u.phone || A.getUser().phone,
+            role: "student",
+            displayName: u.displayName || name,
+            avatarUrl: u.avatarUrl || A.getUser().avatarUrl || ""
+          });
           showNameMsg("用户名已保存", true);
         })
         .catch(function (e) { showNameMsg(e.message); });

@@ -113,9 +113,12 @@
           T.setToken(d.token);
           T.setTeacher(d.teacher || { phone: phoneEl.value.trim() });
           try {
+            var teacher = d.teacher || {};
             localStorage.setItem("yysd:auth:user", JSON.stringify({
-              phone: (d.teacher && d.teacher.phone) || phoneEl.value.trim(),
-              role: "teacher"
+              phone: teacher.phone || phoneEl.value.trim(),
+              role: "teacher",
+              displayName: teacher.name || "",
+              avatarUrl: teacher.avatarUrl || ""
             }));
           } catch (e) {}
           location.href = next;
