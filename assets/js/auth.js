@@ -188,7 +188,13 @@ window.YYSD_AUTH = (function () {
       headers: authHeaders(),
       body: opts.body ? JSON.stringify(opts.body) : undefined
     }).then(function (r) {
-      return r.json().then(function (d) {
+      return r.text().then(function (text) {
+        var d = null;
+        try { d = text ? JSON.parse(text) : {}; } catch (e) {
+          throw new Error(r.status === 502 || r.status === 504
+            ? "服务器暂时不可用，请稍后重试"
+            : "服务器返回异常（" + r.status + "），请确认已部署最新版本");
+        }
         if (!r.ok) throw new Error((d && d.error) || "请求失败");
         return d;
       });

@@ -206,14 +206,23 @@ function saveAvatarDataUrl(prefix, id, dataUrl) {
   try { buf = Buffer.from(m[2], "base64"); } catch (e) { return { error: "图片数据无效" }; }
   if (!buf.length) return { error: "图片数据无效" };
   if (buf.length > 220 * 1024) return { error: "图片过大，请换一张更小的" };
+  try {
+    if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
+  } catch (e) {
+    return { error: "服务器无法创建头像目录" };
+  }
   var fileName = prefix + "-" + id + "." + (ext === "jpeg" ? "jpg" : ext);
   var abs = path.join(avatarsDir, fileName);
-  // remove old extensions for same user
   ["jpg", "jpeg", "png", "webp"].forEach(function (e) {
     var p = path.join(avatarsDir, prefix + "-" + id + "." + e);
     if (p !== abs && fs.existsSync(p)) try { fs.unlinkSync(p); } catch (err) {}
   });
-  fs.writeFileSync(abs, buf);
+  try {
+    fs.writeFileSync(abs, buf);
+  } catch (e) {
+    console.error("[yysd-api] avatar write failed", e && e.message);
+    return { error: "服务器保存头像失败，请稍后重试" };
+  }
   return { url: "/uploads/avatars/" + fileName + "?v=" + Date.now() };
 }
 
@@ -499,23 +508,28 @@ app.get("/api/auth/me", authMiddleware, function (req, res) {
 });
 
 app.post("/api/auth/avatar", authMiddleware, function (req, res) {
-  var image = (req.body && req.body.image) || "";
-  if (req.user.role === "teacher") {
-    var teacher = stmts.findTeacher.get(req.user.phone);
-    if (!teacher) return res.status(404).json({ error: "账号不存在" });
-    var tSaved = saveAvatarDataUrl("t", teacher.id, image);
-    if (tSaved.error) return res.status(400).json({ error: tSaved.error });
-    stmts.setTeacherAvatar.run(tSaved.url.split("?")[0], req.user.phone);
-    teacher.avatar_url = tSaved.url;
-    return res.json({ ok: true, avatarUrl: tSaved.url, user: Object.assign(teacherPayload(teacher), { role: "teacher" }) });
+  try {
+    var image = (req.body && req.body.image) || "";
+    if (req.user.role === "teacher") {
+      var teacher = stmts.findTeacher.get(req.user.phone);
+      if (!teacher) return res.status(404).json({ error: "账号不存在" });
+      var tSaved = saveAvatarDataUrl("t", teacher.id, image);
+      if (tSaved.error) return res.status(400).json({ error: tSaved.error });
+      stmts.setTeacherAvatar.run(tSaved.url.split("?")[0], req.user.phone);
+      teacher.avatar_url = tSaved.url;
+      return res.json({ ok: true, avatarUrl: tSaved.url, user: Object.assign(teacherPayload(teacher), { role: "teacher" }) });
+    }
+    var user = stmts.findUser.get(req.user.phone);
+    if (!user) return res.status(404).json({ error: "账号不存在" });
+    var saved = saveAvatarDataUrl("u", user.id, image);
+    if (saved.error) return res.status(400).json({ error: saved.error });
+    stmts.setUserAvatar.run(saved.url.split("?")[0], req.user.phone);
+    user.avatar_url = saved.url;
+    res.json({ ok: true, avatarUrl: saved.url, user: Object.assign(authUserPayload(user), { role: "student" }) });
+  } catch (e) {
+    console.error("[yysd-api] avatar upload error", e && e.message);
+    res.status(500).json({ error: "头像上传失败，请稍后重试" });
   }
-  var user = stmts.findUser.get(req.user.phone);
-  if (!user) return res.status(404).json({ error: "账号不存在" });
-  var saved = saveAvatarDataUrl("u", user.id, image);
-  if (saved.error) return res.status(400).json({ error: saved.error });
-  stmts.setUserAvatar.run(saved.url.split("?")[0], req.user.phone);
-  user.avatar_url = saved.url;
-  res.json({ ok: true, avatarUrl: saved.url, user: Object.assign(authUserPayload(user), { role: "student" }) });
 });
 
 app.patch("/api/auth/profile", authMiddleware, function (req, res) {
