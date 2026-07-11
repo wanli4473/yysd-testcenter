@@ -165,11 +165,9 @@
 </div>
 
 <script>
-var API_BASE = (location.hostname === "127.0.0.1" || location.hostname === "localhost") && location.port === "8080"
-  ? "http://127.0.0.1:3000"
-  : (location.hostname === "youyisida.com" || location.hostname === "www.youyisida.com")
-    ? "https://api.youyisida.com"
-    : "";
+var API_BASE = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+  ? (location.port === "8080" ? "http://127.0.0.1:3000" : location.protocol + "//" + location.hostname + ":3000")
+  : "https://api.youyisida.com";
 
 var SENTENCES = [
   {who:"W",en:"I've been meaning to ask you for some advice about restaurants.",zh:"我一直想请教你一些关于餐厅的建议。"},
