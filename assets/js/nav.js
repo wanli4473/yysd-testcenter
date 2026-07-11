@@ -21,6 +21,16 @@
     else nav.appendChild(results);
   }
 
+  if (!nav.querySelector('a[href*="calendar.html"]')) {
+    var authEl2 = document.getElementById("nav-auth");
+    var cal = document.createElement("a");
+    cal.href = "calendar.html";
+    cal.setAttribute("data-nav", "calendar");
+    cal.textContent = "任务日历";
+    if (authEl2) nav.insertBefore(cal, authEl2);
+    else nav.appendChild(cal);
+  }
+
   var menuBtn = document.createElement("button");
   menuBtn.type = "button";
   menuBtn.className = "nav-menu-btn";
@@ -157,6 +167,18 @@
     if (path === "results.html" || path === "profile.html" || path === "login.html") {
       activate(nav.querySelectorAll("a"), function (a) {
         return a.getAttribute("data-nav") === "results" || a.id === "nav-auth";
+      });
+      activate(tabs.querySelectorAll("a"), function (a) {
+        return a.dataset.tab === "me";
+      });
+      return;
+    }
+    if (path === "calendar.html") {
+      activate(nav.querySelectorAll("a"), function (a) {
+        return a.getAttribute("data-nav") === "calendar";
+      });
+      activate(drawerNav.querySelectorAll("a"), function (a) {
+        return a.getAttribute("data-nav") === "calendar";
       });
       activate(tabs.querySelectorAll("a"), function (a) {
         return a.dataset.tab === "me";

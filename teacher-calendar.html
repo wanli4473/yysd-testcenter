@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>任务发布台 · 教师端 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260711cal2">
+</head>
+<body class="home-minimal teacher-page">
+
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="index.html" class="minimal-brand" aria-label="优益思达国际课程中心首页">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text">
+          <b>优益思达国际课程中心</b>
+          <span>Teacher Portal</span>
+        </span>
+      </a>
+      <nav class="minimal-nav" aria-label="教师导航">
+        <a href="index.html">学生端首页</a>
+        <a href="teacher.html">学情看板</a>
+        <a href="teacher-calendar.html" class="is-active">任务日历</a>
+        <a href="profile.html">个人中心</a>
+        <button type="button" class="btn btn--ghost btn--sm" id="logout-btn">退出</button>
+      </nav>
+    </div>
+  </header>
+
+  <section class="minimal-shell minimal-page-head">
+    <div class="minimal-crumb"><a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> <a href="teacher.html">教师端</a> <span class="crumb-sep" aria-hidden="true">★</span> 任务日历</div>
+    <div class="minimal-eyebrow">TASK CALENDAR</div>
+    <h1>任务与日程发布台</h1>
+    <p class="minimal-page-desc">布置练习作业、课程时间或提醒事项，学生可在日历中查看并跳转练习。</p>
+  </section>
+
+  <main class="minimal-shell minimal-main">
+    <div class="teacher-toolbar cal-toolbar">
+      <div class="teacher-filters" role="tablist" aria-label="视图切换">
+        <button type="button" class="teacher-filter is-active" data-view="list">列表</button>
+        <button type="button" class="teacher-filter" data-view="month">月历</button>
+      </div>
+      <div class="cal-toolbar__acts">
+        <button type="button" class="btn btn--ghost btn--sm" id="refresh-btn">刷新</button>
+        <button type="button" class="btn btn--primary btn--sm pressable" id="create-btn">新建任务</button>
+      </div>
+    </div>
+
+    <div id="cal-stats" class="teacher-stats"></div>
+    <div id="cal-view" class="cal-view">
+      <div class="state state--brand"><div class="spinner spinner--brand"></div></div>
+    </div>
+  </main>
+
+  <div class="cal-modal" id="create-modal" hidden>
+    <div class="cal-modal__backdrop" data-close="1"></div>
+    <div class="cal-modal__panel" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+      <div class="cal-modal__head">
+        <h2 id="create-modal-title">新建任务 / 日程</h2>
+        <button type="button" class="cal-modal__x" data-close="1" aria-label="关闭">×</button>
+      </div>
+      <form class="cal-form" id="create-form">
+        <label class="auth-field">
+          <span>标题</span>
+          <input type="text" id="f-title" maxlength="80" required placeholder="如：本周剑桥听力 Test 1">
+        </label>
+        <label class="auth-field">
+          <span>类型</span>
+          <select id="f-type">
+            <option value="ASSIGNMENT">练习作业</option>
+            <option value="LESSON">课程日程</option>
+            <option value="ANNOUNCEMENT">提醒事项</option>
+          </select>
+        </label>
+        <div class="cal-form__row">
+          <label class="auth-field">
+            <span id="f-start-label">开始 / 上课时间</span>
+            <input type="datetime-local" id="f-start">
+          </label>
+          <label class="auth-field" id="f-due-wrap">
+            <span>截止时间</span>
+            <input type="datetime-local" id="f-due">
+          </label>
+        </div>
+        <label class="auth-field">
+          <span>说明</span>
+          <textarea id="f-desc" rows="3" maxlength="2000" placeholder="给学生的要求或课程备注"></textarea>
+        </label>
+
+        <fieldset class="cal-fieldset">
+          <legend>目标学生</legend>
+          <div class="cal-picker-toolbar">
+            <input type="search" id="student-q" placeholder="搜索姓名或手机号" autocomplete="off">
+            <button type="button" class="btn btn--ghost btn--sm" id="select-all-students">全选</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="clear-students">清空</button>
+          </div>
+          <div class="cal-check-list" id="student-list"></div>
+          <p class="profile-hint" id="student-picked">已选 0 人</p>
+        </fieldset>
+
+        <fieldset class="cal-fieldset" id="exercise-fieldset">
+          <legend>关联练习（可选，可多选）</legend>
+          <div class="cal-picker-toolbar">
+            <input type="search" id="exercise-q" placeholder="搜索练习标题" autocomplete="off">
+            <select id="exercise-zone">
+              <option value="">全部区域</option>
+              <option value="mock">模考区</option>
+              <option value="practice">练习区</option>
+              <option value="study">学习区</option>
+            </select>
+          </div>
+          <div class="cal-check-list cal-check-list--tall" id="exercise-list"></div>
+          <p class="profile-hint" id="exercise-picked">已选 0 份练习</p>
+        </fieldset>
+
+        <p class="auth-msg" id="create-msg" role="status"></p>
+        <div class="cal-form__foot">
+          <button type="button" class="btn btn--ghost" data-close="1">取消</button>
+          <button type="submit" class="btn btn--primary pressable">发布</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="cal-modal" id="detail-modal" hidden>
+    <div class="cal-modal__backdrop" data-close-detail="1"></div>
+    <div class="cal-modal__panel" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title">
+      <div class="cal-modal__head">
+        <h2 id="detail-modal-title">任务详情</h2>
+        <button type="button" class="cal-modal__x" data-close-detail="1" aria-label="关闭">×</button>
+      </div>
+      <div id="detail-body" class="cal-detail"></div>
+      <div class="cal-form__foot">
+        <button type="button" class="btn btn--ghost" data-close-detail="1">关闭</button>
+        <button type="button" class="btn btn--ghost" id="delete-event-btn">删除任务</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="minimal-footer minimal-footer--rich">
+    <div class="minimal-shell minimal-footer__inner">
+      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心 · 教师端</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/config.js?v=20260711f"></script>
+  <script src="assets/js/auth.js?v=20260711avatar2"></script>
+  <script src="assets/js/teacher-auth.js?v=20260711cal2"></script>
+  <script src="assets/js/ui.js?v=20260702f"></script>
+  <script src="assets/js/teacher-calendar.js?v=20260711cal2"></script>
+</body>
+</html>

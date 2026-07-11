@@ -21,7 +21,8 @@ window.YYSD_TEACHER = (function () {
   }
 
   function isTeacherPage() {
-    return pageName() === "teacher.html" || isPublicPage();
+    var n = pageName();
+    return n === "teacher.html" || n === "teacher-calendar.html" || isPublicPage();
   }
 
   function setAuthCookie(on) {

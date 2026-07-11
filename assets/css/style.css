@@ -4195,8 +4195,6 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   transform: none;
 }
 
-  margin-left: 4px;
-}
 .teacher-toolbar {
   display: flex;
   align-items: center;
@@ -4317,4 +4315,312 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ---- Teacher calendar admin ---- */
+.cal-toolbar__acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cal-view { margin-top: 8px; }
+.cal-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.cal-card {
+  background: #fff;
+  border: 1px solid rgba(16, 42, 76, 0.1);
+  border-radius: 14px;
+  padding: 16px;
+}
+.cal-card__top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cal-card__top h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--brand-navy, #102a4c);
+}
+.cal-card__meta,
+.cal-card__sum {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-muted, #5a6472);
+}
+.cal-tag {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.cal-tag--assignment { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+.cal-tag--lesson { background: rgba(22, 163, 74, 0.14); color: #15803d; }
+.cal-tag--announce { background: rgba(124, 58, 237, 0.12); color: #6d28d9; }
+
+.cal-month {
+  background: #fff;
+  border: 1px solid rgba(16, 42, 76, 0.1);
+  border-radius: 14px;
+  padding: 14px;
+}
+.cal-month__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.cal-month__weekdays,
+.cal-month__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.cal-month__weekdays span {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted, #5a6472);
+  padding: 4px 0;
+}
+.cal-month__cell {
+  min-height: 88px;
+  border: 1px solid rgba(16, 42, 76, 0.08);
+  border-radius: 10px;
+  padding: 6px;
+  background: #fafbfc;
+}
+.cal-month__cell.is-empty { background: transparent; border-color: transparent; }
+.cal-month__day {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-navy, #102a4c);
+  margin-bottom: 4px;
+}
+.cal-month__chip {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 6px;
+  padding: 2px 6px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cal-month__chip.cal-tag--assignment { background: rgba(37, 99, 235, 0.14); color: #1d4ed8; }
+.cal-month__chip.cal-tag--lesson { background: rgba(22, 163, 74, 0.16); color: #15803d; }
+.cal-month__chip.cal-tag--announce { background: rgba(124, 58, 237, 0.14); color: #6d28d9; }
+.cal-month__more { font-size: 11px; color: var(--text-muted); }
+
+.cal-modal[hidden] { display: none !important; }
+.cal-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.cal-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 25, 47, 0.45);
+}
+.cal-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(720px, 100%);
+  max-height: min(90vh, 900px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 20px 50px rgba(7, 25, 47, 0.2);
+}
+.cal-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.cal-modal__head h2 { margin: 0; font-size: 1.25rem; }
+.cal-modal__x {
+  border: 0;
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.cal-form .auth-field { margin-bottom: 12px; }
+.cal-form textarea,
+.cal-form select,
+.cal-form input[type="text"],
+.cal-form input[type="search"],
+.cal-form input[type="datetime-local"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #e5e2db);
+  border-radius: 10px;
+  font: inherit;
+}
+.cal-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.cal-form__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.cal-fieldset {
+  border: 1px solid rgba(16, 42, 76, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 0 0 14px;
+}
+.cal-fieldset legend {
+  padding: 0 6px;
+  font-weight: 700;
+  color: var(--brand-navy, #102a4c);
+}
+.cal-picker-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cal-picker-toolbar input[type="search"],
+.cal-picker-toolbar select {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.cal-check-list {
+  max-height: 160px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cal-check-list--tall { max-height: 220px; }
+.cal-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+.cal-check small {
+  display: block;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.cal-detail h3 { margin: 16px 0 8px; font-size: 1rem; }
+.cal-detail ul { margin: 0 0 12px; padding-left: 18px; }
+
+@media (max-width: 640px) {
+  .cal-form__row { grid-template-columns: 1fr; }
+  .cal-month__cell { min-height: 64px; }
+}
+
+/* ---- Student calendar extras ---- */
+.cal-status-pill {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(16, 42, 76, 0.08);
+  color: var(--brand-navy, #102a4c);
+}
+.cal-status--done .cal-status-pill,
+.cal-status-pill.cal-status--done {
+  background: rgba(22, 163, 74, 0.14);
+  color: #15803d;
+}
+.cal-status--overdue .cal-status-pill,
+.cal-status-pill.cal-status--overdue {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+.cal-status--pending .cal-status-pill,
+.cal-status-pill.cal-status--pending {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+.cal-card--student.is-overdue,
+.cal-month__chip.is-overdue {
+  box-shadow: inset 3px 0 0 #dc2626;
+}
+.cal-month__chip.is-done {
+  opacity: 0.65;
+  text-decoration: line-through;
+}
+.cal-week {
+  background: #fff;
+  border: 1px solid rgba(16, 42, 76, 0.1);
+  border-radius: 14px;
+  padding: 14px;
+}
+.cal-week__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+.cal-week__day {
+  border: 1px solid rgba(16, 42, 76, 0.08);
+  border-radius: 10px;
+  padding: 8px;
+  min-height: 140px;
+  background: #fafbfc;
+}
+.cal-week__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.cal-week__head span { color: var(--text-muted); }
+.cal-week__list { display: flex; flex-direction: column; gap: 4px; }
+.cal-ex-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cal-ex-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f7f8fa;
+  font-size: 14px;
+}
+@media (max-width: 800px) {
+  .cal-week__grid {
+    grid-template-columns: 1fr;
+  }
+  .cal-week__day { min-height: 0; }
+}
+
+
 

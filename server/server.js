@@ -69,6 +69,29 @@ const uploadsRoot = path.join(dataDir, "uploads");
 const avatarsDir = path.join(uploadsRoot, "avatars");
 if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
 
+db.exec(
+  "CREATE TABLE IF NOT EXISTS calendar_events (" +
+  "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+  "title TEXT NOT NULL," +
+  "description TEXT," +
+  "event_type TEXT NOT NULL," +
+  "start_time TEXT," +
+  "due_time TEXT," +
+  "created_by INTEGER NOT NULL," +
+  "target_student_ids TEXT NOT NULL," +
+  "linked_exercise_ids TEXT NOT NULL," +
+  "created_at TEXT NOT NULL" +
+  ");" +
+  "CREATE TABLE IF NOT EXISTS student_task_status (" +
+  "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+  "event_id INTEGER NOT NULL," +
+  "student_id INTEGER NOT NULL," +
+  "status TEXT NOT NULL," +
+  "completed_at TEXT," +
+  "UNIQUE(event_id, student_id)" +
+  ");"
+);
+
 const stmts = {
   upsertCode: db.prepare(
     "INSERT INTO sms_codes (phone, code, expires_at, created_at) VALUES (?, ?, ?, ?)"
@@ -106,6 +129,41 @@ const stmts = {
   ),
   listStudentScores: db.prepare(
     "SELECT item_id, payload, updated_at FROM user_scores WHERE user_id = ? ORDER BY updated_at DESC"
+  ),
+  findUserById: db.prepare("SELECT id, phone, display_name, avatar_url FROM users WHERE id = ?"),
+  insertCalendarEvent: db.prepare(
+    "INSERT INTO calendar_events (title, description, event_type, start_time, due_time, created_by, target_student_ids, linked_exercise_ids, created_at) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ),
+  getCalendarEvent: db.prepare("SELECT * FROM calendar_events WHERE id = ?"),
+  listTeacherEvents: db.prepare(
+    "SELECT * FROM calendar_events WHERE created_by = ? ORDER BY COALESCE(due_time, start_time, created_at) DESC"
+  ),
+  deleteCalendarEvent: db.prepare("DELETE FROM calendar_events WHERE id = ? AND created_by = ?"),
+  insertTaskStatus: db.prepare(
+    "INSERT OR IGNORE INTO student_task_status (event_id, student_id, status, completed_at) VALUES (?, ?, 'PENDING', NULL)"
+  ),
+  getTaskStatus: db.prepare(
+    "SELECT * FROM student_task_status WHERE event_id = ? AND student_id = ?"
+  ),
+  listStudentCalendar: db.prepare(
+    "SELECT e.*, s.status AS task_status, s.completed_at " +
+    "FROM calendar_events e " +
+    "INNER JOIN student_task_status s ON s.event_id = e.id " +
+    "WHERE s.student_id = ? " +
+    "ORDER BY COALESCE(e.due_time, e.start_time, e.created_at) ASC"
+  ),
+  listStatusesForEvent: db.prepare(
+    "SELECT student_id, status, completed_at FROM student_task_status WHERE event_id = ?"
+  ),
+  setTaskStatus: db.prepare(
+    "UPDATE student_task_status SET status = ?, completed_at = ? WHERE event_id = ? AND student_id = ?"
+  ),
+  // ponytail: LIKE scan ok while event count is small; index JSON later if needed
+  listOpenAssignmentsForStudent: db.prepare(
+    "SELECT e.id, e.linked_exercise_ids, s.status FROM calendar_events e " +
+    "INNER JOIN student_task_status s ON s.event_id = e.id " +
+    "WHERE s.student_id = ? AND e.event_type = 'ASSIGNMENT' AND s.status != 'COMPLETED'"
   )
 };
 
@@ -194,6 +252,75 @@ function teacherPayload(teacher) {
     createdAt: teacher.created_at,
     lastLoginAt: teacher.last_login_at
   };
+}
+
+var EVENT_TYPES = { ASSIGNMENT: 1, LESSON: 1, ANNOUNCEMENT: 1 };
+
+function parseExerciseIds(raw) {
+  var arr = Array.isArray(raw) ? raw : [];
+  var out = [], seen = {};
+  arr.forEach(function (v) {
+    var id = clipText(v, 120);
+    if (!id || seen[id]) return;
+    seen[id] = 1;
+    out.push(id);
+  });
+  return out.slice(0, 50);
+}
+
+function parseStudentIds(raw) {
+  var arr = Array.isArray(raw) ? raw : [];
+  var out = [], seen = {};
+  arr.forEach(function (v) {
+    var n = Number(v);
+    if (!n || seen[n]) return;
+    seen[n] = 1;
+    out.push(n);
+  });
+  return out.slice(0, 500);
+}
+
+function effectiveTaskStatus(stored, dueTime) {
+  if (stored === "COMPLETED") return "COMPLETED";
+  if (dueTime && new Date(dueTime).getTime() < Date.now()) return "OVERDUE";
+  return stored === "OVERDUE" ? "OVERDUE" : "PENDING";
+}
+
+function eventFromRow(row, extra) {
+  var targetIds = [];
+  var exerciseIds = [];
+  try { targetIds = JSON.parse(row.target_student_ids || "[]"); } catch (e) {}
+  try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
+  var ev = {
+    id: row.id,
+    title: row.title,
+    description: row.description || "",
+    eventType: row.event_type,
+    startTime: row.start_time || null,
+    dueTime: row.due_time || null,
+    createdBy: row.created_by,
+    targetStudentIds: targetIds,
+    linkedExerciseIds: exerciseIds,
+    createdAt: row.created_at
+  };
+  if (extra) Object.keys(extra).forEach(function (k) { ev[k] = extra[k]; });
+  return ev;
+}
+
+function autoCompleteAssignments(studentId, itemId) {
+  var rows = stmts.listOpenAssignmentsForStudent.all(studentId);
+  var scoreRows = stmts.listScores.all(studentId);
+  var scored = {};
+  scoreRows.forEach(function (r) { scored[r.item_id] = 1; });
+  scored[itemId] = 1;
+  var now = new Date().toISOString();
+  rows.forEach(function (row) {
+    var ids = [];
+    try { ids = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
+    if (!ids.length) return;
+    var allDone = ids.every(function (id) { return scored[id]; });
+    if (allDone) stmts.setTaskStatus.run("COMPLETED", now, row.id, studentId);
+  });
 }
 
 // ponytail: client-resized JPEG/PNG base64; switch to multipart+multer if avatars get big
@@ -679,6 +806,143 @@ app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function 
   });
 });
 
+// ---- Calendar / Assignments (Step 1 APIs) ----
+
+app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
+  var body = req.body || {};
+  var title = clipText(body.title, 80);
+  var description = clipText(body.description, 2000);
+  var eventType = clipText(body.eventType || body.event_type, 20).toUpperCase();
+  var startTime = clipText(body.startTime || body.start_time, 40) || null;
+  var dueTime = clipText(body.dueTime || body.due_time, 40) || null;
+  var targetStudentIds = parseStudentIds(body.targetStudentIds || body.target_student_ids);
+  var linkedExerciseIds = parseExerciseIds(body.linkedExerciseIds || body.linked_exercise_ids);
+
+  if (!title) return res.status(400).json({ error: "请填写标题" });
+  if (!EVENT_TYPES[eventType]) {
+    return res.status(400).json({ error: "类型须为 ASSIGNMENT / LESSON / ANNOUNCEMENT" });
+  }
+  if (!targetStudentIds.length) return res.status(400).json({ error: "请至少选择一名学生" });
+  if (eventType === "ASSIGNMENT" && !dueTime && !startTime) {
+    return res.status(400).json({ error: "练习作业请设置截止时间或开始时间" });
+  }
+  if (eventType === "LESSON" && !startTime) {
+    return res.status(400).json({ error: "课程日程请设置上课时间" });
+  }
+
+  for (var i = 0; i < targetStudentIds.length; i++) {
+    if (!stmts.findUserById.get(targetStudentIds[i])) {
+      return res.status(400).json({ error: "学生 ID 无效：" + targetStudentIds[i] });
+    }
+  }
+
+  var now = new Date().toISOString();
+  var info = stmts.insertCalendarEvent.run(
+    title,
+    description || "",
+    eventType,
+    startTime,
+    dueTime,
+    req.user.sub,
+    JSON.stringify(targetStudentIds),
+    JSON.stringify(eventType === "ASSIGNMENT" ? linkedExerciseIds : []),
+    now
+  );
+  var eventId = info.lastInsertRowid;
+  var insertMany = db.transaction(function (ids) {
+    ids.forEach(function (sid) { stmts.insertTaskStatus.run(eventId, sid); });
+  });
+  insertMany(targetStudentIds);
+
+  var row = stmts.getCalendarEvent.get(eventId);
+  res.json({ ok: true, event: eventFromRow(row) });
+});
+
+app.get("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
+  var rows = stmts.listTeacherEvents.all(req.user.sub);
+  var events = rows.map(function (row) {
+    var statuses = stmts.listStatusesForEvent.all(row.id);
+    var summary = { total: statuses.length, pending: 0, completed: 0, overdue: 0 };
+    statuses.forEach(function (s) {
+      var st = effectiveTaskStatus(s.status, row.due_time);
+      if (st === "COMPLETED") summary.completed++;
+      else if (st === "OVERDUE") summary.overdue++;
+      else summary.pending++;
+    });
+    return eventFromRow(row, { statusSummary: summary });
+  });
+  res.json({ ok: true, events: events });
+});
+
+app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: "无效 ID" });
+  var row = stmts.getCalendarEvent.get(id);
+  if (!row || row.created_by !== req.user.sub) return res.status(404).json({ error: "任务不存在" });
+  var statuses = stmts.listStatusesForEvent.all(id).map(function (s) {
+    var stu = stmts.findUserById.get(s.student_id);
+    return {
+      studentId: s.student_id,
+      displayName: (stu && stu.display_name) || "",
+      phone: stu ? maskPhone(stu.phone) : "",
+      status: effectiveTaskStatus(s.status, row.due_time),
+      completedAt: s.completed_at || null
+    };
+  });
+  res.json({ ok: true, event: eventFromRow(row, { students: statuses }) });
+});
+
+app.delete("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: "无效 ID" });
+  var row = stmts.getCalendarEvent.get(id);
+  if (!row || row.created_by !== req.user.sub) return res.status(404).json({ error: "任务不存在" });
+  db.prepare("DELETE FROM student_task_status WHERE event_id = ?").run(id);
+  stmts.deleteCalendarEvent.run(id, req.user.sub);
+  res.json({ ok: true });
+});
+
+app.get("/api/student/calendar", authMiddleware, function (req, res) {
+  if (req.user.role === "teacher") return res.json({ ok: true, events: [] });
+  var rows = stmts.listStudentCalendar.all(req.user.sub);
+  var events = rows.map(function (row) {
+    return eventFromRow(row, {
+      status: effectiveTaskStatus(row.task_status, row.due_time),
+      completedAt: row.completed_at || null
+    });
+  });
+  res.json({ ok: true, events: events });
+});
+
+app.patch("/api/student/calendar/:eventId/status", authMiddleware, function (req, res) {
+  if (req.user.role === "teacher") return res.status(403).json({ error: "教师请使用教师端" });
+  var eventId = Number(req.params.eventId);
+  if (!eventId) return res.status(400).json({ error: "无效 ID" });
+  var status = clipText((req.body && req.body.status) || "", 20).toUpperCase();
+  if (status !== "COMPLETED" && status !== "PENDING") {
+    return res.status(400).json({ error: "status 仅支持 COMPLETED 或 PENDING" });
+  }
+  var row = stmts.getCalendarEvent.get(eventId);
+  if (!row) return res.status(404).json({ error: "任务不存在" });
+  var task = stmts.getTaskStatus.get(eventId, req.user.sub);
+  if (!task) return res.status(404).json({ error: "你不在此任务名单中" });
+
+  var exerciseIds = [];
+  try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
+  if (row.event_type === "ASSIGNMENT" && exerciseIds.length && status === "COMPLETED") {
+    return res.status(400).json({ error: "请完成关联练习后自动标记完成" });
+  }
+
+  var completedAt = status === "COMPLETED" ? new Date().toISOString() : null;
+  stmts.setTaskStatus.run(status, completedAt, eventId, req.user.sub);
+  res.json({
+    ok: true,
+    eventId: eventId,
+    status: effectiveTaskStatus(status, row.due_time),
+    completedAt: completedAt
+  });
+});
+
 function maskPhone(phone) {
   return phone.slice(0, 3) + "****" + phone.slice(-4);
 }
@@ -722,6 +986,9 @@ app.put("/api/scores/:itemId", authMiddleware, function (req, res) {
   var rec = sanitizeScore(Object.assign({}, req.body || {}, { id: itemId }));
   if (!rec) return res.status(400).json({ error: "成绩数据无效" });
   stmts.upsertScore.run(req.user.sub, itemId, JSON.stringify(rec), rec.date);
+  try { autoCompleteAssignments(req.user.sub, itemId); } catch (e) {
+    console.error("[yysd-api] calendar auto-complete", e && e.message);
+  }
   res.json({ ok: true, score: rec });
 });
 
@@ -918,6 +1185,11 @@ if (require.main === module) {
   var hp = hashPassword("test1234");
   console.assert(verifyPassword("test1234", hp));
   console.assert(!verifyPassword("wrong", hp));
+  console.assert(EVENT_TYPES.ASSIGNMENT && EVENT_TYPES.LESSON && EVENT_TYPES.ANNOUNCEMENT);
+  console.assert(effectiveTaskStatus("PENDING", "2000-01-01T00:00:00.000Z") === "OVERDUE");
+  console.assert(effectiveTaskStatus("COMPLETED", "2000-01-01T00:00:00.000Z") === "COMPLETED");
+  console.assert(parseExerciseIds(["a", "a", "b"]).join(",") === "a,b");
+  console.assert(parseStudentIds([1, "2", 1, 0]).join(",") === "1,2");
   app.listen(PORT, function () {
     console.log("[yysd-api] listening on " + PORT + (SMS_DEV ? " (SMS_DEV_MODE)" : ""));
   });
