@@ -1,6 +1,7 @@
 /* ==========================================================================
    exam-shell.css — brand skin for exam iframes (injected by exam.js)
-   Applied when body.yysd-embedded: hide duplicate chrome, remap palette.
+   Canvas-like academic remap: ivory / navy / gold over legacy blue-green.
+   Applied when body.yysd-embedded.
    ========================================================================== */
 
 body.yysd-embedded {
@@ -24,7 +25,15 @@ body.yysd-embedded > header.header {
   position: sticky;
   top: 0;
   z-index: 50;
+  background: linear-gradient(90deg, #061427, #102a4c) !important;
+  color: #fff !important;
+  border-bottom: 1px solid rgba(199, 164, 93, .38) !important;
   box-shadow: 0 1px 0 rgba(7, 25, 47, .06);
+}
+
+body.yysd-embedded > .header h1,
+body.yysd-embedded > header.header h1 {
+  color: #fff !important;
 }
 
 body.yysd-embedded > .header .header-inner,
@@ -35,6 +44,15 @@ body.yysd-embedded > header.header .header-inner {
 body.yysd-embedded > .header .nav-tabs,
 body.yysd-embedded > header.header .nav-tabs {
   display: flex !important;
+  background: rgba(255, 255, 255, .08) !important;
+}
+
+body.yysd-embedded .nav-tab {
+  color: rgba(255, 255, 255, .78) !important;
+}
+body.yysd-embedded .nav-tab.active {
+  background: #fffcf7 !important;
+  color: #07192f !important;
 }
 
 body.yysd-embedded .header .timer,
@@ -45,6 +63,16 @@ body.yysd-embedded #timer.timer:not(.show) {
 
 body.yysd-embedded .test-topbar {
   top: 0 !important;
+  background: #fffcf7 !important;
+  border: 1px solid #e6dfd0 !important;
+  box-shadow: 0 1px 0 rgba(7, 25, 47, .04) !important;
+}
+body.yysd-embedded .test-topbar .tt-title {
+  color: #07192f !important;
+}
+body.yysd-embedded .test-topbar .tt-mode {
+  background: #f6eedf !important;
+  color: #8a6a2f !important;
 }
 
 /* Cover & cards */
@@ -52,8 +80,7 @@ body.yysd-embedded .cover-hero,
 body.yysd-embedded .res-card,
 body.yysd-embedded .task,
 body.yysd-embedded .modal,
-body.yysd-embedded .mode-box,
-body.yysd-embedded .test-topbar {
+body.yysd-embedded .mode-box {
   background: #fffcf7 !important;
   border-color: #e6dfd0 !important;
   box-shadow: 0 14px 34px -18px rgba(7, 25, 47, .10) !important;
@@ -95,6 +122,25 @@ body.yysd-embedded .paper-card.listen .pc-go:hover {
   background: #102a4c !important;
 }
 
+/* Kill legacy blue/green accents → navy / gold */
+body.yysd-embedded .mode-box.practice .mode-start,
+body.yysd-embedded .audio-play,
+body.yysd-embedded .listen-here,
+body.yysd-embedded .btn-primary,
+body.yysd-embedded button.primary {
+  background: #07192f !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(7, 25, 47, .22) !important;
+}
+body.yysd-embedded .mode-box.exam .mode-start {
+  background: #c7a45d !important;
+  color: #07192f !important;
+}
+body.yysd-embedded .audio-prog .fill,
+body.yysd-embedded .pw-fill {
+  background: linear-gradient(90deg, #102a4c, #c7a45d) !important;
+}
+
 /* Primary action buttons */
 body.yysd-embedded .submit-btn,
 body.yysd-embedded .btn-start,
@@ -102,11 +148,14 @@ body.yysd-embedded .start-btn,
 body.yysd-embedded button[class*="start"],
 body.yysd-embedded .copy-btn {
   background: linear-gradient(135deg, #07192f, #102a4c) !important;
+  color: #fff !important;
   box-shadow: 0 4px 14px rgba(7, 25, 47, .22) !important;
 }
 
 body.yysd-embedded .submit-btn {
-  background: linear-gradient(135deg, #1e6b45, #27ae60) !important;
+  background: linear-gradient(135deg, #a98234, #c7a45d) !important;
+  color: #07192f !important;
+  box-shadow: 0 4px 14px rgba(169, 130, 52, .28) !important;
 }
 
 /* Accent tags */
@@ -119,6 +168,8 @@ body.yysd-embedded .header h1 .brandtag {
 /* Form fields */
 body.yysd-embedded textarea:focus,
 body.yysd-embedded input:focus,
+body.yysd-embedded select:focus,
+body.yysd-embedded input[type=text]:focus,
 body.yysd-embedded select:focus {
   border-color: #c7a45d !important;
   box-shadow: 0 0 0 3px rgba(199, 164, 93, .18) !important;
@@ -132,6 +183,9 @@ body.yysd-embedded table.wt th {
 }
 
 body.yysd-embedded .stat-box .big,
+body.yysd-embedded .stat-box.s1 .big,
+body.yysd-embedded .stat-box.s2 .big,
+body.yysd-embedded .stat-box.s3 .big,
 body.yysd-embedded table.wt caption {
   color: #102a4c !important;
 }
@@ -141,6 +195,29 @@ body.yysd-embedded .passage-pane,
 body.yysd-embedded .col.passage {
   background: #fffcf7 !important;
   border-color: #e6dfd0 !important;
+}
+
+body.yysd-embedded .ritem.correct {
+  background: #f6eedf !important;
+  border-left-color: #c7a45d !important;
+}
+body.yysd-embedded .ritem.wrong {
+  background: #f8eeee !important;
+  border-left-color: #8b3a3a !important;
+}
+
+/* Vocab word cards inside iframe */
+body.yysd-embedded .word-card {
+  background: #fffcf7 !important;
+  border-color: #e6dfd0 !important;
+}
+body.yysd-embedded .word-headword,
+body.yysd-embedded .logo {
+  color: #07192f !important;
+}
+body.yysd-embedded .btn-play {
+  background: #f6eedf !important;
+  color: #07192f !important;
 }
 
 /* Mock exam lock overlay (模考模式防切屏) */
@@ -177,8 +254,8 @@ body.yysd-embedded .col.passage {
   background: #fff; color: #07192f; border: 1px solid #cbd5e1;
 }
 .yysd-exam-lock-overlay__inner--void .yysd-exam-lock-restart {
-  background: #27ae60; color: #fff; border: none;
+  background: #c7a45d; color: #07192f; border: none;
 }
 .yysd-exam-lock-overlay__inner--void .yysd-exam-lock-restart:hover {
-  background: #2ecc71; filter: none;
+  filter: brightness(1.06);
 }

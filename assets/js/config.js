@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260711g";
+  var CONTENT_VER = "20260714a";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
 
   // Homepage display order: 学习区 → 练习区 → 模考区
@@ -254,7 +254,7 @@ window.YYSD = (function () {
           '<span class="badge badge--' + esc(item.subject) + '">' + esc(subj.label) + '</span>' +
           '<span class="tag-cat">' + esc((ZONE[item.zone] || {}).label || "") + '</span>' +
         '</div>' +
-        '<h3>' + esc(item.title) + '</h3>' +
+        '<h3>' + esc(displayTitle(item)) + '</h3>' +
         '<p>' + esc(item.description || "点击进入，按要求完成本份内容。") + '</p>' +
         '<div class="exam-card__meta">' + meta +
           (item.added ? '<span>📅 ' + esc(item.added) + '</span>' : '') +
@@ -296,7 +296,35 @@ window.YYSD = (function () {
     m = t.match(/第\s*0*(\d+)\s*篇/);
     if (m) return Number(m[1]);
     m = String((item && item.id) || "").match(/(?:writing|listening|reading)-vocab-0*(\d+)/i);
+    if (m) return Number(m[1]);
+    m = String((item && item.file) || "").match(/(?:LIST|list|vocab-)0*(\d+)/i);
     return m ? Number(m[1]) : 0;
+  }
+
+  // Clear catalog titles for search + UI (manifest keeps raw LIST titles).
+  function vocabDisplayTitle(item) {
+    var n = vocabListNo(item);
+    var s = (item && item.subject) || "";
+    if (!n) return (item && item.title) || "";
+    if (s === "vocab") return "高中词汇单元" + n;
+    if (s === "vocab-cet4") return "四级词汇单元" + n;
+    if (isVocabSpecial(s)) return "雅思词汇单元" + n;
+    return (item && item.title) || "";
+  }
+
+  function displayTitle(item) {
+    if (!item) return "";
+    if (isVocabListSubject(item.subject) || isVocabSpecial(item.subject)) {
+      return vocabDisplayTitle(item);
+    }
+    return item.title || "";
+  }
+
+  // Topic after "·" for special units (secondary line only).
+  function vocabTopic(item) {
+    var t = String((item && item.title) || "");
+    var m = t.match(/[·•]\s*(.+)$/);
+    return m ? m[1].replace(/\s*-\s*.*$/, "").trim() : "";
   }
 
   function vocabBookStats(items, bookKey) {
@@ -351,7 +379,7 @@ window.YYSD = (function () {
     var ranges = [];
     for (var start = 1; start <= max; start += chunk) {
       var end = Math.min(start + chunk - 1, max);
-      ranges.push({ id: start + "-" + end, label: "LIST " + start + "–" + end, start: start, end: end });
+      ranges.push({ id: start + "-" + end, label: "单元 " + start + "–" + end, start: start, end: end });
     }
     return ranges;
   }
@@ -365,10 +393,10 @@ window.YYSD = (function () {
   function vocabBookCardHTML(stats, prefix) {
     var book = stats.book;
     var prog = vocabProgress(stats.lists);
-    var unit = book.subject ? " LIST" : " 份";
+    var unit = book.subject ? " 单元" : " 份";
     var cnt = stats.total + unit;
     var progTxt = prog.done ? ("已学 " + prog.done + "/" + stats.total) : cnt;
-    var shortLabel = book.key === "gaozhong" ? "高中" : (book.key === "cet4" ? "四级" : "专项");
+    var shortLabel = book.key === "gaozhong" ? "高中" : (book.key === "cet4" ? "四级" : "雅思");
     var tagTier = book.key === "special" ? "new" : (book.key === "cet4" ? "mid" : "base");
     var shieldIcon = '<svg class="vol-card__shield" viewBox="0 0 14 16" aria-hidden="true"><path d="M7 1.2 12 3v5.2c0 3.4-2.1 5.9-5 7.3-2.9-1.4-5-3.9-5-7.3V3L7 1.2Z" fill="currentColor"/></svg>';
     var bookIcon = '<svg class="vol-card__book" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
@@ -567,7 +595,8 @@ window.YYSD = (function () {
     var q = String(query || "").toLowerCase().trim();
     if (!q) return items || [];
     return (items || []).filter(function (it) {
-      var hay = (it.title + " " + (it.description || "") + " " + it.subject + " " + it.id).toLowerCase();
+      var hay = (displayTitle(it) + " " + it.title + " " + (it.description || "") + " " +
+        it.subject + " " + it.id).toLowerCase();
       return hay.indexOf(q) >= 0;
     });
   }
@@ -693,7 +722,7 @@ window.YYSD = (function () {
       if (r.band != null) meta += " · Band " + r.band;
       return '<a class="home-dashboard__row" href="' + fileHref(a.item, p) + '">' +
         '<span class="home-dashboard__row-zone">' + esc(zone) + "</span>" +
-        '<span class="home-dashboard__row-title">' + esc(a.item.title) + "</span>" +
+        '<span class="home-dashboard__row-title">' + esc(displayTitle(a.item)) + "</span>" +
         '<span class="home-dashboard__row-meta">' + esc(meta) + " ›</span></a>";
     }).join("");
 
@@ -718,7 +747,7 @@ window.YYSD = (function () {
     var subj = SUBJECT[item.subject] || { label: "其他" };
     return '<a class="catalog-row' + (done ? " is-done" : "") + '" href="' + fileHref(item, prefix) + '">' +
       '<span class="catalog-row__badge badge badge--' + esc(item.subject) + '">' + esc(subj.label) + "</span>" +
-      '<span class="catalog-row__title">' + esc(item.title) + "</span>" +
+      '<span class="catalog-row__title">' + esc(displayTitle(item)) + "</span>" +
       (done ? '<span class="catalog-row__status">已完成</span>' : '<span class="catalog-row__go">进入 ›</span>') +
       "</a>";
   }
@@ -800,7 +829,9 @@ window.YYSD = (function () {
     searchResultsHTML: searchResultsHTML, compactItemRowHTML: compactItemRowHTML,
     VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,
     needsVocabBridge: needsVocabBridge,
-    vocabListNo: vocabListNo, vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
+    vocabListNo: vocabListNo, vocabDisplayTitle: vocabDisplayTitle, displayTitle: displayTitle,
+    vocabTopic: vocabTopic,
+    vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
     vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML,
     vocabBookOfSubject: vocabBookOfSubject,
     wrongWords: wrongWords, wrongWordCount: wrongWordCount, mergeWrongWords: mergeWrongWords,

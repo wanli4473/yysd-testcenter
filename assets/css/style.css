@@ -580,31 +580,68 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
 .skill-panel__btn:hover { background: var(--brand-red); }
 @media (max-width: 640px) { .cam-hero { flex-direction: column; text-align: center; } }
 
-/* ---------- Vocabulary book hub (vocab.html) --------------------------- */
+/* ---------- Vocabulary book hub (vocab.html) — Canvas-like modules ------ */
 .vocab-hero__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.vocab-search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  max-width: 420px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.vocab-search input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-paper);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+.vocab-search input:focus {
+  outline: none;
+  border-color: var(--brand-gold);
+  box-shadow: 0 0 0 3px rgba(199, 164, 93, .18);
+}
 .vocab-range-wrap { margin-top: 8px; }
 .vocab-range-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .vocab-range-panel { display: none; }
 .vocab-range-panel.is-active { display: block; }
 .vocab-list-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 920px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
 }
 .vocab-list-row {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  gap: 14px;
+  padding: 14px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--surface-paper);
   text-decoration: none;
   color: inherit;
   overflow: hidden;
-  transition: border-color .18s var(--ease), transform .18s var(--ease-out);
+  transition: background .15s var(--ease);
 }
+.vocab-list-row:last-child { border-bottom: 0; }
 .vocab-list-row.is-done::before {
   content: "";
   position: absolute;
@@ -612,31 +649,42 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, #f1d38a, var(--brand-gold, #c7a45d));
+  background: var(--brand-gold);
 }
-.vocab-list-row:hover { border-color: var(--border-strong); transform: translateY(-2px); }
-.vocab-list-row.is-done { background: #f8faf8; border-color: #d4e8d9; }
+.vocab-list-row:hover { border-color: transparent; transform: none; background: #fff; }
+.vocab-list-row.is-done { background: #fbf8f1; border-color: transparent; }
 .vocab-list-row__no {
   flex-shrink: 0;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: .4px;
-  color: var(--text-faint);
-  min-width: 52px;
+  letter-spacing: .04em;
+  color: var(--brand-navy-soft);
+  min-width: 58px;
+  text-transform: uppercase;
+}
+.vocab-list-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .vocab-list-row__title {
-  flex: 1;
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--brand-navy);
   line-height: 1.35;
 }
-.vocab-list-row__go { font-size: 13px; font-weight: 700; color: var(--brand-red); flex-shrink: 0; }
+.vocab-list-row__topic {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.vocab-list-row__go { font-size: 13px; font-weight: 700; color: var(--brand-gold); flex-shrink: 0; }
 .vocab-list-row__badge {
   font-size: 11px;
   font-weight: 700;
-  color: #2d6a4a;
-  background: #e8f5ee;
+  color: var(--brand-navy);
+  background: var(--brand-red-soft);
   padding: 3px 8px;
   border-radius: 999px;
   flex-shrink: 0;
@@ -1864,10 +1912,6 @@ table.data tr:last-child td { border-bottom: 0; }
   background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(247,243,234,.78));
 }
 
-.vocab-list-grid {
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
 .vocab-list-grid--compact { max-width: 920px; }
 
 .cam-crumb { margin-bottom: 18px; }
@@ -4329,10 +4373,11 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   gap: 14px;
 }
 .cal-card {
-  background: #fff;
-  border: 1px solid rgba(16, 42, 76, 0.1);
-  border-radius: 14px;
+  background: var(--surface-paper, #fffcf7);
+  border: 1px solid var(--border, #e6dfd0);
+  border-radius: 12px;
   padding: 16px;
+  box-shadow: var(--shadow-paper);
 }
 .cal-card__top {
   display: flex;
@@ -4359,14 +4404,14 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   font-size: 12px;
   font-weight: 700;
 }
-.cal-tag--assignment { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
-.cal-tag--lesson { background: rgba(22, 163, 74, 0.14); color: #15803d; }
-.cal-tag--announce { background: rgba(124, 58, 237, 0.12); color: #6d28d9; }
+.cal-tag--assignment { background: rgba(199, 164, 93, 0.2); color: #8a6a2f; }
+.cal-tag--lesson { background: rgba(7, 25, 47, 0.1); color: #07192f; }
+.cal-tag--announce { background: rgba(95, 102, 115, 0.12); color: #5f6673; }
 
 .cal-month {
-  background: #fff;
-  border: 1px solid rgba(16, 42, 76, 0.1);
-  border-radius: 14px;
+  background: var(--surface-paper, #fffcf7);
+  border: 1px solid var(--border, #e6dfd0);
+  border-radius: 12px;
   padding: 14px;
 }
 .cal-month__nav {
@@ -4388,11 +4433,11 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   padding: 4px 0;
 }
 .cal-month__cell {
-  min-height: 88px;
-  border: 1px solid rgba(16, 42, 76, 0.08);
-  border-radius: 10px;
+  min-height: 96px;
+  border: 1px solid rgba(230, 223, 208, 0.95);
+  border-radius: 8px;
   padding: 6px;
-  background: #fafbfc;
+  background: #fff;
 }
 .cal-month__cell.is-empty { background: transparent; border-color: transparent; }
 .cal-month__day {
@@ -4406,18 +4451,19 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   width: 100%;
   text-align: left;
   border: 0;
-  border-radius: 6px;
-  padding: 2px 6px;
+  border-radius: 4px;
+  padding: 3px 6px;
   margin-bottom: 3px;
   font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.cal-month__chip.cal-tag--assignment { background: rgba(37, 99, 235, 0.14); color: #1d4ed8; }
-.cal-month__chip.cal-tag--lesson { background: rgba(22, 163, 74, 0.16); color: #15803d; }
-.cal-month__chip.cal-tag--announce { background: rgba(124, 58, 237, 0.14); color: #6d28d9; }
+.cal-month__chip.cal-tag--assignment { background: rgba(199, 164, 93, 0.22); color: #8a6a2f; }
+.cal-month__chip.cal-tag--lesson { background: rgba(7, 25, 47, 0.12); color: #07192f; }
+.cal-month__chip.cal-tag--announce { background: rgba(95, 102, 115, 0.14); color: #5f6673; }
 .cal-month__more { font-size: 11px; color: var(--text-muted); }
 
 .cal-modal[hidden] { display: none !important; }
@@ -4549,31 +4595,31 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
 }
 .cal-status--done .cal-status-pill,
 .cal-status-pill.cal-status--done {
-  background: rgba(22, 163, 74, 0.14);
-  color: #15803d;
+  background: rgba(7, 25, 47, 0.1);
+  color: #07192f;
 }
 .cal-status--overdue .cal-status-pill,
 .cal-status-pill.cal-status--overdue {
-  background: rgba(220, 38, 38, 0.12);
-  color: #b91c1c;
+  background: rgba(139, 58, 58, 0.12);
+  color: #8b3a3a;
 }
 .cal-status--pending .cal-status-pill,
 .cal-status-pill.cal-status--pending {
-  background: rgba(37, 99, 235, 0.1);
-  color: #1d4ed8;
+  background: rgba(199, 164, 93, 0.22);
+  color: #8a6a2f;
 }
 .cal-card--student.is-overdue,
 .cal-month__chip.is-overdue {
-  box-shadow: inset 3px 0 0 #dc2626;
+  box-shadow: inset 3px 0 0 #8b3a3a;
 }
 .cal-month__chip.is-done {
   opacity: 0.65;
   text-decoration: line-through;
 }
 .cal-week {
-  background: #fff;
-  border: 1px solid rgba(16, 42, 76, 0.1);
-  border-radius: 14px;
+  background: var(--surface-paper, #fffcf7);
+  border: 1px solid var(--border, #e6dfd0);
+  border-radius: 12px;
   padding: 14px;
 }
 .cal-week__grid {
@@ -4582,11 +4628,11 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   gap: 8px;
 }
 .cal-week__day {
-  border: 1px solid rgba(16, 42, 76, 0.08);
-  border-radius: 10px;
+  border: 1px solid var(--border, #e6dfd0);
+  border-radius: 8px;
   padding: 8px;
   min-height: 140px;
-  background: #fafbfc;
+  background: #fff;
 }
 .cal-week__head {
   display: flex;
@@ -4611,9 +4657,19 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   justify-content: space-between;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
-  background: #f7f8fa;
+  border-radius: 8px;
+  background: #fbf8f1;
+  border: 1px solid var(--border, #e6dfd0);
   font-size: 14px;
+}
+.teacher-page .teacher-stats,
+.cal-view .teacher-stats {
+  gap: 10px;
+}
+.teacher-page .teacher-stat {
+  background: var(--surface-paper, #fffcf7);
+  border: 1px solid var(--border, #e6dfd0);
+  border-radius: 10px;
 }
 @media (max-width: 800px) {
   .cal-week__grid {

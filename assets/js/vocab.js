@@ -29,40 +29,26 @@
 
   function listBadge(item) {
     var n = Y.vocabListNo(item);
-    if (!n) return "#";
-    if (item.subject === "vocab-special-listening") {
-      return "第" + n + "篇";
-    }
-    if (item.subject === "vocab-special-reading" || item.subject === "vocab-special-writing") {
-      return "单元" + n;
-    }
-    return "LIST " + n;
+    return n ? ("单元 " + n) : "#";
   }
 
   function heroHTML(book, stats, prog) {
-    var badge = book.key === "gaozhong" ? "GZ" : (book.key === "cet4" ? "CET4" : "SP");
-    var sub = stats.total + (book.subject ? " 个 LIST" : " 份专题");
-    var progLine;
-    if (book.subject) {
-      progLine = prog.done
-        ? "已学 " + prog.done + " / " + stats.total + (prog.last ? " · 上次 LIST " + Y.vocabListNo(prog.last) : "")
-        : "边学边测 · 点击 LIST 进入";
-    } else {
-      progLine = prog.done
-        ? "已学 " + prog.done + " / " + stats.total + (prog.last ? " · 上次 " + listBadge(prog.last) : "")
-        : "边学边测 · 点击单元进入";
-    }
+    var badge = book.key === "gaozhong" ? "GZ" : (book.key === "cet4" ? "CET4" : "IELTS");
+    var sub = stats.total + " 个单元";
+    var progLine = prog.done
+      ? "已学 " + prog.done + " / " + stats.total +
+        (prog.last ? " · 上次 " + Y.displayTitle(prog.last) : "")
+      : "边学边测 · 点击单元进入";
 
     var actions = "";
     if (prog.next) {
-      var nextLabel = book.subject ? ("LIST " + Y.vocabListNo(prog.next)) : listBadge(prog.next);
+      var nextLabel = Y.displayTitle(prog.next);
       var first = stats.lists[0];
       actions = '<div class="vocab-hero__actions">' +
         '<a class="btn btn--primary btn--sm" href="' + Y.fileHref(prog.next, "") + '">继续学习 · ' +
         Y.esc(nextLabel) + '</a>';
       if (first) {
-        actions += '<a class="btn btn--ghost btn--sm" href="' + Y.fileHref(first, "") + '">' +
-          (book.subject ? "从 LIST 1 开始" : "从第一篇开始") + '</a>';
+        actions += '<a class="btn btn--ghost btn--sm" href="' + Y.fileHref(first, "") + '">从单元 1 开始</a>';
       }
       actions += '</div>';
     }
@@ -71,15 +57,25 @@
       '<div class="cam-hero__badge"><div class="lbl">VOCAB</div><div class="num">' + Y.esc(badge) + '</div></div>' +
       '<div><h1>' + Y.esc(book.label) + '</h1>' +
       '<div class="meta">' + Y.esc(sub) + ' · ' + Y.esc(progLine) + '</div>' +
+      '<label class="vocab-search">搜索单元' +
+      '<input type="search" id="vocab-q" placeholder="如：' +
+      Y.esc(book.key === "cet4" ? "四级词汇单元1" : (book.key === "special" ? "雅思词汇单元1" : "高中词汇单元1")) +
+      '" autocomplete="off"></label>' +
       actions +
       '</div></div>';
   }
 
   function listRowHTML(item) {
     var done = Y.results()[item.id];
-    return '<a class="vocab-list-row' + (done ? " is-done" : "") + '" href="' + Y.fileHref(item, "") + '">' +
+    var topic = Y.vocabTopic(item);
+    return '<a class="vocab-list-row' + (done ? " is-done" : "") + '" href="' + Y.fileHref(item, "") +
+      '" data-title="' + Y.esc(Y.displayTitle(item).toLowerCase()) +
+      '" data-raw="' + Y.esc(String(item.title || "").toLowerCase()) + '">' +
       '<span class="vocab-list-row__no">' + Y.esc(listBadge(item)) + '</span>' +
-      '<span class="vocab-list-row__title">' + Y.esc(item.title) + '</span>' +
+      '<span class="vocab-list-row__main">' +
+        '<span class="vocab-list-row__title">' + Y.esc(Y.displayTitle(item)) + '</span>' +
+        (topic ? '<span class="vocab-list-row__topic">' + Y.esc(topic) + '</span>' : '') +
+      '</span>' +
       (done
         ? '<span class="vocab-list-row__badge">已学</span>'
         : '<span class="vocab-list-row__go">进入 ›</span>') +
@@ -165,6 +161,17 @@
       if (!btn) return;
       switchRange(btn.getAttribute("data-range"));
     });
+
+    var qEl = document.getElementById("vocab-q");
+    if (qEl) {
+      qEl.addEventListener("input", function () {
+        var q = qEl.value.trim().toLowerCase();
+        contentEl.querySelectorAll(".vocab-list-row").forEach(function (row) {
+          var hay = (row.getAttribute("data-title") || "") + " " + (row.getAttribute("data-raw") || "");
+          row.hidden = !!(q && hay.indexOf(q) < 0);
+        });
+      });
+    }
 
     animateListRows(contentEl.querySelector(".vocab-range-panel.is-active"));
   }

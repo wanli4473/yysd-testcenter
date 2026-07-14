@@ -276,8 +276,9 @@
     var isStudy = item.zone === "study";
     var badges = parseBadges(item);
 
-    titleEl.textContent = item.title;
-    document.title = item.title + " · 优益思达学习中心";
+    var shown = Y.displayTitle(item);
+    titleEl.textContent = shown;
+    document.title = shown + " · 优益思达学习中心";
     renderBadges(badges);
 
     if (badges) {

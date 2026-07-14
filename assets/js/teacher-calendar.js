@@ -104,7 +104,7 @@
     var items = catalog.filter(function (it) {
       if (zone && it.zone !== zone) return false;
       if (!q) return true;
-      var hay = (it.title + " " + it.id + " " + (it.subject || "")).toLowerCase();
+      var hay = (Y.displayTitle(it) + " " + it.title + " " + it.id + " " + (it.subject || "")).toLowerCase();
       return hay.indexOf(q) >= 0;
     }).slice(0, 80);
     var html = items.map(function (it) {
@@ -112,7 +112,7 @@
       var zoneLbl = (Y.ZONE[it.zone] || {}).label || it.zone;
       return '<label class="cal-check">' +
         '<input type="checkbox" data-exercise="' + esc(it.id) + '"' + checked + ">" +
-        "<span><b>" + esc(it.title) + "</b><small>" + esc(zoneLbl) + "</small></span></label>";
+        "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(zoneLbl) + "</small></span></label>";
     }).join("");
     document.getElementById("exercise-list").innerHTML =
       html || '<p class="profile-hint">没有匹配的练习</p>';
@@ -235,7 +235,7 @@
       }).join("");
       var exHtml = (ev.linkedExerciseIds || []).map(function (xid) {
         var it = catalog.filter(function (c) { return c.id === xid; })[0];
-        return "<li>" + esc(it ? it.title : xid) + "</li>";
+        return "<li>" + esc(it ? Y.displayTitle(it) : xid) + "</li>";
       }).join("");
       document.getElementById("detail-body").innerHTML =
         '<p><span class="cal-tag ' + typeClass(ev.eventType) + '">' +

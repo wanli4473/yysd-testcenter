@@ -233,7 +233,7 @@
     document.getElementById("stu-detail-title").textContent = ev.title;
     var exList = (ev.linkedExerciseIds || []).map(function (xid) {
       var it = catalogById[xid];
-      var title = it ? it.title : xid;
+      var title = it ? Y.displayTitle(it) : xid;
       var href = "exam.html?id=" + encodeURIComponent(xid);
       return '<li class="cal-ex-row">' +
         "<span>" + esc(title) + "</span>" +
