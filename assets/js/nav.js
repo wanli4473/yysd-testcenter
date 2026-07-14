@@ -93,6 +93,7 @@
   tabs.className = "mobile-tabs";
   tabs.setAttribute("aria-label", "快捷导航");
   [
+    { href: "dashboard.html", label: "工作台", key: "dash" },
     { href: "zone.html?zone=study", label: "学习", key: "study" },
     { href: "zone.html?zone=practice", label: "练习", key: "practice" },
     { href: "zone.html?zone=mock", label: "模考", key: "mock" },
@@ -149,6 +150,18 @@
       });
     }
 
+    if (path === "dashboard.html") {
+      activate(nav.querySelectorAll("a"), function (a) {
+        return a.getAttribute("data-nav") === "dashboard" || (a.getAttribute("href") || "").indexOf("dashboard") >= 0;
+      });
+      activate(drawerNav.querySelectorAll("a"), function (a) {
+        return (a.getAttribute("href") || "").indexOf("dashboard") >= 0;
+      });
+      activate(tabs.querySelectorAll("a"), function (a) {
+        return a.dataset.tab === "dash";
+      });
+      return;
+    }
     if (path === "index.html" || path === "") {
       return;
     }

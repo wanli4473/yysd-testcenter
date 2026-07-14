@@ -56,9 +56,12 @@ check() {
   fi
 }
 missing=0
+check "dashboard.html"
+check "assets/js/dashboard.js"
 check "ai-tutor.html"
 check "data/speaking/jiijing-banks/2026-q2.json"
 check "data/speaking/jiijing-active.json"
+check "data/speaking/writing-prompts.json"
 check "data/speaking/part1-topics.json"
 check "data/speaking/part1-fixed.json"
 check "speaking.html"
