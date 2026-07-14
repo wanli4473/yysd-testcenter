@@ -200,14 +200,86 @@
 .ai-tutor-entry b { display: block; font-size: 1.2rem; margin-bottom: 6px; }
 .ai-tutor-entry span { font-size: 0.88rem; opacity: 0.85; }
 
+.ai-tutor__picker {
+  border-bottom: 1px solid var(--c-line, rgba(16, 42, 76, 0.1));
+  padding: 12px 14px 16px;
+  background: rgba(16, 42, 76, 0.02);
+}
+.ai-tutor__bank-title {
+  font-size: 0.85rem;
+  color: var(--c-muted, #5a6b7d);
+  margin-bottom: 10px;
+}
+.ai-tutor__pick-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ai-tutor__pick-cols h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+.ai-tutor__pick-list {
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--c-line, rgba(16, 42, 76, 0.12));
+  border-radius: 10px;
+  background: #fff;
+  padding: 6px;
+}
+.ai-tutor__pick-list label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.ai-tutor__pick-list label:hover { background: rgba(16, 42, 76, 0.06); }
+.ai-tutor__pick-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ai-tutor__prep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  font-size: 0.88rem;
+}
+.ai-tutor__prep strong {
+  font-variant-numeric: tabular-nums;
+  min-width: 3.2em;
+}
+.ai-tutor__admin {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-line, rgba(16, 42, 76, 0.12));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+.ai-tutor__admin-hint { margin: 0; color: var(--c-muted, #5a6b7d); }
+.ai-pack {
+  align-self: stretch;
+  border: 1px dashed rgba(16, 42, 76, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  background: #fff;
+  margin-bottom: 4px;
+}
+.ai-pack b { display: block; margin-bottom: 4px; }
+
 @media (max-width: 860px) {
-  .ai-tutor {
-    grid-template-columns: 1fr;
-  }
-  .ai-tutor__side {
-    max-height: none;
-  }
-  .ai-tutor__sessions {
-    max-height: 160px;
-  }
+  .ai-tutor { grid-template-columns: 1fr; }
+  .ai-tutor__side { max-height: none; }
+  .ai-tutor__sessions { max-height: 160px; }
+  .ai-tutor__pick-cols { grid-template-columns: 1fr; }
+  .ai-tutor__prep { margin-left: 0; width: 100%; }
 }

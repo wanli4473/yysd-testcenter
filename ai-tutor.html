@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
   <link rel="stylesheet" href="assets/css/style.css?v=20260714shell">
-  <link rel="stylesheet" href="assets/css/ai-tutor.css?v=20260714a">
+  <link rel="stylesheet" href="assets/css/ai-tutor.css?v=20260714c">
   <link rel="stylesheet" href="assets/css/mascot.css?v=20260709a">
 </head>
 <body class="home-minimal student-layout shell-compact-nav ai-tutor-page">
@@ -38,30 +38,57 @@
   <section class="minimal-shell minimal-page-head">
     <div class="minimal-crumb"><a href="zone.html?zone=practice">练习区</a> <span class="crumb-sep" aria-hidden="true">★</span> <span>AI 雅思老师</span></div>
     <h1>AI 雅思老师</h1>
-    <p class="minimal-page-desc">模拟考官练口语，或向老师请教口语与写作。支持文字与语音。</p>
+    <p class="minimal-page-desc">机经练习 / 全真模考，或向老师请教口语与写作。支持文字与语音。</p>
   </section>
 
   <main class="minimal-shell minimal-main ai-tutor" id="ai-tutor-root">
     <aside class="ai-tutor__side" aria-label="历史会话">
       <div class="ai-tutor__side-head">
         <strong>历史会话</strong>
-        <button type="button" class="btn btn--primary btn--sm" id="btn-new">新建</button>
+        <button type="button" class="btn btn--primary btn--sm" id="btn-new">新建辅导</button>
       </div>
       <div class="ai-tutor__quota" id="quota-box">加载额度…</div>
       <ul class="ai-tutor__sessions" id="session-list"></ul>
+      <div class="ai-tutor__admin" id="admin-upload" hidden>
+        <strong>更新机经题库</strong>
+        <input type="file" id="jiijing-file" accept="application/pdf,.pdf">
+        <button type="button" class="btn btn--ghost btn--sm" id="btn-upload-jiijing">上传 PDF</button>
+        <p class="ai-tutor__admin-hint" id="upload-hint"></p>
+      </div>
     </aside>
 
     <section class="ai-tutor__main">
       <div class="ai-tutor__toolbar">
         <div class="ai-tutor__modes" role="group" aria-label="模式">
           <button type="button" class="chip is-active" data-mode="teacher">辅导老师</button>
-          <button type="button" class="chip" data-mode="examiner">模拟考官</button>
+          <button type="button" class="chip" data-mode="examiner">口语考官</button>
         </div>
         <div class="ai-tutor__exam" id="exam-opts" hidden>
-          <button type="button" class="chip chip--sub is-active" data-exam="full">完整模拟考</button>
-          <button type="button" class="chip chip--sub" data-exam="part1">Part 1</button>
-          <button type="button" class="chip chip--sub" data-exam="part2">Part 2</button>
-          <button type="button" class="chip chip--sub" data-exam="part3">Part 3</button>
+          <button type="button" class="chip chip--sub is-active" data-exam-mode="practice">机经练习</button>
+          <button type="button" class="chip chip--sub" data-exam-mode="mock">机经模考</button>
+        </div>
+        <div class="ai-tutor__prep" id="prep-bar" hidden>
+          <span id="prep-label">Part 2 准备</span>
+          <strong id="prep-time">01:00</strong>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-prep">开始 60 秒准备</button>
+        </div>
+      </div>
+
+      <div class="ai-tutor__picker" id="topic-picker" hidden>
+        <div class="ai-tutor__bank-title" id="bank-title">机经题库</div>
+        <div class="ai-tutor__pick-cols">
+          <div>
+            <h3>Part 1（可多选）</h3>
+            <div class="ai-tutor__pick-list" id="part1-list"></div>
+          </div>
+          <div>
+            <h3>Part 2（单选，含 Part 3）</h3>
+            <div class="ai-tutor__pick-list" id="part2-list"></div>
+          </div>
+        </div>
+        <div class="ai-tutor__pick-actions">
+          <button type="button" class="btn btn--primary" id="btn-start-practice">开始练习</button>
+          <button type="button" class="btn btn--primary" id="btn-start-mock" hidden>开始模考（随机抽题）</button>
         </div>
       </div>
 
@@ -90,7 +117,7 @@
   <script src="assets/js/auth.js?v=20260714localapi"></script>
   <script src="assets/js/nav.js?v=20260714dash"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/ai-tutor.js?v=20260714b"></script>
+  <script src="assets/js/ai-tutor.js?v=20260714c"></script>
   <script src="assets/js/mascot.js?v=20260709a"></script>
 </body>
 </html>

@@ -487,8 +487,8 @@ function adminAuthMiddleware(req, res, next) {
 }
 
 const app = express();
-// ponytail: 8mb covers ai-tutor ASR base64; other routes stay small in practice
-app.use(express.json({ limit: "8mb" }));
+// ponytail: 12mb covers ASR base64 + jiijing PDF upload
+app.use(express.json({ limit: "12mb" }));
 app.use(cors({
   origin: function (origin, cb) {
     if (!origin || ORIGINS.indexOf(origin) !== -1) return cb(null, true);
@@ -533,8 +533,161 @@ db.exec(
   "PRIMARY KEY (user_id, day)" +
   ");"
 );
+try { db.exec("ALTER TABLE ai_tutor_sessions ADD COLUMN exam_mode TEXT"); } catch (e) { /* exists */ }
+try { db.exec("ALTER TABLE ai_tutor_sessions ADD COLUMN exam_pack TEXT"); } catch (e) { /* exists */ }
 
 var AI_QUOTA = { text: 30, voiceSec: 15 * 60, fullMocks: 2 };
+
+var SPEAKING_DATA_DIRS = [
+  path.join(__dirname, "data", "speaking"),
+  path.join(__dirname, "..", "data", "speaking"),
+  "/opt/yysd/repo/data/speaking",
+  "/opt/yysd/web/data/speaking"
+];
+var JIIJING_UPLOAD_DIR = path.join(dataDir, "uploads", "jiijing");
+if (!fs.existsSync(JIIJING_UPLOAD_DIR)) fs.mkdirSync(JIIJING_UPLOAD_DIR, { recursive: true });
+
+function speakingDataDir() {
+  for (var i = 0; i < SPEAKING_DATA_DIRS.length; i++) {
+    if (fs.existsSync(path.join(SPEAKING_DATA_DIRS[i], "jiijing-active.json"))) return SPEAKING_DATA_DIRS[i];
+  }
+  return SPEAKING_DATA_DIRS[0];
+}
+
+function readJsonFile(p) {
+  return JSON.parse(fs.readFileSync(p, "utf8"));
+}
+
+function loadActiveBank() {
+  var root = speakingDataDir();
+  var activePath = path.join(root, "jiijing-active.json");
+  if (!fs.existsSync(activePath)) throw new Error("机经题库未配置");
+  var active = readJsonFile(activePath);
+  var bankId = String(active.bankId || "").trim();
+  if (!bankId) throw new Error("机经题库未配置");
+  var bankPath = path.join(root, "jiijing-banks", bankId + ".json");
+  if (!fs.existsSync(bankPath)) throw new Error("机经题库文件不存在: " + bankId);
+  return readJsonFile(bankPath);
+}
+
+function bankSummary(bank) {
+  return {
+    id: bank.id,
+    title: bank.title || bank.id,
+    source: bank.source || "",
+    part1: (bank.part1 || []).map(function (t) {
+      return { id: t.id, topic: t.topic, questionCount: (t.questions || []).length };
+    }),
+    part2: (bank.part2 || []).map(function (t) {
+      return { id: t.id, title: t.title, bulletCount: (t.bullets || []).length, part3Count: (t.part3 || []).length };
+    })
+  };
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function pickPart1Questions(topic, maxN) {
+  var qs = (topic.questions || []).slice();
+  if (qs.length <= maxN) return qs;
+  return shuffle(qs).slice(0, maxN);
+}
+
+function buildExamPack(examMode, part1Ids, part2Id) {
+  var bank = loadActiveBank();
+  var p1map = {};
+  (bank.part1 || []).forEach(function (t) { p1map[t.id] = t; });
+  var p2map = {};
+  (bank.part2 || []).forEach(function (t) { p2map[t.id] = t; });
+
+  var part1Topics = [];
+  var part2 = null;
+
+  if (examMode === "practice") {
+    var ids = Array.isArray(part1Ids) ? part1Ids : [];
+    if (!ids.length) throw new Error("练习模式请至少选择 1 个 Part 1 话题");
+    if (!part2Id) throw new Error("练习模式请选择 1 个 Part 2 话题");
+    ids.slice(0, 4).forEach(function (id) {
+      var t = p1map[clipText(id, 80)];
+      if (t) part1Topics.push({
+        id: t.id, topic: t.topic,
+        questions: pickPart1Questions(t, 4)
+      });
+    });
+    part2 = p2map[clipText(part2Id, 80)];
+    if (!part1Topics.length) throw new Error("所选 Part 1 话题无效");
+    if (!part2) throw new Error("所选 Part 2 话题无效");
+  } else {
+    // mock: 2–3 random part1 topics, 1 random part2
+    var n = 2 + Math.floor(Math.random() * 2);
+    part1Topics = shuffle(bank.part1 || []).slice(0, Math.min(n, (bank.part1 || []).length)).map(function (t) {
+      return { id: t.id, topic: t.topic, questions: pickPart1Questions(t, 3 + Math.floor(Math.random() * 2)) };
+    });
+    var cards = bank.part2 || [];
+    if (!cards.length || !part1Topics.length) throw new Error("机经题库为空");
+    part2 = cards[Math.floor(Math.random() * cards.length)];
+  }
+
+  return {
+    bankId: bank.id,
+    bankTitle: bank.title || bank.id,
+    examMode: examMode,
+    part1: part1Topics,
+    part2: {
+      id: part2.id,
+      title: part2.title,
+      bullets: part2.bullets || [],
+      part3: part2.part3 || []
+    }
+  };
+}
+
+function buildTutorSystem(mode, examType, examPack) {
+  if (mode === "examiner" && examPack) {
+    var packJson = JSON.stringify(examPack);
+    return (
+      "You are a professional IELTS Speaking examiner at YYSD. Speak ONLY in English. " +
+      "Conduct the test STRICTLY using this exam pack — do NOT invent topics or questions outside it:\n" +
+      packJson + "\n" +
+      "Flow: (1) Brief intro + ask name. (2) Part 1: ask the pack part1 questions one at a time " +
+      "(you may skip a few if time is tight, but stay within listed topics). " +
+      "(3) Part 2: read the FULL cue card title and ALL bullets, tell candidate they have 1 minute to prepare, " +
+      "then ask them to speak 1–2 minutes; after they finish ask 1 short rounding-off question if needed. " +
+      "(4) Part 3: ask the pack part3 questions one at a time (4–6 questions). " +
+      "(5) End the test and output on its own line: " +
+      "SCORE_JSON:{\"overall\":6.0,\"fluency\":6.0,\"lexical\":6.0,\"grammar\":6.0,\"pronunciation\":6.0,\"comment\":\"2-4 sentences in English\"} " +
+      "Bands 0–9 in 0.5 steps; be conservative (typical 4.5–6.5). Treat STT typos leniently. No Chinese."
+    );
+  }
+  if (mode === "examiner") {
+    var scope =
+      examType === "part1" ? "Only Part 1 (familiar topics, short answers). Do not move to Part 2/3." :
+      examType === "part2" ? "Only Part 2: give one cue card, 1 minute prep reminder, then 1–2 minutes speaking, then 1–2 follow-ups. Do not do Part 1/3." :
+      examType === "part3" ? "Only Part 3 discussion questions on an abstract theme. Do not do Part 1/2." :
+      "Run a full IELTS Speaking test: Part 1 → Part 2 (cue card + 1 min prep + long turn) → Part 3, then score.";
+    return (
+      "You are a professional IELTS Speaking examiner at YYSD International Course Center. " +
+      "Speak ONLY in English. Be concise, formal, and exam-like — do not tutor or translate. " +
+      scope + " " +
+      "Ask one question (or give the cue card) at a time and wait for the candidate. " +
+      "When the selected exam scope is finished, end with a clear score block on its own line as: " +
+      "SCORE_JSON:{\"overall\":6.0,\"fluency\":6.0,\"lexical\":6.0,\"grammar\":6.0,\"pronunciation\":6.0,\"comment\":\"2-4 sentences in English\"} " +
+      "Bands are 0–9 in 0.5 steps. Be conservative (typical learners 4.5–6.5). " +
+      "Treat STT typos leniently. Never invent Chinese."
+    );
+  }
+  return (
+    "你是优益思达国际课程中心（YYSD）的雅思辅导老师，第一版只辅导口语与写作。 " +
+    "讲解优先用中文，示范句子/范文用英文。帮助学生练口语思路、词汇语法、写作 Task 1/2 提纲与批改（学生粘贴文字作文）。 " +
+    "不要编造网站没有的功能；不要做阅读/听力精讲。语气耐心、具体、可执行。若学生要模拟口语考试，提醒可切换到「考官模式」。"
+  );
+}
 
 app.get("/api/health", function (req, res) {
   res.json({ ok: true, service: "yysd-api", ai: !!DASHSCOPE_KEY });
@@ -1437,32 +1590,7 @@ function newSessionId() {
 }
 
 function examTypeLabel(t) {
-  return ({ full: "完整模拟考", part1: "Part 1", part2: "Part 2", part3: "Part 3" })[t] || t || "";
-}
-
-function buildTutorSystem(mode, examType) {
-  if (mode === "examiner") {
-    var scope =
-      examType === "part1" ? "Only Part 1 (familiar topics, short answers). Do not move to Part 2/3." :
-      examType === "part2" ? "Only Part 2: give one cue card, 1 minute prep reminder, then 1–2 minutes speaking, then 1–2 follow-ups. Do not do Part 1/3." :
-      examType === "part3" ? "Only Part 3 discussion questions on an abstract theme. Do not do Part 1/2." :
-      "Run a full IELTS Speaking test: Part 1 → Part 2 (cue card + 1 min prep + long turn) → Part 3, then score.";
-    return (
-      "You are a professional IELTS Speaking examiner at YYSD International Course Center. " +
-      "Speak ONLY in English. Be concise, formal, and exam-like — do not tutor or translate. " +
-      scope + " " +
-      "Ask one question (or give the cue card) at a time and wait for the candidate. " +
-      "When the selected exam scope is finished, end with a clear score block on its own line as: " +
-      "SCORE_JSON:{\"overall\":6.0,\"fluency\":6.0,\"lexical\":6.0,\"grammar\":6.0,\"pronunciation\":6.0,\"comment\":\"2-4 sentences in English\"} " +
-      "Bands are 0–9 in 0.5 steps. Be conservative (typical learners 4.5–6.5). " +
-      "Treat STT typos leniently. Never invent Chinese."
-    );
-  }
-  return (
-    "你是优益思达国际课程中心（YYSD）的雅思辅导老师，第一版只辅导口语与写作。 " +
-    "讲解优先用中文，示范句子/范文用英文。帮助学生练口语思路、词汇语法、写作 Task 1/2 提纲与批改（学生粘贴文字作文）。 " +
-    "不要编造网站没有的功能；不要做阅读/听力精讲。语气耐心、具体、可执行。若学生要模拟口语考试，提醒可切换到「考官模式」。"
-  );
+  return ({ full: "完整模拟考", part1: "Part 1", part2: "Part 2", part3: "Part 3", practice: "机经练习", mock: "机经模考" })[t] || t || "";
 }
 
 function parseScoreFromReply(text) {
@@ -1493,11 +1621,11 @@ function stripScoreMarker(text) {
 }
 
 var tutorListSessions = db.prepare(
-  "SELECT id, mode, exam_type, title, created_at, updated_at FROM ai_tutor_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50"
+  "SELECT id, mode, exam_type, exam_mode, title, created_at, updated_at FROM ai_tutor_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50"
 );
 var tutorGetSession = db.prepare("SELECT * FROM ai_tutor_sessions WHERE id = ? AND user_id = ?");
 var tutorInsertSession = db.prepare(
-  "INSERT INTO ai_tutor_sessions (id, user_id, mode, exam_type, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  "INSERT INTO ai_tutor_sessions (id, user_id, mode, exam_type, exam_mode, exam_pack, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 );
 var tutorTouchSession = db.prepare("UPDATE ai_tutor_sessions SET updated_at = ?, title = COALESCE(?, title) WHERE id = ?");
 var tutorListMessages = db.prepare(
@@ -1507,9 +1635,31 @@ var tutorInsertMessage = db.prepare(
   "INSERT INTO ai_tutor_messages (session_id, role, content, audio_sec, meta, created_at) VALUES (?, ?, ?, ?, ?, ?)"
 );
 
+function staffAuthMiddleware(req, res, next) {
+  var h = req.headers.authorization || "";
+  var token = h.indexOf("Bearer ") === 0 ? h.slice(7) : "";
+  if (!token) return res.status(401).json({ error: "未登录" });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    if (req.user.role === "teacher" || isAdminPhone(req.user.phone)) return next();
+    return res.status(403).json({ error: "需要教师或管理员权限" });
+  } catch (e) {
+    return res.status(401).json({ error: "登录已过期，请重新登录" });
+  }
+}
+
 app.get("/api/ai-tutor/quota", authMiddleware, function (req, res) {
   if (!studentOnly(req, res)) return;
   res.json({ ok: true, quota: quotaPayload(getUsage(req.user.sub)) });
+});
+
+app.get("/api/ai-tutor/bank", authMiddleware, function (req, res) {
+  if (!studentOnly(req, res)) return;
+  try {
+    res.json({ ok: true, bank: bankSummary(loadActiveBank()) });
+  } catch (e) {
+    res.status(503).json({ error: e.message || "机经题库不可用" });
+  }
 });
 
 app.get("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
@@ -1521,37 +1671,73 @@ app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
   if (!studentOnly(req, res)) return;
   var mode = clipText(req.body && req.body.mode, 20) || "teacher";
   if (mode !== "examiner" && mode !== "teacher") mode = "teacher";
+  var examMode = clipText(req.body && req.body.examMode, 20) || "";
   var examType = clipText(req.body && req.body.examType, 20) || "";
-  if (mode === "examiner" && ["full", "part1", "part2", "part3"].indexOf(examType) < 0) examType = "full";
-  if (mode === "teacher") examType = "";
-  if (mode === "examiner" && examType === "full") {
-    var u = getUsage(req.user.sub);
-    if (u.fullMocks >= AI_QUOTA.fullMocks) {
-      return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: quotaPayload(u) });
+  var examPack = null;
+  var packStr = null;
+
+  if (mode === "examiner" && (examMode === "practice" || examMode === "mock")) {
+    try {
+      examPack = buildExamPack(examMode, req.body && req.body.part1Ids, req.body && req.body.part2Id);
+      packStr = JSON.stringify(examPack);
+      examType = examMode;
+    } catch (e) {
+      return res.status(400).json({ error: e.message || "无法生成考题包" });
     }
+    if (examMode === "mock") {
+      var uMock = getUsage(req.user.sub);
+      if (uMock.fullMocks >= AI_QUOTA.fullMocks) {
+        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: quotaPayload(uMock) });
+      }
+    }
+  } else if (mode === "examiner") {
+    if (["full", "part1", "part2", "part3"].indexOf(examType) < 0) examType = "full";
+    if (examType === "full") {
+      var u = getUsage(req.user.sub);
+      if (u.fullMocks >= AI_QUOTA.fullMocks) {
+        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: quotaPayload(u) });
+      }
+    }
+  } else {
+    examType = "";
+    examMode = "";
   }
+
   var now = new Date().toISOString();
   var id = newSessionId();
   var title = mode === "examiner"
-    ? "考官 · " + examTypeLabel(examType)
+    ? "考官 · " + examTypeLabel(examMode || examType)
     : "老师辅导";
-  tutorInsertSession.run(id, req.user.sub, mode, examType || null, title, now, now);
-  if (mode === "examiner" && examType === "full") bumpUsage(req.user.sub, { fullMocks: 1 });
-  var opener =
-    mode === "examiner"
-      ? (examType === "part2"
-        ? "Good afternoon. This is Part 2. I will give you a topic card. You will have one minute to prepare, then I'd like you to speak for one to two minutes."
-        : examType === "part3"
-          ? "Good afternoon. Let's move on to Part 3. I'd like to discuss some more general questions related to your topic."
-          : examType === "part1"
-            ? "Good afternoon. My name is Alex. Could you tell me your full name, please?"
-            : "Good afternoon. My name is Alex. This is the IELTS Speaking test. Could you tell me your full name, please?")
-      : "你好，我是优益思达的 AI 雅思老师。可以帮你练口语思路，或批改写作（直接粘贴作文即可）。想先从哪方面开始？";
+  tutorInsertSession.run(id, req.user.sub, mode, examType || null, examMode || null, packStr, title, now, now);
+  if (mode === "examiner" && (examMode === "mock" || examType === "full")) {
+    bumpUsage(req.user.sub, { fullMocks: 1 });
+  }
+
+  var opener;
+  if (mode === "examiner" && examPack) {
+    opener = examMode === "practice"
+      ? "Good afternoon. This is a practice speaking session based on your selected topics. Could you tell me your full name, please?"
+      : "Good afternoon. My name is Alex. This is a full IELTS Speaking mock test. Could you tell me your full name, please?";
+  } else if (mode === "examiner") {
+    opener = examType === "part2"
+      ? "Good afternoon. This is Part 2. I will give you a topic card. You will have one minute to prepare, then I'd like you to speak for one to two minutes."
+      : examType === "part3"
+        ? "Good afternoon. Let's move on to Part 3. I'd like to discuss some more general questions related to your topic."
+        : examType === "part1"
+          ? "Good afternoon. My name is Alex. Could you tell me your full name, please?"
+          : "Good afternoon. My name is Alex. This is the IELTS Speaking test. Could you tell me your full name, please?";
+  } else {
+    opener = "你好，我是优益思达的 AI 雅思老师。可以帮你练口语思路，或批改写作（直接粘贴作文即可）。想先从哪方面开始？";
+  }
   tutorInsertMessage.run(id, "assistant", opener, 0, null, now);
   res.json({
     ok: true,
-    session: { id: id, mode: mode, exam_type: examType || null, title: title, created_at: now, updated_at: now },
+    session: {
+      id: id, mode: mode, exam_type: examType || null, exam_mode: examMode || null,
+      title: title, created_at: now, updated_at: now, examPack: examPack
+    },
     opener: opener,
+    examPack: examPack,
     quota: quotaPayload(getUsage(req.user.sub))
   });
 });
@@ -1560,12 +1746,14 @@ app.get("/api/ai-tutor/sessions/:id", authMiddleware, function (req, res) {
   if (!studentOnly(req, res)) return;
   var s = tutorGetSession.get(clipText(req.params.id, 64), req.user.sub);
   if (!s) return res.status(404).json({ error: "会话不存在" });
+  var pack = null;
+  try { pack = s.exam_pack ? JSON.parse(s.exam_pack) : null; } catch (e) {}
   var msgs = tutorListMessages.all(s.id).map(function (m) {
     var meta = null;
     try { meta = m.meta ? JSON.parse(m.meta) : null; } catch (e) {}
     return { id: m.id, role: m.role, content: m.content, audioSec: m.audio_sec, meta: meta, createdAt: m.created_at };
   });
-  res.json({ ok: true, session: s, messages: msgs });
+  res.json({ ok: true, session: s, examPack: pack, messages: msgs });
 });
 
 app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
@@ -1586,7 +1774,7 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
   var now = new Date().toISOString();
   tutorInsertMessage.run(sessionId, "user", content, audioSec, null, now);
   bumpUsage(req.user.sub, { text: 1, voiceSec: audioSec });
-  if (s.title === "老师辅导" || s.title.indexOf("考官 ·") === 0) {
+  if (s.title === "老师辅导" || String(s.title || "").indexOf("考官 ·") === 0) {
     var short = content.slice(0, 24).replace(/\s+/g, " ");
     if (short) tutorTouchSession.run(now, short + (content.length > 24 ? "…" : ""), sessionId);
     else tutorTouchSession.run(now, null, sessionId);
@@ -1596,11 +1784,12 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
   var history = tutorListMessages.all(sessionId).map(function (m) {
     return { role: m.role === "assistant" ? "assistant" : "user", content: m.content };
   });
-  // keep last 24 turns + system
   if (history.length > 24) history = history.slice(history.length - 24);
-  var messages = [{ role: "system", content: buildTutorSystem(s.mode, s.exam_type) }].concat(history);
+  var pack = null;
+  try { pack = s.exam_pack ? JSON.parse(s.exam_pack) : null; } catch (e) {}
+  var messages = [{ role: "system", content: buildTutorSystem(s.mode, s.exam_type, pack) }].concat(history);
   try {
-    var raw = await qwenChatMessages(messages, s.mode === "examiner" ? 0.4 : 0.5);
+    var raw = await qwenChatMessages(messages, s.mode === "examiner" ? 0.35 : 0.5);
     var score = s.mode === "examiner" ? parseScoreFromReply(raw) : null;
     var reply = score ? stripScoreMarker(raw) : String(raw || "").trim();
     if (!reply && score) reply = "That concludes the test. Please review your band scores below.";
@@ -1617,6 +1806,69 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
   } catch (e) {
     console.error("[yysd-api] ai-tutor/chat", e.message);
     res.status(e.message.indexOf("未配置") >= 0 ? 503 : 502).json({ error: "AI 回复失败，请稍后再试" });
+  }
+});
+
+app.post("/api/admin/jiijing/upload", staffAuthMiddleware, async function (req, res) {
+  var b64 = String((req.body && req.body.pdfBase64) || "").trim();
+  var title = clipText(req.body && req.body.title, 120) || ("机经题库 " + new Date().toISOString().slice(0, 10));
+  if (!b64) return res.status(400).json({ error: "缺少 pdfBase64" });
+  var m = b64.match(/^data:application\/pdf;base64,(.+)$/i) || b64.match(/^data:.*base64,(.+)$/i);
+  var raw = m ? m[1] : b64;
+  var buf;
+  try { buf = Buffer.from(raw, "base64"); } catch (e) {
+    return res.status(400).json({ error: "PDF 数据无效" });
+  }
+  if (buf.length < 1000 || buf.length > 10 * 1024 * 1024) {
+    return res.status(400).json({ error: "PDF 大小需在 1KB–10MB" });
+  }
+  var bankId = "bank-" + Date.now().toString(36);
+  var pdfPath = path.join(JIIJING_UPLOAD_DIR, bankId + ".pdf");
+  fs.writeFileSync(pdfPath, buf);
+
+  var scriptCandidates = [
+    path.join(__dirname, "..", "scripts", "parse_jiijing_pdf.py"),
+    path.join(__dirname, "scripts", "parse_jiijing_pdf.py")
+  ];
+  var script = scriptCandidates.find(function (p) { return fs.existsSync(p); });
+  var outRoot = speakingDataDir();
+  var outDir = path.join(outRoot, "jiijing-banks");
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+  if (!script) {
+    return res.status(503).json({ error: "服务器缺少 parse_jiijing_pdf.py，无法解析 PDF" });
+  }
+  try {
+    var { spawnSync } = require("child_process");
+    var py = spawnSync("python3", [script, pdfPath, "--bank-id", bankId, "--title", title, "--out-dir", outDir], {
+      encoding: "utf8",
+      timeout: 120000
+    });
+    if (py.status !== 0) {
+      console.error("[yysd-api] jiijing parse", py.stderr || py.stdout);
+      return res.status(502).json({ error: "PDF 解析失败：" + clipText(py.stderr || py.stdout || "unknown", 300) });
+    }
+    var bankPath = path.join(outDir, bankId + ".json");
+    if (!fs.existsSync(bankPath)) return res.status(502).json({ error: "解析完成但未生成题库文件" });
+    var bank = readJsonFile(bankPath);
+    if (!(bank.part1 && bank.part1.length) || !(bank.part2 && bank.part2.length)) {
+      return res.status(502).json({ error: "解析结果为空，请确认 PDF 为机经纯题目版格式" });
+    }
+    fs.writeFileSync(path.join(outRoot, "jiijing-active.json"), JSON.stringify({ bankId: bankId }, null, 2));
+    // mirror to sibling data dir if present
+    SPEAKING_DATA_DIRS.forEach(function (root) {
+      try {
+        if (root === outRoot) return;
+        var bdir = path.join(root, "jiijing-banks");
+        if (!fs.existsSync(bdir)) fs.mkdirSync(bdir, { recursive: true });
+        fs.copyFileSync(bankPath, path.join(bdir, bankId + ".json"));
+        fs.writeFileSync(path.join(root, "jiijing-active.json"), JSON.stringify({ bankId: bankId }, null, 2));
+      } catch (e) {}
+    });
+    res.json({ ok: true, bank: bankSummary(bank) });
+  } catch (e) {
+    console.error("[yysd-api] jiijing upload", e.message);
+    res.status(502).json({ error: "PDF 解析异常：" + e.message });
   }
 });
 
@@ -1714,8 +1966,9 @@ if (require.main === module) {
   console.assert(isAdminPhone("15901754473") === true);
   console.assert(isAdminPhone("13800138000") === false);
   console.assert(examTypeLabel("full") === "完整模拟考");
-  console.assert(buildTutorSystem("teacher", "").indexOf("口语") >= 0);
-  console.assert(parseScoreFromReply('Hi\nSCORE_JSON:{"overall":6,"fluency":6,"lexical":5.5,"grammar":6,"pronunciation":6,"comment":"ok"}').overall === 6);
+  console.assert(buildTutorSystem("teacher", "", null).indexOf("口语") >= 0);
+  console.assert(loadActiveBank().part1.length > 0);
+  console.assert(buildExamPack("mock").part2.title.indexOf("Describe") === 0);
   app.listen(PORT, function () {
     console.log("[yysd-api] listening on " + PORT + (SMS_DEV ? " (SMS_DEV_MODE)" : "") +
       " admins=" + ADMIN_PHONES.join(","));
