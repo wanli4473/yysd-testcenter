@@ -259,8 +259,12 @@
     } else {
       var recent = Y.recentActivity(allItems, 3);
       var continueHTML = recent.length ? Y.continueStripHTML(recent, "") : "";
+      var aiTutorHTML = zone === "practice"
+        ? '<a class="ai-tutor-entry pressable" href="ai-tutor.html">' +
+          "<b>AI 雅思老师</b><span>口语考官模拟 · 口语/写作辅导 · 文字与语音</span></a>"
+        : "";
       var cats = activeCat === "all" ? visibleNav() : visibleNav().filter(function (c) { return c.key === activeCat; });
-      html = continueHTML + cats.map(categoryHTML).join("");
+      html = aiTutorHTML + continueHTML + cats.map(categoryHTML).join("");
     }
     if (window.YYSD_UI_SWAP && contentEl.innerHTML && !contentEl.querySelector(".spinner--brand")) {
       window.YYSD_UI_SWAP(contentEl, html);

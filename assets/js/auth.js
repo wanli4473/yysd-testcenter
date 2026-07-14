@@ -4,7 +4,10 @@
 window.YYSD_AUTH = (function () {
   "use strict";
 
-  var API_BASE = "https://api.youyisida.com";
+  var API_BASE = (typeof location !== "undefined" &&
+    (location.hostname === "localhost" || location.hostname === "127.0.0.1"))
+    ? (location.protocol + "//" + location.hostname + ":3000")
+    : "https://api.youyisida.com";
   var TOKEN_KEY = "yysd:auth:token";
   var USER_KEY = "yysd:auth:user";
   var TEACHER_TOKEN_KEY = "yysd:teacher:token";
@@ -71,13 +74,15 @@ window.YYSD_AUTH = (function () {
         localStorage.setItem(TEACHER_USER_KEY, JSON.stringify({
           phone: teacher.phone || "",
           name: teacher.name || "",
-          avatarUrl: teacher.avatarUrl || ""
+          avatarUrl: teacher.avatarUrl || "",
+          isAdmin: !!teacher.isAdmin
         }));
         setUser({
           phone: teacher.phone || "",
           role: "teacher",
           displayName: teacher.name || "",
-          avatarUrl: teacher.avatarUrl || ""
+          avatarUrl: teacher.avatarUrl || "",
+          isAdmin: !!teacher.isAdmin
         });
       } else {
         localStorage.removeItem(TEACHER_TOKEN_KEY);
@@ -87,7 +92,8 @@ window.YYSD_AUTH = (function () {
           phone: stu.phone || "",
           role: "student",
           displayName: stu.displayName || "",
-          avatarUrl: stu.avatarUrl || ""
+          avatarUrl: stu.avatarUrl || "",
+          isAdmin: !!stu.isAdmin
         });
       }
     } catch (e) {}
@@ -106,11 +112,20 @@ window.YYSD_AUTH = (function () {
           phone: u.phone,
           role: u.role || "",
           displayName: u.displayName || "",
-          avatarUrl: u.avatarUrl || ""
+          avatarUrl: u.avatarUrl || "",
+          isAdmin: !!u.isAdmin
         }));
       } else localStorage.removeItem(USER_KEY);
     } catch (e) {}
     bindNav();
+  }
+
+  function isAdmin() {
+    try {
+      if (getUser().isAdmin) return true;
+      var t = JSON.parse(localStorage.getItem(TEACHER_USER_KEY) || "{}");
+      return !!t.isAdmin;
+    } catch (e) { return false; }
   }
 
   function avatarSrc(url) {
@@ -158,7 +173,8 @@ window.YYSD_AUTH = (function () {
         phone: u.phone || getUser().phone,
         role: u.role || getUser().role || "",
         displayName: u.displayName || u.name || getUser().displayName || "",
-        avatarUrl: d.avatarUrl || u.avatarUrl || ""
+        avatarUrl: d.avatarUrl || u.avatarUrl || "",
+        isAdmin: u.isAdmin != null ? !!u.isAdmin : !!getUser().isAdmin
       };
       setUser(next);
       if (next.role === "teacher") {
@@ -166,7 +182,8 @@ window.YYSD_AUTH = (function () {
           localStorage.setItem(TEACHER_USER_KEY, JSON.stringify({
             phone: next.phone,
             name: next.displayName || "",
-            avatarUrl: next.avatarUrl || ""
+            avatarUrl: next.avatarUrl || "",
+            isAdmin: !!next.isAdmin
           }));
         } catch (e) {}
       }
@@ -249,14 +266,39 @@ window.YYSD_AUTH = (function () {
     return api("/api/scores/" + encodeURIComponent(record.id), { method: "PUT", body: record }).catch(function () {});
   }
 
+  function ensureLogoutBtn(nav) {
+    if (!nav || document.getElementById("logout-btn") || document.getElementById("nav-logout")) return;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn--ghost btn--sm nav-persist";
+    btn.id = "nav-logout";
+    btn.textContent = "退出";
+    btn.addEventListener("click", function () { logout(); });
+    nav.appendChild(btn);
+  }
+
+  function applyCompactShell() {
+    if (!getToken()) return;
+    var name = pageName();
+    if (PUBLIC_PAGES[name] || name === "exam.html") return;
+    if (document.body.classList.contains("viewer")) return;
+    document.body.classList.add("shell-compact-nav");
+    var nav = document.querySelector(".minimal-nav");
+    if (nav) ensureLogoutBtn(nav);
+  }
+
   function bindNav() {
     var el = document.getElementById("nav-auth");
-    if (!el) return;
+    if (!el) {
+      applyCompactShell();
+      return;
+    }
     if (getToken()) {
-      el.href = isTeacher() ? "teacher.html" : "profile.html";
+      el.href = "profile.html";
+      el.classList.add("nav-persist");
       var user = getUser();
       var phone = (user.phone || "").trim();
-      var label = isTeacher() ? "教师" : ((user.displayName || "").trim() || "我的");
+      var label = (user.displayName || "").trim() || "个人中心";
       var src = avatarSrc(user.avatarUrl);
       if (phone.length >= 4 || src) {
         el.classList.add("is-logged-in");
@@ -267,12 +309,14 @@ window.YYSD_AUTH = (function () {
         el.setAttribute("aria-label", label + (phone.length >= 4 ? "，尾号 " + phone.slice(-4) : ""));
       } else {
         el.classList.remove("is-logged-in");
-        el.textContent = isTeacher() ? "教师端" : "个人中心";
+        el.textContent = "个人中心";
         el.removeAttribute("aria-label");
       }
+      applyCompactShell();
     } else {
       el.href = "login.html";
       el.classList.remove("is-logged-in");
+      el.classList.remove("nav-persist");
       el.textContent = "登录";
       el.removeAttribute("aria-label");
     }
@@ -306,6 +350,108 @@ window.YYSD_AUTH = (function () {
     location.href = "index.html";
   }
 
+  function studentHome() {
+    return "dashboard.html";
+  }
+
+  function postLoginPath(next) {
+    var n = String(next || "").trim() || studentHome();
+    if (isTeacher()) return "teacher.html";
+    if (!n || n === "/" || n === "index.html" || n.indexOf("login") >= 0 || n.indexOf("register") >= 0) {
+      return studentHome();
+    }
+    return n;
+  }
+
+  function redirectLoggedInAwayFromMarketing() {
+    if (!getToken()) return false;
+    if (pageName() !== "index.html") return false;
+    location.replace(isTeacher() ? "teacher.html" : studentHome());
+    return true;
+  }
+
+  function mountStudentShell() {
+    if (!getToken() || isTeacher()) return;
+    if (document.body.classList.contains("viewer")) return;
+    var name = pageName();
+    if (PUBLIC_PAGES[name]) return;
+    if (name === "exam.html" || name === "admin-assign.html" || name.indexOf("teacher") === 0) return;
+    if (document.querySelector(".student-shell")) return;
+    var header = document.querySelector(".minimal-topbar");
+    if (!header) return;
+
+    document.body.classList.add("student-layout", "shell-compact-nav");
+
+    var brand = header.querySelector(".minimal-brand");
+    if (brand) brand.setAttribute("href", "dashboard.html");
+    var nav = header.querySelector(".minimal-nav");
+    if (nav) ensureLogoutBtn(nav);
+
+    var shell = document.createElement("div");
+    shell.className = "student-shell";
+
+    var side = document.createElement("aside");
+    side.className = "student-side";
+    side.setAttribute("aria-label", "课程导航");
+
+    var links = [
+      { href: "dashboard.html", label: "工作台", key: "dashboard" },
+      { href: "zone.html?zone=study", label: "学习区", key: "study" },
+      { href: "zone.html?zone=practice", label: "练习区", key: "practice" },
+      { href: "zone.html?zone=mock", label: "模考区", key: "mock" },
+      { href: "calendar.html", label: "任务日历", key: "calendar" },
+      { href: "results.html", label: "我的成绩", key: "results" },
+      { href: "profile.html", label: "个人中心", key: "profile" }
+    ];
+    if (isAdmin()) {
+      links.push({ href: "admin-assign.html", label: "学生分配", key: "admin" });
+    }
+
+    var path = location.pathname + location.search;
+    var label = document.createElement("p");
+    label.className = "student-side__label";
+    label.textContent = "优益思达备考";
+    side.appendChild(label);
+
+    links.forEach(function (L) {
+      var a = document.createElement("a");
+      a.className = "student-side__link";
+      a.href = L.href;
+      a.textContent = L.label;
+      var active = false;
+      if (L.key === "dashboard" && name === "dashboard.html") active = true;
+      else if (L.key === "study" && /zone=study/.test(path)) active = true;
+      else if (L.key === "practice" && /zone=practice/.test(path)) active = true;
+      else if (L.key === "mock" && (/zone=mock/.test(path) || name === "cambridge.html" || name.indexOf("alevel") === 0)) active = true;
+      else if (L.key === "calendar" && name === "calendar.html") active = true;
+      else if (L.key === "results" && (name === "results.html" || name === "wrong-words.html")) active = true;
+      else if (L.key === "profile" && name === "profile.html") active = true;
+      else if (L.key === "admin" && name === "admin-assign.html") active = true;
+      else if (L.key === "study" && (name === "vocab.html" || name.indexOf("vocab") >= 0)) active = true;
+      else if (L.key === "practice" && name.indexOf("speaking") === 0) active = true;
+      if (active) a.classList.add("is-active");
+      side.appendChild(a);
+    });
+
+    var content = document.createElement("div");
+    content.className = "student-content";
+
+    var node = header.nextSibling;
+    var footer = document.querySelector(".minimal-footer, footer.site-footer");
+    while (node && node !== footer) {
+      var next = node.nextSibling;
+      if (node.nodeType === 1 || (node.nodeType === 3 && String(node.textContent).trim())) {
+        content.appendChild(node);
+      }
+      node = next;
+    }
+
+    shell.appendChild(side);
+    shell.appendChild(content);
+    if (footer) header.parentNode.insertBefore(shell, footer);
+    else header.parentNode.appendChild(shell);
+  }
+
   function guardPage() {
     if (isPublicPage()) return true;
     if (!getToken()) {
@@ -317,9 +463,11 @@ window.YYSD_AUTH = (function () {
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    if (redirectLoggedInAwayFromMarketing()) return;
     if (!guardPage()) return;
     bindNav();
     bindIcp();
+    mountStudentShell();
     if (getToken() && !isPublicPage() && !isTeacher()) syncScoresFromCloud();
   });
 
@@ -330,12 +478,15 @@ window.YYSD_AUTH = (function () {
     setToken: setToken,
     applyLogin: applyLogin,
     isTeacher: isTeacher,
+    isAdmin: isAdmin,
     getUser: getUser,
     setUser: setUser,
     api: api,
     bindNav: bindNav,
     requireLogin: requireLogin,
     logout: logout,
+    studentHome: studentHome,
+    postLoginPath: postLoginPath,
     syncScoresFromCloud: syncScoresFromCloud,
     pushScoreRecord: pushScoreRecord,
     uploadAvatar: uploadAvatar,

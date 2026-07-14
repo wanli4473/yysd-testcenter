@@ -15,6 +15,10 @@ const OpenApi = require("@alicloud/openapi-client");
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const TEACHER_REGISTER_KEY = process.env.TEACHER_REGISTER_KEY || "";
+const ADMIN_PHONES = (process.env.ADMIN_PHONES || "15901754473,15609693333")
+  .split(",")
+  .map(function (s) { return String(s || "").replace(/\D/g, ""); })
+  .filter(function (p) { return /^1\d{10}$/.test(p); });
 const SMS_DEV = process.env.SMS_DEV_MODE === "1";
 const ORIGINS = (process.env.CORS_ORIGINS ||
   "https://youyisida.com,https://www.youyisida.com,http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:8765,http://localhost:8765")
@@ -89,6 +93,13 @@ db.exec(
   "status TEXT NOT NULL," +
   "completed_at TEXT," +
   "UNIQUE(event_id, student_id)" +
+  ");" +
+  "CREATE TABLE IF NOT EXISTS teacher_students (" +
+  "teacher_id INTEGER NOT NULL," +
+  "student_id INTEGER NOT NULL," +
+  "assigned_at TEXT NOT NULL," +
+  "assigned_by TEXT," +
+  "PRIMARY KEY (teacher_id, student_id)" +
   ");"
 );
 
@@ -164,6 +175,24 @@ const stmts = {
     "SELECT e.id, e.linked_exercise_ids, s.status FROM calendar_events e " +
     "INNER JOIN student_task_status s ON s.event_id = e.id " +
     "WHERE s.student_id = ? AND e.event_type = 'ASSIGNMENT' AND s.status != 'COMPLETED'"
+  ),
+  listTeachers: db.prepare(
+    "SELECT id, phone, name, created_at, last_login_at FROM teachers ORDER BY id ASC"
+  ),
+  listTeacherStudentIds: db.prepare(
+    "SELECT student_id FROM teacher_students WHERE teacher_id = ?"
+  ),
+  getTeacherStudent: db.prepare(
+    "SELECT teacher_id, student_id FROM teacher_students WHERE teacher_id = ? AND student_id = ?"
+  ),
+  insertTeacherStudent: db.prepare(
+    "INSERT OR IGNORE INTO teacher_students (teacher_id, student_id, assigned_at, assigned_by) VALUES (?, ?, ?, ?)"
+  ),
+  deleteTeacherStudentsForTeacher: db.prepare(
+    "DELETE FROM teacher_students WHERE teacher_id = ?"
+  ),
+  findTeacherById: db.prepare(
+    "SELECT id, phone, password_hash, name, avatar_url, created_at, last_login_at FROM teachers WHERE id = ?"
   )
 };
 
@@ -239,7 +268,8 @@ function authUserPayload(user) {
     displayName: user.display_name || "",
     avatarUrl: user.avatar_url || "",
     createdAt: user.created_at,
-    lastLoginAt: user.last_login_at
+    lastLoginAt: user.last_login_at,
+    isAdmin: isAdminPhone(user.phone)
   };
 }
 
@@ -250,8 +280,28 @@ function teacherPayload(teacher) {
     name: teacher.name || "",
     avatarUrl: teacher.avatar_url || "",
     createdAt: teacher.created_at,
-    lastLoginAt: teacher.last_login_at
+    lastLoginAt: teacher.last_login_at,
+    isAdmin: isAdminPhone(teacher.phone)
   };
+}
+
+function isAdminPhone(phone) {
+  var p = String(phone || "").replace(/\D/g, "");
+  return ADMIN_PHONES.indexOf(p) >= 0;
+}
+
+function teacherOwnsStudent(teacherId, studentId) {
+  return !!stmts.getTeacherStudent.get(teacherId, studentId);
+}
+
+function teacherCanManageStudent(req, studentId) {
+  if (isAdminPhone(req.user.phone)) return true;
+  return teacherOwnsStudent(req.user.sub, studentId);
+}
+
+function allowedStudentIdsForTeacher(req) {
+  if (isAdminPhone(req.user.phone)) return null; // null = all
+  return stmts.listTeacherStudentIds.all(req.user.sub).map(function (r) { return r.student_id; });
 }
 
 var EVENT_TYPES = { ASSIGNMENT: 1, LESSON: 1, ANNOUNCEMENT: 1 };
@@ -421,8 +471,24 @@ function teacherAuthMiddleware(req, res, next) {
   }
 }
 
+function adminAuthMiddleware(req, res, next) {
+  var h = req.headers.authorization || "";
+  var token = h.indexOf("Bearer ") === 0 ? h.slice(7) : "";
+  if (!token) return res.status(401).json({ error: "未登录" });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    if (!isAdminPhone(req.user.phone)) {
+      return res.status(403).json({ error: "需要管理员权限" });
+    }
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: "登录已过期，请重新登录" });
+  }
+}
+
 const app = express();
-app.use(express.json({ limit: "256kb" }));
+// ponytail: 8mb covers ai-tutor ASR base64; other routes stay small in practice
+app.use(express.json({ limit: "8mb" }));
 app.use(cors({
   origin: function (origin, cb) {
     if (!origin || ORIGINS.indexOf(origin) !== -1) return cb(null, true);
@@ -432,8 +498,43 @@ app.use(cors({
 app.use("/uploads", express.static(uploadsRoot, { maxAge: "7d" }));
 
 var DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY || "";
-var DASHSCOPE_MODEL = process.env.DASHSCOPE_MODEL || "qwen-turbo";
+var DASHSCOPE_MODEL = process.env.DASHSCOPE_MODEL || "qwen-plus";
 var DASHSCOPE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+var DASHSCOPE_MM_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
+var DASHSCOPE_ASR_MODEL = process.env.DASHSCOPE_ASR_MODEL || "qwen3-asr-flash";
+var DASHSCOPE_TTS_MODEL = process.env.DASHSCOPE_TTS_MODEL || "qwen3-tts-flash";
+var DASHSCOPE_TTS_VOICE = process.env.DASHSCOPE_TTS_VOICE || "Jennifer";
+
+db.exec(
+  "CREATE TABLE IF NOT EXISTS ai_tutor_sessions (" +
+  "id TEXT PRIMARY KEY," +
+  "user_id INTEGER NOT NULL," +
+  "mode TEXT NOT NULL," +
+  "exam_type TEXT," +
+  "title TEXT NOT NULL," +
+  "created_at TEXT NOT NULL," +
+  "updated_at TEXT NOT NULL" +
+  ");" +
+  "CREATE TABLE IF NOT EXISTS ai_tutor_messages (" +
+  "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+  "session_id TEXT NOT NULL," +
+  "role TEXT NOT NULL," +
+  "content TEXT NOT NULL," +
+  "audio_sec REAL DEFAULT 0," +
+  "meta TEXT," +
+  "created_at TEXT NOT NULL" +
+  ");" +
+  "CREATE TABLE IF NOT EXISTS ai_tutor_usage (" +
+  "user_id INTEGER NOT NULL," +
+  "day TEXT NOT NULL," +
+  "text_count INTEGER NOT NULL DEFAULT 0," +
+  "voice_sec REAL NOT NULL DEFAULT 0," +
+  "full_mocks INTEGER NOT NULL DEFAULT 0," +
+  "PRIMARY KEY (user_id, day)" +
+  ");"
+);
+
+var AI_QUOTA = { text: 30, voiceSec: 15 * 60, fullMocks: 2 };
 
 app.get("/api/health", function (req, res) {
   res.json({ ok: true, service: "yysd-api", ai: !!DASHSCOPE_KEY });
@@ -762,7 +863,15 @@ function parseScorePayload(row) {
 
 app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
   var zone = clipText(req.query.zone, 40);
-  var rows = stmts.listStudents.all();
+  var allowed = allowedStudentIdsForTeacher(req);
+  var allowedSet = null;
+  if (allowed) {
+    allowedSet = {};
+    allowed.forEach(function (id) { allowedSet[id] = 1; });
+  }
+  var rows = stmts.listStudents.all().filter(function (row) {
+    return !allowedSet || allowedSet[row.id];
+  });
   var students = rows.map(function (row) {
     var scores = stmts.listStudentScores.all(row.id).map(parseScorePayload);
     var filtered = zone ? scores.filter(function (s) { return s.zone === zone; }) : scores;
@@ -782,12 +891,15 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
   if (zone) {
     students = students.filter(function (s) { return s.scores.length > 0; });
   }
-  res.json({ ok: true, students: students });
+  res.json({ ok: true, students: students, isAdmin: isAdminPhone(req.user.phone) });
 });
 
 app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function (req, res) {
   var userId = Number(req.params.userId);
   if (!userId) return res.status(400).json({ error: "无效的学生 ID" });
+  if (!teacherCanManageStudent(req, userId)) {
+    return res.status(403).json({ error: "该学生未分配给你" });
+  }
   var user = db.prepare("SELECT id, phone, display_name, created_at, last_login_at FROM users WHERE id = ?").get(userId);
   if (!user) return res.status(404).json({ error: "学生不存在" });
   var zone = clipText(req.query.zone, 40);
@@ -834,6 +946,9 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
     if (!stmts.findUserById.get(targetStudentIds[i])) {
       return res.status(400).json({ error: "学生 ID 无效：" + targetStudentIds[i] });
     }
+    if (!teacherCanManageStudent(req, targetStudentIds[i])) {
+      return res.status(403).json({ error: "只能给已分配给你的学生布置任务" });
+    }
   }
 
   var now = new Date().toISOString();
@@ -879,17 +994,28 @@ app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
   if (!id) return res.status(400).json({ error: "无效 ID" });
   var row = stmts.getCalendarEvent.get(id);
   if (!row || row.created_by !== req.user.sub) return res.status(404).json({ error: "任务不存在" });
+  var exerciseIds = [];
+  try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
   var statuses = stmts.listStatusesForEvent.all(id).map(function (s) {
     var stu = stmts.findUserById.get(s.student_id);
+    var scored = {};
+    stmts.listScores.all(s.student_id).forEach(function (r) { scored[r.item_id] = 1; });
+    var doneIds = exerciseIds.filter(function (xid) { return scored[xid]; });
     return {
       studentId: s.student_id,
       displayName: (stu && stu.display_name) || "",
       phone: stu ? maskPhone(stu.phone) : "",
       status: effectiveTaskStatus(s.status, row.due_time),
-      completedAt: s.completed_at || null
+      completedAt: s.completed_at || null,
+      doneExerciseIds: doneIds,
+      exerciseDone: doneIds.length,
+      exerciseTotal: exerciseIds.length
     };
   });
-  res.json({ ok: true, event: eventFromRow(row, { students: statuses }) });
+  res.json({
+    ok: true,
+    event: eventFromRow(row, { students: statuses, linkedExerciseIds: exerciseIds })
+  });
 });
 
 app.delete("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
@@ -902,13 +1028,86 @@ app.delete("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res
   res.json({ ok: true });
 });
 
+// ---- Admin: assign students to teachers ----
+
+app.get("/api/admin/teachers", adminAuthMiddleware, function (req, res) {
+  var teachers = stmts.listTeachers.all().map(function (t) {
+    var n = stmts.listTeacherStudentIds.all(t.id).length;
+    return {
+      id: t.id,
+      phone: maskPhone(t.phone),
+      name: t.name || "",
+      studentCount: n,
+      lastLoginAt: t.last_login_at || null
+    };
+  });
+  res.json({ ok: true, teachers: teachers });
+});
+
+app.get("/api/admin/students", adminAuthMiddleware, function (req, res) {
+  var students = stmts.listStudents.all().map(function (row) {
+    return {
+      id: row.id,
+      phone: maskPhone(row.phone),
+      displayName: row.display_name || "",
+      lastLoginAt: row.last_login_at || null,
+      scoreCount: row.score_count || 0
+    };
+  });
+  res.json({ ok: true, students: students });
+});
+
+app.get("/api/admin/assignments", adminAuthMiddleware, function (req, res) {
+  var teacherId = Number(req.query.teacherId);
+  if (!teacherId) return res.status(400).json({ error: "请指定 teacherId" });
+  var teacher = stmts.findTeacherById.get(teacherId);
+  if (!teacher) return res.status(404).json({ error: "教师不存在" });
+  var studentIds = stmts.listTeacherStudentIds.all(teacherId).map(function (r) { return r.student_id; });
+  res.json({
+    ok: true,
+    teacherId: teacherId,
+    studentIds: studentIds
+  });
+});
+
+app.put("/api/admin/assignments", adminAuthMiddleware, function (req, res) {
+  var teacherId = Number(req.body && req.body.teacherId);
+  var studentIds = parseStudentIds(req.body && req.body.studentIds);
+  if (!teacherId) return res.status(400).json({ error: "请指定 teacherId" });
+  var teacher = stmts.findTeacherById.get(teacherId);
+  if (!teacher) return res.status(404).json({ error: "教师不存在" });
+  for (var i = 0; i < studentIds.length; i++) {
+    if (!stmts.findUserById.get(studentIds[i])) {
+      return res.status(400).json({ error: "学生 ID 无效：" + studentIds[i] });
+    }
+  }
+  var now = new Date().toISOString();
+  var by = String(req.user.phone || "");
+  var tx = db.transaction(function () {
+    stmts.deleteTeacherStudentsForTeacher.run(teacherId);
+    studentIds.forEach(function (sid) {
+      stmts.insertTeacherStudent.run(teacherId, sid, now, by);
+    });
+  });
+  tx();
+  res.json({ ok: true, teacherId: teacherId, studentIds: studentIds });
+});
+
 app.get("/api/student/calendar", authMiddleware, function (req, res) {
   if (req.user.role === "teacher") return res.json({ ok: true, events: [] });
+  var scored = {};
+  stmts.listScores.all(req.user.sub).forEach(function (r) { scored[r.item_id] = 1; });
   var rows = stmts.listStudentCalendar.all(req.user.sub);
   var events = rows.map(function (row) {
+    var exerciseIds = [];
+    try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
+    var doneIds = exerciseIds.filter(function (xid) { return scored[xid]; });
     return eventFromRow(row, {
       status: effectiveTaskStatus(row.task_status, row.due_time),
-      completedAt: row.completed_at || null
+      completedAt: row.completed_at || null,
+      doneExerciseIds: doneIds,
+      exerciseDone: doneIds.length,
+      exerciseTotal: exerciseIds.length
     });
   });
   res.json({ ok: true, events: events });
@@ -992,20 +1191,27 @@ app.put("/api/scores/:itemId", authMiddleware, function (req, res) {
   res.json({ ok: true, score: rec });
 });
 
-async function qwenChat(system, user) {
+async function qwenChatMessages(messages, temperature) {
   if (!DASHSCOPE_KEY) throw new Error("DASHSCOPE_API_KEY 未配置");
   var res = await fetch(DASHSCOPE_URL, {
     method: "POST",
     headers: { Authorization: "Bearer " + DASHSCOPE_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: DASHSCOPE_MODEL,
-      messages: [{ role: "system", content: system }, { role: "user", content: user }],
-      temperature: 0.2
+      messages: messages,
+      temperature: temperature == null ? 0.2 : temperature
     })
   });
   var data = await res.json();
   if (!res.ok) throw new Error((data && data.error && data.error.message) || "DashScope 请求失败");
   return data.choices[0].message.content;
+}
+
+async function qwenChat(system, user) {
+  return qwenChatMessages(
+    [{ role: "system", content: system }, { role: "user", content: user }],
+    0.2
+  );
 }
 
 function parseJsonFromLLM(text) {
@@ -1178,6 +1384,321 @@ app.post("/api/jingting/translate", async function (req, res) {
   }
 });
 
+function studentOnly(req, res) {
+  if (req.user.role === "teacher") {
+    res.status(403).json({ error: "请使用学生账号登录" });
+    return false;
+  }
+  return true;
+}
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getUsage(userId) {
+  var day = todayKey();
+  var row = db.prepare("SELECT text_count, voice_sec, full_mocks FROM ai_tutor_usage WHERE user_id = ? AND day = ?").get(userId, day);
+  return {
+    day: day,
+    textCount: row ? row.text_count : 0,
+    voiceSec: row ? row.voice_sec : 0,
+    fullMocks: row ? row.full_mocks : 0
+  };
+}
+
+function bumpUsage(userId, fields) {
+  var day = todayKey();
+  db.prepare(
+    "INSERT INTO ai_tutor_usage (user_id, day, text_count, voice_sec, full_mocks) VALUES (?, ?, ?, ?, ?) " +
+    "ON CONFLICT(user_id, day) DO UPDATE SET " +
+    "text_count = text_count + excluded.text_count, " +
+    "voice_sec = voice_sec + excluded.voice_sec, " +
+    "full_mocks = full_mocks + excluded.full_mocks"
+  ).run(userId, day, fields.text || 0, fields.voiceSec || 0, fields.fullMocks || 0);
+}
+
+function quotaPayload(u) {
+  return {
+    textLimit: AI_QUOTA.text,
+    textUsed: u.textCount,
+    textLeft: Math.max(0, AI_QUOTA.text - u.textCount),
+    voiceSecLimit: AI_QUOTA.voiceSec,
+    voiceSecUsed: Math.round(u.voiceSec),
+    voiceSecLeft: Math.max(0, Math.round(AI_QUOTA.voiceSec - u.voiceSec)),
+    fullMockLimit: AI_QUOTA.fullMocks,
+    fullMockUsed: u.fullMocks,
+    fullMockLeft: Math.max(0, AI_QUOTA.fullMocks - u.fullMocks)
+  };
+}
+
+function newSessionId() {
+  return "ait-" + Date.now().toString(36) + "-" + crypto.randomBytes(4).toString("hex");
+}
+
+function examTypeLabel(t) {
+  return ({ full: "完整模拟考", part1: "Part 1", part2: "Part 2", part3: "Part 3" })[t] || t || "";
+}
+
+function buildTutorSystem(mode, examType) {
+  if (mode === "examiner") {
+    var scope =
+      examType === "part1" ? "Only Part 1 (familiar topics, short answers). Do not move to Part 2/3." :
+      examType === "part2" ? "Only Part 2: give one cue card, 1 minute prep reminder, then 1–2 minutes speaking, then 1–2 follow-ups. Do not do Part 1/3." :
+      examType === "part3" ? "Only Part 3 discussion questions on an abstract theme. Do not do Part 1/2." :
+      "Run a full IELTS Speaking test: Part 1 → Part 2 (cue card + 1 min prep + long turn) → Part 3, then score.";
+    return (
+      "You are a professional IELTS Speaking examiner at YYSD International Course Center. " +
+      "Speak ONLY in English. Be concise, formal, and exam-like — do not tutor or translate. " +
+      scope + " " +
+      "Ask one question (or give the cue card) at a time and wait for the candidate. " +
+      "When the selected exam scope is finished, end with a clear score block on its own line as: " +
+      "SCORE_JSON:{\"overall\":6.0,\"fluency\":6.0,\"lexical\":6.0,\"grammar\":6.0,\"pronunciation\":6.0,\"comment\":\"2-4 sentences in English\"} " +
+      "Bands are 0–9 in 0.5 steps. Be conservative (typical learners 4.5–6.5). " +
+      "Treat STT typos leniently. Never invent Chinese."
+    );
+  }
+  return (
+    "你是优益思达国际课程中心（YYSD）的雅思辅导老师，第一版只辅导口语与写作。 " +
+    "讲解优先用中文，示范句子/范文用英文。帮助学生练口语思路、词汇语法、写作 Task 1/2 提纲与批改（学生粘贴文字作文）。 " +
+    "不要编造网站没有的功能；不要做阅读/听力精讲。语气耐心、具体、可执行。若学生要模拟口语考试，提醒可切换到「考官模式」。"
+  );
+}
+
+function parseScoreFromReply(text) {
+  var m = String(text || "").match(/SCORE_JSON:\s*(\{[\s\S]*?\})/);
+  if (!m) return null;
+  try {
+    var d = JSON.parse(m[1]);
+    function band(v) {
+      var n = Number(v);
+      if (!isFinite(n)) return null;
+      return Math.round(Math.min(9, Math.max(0, n)) * 2) / 2;
+    }
+    return {
+      overall: band(d.overall),
+      fluency: band(d.fluency),
+      lexical: band(d.lexical),
+      grammar: band(d.grammar),
+      pronunciation: band(d.pronunciation),
+      comment: clipText(d.comment, 800)
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function stripScoreMarker(text) {
+  return String(text || "").replace(/\n?SCORE_JSON:\s*\{[\s\S]*?\}\s*$/, "").trim();
+}
+
+var tutorListSessions = db.prepare(
+  "SELECT id, mode, exam_type, title, created_at, updated_at FROM ai_tutor_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50"
+);
+var tutorGetSession = db.prepare("SELECT * FROM ai_tutor_sessions WHERE id = ? AND user_id = ?");
+var tutorInsertSession = db.prepare(
+  "INSERT INTO ai_tutor_sessions (id, user_id, mode, exam_type, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+);
+var tutorTouchSession = db.prepare("UPDATE ai_tutor_sessions SET updated_at = ?, title = COALESCE(?, title) WHERE id = ?");
+var tutorListMessages = db.prepare(
+  "SELECT id, role, content, audio_sec, meta, created_at FROM ai_tutor_messages WHERE session_id = ? ORDER BY id ASC"
+);
+var tutorInsertMessage = db.prepare(
+  "INSERT INTO ai_tutor_messages (session_id, role, content, audio_sec, meta, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+);
+
+app.get("/api/ai-tutor/quota", authMiddleware, function (req, res) {
+  if (!studentOnly(req, res)) return;
+  res.json({ ok: true, quota: quotaPayload(getUsage(req.user.sub)) });
+});
+
+app.get("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
+  if (!studentOnly(req, res)) return;
+  res.json({ ok: true, sessions: tutorListSessions.all(req.user.sub) });
+});
+
+app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
+  if (!studentOnly(req, res)) return;
+  var mode = clipText(req.body && req.body.mode, 20) || "teacher";
+  if (mode !== "examiner" && mode !== "teacher") mode = "teacher";
+  var examType = clipText(req.body && req.body.examType, 20) || "";
+  if (mode === "examiner" && ["full", "part1", "part2", "part3"].indexOf(examType) < 0) examType = "full";
+  if (mode === "teacher") examType = "";
+  if (mode === "examiner" && examType === "full") {
+    var u = getUsage(req.user.sub);
+    if (u.fullMocks >= AI_QUOTA.fullMocks) {
+      return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: quotaPayload(u) });
+    }
+  }
+  var now = new Date().toISOString();
+  var id = newSessionId();
+  var title = mode === "examiner"
+    ? "考官 · " + examTypeLabel(examType)
+    : "老师辅导";
+  tutorInsertSession.run(id, req.user.sub, mode, examType || null, title, now, now);
+  if (mode === "examiner" && examType === "full") bumpUsage(req.user.sub, { fullMocks: 1 });
+  var opener =
+    mode === "examiner"
+      ? (examType === "part2"
+        ? "Good afternoon. This is Part 2. I will give you a topic card. You will have one minute to prepare, then I'd like you to speak for one to two minutes."
+        : examType === "part3"
+          ? "Good afternoon. Let's move on to Part 3. I'd like to discuss some more general questions related to your topic."
+          : examType === "part1"
+            ? "Good afternoon. My name is Alex. Could you tell me your full name, please?"
+            : "Good afternoon. My name is Alex. This is the IELTS Speaking test. Could you tell me your full name, please?")
+      : "你好，我是优益思达的 AI 雅思老师。可以帮你练口语思路，或批改写作（直接粘贴作文即可）。想先从哪方面开始？";
+  tutorInsertMessage.run(id, "assistant", opener, 0, null, now);
+  res.json({
+    ok: true,
+    session: { id: id, mode: mode, exam_type: examType || null, title: title, created_at: now, updated_at: now },
+    opener: opener,
+    quota: quotaPayload(getUsage(req.user.sub))
+  });
+});
+
+app.get("/api/ai-tutor/sessions/:id", authMiddleware, function (req, res) {
+  if (!studentOnly(req, res)) return;
+  var s = tutorGetSession.get(clipText(req.params.id, 64), req.user.sub);
+  if (!s) return res.status(404).json({ error: "会话不存在" });
+  var msgs = tutorListMessages.all(s.id).map(function (m) {
+    var meta = null;
+    try { meta = m.meta ? JSON.parse(m.meta) : null; } catch (e) {}
+    return { id: m.id, role: m.role, content: m.content, audioSec: m.audio_sec, meta: meta, createdAt: m.created_at };
+  });
+  res.json({ ok: true, session: s, messages: msgs });
+});
+
+app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
+  if (!studentOnly(req, res)) return;
+  var sessionId = clipText(req.body && req.body.sessionId, 64);
+  var content = clipText(req.body && req.body.content, 8000);
+  var audioSec = Math.max(0, Math.min(600, Number(req.body && req.body.audioSec) || 0));
+  if (!sessionId || !content) return res.status(400).json({ error: "缺少 sessionId 或 content" });
+  var s = tutorGetSession.get(sessionId, req.user.sub);
+  if (!s) return res.status(404).json({ error: "会话不存在" });
+  var u = getUsage(req.user.sub);
+  if (u.textCount >= AI_QUOTA.text) {
+    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: quotaPayload(u) });
+  }
+  if (audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
+    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: quotaPayload(u) });
+  }
+  var now = new Date().toISOString();
+  tutorInsertMessage.run(sessionId, "user", content, audioSec, null, now);
+  bumpUsage(req.user.sub, { text: 1, voiceSec: audioSec });
+  if (s.title === "老师辅导" || s.title.indexOf("考官 ·") === 0) {
+    var short = content.slice(0, 24).replace(/\s+/g, " ");
+    if (short) tutorTouchSession.run(now, short + (content.length > 24 ? "…" : ""), sessionId);
+    else tutorTouchSession.run(now, null, sessionId);
+  } else {
+    tutorTouchSession.run(now, null, sessionId);
+  }
+  var history = tutorListMessages.all(sessionId).map(function (m) {
+    return { role: m.role === "assistant" ? "assistant" : "user", content: m.content };
+  });
+  // keep last 24 turns + system
+  if (history.length > 24) history = history.slice(history.length - 24);
+  var messages = [{ role: "system", content: buildTutorSystem(s.mode, s.exam_type) }].concat(history);
+  try {
+    var raw = await qwenChatMessages(messages, s.mode === "examiner" ? 0.4 : 0.5);
+    var score = s.mode === "examiner" ? parseScoreFromReply(raw) : null;
+    var reply = score ? stripScoreMarker(raw) : String(raw || "").trim();
+    if (!reply && score) reply = "That concludes the test. Please review your band scores below.";
+    var meta = score ? JSON.stringify({ score: score }) : null;
+    var at = new Date().toISOString();
+    tutorInsertMessage.run(sessionId, "assistant", reply, 0, meta, at);
+    tutorTouchSession.run(at, null, sessionId);
+    res.json({
+      ok: true,
+      reply: reply,
+      score: score,
+      quota: quotaPayload(getUsage(req.user.sub))
+    });
+  } catch (e) {
+    console.error("[yysd-api] ai-tutor/chat", e.message);
+    res.status(e.message.indexOf("未配置") >= 0 ? 503 : 502).json({ error: "AI 回复失败，请稍后再试" });
+  }
+});
+
+app.post("/api/ai-tutor/asr", authMiddleware, async function (req, res) {
+  if (!studentOnly(req, res)) return;
+  if (!DASHSCOPE_KEY) return res.status(503).json({ error: "DASHSCOPE_API_KEY 未配置" });
+  var audio = clipText(req.body && req.body.audio, 12 * 1024 * 1024);
+  var audioSec = Math.max(0, Math.min(600, Number(req.body && req.body.audioSec) || 0));
+  if (!audio || audio.indexOf("data:") !== 0) return res.status(400).json({ error: "缺少 audio（data URL）" });
+  var u = getUsage(req.user.sub);
+  if (audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
+    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: quotaPayload(u) });
+  }
+  try {
+    var r = await fetch(DASHSCOPE_MM_URL, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + DASHSCOPE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: DASHSCOPE_ASR_MODEL,
+        input: {
+          messages: [
+            { role: "system", content: [{ text: "Transcribe the learner's IELTS speaking English accurately." }] },
+            { role: "user", content: [{ audio: audio }] }
+          ]
+        },
+        parameters: { asr_options: { language: "en", enable_itn: true } }
+      })
+    });
+    var data = await r.json();
+    if (!r.ok) {
+      throw new Error((data && (data.message || (data.error && data.error.message))) || "ASR 失败");
+    }
+    var text = "";
+    try {
+      var choices = data.output && data.output.choices;
+      if (choices && choices[0] && choices[0].message) {
+        var c = choices[0].message.content;
+        if (typeof c === "string") text = c;
+        else if (Array.isArray(c)) {
+          text = c.map(function (p) { return p.text || p; }).filter(Boolean).join(" ");
+        }
+      }
+      if (!text && data.output && data.output.text) text = data.output.text;
+    } catch (e) {}
+    text = clipText(text, 4000);
+    if (!text) return res.status(502).json({ error: "未能识别出语音内容，请重试或改用文字输入" });
+    // ponytail: voice_sec counted on /chat when client sends audioSec
+    res.json({ ok: true, text: text, quota: quotaPayload(u) });
+  } catch (e) {
+    console.error("[yysd-api] ai-tutor/asr", e.message);
+    res.status(502).json({ error: "语音识别失败，请稍后再试或改用文字" });
+  }
+});
+
+app.post("/api/ai-tutor/tts", authMiddleware, async function (req, res) {
+  if (!studentOnly(req, res)) return;
+  if (!DASHSCOPE_KEY) return res.status(503).json({ error: "DASHSCOPE_API_KEY 未配置" });
+  var text = clipText(req.body && req.body.text, 600);
+  if (!text) return res.status(400).json({ error: "缺少 text" });
+  var lang = /[\u4e00-\u9fff]/.test(text) ? "Chinese" : "English";
+  try {
+    var r = await fetch(DASHSCOPE_MM_URL, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + DASHSCOPE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: DASHSCOPE_TTS_MODEL,
+        input: { text: text, voice: DASHSCOPE_TTS_VOICE, language_type: lang }
+      })
+    });
+    var data = await r.json();
+    if (!r.ok) {
+      throw new Error((data && (data.message || (data.error && data.error.message))) || "TTS 失败");
+    }
+    var url = data.output && data.output.audio && data.output.audio.url;
+    if (!url) return res.status(502).json({ error: "语音合成无音频返回" });
+    res.json({ ok: true, url: url });
+  } catch (e) {
+    console.error("[yysd-api] ai-tutor/tts", e.message);
+    res.status(502).json({ error: "语音合成失败" });
+  }
+});
+
 // ponytail: runnable self-check
 if (require.main === module) {
   console.assert(normalizePhone("13800138000") === "13800138000");
@@ -1190,8 +1711,14 @@ if (require.main === module) {
   console.assert(effectiveTaskStatus("COMPLETED", "2000-01-01T00:00:00.000Z") === "COMPLETED");
   console.assert(parseExerciseIds(["a", "a", "b"]).join(",") === "a,b");
   console.assert(parseStudentIds([1, "2", 1, 0]).join(",") === "1,2");
+  console.assert(isAdminPhone("15901754473") === true);
+  console.assert(isAdminPhone("13800138000") === false);
+  console.assert(examTypeLabel("full") === "完整模拟考");
+  console.assert(buildTutorSystem("teacher", "").indexOf("口语") >= 0);
+  console.assert(parseScoreFromReply('Hi\nSCORE_JSON:{"overall":6,"fluency":6,"lexical":5.5,"grammar":6,"pronunciation":6,"comment":"ok"}').overall === 6);
   app.listen(PORT, function () {
-    console.log("[yysd-api] listening on " + PORT + (SMS_DEV ? " (SMS_DEV_MODE)" : ""));
+    console.log("[yysd-api] listening on " + PORT + (SMS_DEV ? " (SMS_DEV_MODE)" : "") +
+      " admins=" + ADMIN_PHONES.join(","));
   });
 }
 
