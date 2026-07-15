@@ -22,6 +22,8 @@ if [ ! -d "$REPO_DIR/.git" ]; then
 fi
 
 cd "$REPO_DIR"
+# GitHub via HTTP/2 often fails on some ECS networks (curl 16).
+git config --local http.version HTTP/1.1
 git fetch origin "$BRANCH"
 git checkout "$BRANCH"
 git pull --ff-only origin "$BRANCH"
@@ -58,6 +60,8 @@ check() {
 missing=0
 check "dashboard.html"
 check "assets/js/dashboard.js"
+check "admin-assign.html"
+check "assets/js/admin-assign.js"
 check "ai-tutor.html"
 check "data/speaking/jiijing-banks/2026-q2.json"
 check "data/speaking/jiijing-active.json"

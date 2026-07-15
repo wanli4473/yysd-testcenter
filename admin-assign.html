@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学生分配 · 管理 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260714shell">
+</head>
+<body class="home-minimal teacher-page teacher-layout shell-compact-nav">
+
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="admin-assign.html" class="minimal-brand" aria-label="学生分配">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text">
+          <b>优益思达国际课程中心</b>
+          <span>Admin</span>
+        </span>
+      </a>
+      <nav class="minimal-nav" aria-label="快捷">
+        <a class="nav-mobile-only" href="teacher.html">学情看板</a>
+        <a class="nav-mobile-only" href="teacher-calendar.html">任务日历</a>
+        <a class="nav-mobile-only" href="dashboard.html">学生工作台</a>
+        <a class="nav-persist" href="profile.html" id="nav-auth">个人中心</a>
+        <button type="button" class="btn btn--ghost btn--sm nav-persist" id="logout-btn">退出</button>
+      </nav>
+    </div>
+  </header>
+
+  <div class="teacher-shell">
+    <aside class="teacher-side" aria-label="导航">
+      <p class="teacher-side__label">ADMIN</p>
+      <a href="admin-assign.html" class="teacher-side__link is-active">学生分配</a>
+      <a href="teacher.html" class="teacher-side__link">学情看板</a>
+      <a href="teacher-calendar.html" class="teacher-side__link">任务日历</a>
+    </aside>
+
+    <div class="teacher-content">
+      <section class="minimal-page-head">
+        <h1>学生分配</h1>
+        <p class="minimal-page-desc">先选择教师，再勾选要分配给他的学生。一名学生可同时属于多位教师。</p>
+      </section>
+
+      <main class="minimal-main">
+        <div class="admin-assign">
+          <label class="auth-field">
+            <span>选择教师</span>
+            <select id="teacher-select">
+              <option value="">加载中…</option>
+            </select>
+          </label>
+          <div class="cal-picker-toolbar">
+            <input type="search" id="student-q" placeholder="搜索学生姓名或手机号" autocomplete="off">
+            <button type="button" class="btn btn--ghost btn--sm" id="select-all">全选可见</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="clear-all">清空勾选</button>
+          </div>
+          <p class="profile-hint" id="picked-hint">请先选择教师</p>
+          <div class="cal-check-list cal-check-list--tall" id="student-list"></div>
+          <p class="auth-msg" id="msg" role="status"></p>
+          <div class="cal-form__foot" style="justify-content:flex-start;margin-top:16px">
+            <button type="button" class="btn btn--primary" id="save-btn" disabled>保存分配</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <footer class="minimal-footer minimal-footer--rich">
+    <div class="minimal-shell minimal-footer__inner">
+      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达 · 管理</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/config.js?v=20260714dash"></script>
+  <script src="assets/js/auth.js?v=20260714shell"></script>
+  <script src="assets/js/admin-assign.js?v=20260714shell"></script>
+</body>
+</html>
