@@ -238,7 +238,9 @@
         : '<div class="soon-box">A-Level 真题筹备中，敬请期待。</div>';
     } else if (cat.key === "vocab") {
       var vbooks = Y.vocabBooksForZone(allItems);
-      body = Y.wrongWordsStripHTML("") +
+      var aiWord = (window.YYSD_AI_WORD && window.YYSD_AI_WORD.shellHTML)
+        ? window.YYSD_AI_WORD.shellHTML() : "";
+      body = aiWord + Y.savedWordsStripHTML("") + Y.wrongWordsStripHTML("") +
         (vbooks.length
         ? '<div class="vol-grid">' + vbooks.map(function (s) { return Y.vocabBookCardHTML(s, ""); }).join("") + "</div>"
         : '<div class="soon-box">暂无单词内容，上传后会显示在这里。</div>');
@@ -261,16 +263,22 @@
       var continueHTML = recent.length ? Y.continueStripHTML(recent, "") : "";
       var aiTutorHTML = zone === "practice"
         ? '<a class="ai-tutor-entry pressable" href="ai-tutor.html">' +
-          "<b>AI 雅思老师</b><span>口语考官模拟 · 口语/写作辅导 · 文字与语音</span></a>"
+          "<b>AI 雅思老师</b><span>口语机经练习/全真模考 · 写作批改</span></a>"
         : "";
       var cats = activeCat === "all" ? visibleNav() : visibleNav().filter(function (c) { return c.key === activeCat; });
       html = aiTutorHTML + continueHTML + cats.map(categoryHTML).join("");
     }
+    function afterRender() {
+      if (window.YYSD_AI_WORD && window.YYSD_AI_WORD.bind) window.YYSD_AI_WORD.bind(contentEl);
+    }
     if (window.YYSD_UI_SWAP && contentEl.innerHTML && !contentEl.querySelector(".spinner--brand")) {
       window.YYSD_UI_SWAP(contentEl, html);
+      // ponytail: UI_SWAP writes DOM after 160ms; bind must wait
+      setTimeout(afterRender, 180);
     } else {
       contentEl.innerHTML = html;
       if (window.YYSD_UI_REVEAL) window.YYSD_UI_REVEAL(contentEl.querySelectorAll(".reveal"));
+      afterRender();
     }
   }
 

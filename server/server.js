@@ -526,7 +526,7 @@ var DASHSCOPE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/comp
 var DASHSCOPE_MM_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 var DASHSCOPE_ASR_MODEL = process.env.DASHSCOPE_ASR_MODEL || "qwen3-asr-flash";
 var DASHSCOPE_TTS_MODEL = process.env.DASHSCOPE_TTS_MODEL || "qwen3-tts-flash";
-var DASHSCOPE_TTS_VOICE = process.env.DASHSCOPE_TTS_VOICE || "Jennifer";
+var DASHSCOPE_TTS_VOICE = process.env.DASHSCOPE_TTS_VOICE || "Neil";
 
 db.exec(
   "CREATE TABLE IF NOT EXISTS ai_tutor_sessions (" +
@@ -558,8 +558,19 @@ db.exec(
 );
 try { db.exec("ALTER TABLE ai_tutor_sessions ADD COLUMN exam_mode TEXT"); } catch (e) { /* exists */ }
 try { db.exec("ALTER TABLE ai_tutor_sessions ADD COLUMN exam_pack TEXT"); } catch (e) { /* exists */ }
+try { db.exec("ALTER TABLE ai_tutor_sessions ADD COLUMN status TEXT"); } catch (e) { /* exists */ }
 
 var AI_QUOTA = { text: 30, voiceSec: 15 * 60, fullMocks: 2 };
+var AI_WORD_QUOTA = 20;
+
+db.exec(
+  "CREATE TABLE IF NOT EXISTS ai_word_usage (" +
+  "user_id INTEGER NOT NULL," +
+  "day TEXT NOT NULL," +
+  "query_count INTEGER NOT NULL DEFAULT 0," +
+  "PRIMARY KEY (user_id, day)" +
+  ");"
+);
 
 var SPEAKING_DATA_DIRS = [
   path.join(__dirname, "data", "speaking"),
@@ -671,21 +682,43 @@ function buildExamPack(examMode, part1Ids, part2Id) {
   };
 }
 
+function loadWritingBank() {
+  var root = speakingDataDir();
+  var p = path.join(root, "writing-prompts.json");
+  if (!fs.existsSync(p)) p = path.join(__dirname, "..", "data", "speaking", "writing-prompts.json");
+  if (!fs.existsSync(p)) throw new Error("写作题库未配置");
+  return readJsonFile(p);
+}
+
+function findWritingPrompt(taskType, promptId) {
+  var bank = loadWritingBank();
+  var list = taskType === "task1" ? (bank.task1 || []) : (bank.task2 || []);
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === promptId) return list[i];
+  }
+  return null;
+}
+
 function buildTutorSystem(mode, examType, examPack) {
   if (mode === "examiner" && examPack) {
     var packJson = JSON.stringify(examPack);
+    var isMock = examPack.examMode === "mock";
     return (
       "You are a professional IELTS Speaking examiner at YYSD. Speak ONLY in English. " +
       "Conduct the test STRICTLY using this exam pack — do NOT invent topics or questions outside it:\n" +
       packJson + "\n" +
-      "Flow: (1) Brief intro + ask name. (2) Part 1: ask the pack part1 questions one at a time " +
-      "(you may skip a few if time is tight, but stay within listed topics). " +
-      "(3) Part 2: read the FULL cue card title and ALL bullets, tell candidate they have 1 minute to prepare, " +
-      "then ask them to speak 1–2 minutes; after they finish ask 1 short rounding-off question if needed. " +
-      "(4) Part 3: ask the pack part3 questions one at a time (4–6 questions). " +
-      "(5) End the test and output on its own line: " +
-      "SCORE_JSON:{\"overall\":6.0,\"fluency\":6.0,\"lexical\":6.0,\"grammar\":6.0,\"pronunciation\":6.0,\"comment\":\"2-4 sentences in English\"} " +
-      "Bands 0–9 in 0.5 steps; be conservative (typical 4.5–6.5). Treat STT typos leniently. No Chinese."
+      "Rules: Ask ONE question at a time and wait. Never list multiple questions in one turn. " +
+      "If a candidate message starts with [ANSWER_INVALID], their previous answer is VOID (silence timeout). " +
+      "Acknowledge briefly, do NOT invite them to retry that question, and move to the NEXT question. " +
+      "Factor invalid / empty answers into a lower Fluency and overall band. " +
+      "Flow: (1) Brief intro + ask name. (2) Part 1: ask pack part1 questions one by one. " +
+      "(3) Part 2: read the FULL cue card title and ALL bullets, say they have one minute to prepare. " +
+      "When they are ready, listen to their long turn (up to 2 minutes), then optionally one rounding-off question. " +
+      "(4) Part 3: ask pack part3 questions one at a time. " +
+      "(5) End and output on its own line: " +
+      "SCORE_JSON:{\"overall\":6.0,\"fluency\":6.0,\"lexical\":6.0,\"grammar\":6.0,\"pronunciation\":6.0,\"comment\":\"2-4 sentences\",\"improvements\":[\"tip1\",\"tip2\",\"tip3\"]} " +
+      "Bands 0–9 in 0.5 steps; be conservative (typical 4.5–6.5). Treat STT typos leniently. No Chinese." +
+      (isMock ? " This is a FORMAL mock — stay strictly exam-like." : " This is practice — still exam-like but you may briefly clarify a misheard word once.")
     );
   }
   if (mode === "examiner") {
@@ -699,17 +732,38 @@ function buildTutorSystem(mode, examType, examPack) {
       "Speak ONLY in English. Be concise, formal, and exam-like — do not tutor or translate. " +
       scope + " " +
       "Ask one question (or give the cue card) at a time and wait for the candidate. " +
-      "When the selected exam scope is finished, end with a clear score block on its own line as: " +
-      "SCORE_JSON:{\"overall\":6.0,\"fluency\":6.0,\"lexical\":6.0,\"grammar\":6.0,\"pronunciation\":6.0,\"comment\":\"2-4 sentences in English\"} " +
-      "Bands are 0–9 in 0.5 steps. Be conservative (typical learners 4.5–6.5). " +
-      "Treat STT typos leniently. Never invent Chinese."
+      "When finished, end with: " +
+      "SCORE_JSON:{\"overall\":6.0,\"fluency\":6.0,\"lexical\":6.0,\"grammar\":6.0,\"pronunciation\":6.0,\"comment\":\"2-4 sentences\",\"improvements\":[\"tip1\",\"tip2\"]} " +
+      "Bands 0–9 in 0.5 steps. Be conservative (typical 4.5–6.5). Treat STT typos leniently. No Chinese."
     );
   }
   return (
-    "你是优益思达国际课程中心（YYSD）的雅思辅导老师，第一版只辅导口语与写作。 " +
-    "讲解优先用中文，示范句子/范文用英文。帮助学生练口语思路、词汇语法、写作 Task 1/2 提纲与批改（学生粘贴文字作文）。 " +
-    "不要编造网站没有的功能；不要做阅读/听力精讲。语气耐心、具体、可执行。若学生要模拟口语考试，提醒可切换到「考官模式」。"
+    "你是优益思达国际课程中心（YYSD）的雅思辅导老师，辅导口语与写作。 " +
+    "讲解优先用中文，示范句子/范文用英文。帮助学生练口语思路、词汇语法。 " +
+    "系统写作批改在写作模块完成；此处可答写作方法问题。 " +
+    "不要编造网站没有的功能。若学生要模拟口语考试，提醒切换到「机经模考」。"
   );
+}
+
+function parseWritingGrade(raw) {
+  var m = String(raw || "").match(/WRITING_JSON:\s*(\{[\s\S]*\})/);
+  if (!m) return null;
+  try {
+    var o = JSON.parse(m[1]);
+    return {
+      overall: o.overall,
+      task: o.task,
+      coherence: o.coherence,
+      lexical: o.lexical,
+      grammar: o.grammar,
+      paragraphNotes: Array.isArray(o.paragraphNotes) ? o.paragraphNotes : [],
+      corrections: Array.isArray(o.corrections) ? o.corrections : [],
+      modelEssay: String(o.modelEssay || "").trim(),
+      comment: String(o.comment || "").trim()
+    };
+  } catch (e) {
+    return null;
+  }
 }
 
 app.get("/api/health", function (req, res) {
@@ -1664,7 +1718,10 @@ function parseScoreFromReply(text) {
       lexical: band(d.lexical),
       grammar: band(d.grammar),
       pronunciation: band(d.pronunciation),
-      comment: clipText(d.comment, 800)
+      comment: clipText(d.comment, 800),
+      improvements: Array.isArray(d.improvements)
+        ? d.improvements.map(function (t) { return clipText(t, 200); }).filter(Boolean).slice(0, 8)
+        : []
     };
   } catch (e) {
     return null;
@@ -1676,13 +1733,14 @@ function stripScoreMarker(text) {
 }
 
 var tutorListSessions = db.prepare(
-  "SELECT id, mode, exam_type, exam_mode, title, created_at, updated_at FROM ai_tutor_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50"
+  "SELECT id, mode, exam_type, exam_mode, status, title, created_at, updated_at FROM ai_tutor_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50"
 );
 var tutorGetSession = db.prepare("SELECT * FROM ai_tutor_sessions WHERE id = ? AND user_id = ?");
 var tutorInsertSession = db.prepare(
-  "INSERT INTO ai_tutor_sessions (id, user_id, mode, exam_type, exam_mode, exam_pack, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  "INSERT INTO ai_tutor_sessions (id, user_id, mode, exam_type, exam_mode, exam_pack, title, created_at, updated_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 );
 var tutorTouchSession = db.prepare("UPDATE ai_tutor_sessions SET updated_at = ?, title = COALESCE(?, title) WHERE id = ?");
+var tutorSetStatus = db.prepare("UPDATE ai_tutor_sessions SET status = ?, updated_at = ? WHERE id = ? AND user_id = ?");
 var tutorListMessages = db.prepare(
   "SELECT id, role, content, audio_sec, meta, created_at FROM ai_tutor_messages WHERE session_id = ? ORDER BY id ASC"
 );
@@ -1715,6 +1773,81 @@ app.get("/api/ai-tutor/bank", authMiddleware, function (req, res) {
   } catch (e) {
     res.status(503).json({ error: e.message || "机经题库不可用" });
   }
+});
+
+app.get("/api/ai-tutor/writing-bank", authMiddleware, function (req, res) {
+  if (!studentOnly(req, res)) return;
+  try {
+    var bank = loadWritingBank();
+    res.json({
+      ok: true,
+      bank: {
+        task1: (bank.task1 || []).map(function (p) { return { id: p.id, title: p.title, prompt: p.prompt }; }),
+        task2: (bank.task2 || []).map(function (p) { return { id: p.id, title: p.title, prompt: p.prompt }; })
+      }
+    });
+  } catch (e) {
+    res.status(503).json({ error: e.message || "写作题库不可用" });
+  }
+});
+
+app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res) {
+  if (!studentOnly(req, res)) return;
+  var taskType = clipText(req.body && req.body.taskType, 10);
+  var promptId = clipText(req.body && req.body.promptId, 80);
+  var essay = clipText(req.body && req.body.essay, 8000);
+  if (taskType !== "task1" && taskType !== "task2") {
+    return res.status(400).json({ error: "请选择 Task 1 或 Task 2" });
+  }
+  if (!promptId || !essay) return res.status(400).json({ error: "缺少题干或作文" });
+  if (essay.length < 80) return res.status(400).json({ error: "作文过短，请粘贴完整作答" });
+  var prompt = findWritingPrompt(taskType, promptId);
+  if (!prompt) return res.status(400).json({ error: "题干不存在" });
+  var u = getUsage(req.user.sub);
+  if (u.textCount >= AI_QUOTA.text) {
+    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: quotaPayload(u) });
+  }
+  var system =
+    "You are an IELTS Writing examiner and teacher for YYSD. Reply mainly in Chinese for explanations; " +
+    "keep example sentences and the model essay in English. Grade " + (taskType === "task1" ? "Task 1" : "Task 2") + ". " +
+    "Prompt:\n" + prompt.prompt + "\n" +
+    "Return useful feedback, then on its own final line exactly: " +
+    "WRITING_JSON:{\"overall\":6.0,\"task\":6.0,\"coherence\":6.0,\"lexical\":6.0,\"grammar\":6.0," +
+    "\"comment\":\"简短总评\",\"paragraphNotes\":[\"段1批注\",\"段2批注\"]," +
+    "\"corrections\":[{\"bad\":\"原句\",\"good\":\"改写\",\"why\":\"原因\"}]," +
+    "\"modelEssay\":\"full model essay in English\"} " +
+    "Bands 0-9 in 0.5 steps; be conservative.";
+  try {
+    var raw = await qwenChatMessages([
+      { role: "system", content: system },
+      { role: "user", content: essay }
+    ], 0.35);
+    bumpUsage(req.user.sub, { text: 1 });
+    var grade = parseWritingGrade(raw);
+    var prose = String(raw || "").replace(/\n?WRITING_JSON:\s*\{[\s\S]*\}\s*$/, "").trim();
+    res.json({
+      ok: true,
+      feedback: prose,
+      grade: grade,
+      prompt: { id: prompt.id, title: prompt.title, taskType: taskType },
+      quota: quotaPayload(getUsage(req.user.sub))
+    });
+  } catch (e) {
+    console.error("[yysd-api] writing-grade", e.message);
+    res.status(502).json({ error: "写作批改失败，请稍后再试" });
+  }
+});
+
+app.post("/api/ai-tutor/sessions/:id/abandon", authMiddleware, function (req, res) {
+  if (!studentOnly(req, res)) return;
+  var id = clipText(req.params.id, 64);
+  var s = tutorGetSession.get(id, req.user.sub);
+  if (!s) return res.status(404).json({ error: "会话不存在" });
+  if (s.status === "complete") return res.json({ ok: true, status: "complete" });
+  var now = new Date().toISOString();
+  tutorSetStatus.run("incomplete", now, id, req.user.sub);
+  tutorInsertMessage.run(id, "assistant", "This mock test was abandoned and marked incomplete. Please start a new mock if you wish to continue.", 0, JSON.stringify({ abandoned: true }), now);
+  res.json({ ok: true, status: "incomplete" });
 });
 
 app.get("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
@@ -1763,7 +1896,7 @@ app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
   var title = mode === "examiner"
     ? "考官 · " + examTypeLabel(examMode || examType)
     : "老师辅导";
-  tutorInsertSession.run(id, req.user.sub, mode, examType || null, examMode || null, packStr, title, now, now);
+  tutorInsertSession.run(id, req.user.sub, mode, examType || null, examMode || null, packStr, title, now, now, "active");
   if (mode === "examiner" && (examMode === "mock" || examType === "full")) {
     bumpUsage(req.user.sub, { fullMocks: 1 });
   }
@@ -1816,9 +1949,19 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
   var sessionId = clipText(req.body && req.body.sessionId, 64);
   var content = clipText(req.body && req.body.content, 8000);
   var audioSec = Math.max(0, Math.min(600, Number(req.body && req.body.audioSec) || 0));
-  if (!sessionId || !content) return res.status(400).json({ error: "缺少 sessionId 或 content" });
+  var answerInvalid = !!(req.body && req.body.answerInvalid);
+  if (!sessionId || (!content && !answerInvalid)) return res.status(400).json({ error: "缺少 sessionId 或 content" });
   var s = tutorGetSession.get(sessionId, req.user.sub);
   if (!s) return res.status(404).json({ error: "会话不存在" });
+  if (s.status === "incomplete") {
+    return res.status(400).json({ error: "该模考已标记未完成，请重新开一场" });
+  }
+  if (s.status === "complete") {
+    return res.status(400).json({ error: "该场次已结束" });
+  }
+  if (answerInvalid) {
+    content = "[ANSWER_INVALID] Candidate remained silent for 5 seconds. Treat this answer as invalid and move to the next question.";
+  }
   var u = getUsage(req.user.sub);
   if (u.textCount >= AI_QUOTA.text) {
     return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: quotaPayload(u) });
@@ -1827,11 +1970,12 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
     return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: quotaPayload(u) });
   }
   var now = new Date().toISOString();
-  tutorInsertMessage.run(sessionId, "user", content, audioSec, null, now);
+  var userMeta = answerInvalid ? JSON.stringify({ answerInvalid: true }) : null;
+  tutorInsertMessage.run(sessionId, "user", content, audioSec, userMeta, now);
   bumpUsage(req.user.sub, { text: 1, voiceSec: audioSec });
   if (s.title === "老师辅导" || String(s.title || "").indexOf("考官 ·") === 0) {
     var short = content.slice(0, 24).replace(/\s+/g, " ");
-    if (short) tutorTouchSession.run(now, short + (content.length > 24 ? "…" : ""), sessionId);
+    if (short && !answerInvalid) tutorTouchSession.run(now, short + (content.length > 24 ? "…" : ""), sessionId);
     else tutorTouchSession.run(now, null, sessionId);
   } else {
     tutorTouchSession.run(now, null, sessionId);
@@ -1851,11 +1995,13 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
     var meta = score ? JSON.stringify({ score: score }) : null;
     var at = new Date().toISOString();
     tutorInsertMessage.run(sessionId, "assistant", reply, 0, meta, at);
-    tutorTouchSession.run(at, null, sessionId);
+    if (score) tutorSetStatus.run("complete", at, sessionId, req.user.sub);
+    else tutorTouchSession.run(at, null, sessionId);
     res.json({
       ok: true,
       reply: reply,
       score: score,
+      status: score ? "complete" : "active",
       quota: quotaPayload(getUsage(req.user.sub))
     });
   } catch (e) {
@@ -1924,6 +2070,102 @@ app.post("/api/admin/jiijing/upload", staffAuthMiddleware, async function (req, 
   } catch (e) {
     console.error("[yysd-api] jiijing upload", e.message);
     res.status(502).json({ error: "PDF 解析异常：" + e.message });
+  }
+});
+
+function getWordUsage(userId) {
+  var day = todayKey();
+  var row = db.prepare("SELECT query_count FROM ai_word_usage WHERE user_id = ? AND day = ?").get(userId, day);
+  return { day: day, queryCount: row ? row.query_count : 0 };
+}
+
+function bumpWordUsage(userId) {
+  var day = todayKey();
+  db.prepare(
+    "INSERT INTO ai_word_usage (user_id, day, query_count) VALUES (?, ?, 1) " +
+    "ON CONFLICT(user_id, day) DO UPDATE SET query_count = query_count + 1"
+  ).run(userId, day);
+}
+
+function wordQuotaPayload(u) {
+  return {
+    limit: AI_WORD_QUOTA,
+    used: u.queryCount,
+    left: Math.max(0, AI_WORD_QUOTA - u.queryCount)
+  };
+}
+
+function buildWordLookupSystem() {
+  return (
+    "你是优益思达（YYSD）的英语词汇助教。用中文为主讲解，关键术语可保留英文。" +
+    "学生可能输入：单个英文单词、短语、整句，或中文（反查英文）。" +
+    "首次详尽解答时，按下列小节用纯文本输出（不要用 Markdown 代码块）：\n" +
+    "1) 词条（英文）\n2) 音标\n3) 词性与中文释义\n4) 英文释义\n5) 例句（2–3 句，附中文翻译）\n" +
+    "6) 近义词 / 反义词\n7) 常见搭配\n8) 易混词\n9) 记忆提示\n" +
+    "追问时针对问题简洁回答，不必重复全部小节。" +
+    "每次回复末尾单独一行：WORD_JSON:{\"word\":\"英文词条\",\"ipa\":\"音标\",\"meaning\":\"中文释义摘要\"}" +
+    "中文反查时 word 填最贴切的英文；短语/句子时 word 填核心英文表达。"
+  );
+}
+
+function parseWordFromReply(text) {
+  var m = String(text || "").match(/WORD_JSON:\s*(\{[\s\S]*?\})/);
+  if (!m) return null;
+  try {
+    var d = JSON.parse(m[1]);
+    return {
+      word: clipText(d.word, 80),
+      ipa: clipText(d.ipa, 80),
+      meaning: clipText(d.meaning, 200)
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function stripWordMarker(text) {
+  return String(text || "").replace(/\n?WORD_JSON:\s*\{[\s\S]*?\}\s*$/, "").trim();
+}
+
+app.get("/api/ai-word/quota", authMiddleware, function (req, res) {
+  if (!studentOnly(req, res)) return;
+  res.json({ ok: true, quota: wordQuotaPayload(getWordUsage(req.user.sub)) });
+});
+
+app.post("/api/ai-word/ask", authMiddleware, async function (req, res) {
+  if (!studentOnly(req, res)) return;
+  var content = clipText(req.body && req.body.content, 500);
+  if (!content) return res.status(400).json({ error: "请输入要查询的内容" });
+  var history = Array.isArray(req.body && req.body.history) ? req.body.history : [];
+  var u = getWordUsage(req.user.sub);
+  if (u.queryCount >= AI_WORD_QUOTA) {
+    return res.status(429).json({
+      error: "今日 AI 查词已达上限（" + AI_WORD_QUOTA + " 次）",
+      quota: wordQuotaPayload(u)
+    });
+  }
+  var msgs = [{ role: "system", content: buildWordLookupSystem() }];
+  history.slice(-12).forEach(function (m) {
+    var role = m && m.role === "assistant" ? "assistant" : "user";
+    var c = clipText(m && m.content, 4000);
+    if (c) msgs.push({ role: role, content: c });
+  });
+  msgs.push({ role: "user", content: content });
+  bumpWordUsage(req.user.sub);
+  try {
+    var raw = await qwenChatMessages(msgs, 0.3);
+    var meta = parseWordFromReply(raw);
+    var reply = stripWordMarker(raw);
+    if (!reply) reply = "暂时无法生成解释，请换个词再试。";
+    res.json({
+      ok: true,
+      reply: reply,
+      meta: meta,
+      quota: wordQuotaPayload(getWordUsage(req.user.sub))
+    });
+  } catch (e) {
+    console.error("[yysd-api] ai-word/ask", e.message);
+    res.status(e.message.indexOf("未配置") >= 0 ? 503 : 502).json({ error: "AI 查词失败，请稍后再试" });
   }
 });
 
@@ -2022,8 +2264,11 @@ if (require.main === module) {
   console.assert(isAdminPhone("13800138000") === false);
   console.assert(examTypeLabel("full") === "完整模拟考");
   console.assert(buildTutorSystem("teacher", "", null).indexOf("口语") >= 0);
+  console.assert(parseWordFromReply('x\nWORD_JSON:{"word":"cat","ipa":"/kæt/","meaning":"猫"}').word === "cat");
+  console.assert(stripWordMarker("hello\nWORD_JSON:{\"word\":\"a\"}") === "hello");
   console.assert(loadActiveBank().part1.length > 0);
   console.assert(buildExamPack("mock").part2.title.indexOf("Describe") === 0);
+  console.assert(loadWritingBank().task1.length > 0);
   app.listen(PORT, function () {
     console.log("[yysd-api] listening on " + PORT + (SMS_DEV ? " (SMS_DEV_MODE)" : "") +
       " admins=" + ADMIN_PHONES.join(","));

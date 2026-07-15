@@ -3696,6 +3696,130 @@ body.has-mobile-tabs { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0
 }
 
 /* ==========================================================================
+   AI word lookup (学习区 · 单词)
+   ========================================================================== */
+.ai-word {
+  margin-bottom: 22px;
+  padding: 18px 20px;
+  border: 1px solid rgba(30, 58, 95, 0.14);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(165deg, #fff 0%, #f4f7fb 100%);
+  box-shadow: var(--shadow-paper);
+}
+.ai-word__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  margin-bottom: 6px;
+}
+.ai-word__head h3 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--brand-navy);
+}
+.ai-word__quota {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+.ai-word__hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.ai-word__form,
+.ai-word__follow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.ai-word__search {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.ai-word__search:focus-within {
+  border-color: rgba(30, 58, 95, 0.35);
+}
+.ai-word__search input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--brand-navy);
+  min-width: 0;
+}
+.ai-word__panel {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(30, 58, 95, 0.08);
+}
+.ai-word__msgs {
+  max-height: 420px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ai-word__msg {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #fff;
+}
+.ai-word__msg--user {
+  background: rgba(30, 58, 95, 0.06);
+  border-color: transparent;
+}
+.ai-word__msg pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--brand-navy);
+}
+.ai-word__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ai-word__follow input {
+  flex: 1;
+  min-width: 160px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  background: #fff;
+}
+.ai-word__status {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.ai-word__status.is-ok { color: #1f7a4d; }
+.ai-word__status.is-warn { color: #9a6b00; }
+.ai-word__status.is-err { color: var(--brand-red, #c8102e); }
+
+/* ==========================================================================
    Wrong-word notebook (单词错题本)
    ========================================================================== */
 .wrong-notebook-strip {

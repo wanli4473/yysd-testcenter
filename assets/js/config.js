@@ -6,8 +6,9 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260714a";
+  var CONTENT_VER = "20260714numdict";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
+  var SAVED_WORDS_KEY = "yysd:saved-words";
 
   // Homepage display order: 学习区 → 练习区 → 模考区
   var ZONES = ["study", "practice", "mock"];
@@ -16,7 +17,7 @@ window.YYSD = (function () {
     study:    { label: "学习区", en: "Study", icon: "📚",
                 desc: "单词系统精讲，边学边测，打牢基础。" },
     practice: { label: "练习区", en: "Practice", icon: "✏️",
-                desc: "长难句、听力精听等专项训练，针对性提分。" },
+                desc: "长难句、数字听写、听力精听等专项训练，针对性提分。" },
     mock:     { label: "模考区", en: "Mock Tests", icon: "🎯",
                 desc: "剑桥雅思 / A-Level 历年真题，在线预览与下载。" }
   };
@@ -25,7 +26,7 @@ window.YYSD = (function () {
   var ZONE_SUBJECTS = {
     study:    ["grammar", "vocab", "vocab-cet4",
                "vocab-special-listening", "vocab-special-reading", "vocab-special-writing"],
-    practice: ["changnanju", "jingting", "ielts-speaking", "ielts"],
+    practice: ["changnanju", "shuzi-tingxie", "jingting", "ielts-speaking", "ielts"],
     mock:     ["cambridge-listening", "cambridge-reading", "ielts",
                "ielts-speaking", "ielts-writing", "alevel", "ap", "toefl", "sat"]
   };
@@ -49,6 +50,7 @@ window.YYSD = (function () {
     "vocab-special-reading":   { label: "阅读专项词汇", en: "Reading Words", color: "var(--c-cambridge-reading)" },
     "vocab-special-writing":   { label: "写作专项词汇", en: "Writing Vocabulary", color: "var(--c-cambridge-reading)" },
     changnanju: { label: "长难句", en: "Complex Sentences", color: "var(--c-zone-practice)" },
+    "shuzi-tingxie": { label: "数字听写", en: "Number Dictation", color: "var(--c-zone-practice)" },
     jingting:   { label: "听力精听", en: "Intensive Listening", color: "var(--c-zone-practice)" }
   };
 
@@ -68,6 +70,7 @@ window.YYSD = (function () {
     ],
     practice: [
       { key: "changnanju", label: "长难句", subject: "changnanju" },
+      { key: "shuzi-tingxie", label: "数字听写", subject: "shuzi-tingxie" },
       { key: "jingting", label: "听力精听", subject: "jingting" },
       { key: "ielts-speaking", label: "雅思口语", subject: "ielts-speaking" }
     ],
@@ -167,6 +170,73 @@ window.YYSD = (function () {
     var store = wrongWordsStore();
     delete store[book];
     localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store));
+  }
+
+  function savedWordsStore() {
+    try { return JSON.parse(localStorage.getItem(SAVED_WORDS_KEY) || "{}"); }
+    catch (e) { return {}; }
+  }
+
+  function savedWords() {
+    var store = savedWordsStore();
+    return Object.keys(store).map(function (k) { return store[k]; })
+      .sort(function (a, b) { return String(b.savedAt || "").localeCompare(String(a.savedAt || "")); });
+  }
+
+  function savedWordCount() {
+    return Object.keys(savedWordsStore()).length;
+  }
+
+  function addSavedWord(entry) {
+    var word = String((entry && entry.word) || "").trim();
+    if (!word) return false;
+    var key = word.toLowerCase();
+    var store = savedWordsStore();
+    var now = new Date().toISOString();
+    if (store[key]) {
+      store[key].ipa = entry.ipa || store[key].ipa || "";
+      store[key].meaning = entry.meaning || store[key].meaning || "";
+      store[key].note = entry.note || store[key].note || "";
+      store[key].savedAt = now;
+    } else {
+      store[key] = {
+        word: word,
+        ipa: (entry && entry.ipa) || "",
+        meaning: (entry && entry.meaning) || "",
+        note: (entry && entry.note) || "",
+        savedAt: now
+      };
+    }
+    localStorage.setItem(SAVED_WORDS_KEY, JSON.stringify(store));
+    return true;
+  }
+
+  function removeSavedWord(wordKey) {
+    var store = savedWordsStore();
+    delete store[String(wordKey || "").toLowerCase()];
+    localStorage.setItem(SAVED_WORDS_KEY, JSON.stringify(store));
+  }
+
+  function clearSavedWords() {
+    localStorage.removeItem(SAVED_WORDS_KEY);
+  }
+
+  function savedWordsStripHTML(prefix) {
+    var p = prefix || "";
+    var n = savedWordCount();
+    return '<div class="wrong-notebook-strip" aria-label="生词本">' +
+      '<div class="wrong-notebook-strip__head"><h3>生词本</h3>' +
+      '<span class="wrong-notebook-strip__hint">AI 查词后可一键收藏，便于复习</span></div>' +
+      '<div class="wrong-notebook-strip__grid">' +
+        '<a class="wrong-notebook-card' + (n ? " has-items" : "") + '" href="' + p + 'saved-words.html">' +
+          '<span class="wrong-notebook-card__ico" aria-hidden="true">📘</span>' +
+          '<span class="wrong-notebook-card__body">' +
+            '<b>AI 生词本</b>' +
+            '<span>' + (n ? n + " 个生词待复习" : "暂无生词，查词后可加入") + "</span>" +
+          "</span>" +
+          (n ? '<span class="wrong-notebook-card__badge">' + n + "</span>" : '<span class="wrong-notebook-card__go">进入 ›</span>') +
+        "</a>" +
+      "</div></div>";
   }
 
   function wrongWordsStripHTML(prefix) {
@@ -835,6 +905,8 @@ window.YYSD = (function () {
     vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML,
     vocabBookOfSubject: vocabBookOfSubject,
     wrongWords: wrongWords, wrongWordCount: wrongWordCount, mergeWrongWords: mergeWrongWords,
-    removeWrongWord: removeWrongWord, clearWrongWords: clearWrongWords, wrongWordsStripHTML: wrongWordsStripHTML
+    removeWrongWord: removeWrongWord, clearWrongWords: clearWrongWords, wrongWordsStripHTML: wrongWordsStripHTML,
+    savedWords: savedWords, savedWordCount: savedWordCount, addSavedWord: addSavedWord,
+    removeSavedWord: removeSavedWord, clearSavedWords: clearSavedWords, savedWordsStripHTML: savedWordsStripHTML
   };
 })();
