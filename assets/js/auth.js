@@ -218,6 +218,27 @@ window.YYSD_AUTH = (function () {
     });
   }
 
+  // HTML responses (uploaded assignments) — do not JSON.parse
+  function apiHtml(path) {
+    var h = {};
+    var t = getToken();
+    if (t) h.Authorization = "Bearer " + t;
+    return fetch(API_BASE + path, { method: "GET", headers: h }).then(function (r) {
+      return r.text().then(function (text) {
+        if (!r.ok) {
+          try {
+            var d = JSON.parse(text);
+            throw new Error((d && d.error) || "请求失败");
+          } catch (e) {
+            if (e.message && e.message !== "请求失败" && e.name !== "SyntaxError") throw e;
+            throw new Error("加载练习失败（" + r.status + "）");
+          }
+        }
+        return text;
+      });
+    });
+  }
+
   function readLocalResults() {
     try { return JSON.parse(localStorage.getItem(RESULTS_KEY) || "{}"); }
     catch (e) { return {}; }
@@ -484,6 +505,7 @@ window.YYSD_AUTH = (function () {
     getUser: getUser,
     setUser: setUser,
     api: api,
+    apiHtml: apiHtml,
     bindNav: bindNav,
     requireLogin: requireLogin,
     logout: logout,

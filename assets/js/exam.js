@@ -29,15 +29,52 @@
 
   if (!id) { fail("缺少内容编号。"); return; }
 
-  Y.load().then(function (items) {
-    item = items.filter(function (e) { return e.id === id; })[0];
-    if (!item) { fail("找不到该内容，可能已被移除。"); return; }
-    start();
-  }).catch(function () {
-    fail(location.protocol === "file:"
-      ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"
-      : "内容信息加载失败。");
-  });
+  var uploadMatch = String(id).match(/^upload-(\d+)$/);
+  if (uploadMatch) {
+    if (!window.YYSD_AUTH || !YYSD_AUTH.getToken || !YYSD_AUTH.getToken()) {
+      location.href = "login.html?next=" + encodeURIComponent(location.pathname + location.search);
+      return;
+    }
+    var eventId = Number(uploadMatch[1]);
+    var isTeach = YYSD_AUTH.isTeacher && YYSD_AUTH.isTeacher();
+    var metaReq = isTeach
+      ? YYSD_AUTH.api("/api/calendar/events/" + eventId)
+      : YYSD_AUTH.api("/api/student/assignments/" + eventId + "/meta");
+    var htmlPath = isTeach
+      ? "/api/calendar/events/" + eventId + "/html"
+      : "/api/student/assignments/" + eventId + "/html";
+    metaReq
+      .then(function (d) {
+        var ev = d.event || {};
+        item = {
+          id: id,
+          title: ev.title || ("上传练习 #" + eventId),
+          zone: "assignment",
+          subject: "teacher-upload",
+          duration: 0,
+          description: ev.description || "",
+          _uploadEventId: eventId,
+          _attachmentName: ev.attachmentName || ""
+        };
+        return YYSD_AUTH.apiHtml(htmlPath);
+      })
+      .then(function (html) {
+        startUpload(html);
+      })
+      .catch(function (e) {
+        fail((e && e.message) || "无法加载老师布置的练习。");
+      });
+  } else {
+    Y.load().then(function (items) {
+      item = items.filter(function (e) { return e.id === id; })[0];
+      if (!item) { fail("找不到该内容，可能已被移除。"); return; }
+      start();
+    }).catch(function () {
+      fail(location.protocol === "file:"
+        ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"
+        : "内容信息加载失败。");
+    });
+  }
 
   function fail(msg) {
     titleEl.textContent = "无法打开";
@@ -337,6 +374,33 @@
       } else if (!isStudy) {
         if (!confirm("确定退出吗？未交卷的作答可能不会被保存。")) e.preventDefault();
       }
+    });
+  }
+
+  function startUpload(html) {
+    var zoneLabel = (Y.ZONE[item.zone] || {}).label || "";
+    var subjLabel = "老师布置";
+    titleEl.textContent = item.title;
+    document.title = item.title + " · 优益思达学习中心";
+    renderBadges(null);
+    metaEl.textContent = [subjLabel, zoneLabel, item._attachmentName || ""].filter(Boolean).join(" · ");
+    if (hintEl) {
+      hintEl.hidden = false;
+      hintEl.textContent = "交卷后成绩会自动同步到「我的成绩」与任务日历";
+    }
+    backBtn.textContent = "← 返回任务日历";
+    backBtn.href = "calendar.html";
+
+    var blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    frame.src = url;
+    frame.addEventListener("load", function () {
+      try { URL.revokeObjectURL(url); } catch (e) {}
+      onFrameLoad();
+    }, { once: true });
+
+    backBtn.addEventListener("click", function (e) {
+      if (!confirm("确定退出吗？未交卷的作答可能不会被保存。")) e.preventDefault();
     });
   }
 

@@ -58,6 +58,8 @@
     document.getElementById("create-form").reset();
     selectedStudents = {};
     selectedExercises = {};
+    var hint = document.getElementById("html-file-hint");
+    if (hint) hint.textContent = "上传后优先生效；学生将在站内打开做题。也可下方勾选网站现有练习。";
     document.getElementById("f-type").value = "ASSIGNMENT";
     syncTypeUi();
     renderStudentList();
@@ -270,6 +272,9 @@
           "<td>" + esc(fmtDate(s.completedAt)) + "</td></tr>";
       }).join("");
       var exHtml = (ev.linkedExerciseIds || []).map(function (xid) {
+        if (String(xid).indexOf("upload-") === 0) {
+          return "<li>上传练习：" + esc(ev.attachmentName || xid) + "</li>";
+        }
         var it = catalog.filter(function (c) { return c.id === xid; })[0];
         return "<li>" + esc(it ? Y.displayTitle(it) : xid) + "</li>";
       }).join("");
@@ -281,6 +286,9 @@
         "<p>" + esc(ev.description || "无额外说明") + "</p>" +
         "<p class=\"cal-card__meta\">开始：" + esc(fmtDate(ev.startTime)) +
           " · 截止：" + esc(fmtDate(ev.dueTime)) + "</p>" +
+        (ev.attachmentName
+          ? "<p class=\"profile-hint\">附件：" + esc(ev.attachmentName) + "</p>"
+          : "") +
         (exHtml ? "<h3>关联练习</h3><ul>" + exHtml + "</ul>" +
           "<p class=\"profile-hint\">学生须完成以上全部练习后，任务才会自动变为「已完成」。</p>" : "") +
         "<h3>学生完成情况 <span class=\"cal-detail__count\">" + doneN + "/" + totalN + " 人已完成</span></h3>" +
@@ -402,6 +410,32 @@
       showMsg("请至少选择一名学生");
       return;
     }
+    var fileInput = document.getElementById("f-html");
+    var file = fileInput && fileInput.files && fileInput.files[0];
+    if (file && type !== "ASSIGNMENT") {
+      showMsg("只有练习作业可以上传 HTML");
+      return;
+    }
+    if (file && !/\.html?$/i.test(file.name)) {
+      showMsg("仅支持 .html 文件");
+      return;
+    }
+    if (file && file.size > 2 * 1024 * 1024) {
+      showMsg("HTML 不能超过 2MB");
+      return;
+    }
+
+    function post(body) {
+      showMsg("发布中…");
+      return T.api("/api/calendar/events", { method: "POST", body: body })
+        .then(function () {
+          showMsg("已发布", true);
+          closeCreate();
+          load();
+        })
+        .catch(function (e) { showMsg(e.message); });
+    }
+
     var body = {
       title: document.getElementById("f-title").value.trim(),
       description: document.getElementById("f-desc").value.trim(),
@@ -409,16 +443,36 @@
       startTime: fromLocalInput(document.getElementById("f-start").value),
       dueTime: fromLocalInput(document.getElementById("f-due").value),
       targetStudentIds: targetStudentIds,
-      linkedExerciseIds: type === "ASSIGNMENT" ? Object.keys(selectedExercises) : []
+      linkedExerciseIds: type === "ASSIGNMENT" && !file ? Object.keys(selectedExercises) : []
     };
-    T.api("/api/calendar/events", { method: "POST", body: body })
-      .then(function () {
-        showMsg("已发布", true);
-        closeCreate();
-        load();
-      })
-      .catch(function (e) { showMsg(e.message); });
+
+    if (file) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        body.htmlContent = String(reader.result || "");
+        body.htmlFileName = file.name;
+        post(body);
+      };
+      reader.onerror = function () { showMsg("读取文件失败"); };
+      reader.readAsText(file);
+      return;
+    }
+    post(body);
   });
+
+  var htmlInput = document.getElementById("f-html");
+  if (htmlInput) {
+    htmlInput.addEventListener("change", function () {
+      var f = this.files && this.files[0];
+      var hint = document.getElementById("html-file-hint");
+      if (!hint) return;
+      if (!f) {
+        hint.textContent = "上传后优先生效；学生将在站内打开做题。也可下方勾选网站现有练习。";
+        return;
+      }
+      hint.textContent = "已选择：" + f.name + "（" + Math.round(f.size / 1024) + " KB）· 将优先生效，下方勾选将被忽略";
+    });
+  }
 
   load();
 })();

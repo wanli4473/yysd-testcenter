@@ -71,7 +71,9 @@ try { db.exec("ALTER TABLE teachers ADD COLUMN avatar_url TEXT"); } catch (e) { 
 
 const uploadsRoot = path.join(dataDir, "uploads");
 const avatarsDir = path.join(uploadsRoot, "avatars");
+const assignmentsDir = path.join(uploadsRoot, "assignments");
 if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
+if (!fs.existsSync(assignmentsDir)) fs.mkdirSync(assignmentsDir, { recursive: true });
 
 db.exec(
   "CREATE TABLE IF NOT EXISTS calendar_events (" +
@@ -84,7 +86,8 @@ db.exec(
   "created_by INTEGER NOT NULL," +
   "target_student_ids TEXT NOT NULL," +
   "linked_exercise_ids TEXT NOT NULL," +
-  "created_at TEXT NOT NULL" +
+  "created_at TEXT NOT NULL," +
+  "attachment_name TEXT" +
   ");" +
   "CREATE TABLE IF NOT EXISTS student_task_status (" +
   "id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -110,6 +113,8 @@ db.exec(
   ");" +
   "CREATE INDEX IF NOT EXISTS idx_score_attempts_user ON user_score_attempts(user_id, created_at DESC);"
 );
+
+try { db.exec("ALTER TABLE calendar_events ADD COLUMN attachment_name TEXT"); } catch (e) { /* already exists */ }
 
 // ponytail: one-shot backfill so legacy latest-only rows appear as first attempt
 db.prepare(
@@ -166,8 +171,11 @@ const stmts = {
   ),
   findUserById: db.prepare("SELECT id, phone, display_name, avatar_url FROM users WHERE id = ?"),
   insertCalendarEvent: db.prepare(
-    "INSERT INTO calendar_events (title, description, event_type, start_time, due_time, created_by, target_student_ids, linked_exercise_ids, created_at) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO calendar_events (title, description, event_type, start_time, due_time, created_by, target_student_ids, linked_exercise_ids, created_at, attachment_name) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ),
+  setEventAttachment: db.prepare(
+    "UPDATE calendar_events SET attachment_name = ?, linked_exercise_ids = ? WHERE id = ?"
   ),
   getCalendarEvent: db.prepare("SELECT * FROM calendar_events WHERE id = ?"),
   listTeacherEvents: db.prepare(
@@ -364,6 +372,7 @@ function eventFromRow(row, extra) {
   var exerciseIds = [];
   try { targetIds = JSON.parse(row.target_student_ids || "[]"); } catch (e) {}
   try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
+  var hasUpload = exerciseIds.some(function (id) { return String(id).indexOf("upload-") === 0; });
   var ev = {
     id: row.id,
     title: row.title,
@@ -374,10 +383,81 @@ function eventFromRow(row, extra) {
     createdBy: row.created_by,
     targetStudentIds: targetIds,
     linkedExerciseIds: exerciseIds,
+    attachmentName: row.attachment_name || "",
+    hasUpload: hasUpload || !!row.attachment_name,
     createdAt: row.created_at
   };
   if (extra) Object.keys(extra).forEach(function (k) { ev[k] = extra[k]; });
   return ev;
+}
+
+var SCORE_BRIDGE_SCRIPT =
+  "<script>(function(){" +
+  "if(window.__yysdScoreBridge)return;window.__yysdScoreBridge=1;" +
+  "var sent='';" +
+  "function report(){" +
+  "var sum=document.getElementById('summary');" +
+  "if(!sum)return;" +
+  "var num=sum.querySelector('.item .num');" +
+  "if(!num)return;" +
+  "var m=String(num.textContent||'').match(/(\\d+)\\s*\\/\\s*(\\d+)/);" +
+  "if(!m)return;" +
+  "var score=Number(m[1]),total=Number(m[2]);" +
+  "var key=score+'|'+total;" +
+  "if(sent===key)return;sent=key;" +
+  "try{parent.postMessage({type:'yysd:score',score:score,total:total,completed:true},'*');}catch(e){}" +
+  "}" +
+  "function watch(){" +
+  "var el=document.getElementById('testResults');" +
+  "if(!el){setTimeout(watch,400);return;}" +
+  "var run=function(){if(el.classList.contains('visible'))report();};" +
+  "new MutationObserver(run).observe(el,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});" +
+  "var sum=document.getElementById('summary');" +
+  "if(sum)new MutationObserver(report).observe(sum,{childList:true,subtree:true,characterData:true});" +
+  "run();" +
+  "}" +
+  "if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch);else watch();" +
+  "})();</script>";
+
+function injectScoreBridge(html) {
+  var raw = String(html || "");
+  if (raw.indexOf("__yysdScoreBridge") >= 0) return raw;
+  if (/<\/body>/i.test(raw)) return raw.replace(/<\/body>/i, SCORE_BRIDGE_SCRIPT + "</body>");
+  return raw + SCORE_BRIDGE_SCRIPT;
+}
+
+function assignmentHtmlPath(eventId) {
+  return path.join(assignmentsDir, String(eventId) + ".html");
+}
+
+function saveAssignmentHtml(eventId, htmlContent) {
+  var raw = String(htmlContent || "");
+  if (!raw.trim()) return { error: "HTML 内容为空" };
+  if (Buffer.byteLength(raw, "utf8") > 2 * 1024 * 1024) {
+    return { error: "HTML 不能超过 2MB" };
+  }
+  var lower = raw.slice(0, 500).toLowerCase();
+  if (lower.indexOf("<html") < 0 && lower.indexOf("<!doctype") < 0) {
+    return { error: "请上传有效的 HTML 文件" };
+  }
+  try {
+    if (!fs.existsSync(assignmentsDir)) fs.mkdirSync(assignmentsDir, { recursive: true });
+    fs.writeFileSync(assignmentHtmlPath(eventId), raw, "utf8");
+  } catch (e) {
+    console.error("[yysd-api] assignment write failed", e && e.message);
+    return { error: "保存练习文件失败" };
+  }
+  return { ok: true };
+}
+
+function readAssignmentHtml(eventId) {
+  var p = assignmentHtmlPath(eventId);
+  if (!fs.existsSync(p)) return null;
+  try {
+    return injectScoreBridge(fs.readFileSync(p, "utf8"));
+  } catch (e) {
+    return null;
+  }
 }
 
 function autoCompleteAssignments(studentId, itemId) {
@@ -1172,6 +1252,8 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
   var dueTime = clipText(body.dueTime || body.due_time, 40) || null;
   var targetStudentIds = parseStudentIds(body.targetStudentIds || body.target_student_ids);
   var linkedExerciseIds = parseExerciseIds(body.linkedExerciseIds || body.linked_exercise_ids);
+  var htmlContent = body.htmlContent != null ? String(body.htmlContent) : "";
+  var htmlFileName = clipText(body.htmlFileName || body.html_file_name, 120);
 
   if (!title) return res.status(400).json({ error: "请填写标题" });
   if (!EVENT_TYPES[eventType]) {
@@ -1184,6 +1266,12 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
   if (eventType === "LESSON" && !startTime) {
     return res.status(400).json({ error: "课程日程请设置上课时间" });
   }
+  if (htmlContent && eventType !== "ASSIGNMENT") {
+    return res.status(400).json({ error: "只有练习作业可以上传 HTML" });
+  }
+  if (htmlFileName && !/\.html?$/i.test(htmlFileName)) {
+    return res.status(400).json({ error: "仅支持 .html 文件" });
+  }
 
   for (var i = 0; i < targetStudentIds.length; i++) {
     if (!stmts.findUserById.get(targetStudentIds[i])) {
@@ -1195,6 +1283,7 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
   }
 
   var now = new Date().toISOString();
+  var exerciseJson = JSON.stringify(eventType === "ASSIGNMENT" ? linkedExerciseIds : []);
   var info = stmts.insertCalendarEvent.run(
     title,
     description || "",
@@ -1203,10 +1292,26 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
     dueTime,
     req.user.sub,
     JSON.stringify(targetStudentIds),
-    JSON.stringify(eventType === "ASSIGNMENT" ? linkedExerciseIds : []),
-    now
+    exerciseJson,
+    now,
+    null
   );
   var eventId = info.lastInsertRowid;
+
+  if (htmlContent) {
+    var saved = saveAssignmentHtml(eventId, htmlContent);
+    if (saved.error) {
+      db.prepare("DELETE FROM calendar_events WHERE id = ?").run(eventId);
+      return res.status(400).json({ error: saved.error });
+    }
+    var uploadId = "upload-" + eventId;
+    stmts.setEventAttachment.run(
+      htmlFileName || ("练习-" + eventId + ".html"),
+      JSON.stringify([uploadId]),
+      eventId
+    );
+  }
+
   var insertMany = db.transaction(function (ids) {
     ids.forEach(function (sid) { stmts.insertTaskStatus.run(eventId, sid); });
   });
@@ -1268,7 +1373,59 @@ app.delete("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res
   if (!row || row.created_by !== req.user.sub) return res.status(404).json({ error: "任务不存在" });
   db.prepare("DELETE FROM student_task_status WHERE event_id = ?").run(id);
   stmts.deleteCalendarEvent.run(id, req.user.sub);
+  try {
+    var hp = assignmentHtmlPath(id);
+    if (fs.existsSync(hp)) fs.unlinkSync(hp);
+  } catch (e) {}
   res.json({ ok: true });
+});
+
+app.get("/api/calendar/events/:id/html", teacherAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: "无效 ID" });
+  var row = stmts.getCalendarEvent.get(id);
+  if (!row || row.created_by !== req.user.sub) return res.status(404).json({ error: "任务不存在" });
+  var html = readAssignmentHtml(id);
+  if (!html) return res.status(404).json({ error: "未找到上传的练习文件" });
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", "private, no-store");
+  res.send(html);
+});
+
+app.get("/api/student/assignments/:eventId/html", authMiddleware, function (req, res) {
+  if (req.user.role === "teacher") {
+    return res.status(403).json({ error: "请使用教师预览接口" });
+  }
+  var eventId = Number(req.params.eventId);
+  if (!eventId) return res.status(400).json({ error: "无效 ID" });
+  var row = stmts.getCalendarEvent.get(eventId);
+  if (!row) return res.status(404).json({ error: "任务不存在" });
+  var task = stmts.getTaskStatus.get(eventId, req.user.sub);
+  if (!task) return res.status(403).json({ error: "你不在此任务名单中" });
+  var html = readAssignmentHtml(eventId);
+  if (!html) return res.status(404).json({ error: "未找到练习文件" });
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", "private, no-store");
+  res.send(html);
+});
+
+app.get("/api/student/assignments/:eventId/meta", authMiddleware, function (req, res) {
+  if (req.user.role === "teacher") {
+    return res.status(403).json({ error: "教师请使用教师端" });
+  }
+  var eventId = Number(req.params.eventId);
+  if (!eventId) return res.status(400).json({ error: "无效 ID" });
+  var row = stmts.getCalendarEvent.get(eventId);
+  if (!row) return res.status(404).json({ error: "任务不存在" });
+  var task = stmts.getTaskStatus.get(eventId, req.user.sub);
+  if (!task) return res.status(403).json({ error: "你不在此任务名单中" });
+  res.json({
+    ok: true,
+    event: eventFromRow(row, {
+      status: effectiveTaskStatus(task.status, row.due_time),
+      completedAt: task.completed_at || null
+    })
+  });
 });
 
 // ---- Admin: assign students to teachers ----

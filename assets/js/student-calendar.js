@@ -193,23 +193,41 @@
       return;
     }
     var sorted = events.slice().sort(function (a, b) {
+      var oa = a.status === "OVERDUE" ? 0 : (a.status === "PENDING" ? 1 : 2);
+      var ob = b.status === "OVERDUE" ? 0 : (b.status === "PENDING" ? 1 : 2);
+      if (oa !== ob) return oa - ob;
       return String(a.dueTime || a.startTime || "").localeCompare(String(b.dueTime || b.startTime || ""));
     });
     var rows = sorted.map(function (ev) {
-      return '<article class="cal-card cal-card--student ' + statusClass(ev.status) + '">' +
-        '<div class="cal-card__top">' +
-          '<span class="cal-tag ' + typeClass(ev.eventType) + '">' + esc(TYPE_LABEL[ev.eventType] || "") + "</span>" +
-          '<span class="cal-status-pill">' + esc(STATUS_LABEL[ev.status] || ev.status) + "</span>" +
+      var ids = ev.linkedExerciseIds || [];
+      var doneN = ev.exerciseDone || 0;
+      var totalN = ev.exerciseTotal != null ? ev.exerciseTotal : ids.length;
+      var prog = totalN
+        ? '<span class="cal-progress__txt">' + doneN + "/" + totalN + " 练习</span>"
+        : "";
+      var cta = ev.status === "COMPLETED"
+        ? '<button type="button" class="btn btn--ghost btn--sm" data-open="' + ev.id + '">查看</button>'
+        : (ids.length === 1
+          ? '<a class="btn btn--primary btn--sm" href="exam.html?id=' + encodeURIComponent(ids[0]) + '">去做</a>'
+          : '<button type="button" class="btn btn--primary btn--sm" data-open="' + ev.id + '">去做</button>');
+      return '<article class="cal-todo-row ' + statusClass(ev.status) + '">' +
+        '<div class="cal-todo-row__main">' +
+          '<div class="cal-todo-row__tags">' +
+            '<span class="cal-tag ' + typeClass(ev.eventType) + '">' + esc(TYPE_LABEL[ev.eventType] || "") + "</span>" +
+            '<span class="cal-status-pill ' + statusClass(ev.status) + '">' +
+              esc(STATUS_LABEL[ev.status] || ev.status) + "</span>" +
+          "</div>" +
           "<h3>" + esc(ev.title) + "</h3>" +
+          '<p class="cal-card__meta">' +
+            (ev.dueTime ? "截止 " + esc(fmtDate(ev.dueTime)) : "") +
+            (ev.startTime ? (ev.dueTime ? " · " : "") + "开始 " + esc(fmtDate(ev.startTime)) : "") +
+            (prog ? " · " + prog : "") +
+          "</p>" +
         "</div>" +
-        '<p class="cal-card__meta">' +
-          (ev.dueTime ? "截止 " + esc(fmtDate(ev.dueTime)) : "") +
-          (ev.startTime ? (ev.dueTime ? " · " : "") + "开始 " + esc(fmtDate(ev.startTime)) : "") +
-        "</p>" +
-        '<button type="button" class="btn btn--ghost btn--sm" data-open="' + ev.id + '">查看详情</button>' +
+        '<div class="cal-todo-row__act">' + cta + "</div>" +
       "</article>";
     }).join("");
-    viewEl.innerHTML = '<div class="cal-card-grid">' + rows + "</div>";
+    viewEl.innerHTML = '<div class="cal-todo-list">' + rows + "</div>";
   }
 
   function render() {
@@ -231,15 +249,28 @@
     if (!ev) return;
     activeEvent = ev;
     document.getElementById("stu-detail-title").textContent = ev.title;
+    var doneSet = {};
+    (ev.doneExerciseIds || []).forEach(function (xid) { doneSet[xid] = 1; });
     var exList = (ev.linkedExerciseIds || []).map(function (xid) {
+      var isUpload = String(xid).indexOf("upload-") === 0;
       var it = catalogById[xid];
-      var title = it ? Y.displayTitle(it) : xid;
+      var title = isUpload
+        ? (ev.attachmentName || "老师上传的练习")
+        : (it ? Y.displayTitle(it) : xid);
+      var done = !!doneSet[xid];
       var href = "exam.html?id=" + encodeURIComponent(xid);
-      return '<li class="cal-ex-row">' +
-        "<span>" + esc(title) + "</span>" +
-        '<a class="btn btn--primary btn--sm" href="' + href + '">立即去做</a></li>';
+      return '<li class="cal-ex-row' + (done ? " is-done" : "") + '">' +
+        "<span><b>" + esc(title) + "</b>" +
+          (done ? '<small class="cal-ex-done">已完成</small>' : "") +
+        "</span>" +
+        (done
+          ? '<a class="btn btn--ghost btn--sm" href="' + href + '">再看一次</a>'
+          : '<a class="btn btn--primary btn--sm" href="' + href + '">立即去做</a>') +
+        "</li>";
     }).join("");
 
+    var totalN = ev.exerciseTotal != null ? ev.exerciseTotal : (ev.linkedExerciseIds || []).length;
+    var doneN = ev.exerciseDone || 0;
     detailBody.innerHTML =
       '<p><span class="cal-tag ' + typeClass(ev.eventType) + '">' +
         esc(TYPE_LABEL[ev.eventType] || "") + "</span> " +
@@ -247,9 +278,13 @@
         esc(STATUS_LABEL[ev.status] || ev.status) + "</span></p>" +
       "<p>" + esc(ev.description || "老师未填写额外说明。") + "</p>" +
       '<p class="cal-card__meta">开始：' + esc(fmtDate(ev.startTime)) +
-        " · 截止：" + esc(fmtDate(ev.dueTime)) + "</p>" +
+        " · 截止：" + esc(fmtDate(ev.dueTime)) +
+        (totalN ? " · 练习进度 " + doneN + "/" + totalN : "") + "</p>" +
       (exList
-        ? "<h3>关联练习</h3><ul class=\"cal-ex-list\">" + exList + "</ul>"
+        ? "<h3>关联练习</h3><ul class=\"cal-ex-list\">" + exList + "</ul>" +
+          (ev.status !== "COMPLETED" && totalN
+            ? '<p class="profile-hint">完成全部 ' + totalN + " 份练习后，任务将自动标记为已完成。</p>"
+            : "")
         : (ev.eventType === "ASSIGNMENT"
           ? "<p class=\"profile-hint\">未关联具体练习，可按说明完成并手动勾选。</p>"
           : ""));
