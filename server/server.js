@@ -100,8 +100,25 @@ db.exec(
   "assigned_at TEXT NOT NULL," +
   "assigned_by TEXT," +
   "PRIMARY KEY (teacher_id, student_id)" +
-  ");"
+  ");" +
+  "CREATE TABLE IF NOT EXISTS user_score_attempts (" +
+  "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+  "user_id INTEGER NOT NULL," +
+  "item_id TEXT NOT NULL," +
+  "payload TEXT NOT NULL," +
+  "created_at TEXT NOT NULL" +
+  ");" +
+  "CREATE INDEX IF NOT EXISTS idx_score_attempts_user ON user_score_attempts(user_id, created_at DESC);"
 );
+
+// ponytail: one-shot backfill so legacy latest-only rows appear as first attempt
+db.prepare(
+  "INSERT INTO user_score_attempts (user_id, item_id, payload, created_at) " +
+  "SELECT s.user_id, s.item_id, s.payload, s.updated_at FROM user_scores s " +
+  "WHERE NOT EXISTS (" +
+  "  SELECT 1 FROM user_score_attempts a WHERE a.user_id = s.user_id AND a.item_id = s.item_id" +
+  ")"
+).run();
 
 const stmts = {
   upsertCode: db.prepare(
@@ -134,12 +151,18 @@ const stmts = {
   setTeacherAvatar: db.prepare("UPDATE teachers SET avatar_url = ? WHERE phone = ?"),
   listStudents: db.prepare(
     "SELECT u.id, u.phone, u.display_name, u.created_at, u.last_login_at, " +
-    "COUNT(s.item_id) AS score_count, MAX(s.updated_at) AS last_score_at " +
-    "FROM users u LEFT JOIN user_scores s ON s.user_id = u.id " +
-    "GROUP BY u.id ORDER BY COALESCE(MAX(s.updated_at), u.last_login_at, u.created_at) DESC"
+    "COUNT(a.id) AS score_count, MAX(a.created_at) AS last_score_at " +
+    "FROM users u LEFT JOIN user_score_attempts a ON a.user_id = u.id " +
+    "GROUP BY u.id ORDER BY COALESCE(MAX(a.created_at), u.last_login_at, u.created_at) DESC"
   ),
   listStudentScores: db.prepare(
     "SELECT item_id, payload, updated_at FROM user_scores WHERE user_id = ? ORDER BY updated_at DESC"
+  ),
+  listStudentAttempts: db.prepare(
+    "SELECT id, item_id, payload, created_at FROM user_score_attempts WHERE user_id = ? ORDER BY created_at DESC"
+  ),
+  insertAttempt: db.prepare(
+    "INSERT INTO user_score_attempts (user_id, item_id, payload, created_at) VALUES (?, ?, ?, ?)"
   ),
   findUserById: db.prepare("SELECT id, phone, display_name, avatar_url FROM users WHERE id = ?"),
   insertCalendarEvent: db.prepare(
@@ -1000,8 +1023,20 @@ function parseScorePayload(row) {
   var rec = null;
   try { rec = JSON.parse(row.payload); } catch (e) { rec = null; }
   if (!rec || typeof rec !== "object") rec = {};
+  var wrong = [];
+  if (Array.isArray(rec.wrong)) {
+    wrong = rec.wrong.slice(0, 80).map(function (w) {
+      if (!w || typeof w !== "object") return null;
+      return {
+        no: clipText(w.no != null ? String(w.no) : "", 20),
+        ua: clipText(w.ua, 200),
+        ans: clipText(w.ans, 200)
+      };
+    }).filter(Boolean);
+  }
   return {
     id: row.item_id,
+    attemptId: row.id != null ? row.id : null,
     title: clipText(rec.title, 200),
     zone: clipText(rec.zone, 40),
     subject: clipText(rec.subject, 60),
@@ -1009,8 +1044,9 @@ function parseScorePayload(row) {
     total: rec.total != null ? rec.total : null,
     band: rec.band != null ? rec.band : null,
     writingWords: rec.writingWords != null ? rec.writingWords : null,
-    date: clipText(rec.date, 40) || row.updated_at,
-    updatedAt: row.updated_at
+    date: clipText(rec.date, 40) || row.created_at || row.updated_at,
+    updatedAt: row.created_at || row.updated_at,
+    wrong: wrong
   };
 }
 
@@ -1026,7 +1062,7 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
     return !allowedSet || allowedSet[row.id];
   });
   var students = rows.map(function (row) {
-    var scores = stmts.listStudentScores.all(row.id).map(parseScorePayload);
+    var scores = stmts.listStudentAttempts.all(row.id).map(parseScorePayload);
     var filtered = zone ? scores.filter(function (s) { return s.zone === zone; }) : scores;
     var mockCount = scores.filter(function (s) { return s.zone === "mock"; }).length;
     return {
@@ -1056,7 +1092,7 @@ app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function 
   var user = db.prepare("SELECT id, phone, display_name, created_at, last_login_at FROM users WHERE id = ?").get(userId);
   if (!user) return res.status(404).json({ error: "学生不存在" });
   var zone = clipText(req.query.zone, 40);
-  var scores = stmts.listStudentScores.all(userId).map(parseScorePayload);
+  var scores = stmts.listStudentAttempts.all(userId).map(parseScorePayload);
   if (zone) scores = scores.filter(function (s) { return s.zone === zone; });
   res.json({
     ok: true,
@@ -1299,6 +1335,18 @@ function maskPhone(phone) {
   return phone.slice(0, 3) + "****" + phone.slice(-4);
 }
 
+function sanitizeWrong(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.slice(0, 80).map(function (w) {
+    if (!w || typeof w !== "object") return null;
+    return {
+      no: clipText(w.no != null ? String(w.no) : "", 20),
+      ua: clipText(w.ua, 200),
+      ans: clipText(w.ans, 200)
+    };
+  }).filter(Boolean);
+}
+
 function sanitizeScore(body) {
   if (!body || typeof body !== "object") return null;
   var id = clipText(body.id, 120);
@@ -1335,9 +1383,16 @@ app.get("/api/scores", authMiddleware, function (req, res) {
 app.put("/api/scores/:itemId", authMiddleware, function (req, res) {
   if (req.user.role === "teacher") return res.json({ ok: true, skipped: true });
   var itemId = clipText(req.params.itemId, 120);
-  var rec = sanitizeScore(Object.assign({}, req.body || {}, { id: itemId }));
+  var body = req.body || {};
+  var rec = sanitizeScore(Object.assign({}, body, { id: itemId }));
   if (!rec) return res.status(400).json({ error: "成绩数据无效" });
   stmts.upsertScore.run(req.user.sub, itemId, JSON.stringify(rec), rec.date);
+  // ponytail: only real exam submits send attemptAt; login sync upserts latest only
+  var attemptAt = clipText(body.attemptAt, 40);
+  if (attemptAt) {
+    var attempt = Object.assign({}, rec, { wrong: sanitizeWrong(body.wrong) });
+    stmts.insertAttempt.run(req.user.sub, itemId, JSON.stringify(attempt), attemptAt);
+  }
   try { autoCompleteAssignments(req.user.sub, itemId); } catch (e) {
     console.error("[yysd-api] calendar auto-complete", e && e.message);
   }

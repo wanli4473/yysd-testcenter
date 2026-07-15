@@ -18,6 +18,7 @@
   var item = null;
   var timerHandle = null;
   var toastTimer = null;
+  var lastScorePushKey = null;
   var examLockOn = false;
   var examLockVoided = false;
   var examLockBound = null;
@@ -291,7 +292,7 @@
         (!isStudy && item.duration ? item.duration + " 分钟" : "")].filter(Boolean).join(" · ");
     }
 
-    if (hintEl && Y.isReadingExam(item)) {
+    if (hintEl && (Y.isReadingExam(item) || item.subject === "cambridge-listening")) {
       hintEl.hidden = false;
       hintEl.textContent = "选中文字可高亮 · 右键做笔记";
     }
@@ -356,7 +357,7 @@
   }
 
   function injectReadingTools() {
-    if (!item || !Y.isReadingExam(item)) return;
+    if (!item || !(Y.isReadingExam(item) || item.subject === "cambridge-listening")) return;
     var doc = frame.contentDocument;
     if (!doc || !doc.body || doc.getElementById("yysd-reading-tools-js")) return;
 
@@ -455,6 +456,33 @@
     try { localStorage.setItem("yysd:results", JSON.stringify(store)); } catch (err) {}
   }
 
+  // ponytail: scrape iframe result DOM — avoids patching 100+ paper HTML files
+  function scrapeWrongFromFrame() {
+    try {
+      var doc = frame.contentDocument;
+      if (!doc) return [];
+      var out = [];
+      var nodes = doc.querySelectorAll(".ritem.wrong");
+      for (var i = 0; i < nodes.length && out.length < 80; i++) {
+        var el = nodes[i];
+        var rq = ((el.querySelector(".rq") || {}).textContent || "").trim();
+        var m = rq.match(/第\s*([^\s题]+)\s*题/);
+        var yoursEl = el.querySelector(".yours");
+        var ansEl = el.querySelector(".correctv");
+        var ua = yoursEl ? yoursEl.textContent.trim() : "";
+        if (ua === "未作答") ua = "";
+        out.push({
+          no: m ? m[1] : rq.replace(/^[✘✔]\s*/, ""),
+          ua: ua,
+          ans: ansEl ? ansEl.textContent.trim() : ""
+        });
+      }
+      return out;
+    } catch (err) {
+      return [];
+    }
+  }
+
   window.addEventListener("message", function (e) {
     var d = e.data;
     if (!d || !frame.contentWindow || e.source !== frame.contentWindow) return;
@@ -480,37 +508,40 @@
     if (d.type !== "yysd:score" || !item) return;
 
     var key = scoreKeyOf(d);
+    // ponytail: in-memory only — blocks same-submit echo; retake reloads exam.html and clears this
+    var pushKey = item.id + "|" + key;
+    if (lastScorePushKey === pushKey) return;
+    lastScorePushKey = pushKey;
+
     var store = {};
     try { store = JSON.parse(localStorage.getItem("yysd:results") || "{}"); } catch (err) {}
-    var prev = store[item.id];
-    var isDup = prev && prev._scoreKey === key;
+    var attemptAt = new Date().toISOString();
+    var wrong = Array.isArray(d.wrong) && d.wrong.length ? d.wrong : scrapeWrongFromFrame();
+    var record = {
+      id: item.id, title: item.title, zone: item.zone, subject: item.subject,
+      score: (d.score != null ? d.score : null),
+      total: (d.total != null ? d.total : null),
+      band: (d.band != null ? d.band : null),
+      writingWords: d.writingWords || null,
+      date: attemptAt,
+      _scoreKey: key
+    };
+    store[item.id] = record;
+    saveResults(store);
+    if (window.YYSD_AUTH && YYSD_AUTH.pushScoreRecord) {
+      YYSD_AUTH.pushScoreRecord(Object.assign({}, record, { attemptAt: attemptAt, wrong: wrong }));
+    }
 
-    if (!isDup) {
-      store[item.id] = {
-        id: item.id, title: item.title, zone: item.zone, subject: item.subject,
-        score: (d.score != null ? d.score : null),
-        total: (d.total != null ? d.total : null),
-        band: (d.band != null ? d.band : null),
-        writingWords: d.writingWords || null,
-        date: new Date().toISOString(),
-        _scoreKey: key
-      };
-      saveResults(store);
-      if (window.YYSD_AUTH && YYSD_AUTH.pushScoreRecord) YYSD_AUTH.pushScoreRecord(store[item.id]);
-
-      if (d.wrongWords && d.wrongWords.length && item.zone === "study") {
-        var book = d.book || Y.vocabBookOfSubject(item.subject);
-        if (book) {
-          Y.mergeWrongWords(book, d.wrongWords, {
-            id: item.id, title: item.title, subject: item.subject
-          });
-        }
+    if (d.wrongWords && d.wrongWords.length && item.zone === "study") {
+      var book = d.book || Y.vocabBookOfSubject(item.subject);
+      if (book) {
+        Y.mergeWrongWords(book, d.wrongWords, {
+          id: item.id, title: item.title, subject: item.subject
+        });
       }
     }
 
-    if (!isDup) {
-      showScoreToast(store[item.id], d);
-    }
+    showScoreToast(record, d);
 
     if (timerHandle) {
       clearInterval(timerHandle);

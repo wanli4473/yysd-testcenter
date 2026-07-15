@@ -142,15 +142,20 @@
     var scores = filteredScores(student.scores);
     var rowsHtml = scores.length
       ? scores.map(function (r) {
+          var wrongN = (r.wrong && r.wrong.length) || 0;
+          var btnLabel = wrongN ? ("查看错题 (" + wrongN + ")") : "查看详情";
           return '<tr>' +
             '<td><b>' + Y.esc(r.title || r.id) + '</b></td>' +
             '<td>' + Y.esc(zoneLabel(r.zone)) + '</td>' +
             '<td>' + Y.esc(subjectLabel(r.subject)) + '</td>' +
             '<td><span class="score-pill">' + Y.esc(fmtScore(r)) + '</span></td>' +
             '<td>' + fmtDate(r.date) + '</td>' +
+            '<td><button type="button" class="btn btn--ghost btn--sm" data-attempt="' +
+              Y.esc(String(r.attemptId || "")) + '" data-student="' + student.id + '">' +
+              btnLabel + '</button></td>' +
           '</tr>';
         }).join("")
-      : '<tr><td colspan="5" class="teacher-empty-row">暂无' + (zoneFilter ? zoneLabel(zoneFilter) : "") + '记录</td></tr>';
+      : '<tr><td colspan="6" class="teacher-empty-row">暂无' + (zoneFilter ? zoneLabel(zoneFilter) : "") + '记录</td></tr>';
 
     return '<article class="teacher-card">' +
       '<header class="teacher-card__head">' +
@@ -164,9 +169,56 @@
         '</div>' +
       '</header>' +
       '<div class="table-wrap"><table class="data teacher-table">' +
-        '<thead><tr><th>内容</th><th>板块</th><th>科目</th><th>得分</th><th>完成时间</th></tr></thead>' +
+        '<thead><tr><th>内容</th><th>板块</th><th>科目</th><th>得分</th><th>完成时间</th><th>错题</th></tr></thead>' +
         '<tbody>' + rowsHtml + '</tbody></table></div>' +
     '</article>';
+  }
+
+  function findAttempt(studentId, attemptId) {
+    var sid = Number(studentId);
+    var aid = Number(attemptId);
+    for (var i = 0; i < students.length; i++) {
+      if (students[i].id !== sid) continue;
+      var scores = students[i].scores || [];
+      for (var j = 0; j < scores.length; j++) {
+        if (Number(scores[j].attemptId) === aid) return { student: students[i], attempt: scores[j] };
+      }
+    }
+    return null;
+  }
+
+  function openAttemptDetail(studentId, attemptId) {
+    var hit = findAttempt(studentId, attemptId);
+    var modal = document.getElementById("attempt-modal");
+    var body = document.getElementById("attempt-body");
+    var title = document.getElementById("attempt-modal-title");
+    if (!modal || !body || !hit) return;
+    var r = hit.attempt;
+    var wrong = r.wrong || [];
+    title.textContent = (r.title || r.id) + " · " + fmtScore(r);
+    var head =
+      '<p class="teacher-attempt-meta">' + Y.esc(studentLabel(hit.student)) +
+      ' · ' + fmtDate(r.date) +
+      (r.band != null ? ' · Band ' + r.band : '') + '</p>';
+    var list;
+    if (!wrong.length) {
+      list = '<p class="teacher-empty-row">本题次无错题明细' +
+        (r.score != null && r.total != null && r.score === r.total ? '（全对）' : '（历史记录或该题型未上报）') +
+        '</p>';
+    } else {
+      list = '<ul class="teacher-wrong-list">' + wrong.map(function (w) {
+        return '<li><b>第 ' + Y.esc(String(w.no)) + ' 题</b>' +
+          '<span>学生作答：' + Y.esc(w.ua || "未作答") + '</span>' +
+          '<span>正确答案：' + Y.esc(w.ans || "—") + '</span></li>';
+      }).join("") + '</ul>';
+    }
+    body.innerHTML = head + list;
+    modal.hidden = false;
+  }
+
+  function closeAttemptDetail() {
+    var modal = document.getElementById("attempt-modal");
+    if (modal) modal.hidden = true;
   }
 
   function render() {
@@ -224,4 +276,18 @@
   }
 
   load();
+
+  if (listEl) {
+    listEl.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-attempt]");
+      if (!btn) return;
+      openAttemptDetail(btn.getAttribute("data-student"), btn.getAttribute("data-attempt"));
+    });
+  }
+  var attemptModal = document.getElementById("attempt-modal");
+  if (attemptModal) {
+    attemptModal.addEventListener("click", function (e) {
+      if (e.target.getAttribute("data-close-attempt")) closeAttemptDetail();
+    });
+  }
 })();
