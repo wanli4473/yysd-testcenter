@@ -35,7 +35,7 @@ window.YYSD_SPEAKING = (function () {
     var list = loadRecords();
     list.unshift(rec);
     if (list.length > 100) list.length = 100;
-    localStorage.setItem(RECORDS_KEY, JSON.stringify(list));
+    try { localStorage.setItem(RECORDS_KEY, JSON.stringify(list)); } catch (e) {}
     return rec;
   }
 
@@ -56,7 +56,7 @@ window.YYSD_SPEAKING = (function () {
   }
 
   function setPending(data) {
-    sessionStorage.setItem(PENDING_KEY, JSON.stringify(data));
+    try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(data)); } catch (e) {}
   }
 
   function getPending() {
@@ -65,7 +65,7 @@ window.YYSD_SPEAKING = (function () {
   }
 
   function clearPending() {
-    sessionStorage.removeItem(PENDING_KEY);
+    try { sessionStorage.removeItem(PENDING_KEY); } catch (e) {}
   }
 
   function speak(text, onEnd) {

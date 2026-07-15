@@ -250,6 +250,7 @@
 
   if (bridgeMode === "writing") {
     examId = resolveExamId();
+    var writingObserved = false;
 
     function hookWritingStart() {
       var fn = window.startTest;
@@ -303,13 +304,14 @@
       hookWritingStart();
       hookWritingFinish();
       hookWritingBack();
+      if (writingObserved) return;
       var ra = document.getElementById("resultArea");
-      if (ra) {
-        new MutationObserver(reportWriting).observe(ra, {
-          attributes: true, attributeFilter: ["style"], childList: true, subtree: true
-        });
-        reportWriting();
-      }
+      if (!ra) return;
+      writingObserved = true;
+      new MutationObserver(reportWriting).observe(ra, {
+        attributes: true, attributeFilter: ["style"], childList: true, subtree: true
+      });
+      reportWriting();
     }
 
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initWriting);
@@ -545,11 +547,14 @@
     cover.appendChild(bar);
   }
 
+  var draftListenersBound = false;
   function initDraft() {
     hookStartTest();
     hookSubmitTest();
     hookBackToCover();
     showResumeBanner();
+    if (draftListenersBound) return;
+    draftListenersBound = true;
     window.addEventListener("pagehide", saveDraftNow);
     window.addEventListener("beforeunload", saveDraftNow);
   }

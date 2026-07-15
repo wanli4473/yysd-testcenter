@@ -1005,6 +1005,7 @@ const player=document.getElementById('player');
 function initAudio(){ curAudioSec=currentPaper[0].id; loadSection(curAudioSec,false); paintAudio(); }
 function loadSection(id,autoplay){
   curAudioSec=id; const s=TEST.sections.find(x=>x.id===id);
+  if(!s||!s.audio){console.warn('loadSection: missing section',id);return;}
   player.src=s.audio; document.getElementById('aCur').textContent='Section '+id;
   if(autoplay){ player.play().catch(()=>{}); }
 }

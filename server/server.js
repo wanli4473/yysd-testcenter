@@ -33,6 +33,8 @@ if (!JWT_SECRET || JWT_SECRET.length < 16) {
 const dataDir = path.join(__dirname, "data");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 const db = new Database(path.join(dataDir, "yysd.db"));
+db.pragma("journal_mode = WAL");
+db.pragma("busy_timeout = 5000");
 
 db.exec(
   "CREATE TABLE IF NOT EXISTS users (" +
@@ -590,6 +592,7 @@ function adminAuthMiddleware(req, res, next) {
 }
 
 const app = express();
+app.set("trust proxy", 1);
 // ponytail: 12mb covers ASR base64 + jiijing PDF upload
 app.use(express.json({ limit: "12mb" }));
 app.use(cors({
@@ -935,11 +938,17 @@ app.post("/api/auth/login", function (req, res) {
   var pwErr = validatePassword(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
 
+  var loginKey = phone + "|" + (req.ip || "unknown");
+  var gate = canLogin(loginKey);
+  if (!gate.ok) return res.status(429).json({ error: gate.msg });
+
   var user = stmts.findUser.get(phone);
   if (user && user.password_hash) {
     if (!verifyPassword(password, user.password_hash)) {
+      noteLoginFail(loginKey);
       return res.status(400).json({ error: "手机号或密码错误" });
     }
+    clearLoginFail(loginKey);
     var nowIso = new Date().toISOString();
     stmts.touchLogin.run(nowIso, phone);
     user.last_login_at = nowIso;
@@ -950,6 +959,7 @@ app.post("/api/auth/login", function (req, res) {
 
   var teacher = stmts.findTeacher.get(phone);
   if (teacher && teacher.password_hash && verifyPassword(password, teacher.password_hash)) {
+    clearLoginFail(loginKey);
     var tNow = new Date().toISOString();
     stmts.touchTeacherLogin.run(tNow, phone);
     teacher.last_login_at = tNow;
@@ -963,6 +973,7 @@ app.post("/api/auth/login", function (req, res) {
     });
   }
 
+  noteLoginFail(loginKey);
   return res.status(400).json({ error: "手机号或密码错误" });
 });
 
@@ -1123,14 +1134,21 @@ app.post("/api/teacher/login", function (req, res) {
   var pwErr = validatePassword(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
 
+  var loginKey = "t|" + phone + "|" + (req.ip || "unknown");
+  var gate = canLogin(loginKey);
+  if (!gate.ok) return res.status(429).json({ error: gate.msg });
+
   var teacher = stmts.findTeacher.get(phone);
   if (!teacher || !teacher.password_hash) {
+    noteLoginFail(loginKey);
     return res.status(400).json({ error: "教师账号未注册" });
   }
   if (!verifyPassword(password, teacher.password_hash)) {
+    noteLoginFail(loginKey);
     return res.status(400).json({ error: "手机号或密码错误" });
   }
 
+  clearLoginFail(loginKey);
   var nowIso = new Date().toISOString();
   stmts.touchTeacherLogin.run(nowIso, phone);
   teacher.last_login_at = nowIso;
@@ -1623,7 +1641,11 @@ async function qwenChatMessages(messages, temperature) {
   });
   var data = await res.json();
   if (!res.ok) throw new Error((data && data.error && data.error.message) || "DashScope 请求失败");
-  return data.choices[0].message.content;
+  var content = data && data.choices && data.choices[0] && data.choices[0].message
+    ? data.choices[0].message.content
+    : null;
+  if (content == null || content === "") throw new Error("AI 返回为空");
+  return content;
 }
 
 async function qwenChat(system, user) {
@@ -1652,10 +1674,37 @@ function canUseAi(ip) {
   var now = Date.now(), row = aiLog[ip] || { last: 0, day: "", count: 0 };
   var today = new Date().toISOString().slice(0, 10);
   if (row.day !== today) { row.day = today; row.count = 0; }
-  if (now - row.last < 2000) return { ok: false, msg: "请稍后再试" };
-  if (row.count >= 100) return { ok: false, msg: "今日 AI 调用次数已达上限" };
+  if (now - row.last < 3000) return { ok: false, msg: "请稍后再试" };
+  if (row.count >= 40) return { ok: false, msg: "今日 AI 调用次数已达上限" };
   row.last = now; row.count += 1; aiLog[ip] = row;
   return { ok: true };
+}
+
+// ponytail: in-memory login throttle; single ECS process only
+var loginLog = {};
+function canLogin(key) {
+  var now = Date.now();
+  var row = loginLog[key] || { last: 0, fails: 0, window: 0 };
+  if (row.lock && now < row.lock) {
+    return { ok: false, msg: "尝试过多，请稍后再试" };
+  }
+  if (row.lock && now >= row.lock) { row.fails = 0; row.lock = 0; }
+  if (now - row.last < 1000) return { ok: false, msg: "请稍后再试" };
+  row.last = now;
+  loginLog[key] = row;
+  return { ok: true };
+}
+function noteLoginFail(key) {
+  var row = loginLog[key] || { last: 0, fails: 0, lock: 0 };
+  row.fails += 1;
+  if (row.fails >= 8) {
+    row.lock = Date.now() + 15 * 60 * 1000;
+    row.fails = 0;
+  }
+  loginLog[key] = row;
+}
+function clearLoginFail(key) {
+  delete loginLog[key];
 }
 
 var JUDGE_SYSTEM =
@@ -2182,8 +2231,6 @@ app.post("/api/admin/jiijing/upload", staffAuthMiddleware, async function (req, 
   }
   var bankId = "bank-" + Date.now().toString(36);
   var pdfPath = path.join(JIIJING_UPLOAD_DIR, bankId + ".pdf");
-  fs.writeFileSync(pdfPath, buf);
-
   var scriptCandidates = [
     path.join(__dirname, "..", "scripts", "parse_jiijing_pdf.py"),
     path.join(__dirname, "scripts", "parse_jiijing_pdf.py")
@@ -2197,19 +2244,42 @@ app.post("/api/admin/jiijing/upload", staffAuthMiddleware, async function (req, 
     return res.status(503).json({ error: "服务器缺少 parse_jiijing_pdf.py，无法解析 PDF" });
   }
   try {
-    var { spawnSync } = require("child_process");
-    var py = spawnSync("python3", [script, pdfPath, "--bank-id", bankId, "--title", title, "--out-dir", outDir], {
-      encoding: "utf8",
-      timeout: 120000
+    fs.writeFileSync(pdfPath, buf);
+    var { spawn } = require("child_process");
+    var py = await new Promise(function (resolve, reject) {
+      var stdout = "";
+      var stderr = "";
+      var child = spawn("python3", [script, pdfPath, "--bank-id", bankId, "--title", title, "--out-dir", outDir], {
+        stdio: ["ignore", "pipe", "pipe"]
+      });
+      var timer = setTimeout(function () {
+        try { child.kill("SIGKILL"); } catch (e) {}
+        reject(new Error("PDF 解析超时"));
+      }, 120000);
+      child.stdout.on("data", function (d) { stdout += d; });
+      child.stderr.on("data", function (d) { stderr += d; });
+      child.on("error", function (err) {
+        clearTimeout(timer);
+        reject(err);
+      });
+      child.on("close", function (code) {
+        clearTimeout(timer);
+        resolve({ status: code, stdout: stdout, stderr: stderr });
+      });
     });
     if (py.status !== 0) {
       console.error("[yysd-api] jiijing parse", py.stderr || py.stdout);
+      try { fs.unlinkSync(pdfPath); } catch (e) {}
       return res.status(502).json({ error: "PDF 解析失败：" + clipText(py.stderr || py.stdout || "unknown", 300) });
     }
     var bankPath = path.join(outDir, bankId + ".json");
-    if (!fs.existsSync(bankPath)) return res.status(502).json({ error: "解析完成但未生成题库文件" });
+    if (!fs.existsSync(bankPath)) {
+      try { fs.unlinkSync(pdfPath); } catch (e) {}
+      return res.status(502).json({ error: "解析完成但未生成题库文件" });
+    }
     var bank = readJsonFile(bankPath);
     if (!(bank.part1 && bank.part1.length) || !(bank.part2 && bank.part2.length)) {
+      try { fs.unlinkSync(pdfPath); } catch (e) {}
       return res.status(502).json({ error: "解析结果为空，请确认 PDF 为机经纯题目版格式" });
     }
     fs.writeFileSync(path.join(outRoot, "jiijing-active.json"), JSON.stringify({ bankId: bankId }, null, 2));
@@ -2226,6 +2296,7 @@ app.post("/api/admin/jiijing/upload", staffAuthMiddleware, async function (req, 
     res.json({ ok: true, bank: bankSummary(bank) });
   } catch (e) {
     console.error("[yysd-api] jiijing upload", e.message);
+    try { fs.unlinkSync(pdfPath); } catch (e2) {}
     res.status(502).json({ error: "PDF 解析异常：" + e.message });
   }
 });
@@ -2405,6 +2476,21 @@ app.post("/api/ai-tutor/tts", authMiddleware, async function (req, res) {
   }
 });
 
+app.use(function (err, req, res, next) {
+  console.error("[yysd-api] unhandled", err && err.message);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: "服务器内部错误" });
+});
+
+process.on("unhandledRejection", function (err) {
+  console.error("[yysd-api] unhandledRejection", err && err.message ? err.message : err);
+});
+
+process.on("SIGTERM", function () {
+  try { db.close(); } catch (e) {}
+  process.exit(0);
+});
+
 // ponytail: runnable self-check
 if (require.main === module) {
   console.assert(normalizePhone("13800138000") === "13800138000");
@@ -2423,9 +2509,13 @@ if (require.main === module) {
   console.assert(buildTutorSystem("teacher", "", null).indexOf("口语") >= 0);
   console.assert(parseWordFromReply('x\nWORD_JSON:{"word":"cat","ipa":"/kæt/","meaning":"猫"}').word === "cat");
   console.assert(stripWordMarker("hello\nWORD_JSON:{\"word\":\"a\"}") === "hello");
-  console.assert(loadActiveBank().part1.length > 0);
-  console.assert(buildExamPack("mock").part2.title.indexOf("Describe") === 0);
-  console.assert(loadWritingBank().task1.length > 0);
+  try {
+    console.assert(loadActiveBank().part1.length > 0);
+    console.assert(buildExamPack("mock").part2.title.indexOf("Describe") === 0);
+    console.assert(loadWritingBank().task1.length > 0);
+  } catch (e) {
+    console.error("[yysd-api] speaking/writing bank unavailable at boot:", e.message);
+  }
   app.listen(PORT, function () {
     console.log("[yysd-api] listening on " + PORT + (SMS_DEV ? " (SMS_DEV_MODE)" : "") +
       " admins=" + ADMIN_PHONES.join(","));

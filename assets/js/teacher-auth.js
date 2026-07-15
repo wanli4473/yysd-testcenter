@@ -4,7 +4,10 @@
 window.YYSD_TEACHER = (function () {
   "use strict";
 
-  var API_BASE = "https://api.youyisida.com";
+  var API_BASE = (typeof location !== "undefined" &&
+    (location.hostname === "localhost" || location.hostname === "127.0.0.1"))
+    ? (location.protocol + "//" + location.hostname + ":3000")
+    : "https://api.youyisida.com";
   var TOKEN_KEY = "yysd:teacher:token";
   var TEACHER_KEY = "yysd:teacher:user";
   var STUDENT_TOKEN_KEY = "yysd:auth:token";

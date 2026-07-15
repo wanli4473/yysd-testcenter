@@ -1,11 +1,11 @@
 /* =========================================================================
-   reading-tools.js — IELTS-style highlight + notes on reading passages
-   Injected by exam.js into reading exam iframes. Auto-binds passage panes.
+   reading-tools.js — IELTS-style highlight + notes on passages & questions
+   Injected by exam.js into reading/listening exam iframes.
    ========================================================================= */
 (function () {
   "use strict";
 
-  var PANE_SEL = ".passage-pane, .col.passage, .reading-text";
+  var PANE_SEL = ".passage-pane, .col.passage, .reading-text, .qcol, #questionsHolder";
   var HL = "yysd-hl";
   var script = document.currentScript;
   var examId = (script && script.dataset.examId) || "local";
@@ -32,7 +32,7 @@
       pane.querySelectorAll("." + HL),
       function (m) { return markToOffset(pane, m); }
     );
-    store.setItem(storageKey(paneId(pane)), JSON.stringify(items));
+    try { store.setItem(storageKey(paneId(pane)), JSON.stringify(items)); } catch (e) {}
   }
 
   function markToOffset(pane, mark) {

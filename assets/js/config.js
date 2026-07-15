@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260714numdict";
+  var CONTENT_VER = "20260715stable";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -155,7 +155,7 @@ window.YYSD = (function () {
       }
       n++;
     });
-    localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store));
+    try { localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store)); } catch (e) {}
     return n;
   }
 
@@ -163,13 +163,13 @@ window.YYSD = (function () {
     var store = wrongWordsStore();
     if (!store[book]) return;
     delete store[book][String(wordKey || "").toLowerCase()];
-    localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store));
+    try { localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store)); } catch (e) {}
   }
 
   function clearWrongWords(book) {
     var store = wrongWordsStore();
     delete store[book];
-    localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store));
+    try { localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(store)); } catch (e) {}
   }
 
   function savedWordsStore() {
@@ -207,18 +207,18 @@ window.YYSD = (function () {
         savedAt: now
       };
     }
-    localStorage.setItem(SAVED_WORDS_KEY, JSON.stringify(store));
+    try { localStorage.setItem(SAVED_WORDS_KEY, JSON.stringify(store)); } catch (e) { return false; }
     return true;
   }
 
   function removeSavedWord(wordKey) {
     var store = savedWordsStore();
     delete store[String(wordKey || "").toLowerCase()];
-    localStorage.setItem(SAVED_WORDS_KEY, JSON.stringify(store));
+    try { localStorage.setItem(SAVED_WORDS_KEY, JSON.stringify(store)); } catch (e) {}
   }
 
   function clearSavedWords() {
-    localStorage.removeItem(SAVED_WORDS_KEY);
+    try { localStorage.removeItem(SAVED_WORDS_KEY); } catch (e) {}
   }
 
   function savedWordsStripHTML(prefix) {

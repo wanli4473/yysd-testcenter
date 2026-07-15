@@ -120,7 +120,7 @@
     var isStudy = item.zone === "study";
     var isWriting = item.subject === "cambridge-writing" || payload.completed;
     var heading = isStudy ? "学习进度已保存" : (isWriting ? "写作练习已保存" : "成绩已保存");
-    var sub = "已同步至云端，可在「我的成绩」查看";
+    var sub = payload.syncSub || "已保存在本浏览器，可在「我的成绩」查看";
     var scoreLine = "";
     var wrongN = payload.wrongWords && payload.wrongWords.length;
 
@@ -133,7 +133,7 @@
     } else if (isStudy) {
       scoreLine = "已完成";
     }
-    if (wrongN) {
+    if (wrongN && !payload.syncSub) {
       sub = "本次新增 " + wrongN + " 个错词，可在学习区错题本复习";
     }
 
@@ -155,6 +155,12 @@
 
     toastHost.querySelector(".score-toast__close").addEventListener("click", hideToast);
     toastTimer = setTimeout(hideToast, 6000);
+  }
+
+  function setToastSyncSub(text) {
+    if (!toastHost) return;
+    var el = toastHost.querySelector(".score-toast__sub");
+    if (el) el.textContent = text;
   }
 
   function hideToast() {
@@ -502,8 +508,8 @@
       if (seconds <= 0) {
         clearInterval(timerHandle);
         timerEl.textContent = "时间到";
+        // ponytail: bridge owns auto-submit; parent only signals (avoids stacked alerts)
         try { frame.contentWindow.postMessage({ type: "yysd:time-up" }, "*"); } catch (e) {}
-        alert("⏰ 时间到！请尽快交卷。");
         return;
       }
       seconds--;
@@ -592,9 +598,6 @@
     };
     store[item.id] = record;
     saveResults(store);
-    if (window.YYSD_AUTH && YYSD_AUTH.pushScoreRecord) {
-      YYSD_AUTH.pushScoreRecord(Object.assign({}, record, { attemptAt: attemptAt, wrong: wrong }));
-    }
 
     if (d.wrongWords && d.wrongWords.length && item.zone === "study") {
       var book = d.book || Y.vocabBookOfSubject(item.subject);
@@ -606,6 +609,16 @@
     }
 
     showScoreToast(record, d);
+    if (window.YYSD_AUTH && YYSD_AUTH.pushScoreRecord) {
+      YYSD_AUTH.pushScoreRecord(Object.assign({}, record, { attemptAt: attemptAt, wrong: wrong }))
+        .then(function (ok) {
+          if (ok) setToastSyncSub("已同步至云端，可在「我的成绩」查看");
+          else setToastSyncSub("已保存在本浏览器（未登录则不同步云端）");
+        })
+        .catch(function () {
+          setToastSyncSub("本地已保存，云端同步失败");
+        });
+    }
 
     if (timerHandle) {
       clearInterval(timerHandle);

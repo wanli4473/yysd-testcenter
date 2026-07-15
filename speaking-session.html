@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>口语练习 · 实战 · 优益思达</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260709d">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260714dash">
   <link rel="stylesheet" href="assets/css/speaking.css?v=20260709d">
 </head>
 <body class="home-minimal spk-page">
@@ -76,8 +76,8 @@
     <p id="loading-msg">正在生成评分报告…</p>
   </div>
 
-  <script src="assets/js/auth.js?v=20260711b"></script>
-  <script src="assets/js/speaking-common.js?v=20260711c"></script>
+  <script src="assets/js/auth.js?v=20260715stable"></script>
+  <script src="assets/js/speaking-common.js?v=20260715stable"></script>
   <script>
   (function () {
     var S = window.YYSD_SPEAKING;
@@ -282,6 +282,7 @@
         })
         .catch(function (err) {
           loading.hidden = true;
+          finished = false;
           var msg = err && err.name === "AbortError"
             ? "评分超时（90秒），请确认 API 已启动后重试"
             : (err.message || "评分失败");

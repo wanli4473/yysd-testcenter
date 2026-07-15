@@ -283,8 +283,9 @@ window.YYSD_AUTH = (function () {
   }
 
   function pushScoreRecord(record) {
-    if (!getToken() || isTeacher() || !record || !record.id) return Promise.resolve();
-    return api("/api/scores/" + encodeURIComponent(record.id), { method: "PUT", body: record }).catch(function () {});
+    if (!getToken() || isTeacher() || !record || !record.id) return Promise.resolve(false);
+    return api("/api/scores/" + encodeURIComponent(record.id), { method: "PUT", body: record })
+      .then(function () { return true; });
   }
 
   function ensureLogoutBtn(nav) {
