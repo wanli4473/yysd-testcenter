@@ -194,15 +194,24 @@
       var label = me.name ? me.name + "（" + me.phone + "）" : me.phone;
       welcomeEl.textContent = "欢迎，" + label + "。以下为全部学生的云端成绩与模考记录。";
       renderTeacherAvatar(me.avatarUrl, me.phone);
-      T.setTeacher({ phone: me.phone, name: me.name || "", avatarUrl: me.avatarUrl || "" });
+      T.setTeacher({
+        phone: me.phone,
+        name: me.name || "",
+        avatarUrl: me.avatarUrl || "",
+        isAdmin: !!me.isAdmin
+      });
       try {
         localStorage.setItem("yysd:auth:user", JSON.stringify({
           phone: me.phone || "",
           role: "teacher",
           displayName: me.name || "",
-          avatarUrl: me.avatarUrl || ""
+          avatarUrl: me.avatarUrl || "",
+          isAdmin: !!me.isAdmin
         }));
       } catch (e) {}
+      document.querySelectorAll("[data-admin-only]").forEach(function (el) {
+        el.hidden = !me.isAdmin;
+      });
       students = res[1].students || [];
       render();
     }).catch(function (e) {

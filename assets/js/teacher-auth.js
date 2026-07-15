@@ -22,7 +22,8 @@ window.YYSD_TEACHER = (function () {
 
   function isTeacherPage() {
     var n = pageName();
-    return n === "teacher.html" || n === "teacher-calendar.html" || isPublicPage();
+    return n === "teacher.html" || n === "teacher-calendar.html" ||
+      n === "admin-assign.html" || isPublicPage();
   }
 
   function setAuthCookie(on) {
@@ -70,10 +71,22 @@ window.YYSD_TEACHER = (function () {
         localStorage.setItem(TEACHER_KEY, JSON.stringify({
           phone: t.phone,
           name: t.name || "",
-          avatarUrl: t.avatarUrl || ""
+          avatarUrl: t.avatarUrl || "",
+          isAdmin: !!t.isAdmin
         }));
       } else localStorage.removeItem(TEACHER_KEY);
     } catch (e) {}
+  }
+
+  function isAdmin() {
+    return !!(getTeacher().isAdmin);
+  }
+
+  function revealAdminNav() {
+    var show = isAdmin();
+    document.querySelectorAll("[data-admin-only]").forEach(function (el) {
+      el.hidden = !show;
+    });
   }
 
   function authHeaders() {
@@ -116,6 +129,19 @@ window.YYSD_TEACHER = (function () {
   document.addEventListener("DOMContentLoaded", function () {
     if (!isTeacherPage()) return;
     if (!guardPage()) return;
+    revealAdminNav();
+    if (getToken() && !isPublicPage() && pageName() !== "admin-assign.html") {
+      api("/api/teacher/me").then(function (d) {
+        var me = d.teacher || {};
+        setTeacher({
+          phone: me.phone,
+          name: me.name || "",
+          avatarUrl: me.avatarUrl || "",
+          isAdmin: !!me.isAdmin
+        });
+        revealAdminNav();
+      }).catch(function () {});
+    }
   });
 
   return {
@@ -124,6 +150,7 @@ window.YYSD_TEACHER = (function () {
     setToken: setToken,
     getTeacher: getTeacher,
     setTeacher: setTeacher,
+    isAdmin: isAdmin,
     api: api,
     logout: logout
   };

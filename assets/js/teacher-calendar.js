@@ -136,6 +136,26 @@
       '<div class="teacher-stat"><b>' + overdue + "</b><span>逾期人次</span></div>";
   }
 
+  var STATUS_LABEL = {
+    PENDING: "未完成",
+    COMPLETED: "已完成",
+    OVERDUE: "已逾期"
+  };
+
+  function statusClass(st) {
+    if (st === "COMPLETED") return "cal-status--done";
+    if (st === "OVERDUE") return "cal-status--overdue";
+    return "cal-status--pending";
+  }
+
+  function progressBar(done, total) {
+    if (!total) return '<span class="cal-progress__txt">无关联练习</span>';
+    var pct = Math.round((done / total) * 100);
+    return '<div class="cal-progress" title="' + done + "/" + total + '">' +
+      '<div class="cal-progress__track"><span class="cal-progress__fill" style="width:' + pct + '%"></span></div>' +
+      '<span class="cal-progress__txt">' + done + "/" + total + " 练习</span></div>";
+  }
+
   function typeClass(t) {
     if (t === "ASSIGNMENT") return "cal-tag--assignment";
     if (t === "LESSON") return "cal-tag--lesson";
@@ -149,21 +169,27 @@
     }
     var rows = events.map(function (ev) {
       var sum = ev.statusSummary || {};
-      return '<article class="cal-card" data-id="' + ev.id + '">' +
-        '<div class="cal-card__top">' +
-          '<span class="cal-tag ' + typeClass(ev.eventType) + '">' + esc(TYPE_LABEL[ev.eventType] || ev.eventType) + "</span>" +
+      var done = sum.completed || 0;
+      var total = sum.total || 0;
+      return '<article class="cal-todo-row" data-id="' + ev.id + '">' +
+        '<div class="cal-todo-row__main">' +
+          '<div class="cal-todo-row__tags">' +
+            '<span class="cal-tag ' + typeClass(ev.eventType) + '">' + esc(TYPE_LABEL[ev.eventType] || ev.eventType) + "</span>" +
+          "</div>" +
           "<h3>" + esc(ev.title) + "</h3>" +
+          '<p class="cal-card__meta">' +
+            (ev.dueTime ? "截止 " + esc(fmtDate(ev.dueTime)) : "") +
+            (ev.startTime ? (ev.dueTime ? " · " : "") + "开始 " + esc(fmtDate(ev.startTime)) : "") +
+            " · 学生完成 " + done + "/" + total +
+            (sum.overdue ? " · 逾期 " + sum.overdue : "") +
+          "</p>" +
         "</div>" +
-        '<p class="cal-card__meta">' +
-          (ev.dueTime ? "截止 " + esc(fmtDate(ev.dueTime)) : "") +
-          (ev.startTime ? (ev.dueTime ? " · " : "") + "开始 " + esc(fmtDate(ev.startTime)) : "") +
-        "</p>" +
-        '<p class="cal-card__sum">完成 ' + (sum.completed || 0) + "/" + (sum.total || 0) +
-          (sum.overdue ? " · 逾期 " + sum.overdue : "") + "</p>" +
-        '<button type="button" class="btn btn--ghost btn--sm" data-detail="' + ev.id + '">查看详情</button>' +
+        '<div class="cal-todo-row__act">' +
+          '<button type="button" class="btn btn--ghost btn--sm" data-detail="' + ev.id + '">查看完成情况</button>' +
+        "</div>" +
       "</article>";
     }).join("");
-    viewEl.innerHTML = '<div class="cal-card-grid">' + rows + "</div>";
+    viewEl.innerHTML = '<div class="cal-todo-list">' + rows + "</div>";
   }
 
   function dayKeyOf(iso) {
@@ -230,23 +256,37 @@
       var ev = d.event || {};
       document.getElementById("detail-modal-title").textContent = ev.title || "任务详情";
       var studentsHtml = (ev.students || []).map(function (s) {
-        return "<tr><td>" + esc(s.displayName || s.phone) + "</td><td>" +
-          esc(s.status) + "</td><td>" + esc(fmtDate(s.completedAt)) + "</td></tr>";
+        var st = s.status || "PENDING";
+        var prog = (s.exerciseTotal
+          ? (s.exerciseDone || 0) + "/" + s.exerciseTotal + " 练习已完成"
+          : "—");
+        return "<tr class=\"" + statusClass(st) + "\">" +
+          "<td><b>" + esc(s.displayName || s.phone) + "</b>" +
+            (s.displayName ? "<small class=\"cal-phone\">" + esc(s.phone) + "</small>" : "") +
+          "</td>" +
+          '<td><span class="cal-status-pill ' + statusClass(st) + '">' +
+            esc(STATUS_LABEL[st] || st) + "</span></td>" +
+          "<td>" + esc(prog) + "</td>" +
+          "<td>" + esc(fmtDate(s.completedAt)) + "</td></tr>";
       }).join("");
       var exHtml = (ev.linkedExerciseIds || []).map(function (xid) {
         var it = catalog.filter(function (c) { return c.id === xid; })[0];
         return "<li>" + esc(it ? Y.displayTitle(it) : xid) + "</li>";
       }).join("");
+      var doneN = (ev.students || []).filter(function (s) { return s.status === "COMPLETED"; }).length;
+      var totalN = (ev.students || []).length;
       document.getElementById("detail-body").innerHTML =
         '<p><span class="cal-tag ' + typeClass(ev.eventType) + '">' +
           esc(TYPE_LABEL[ev.eventType] || ev.eventType) + "</span></p>" +
         "<p>" + esc(ev.description || "无额外说明") + "</p>" +
         "<p class=\"cal-card__meta\">开始：" + esc(fmtDate(ev.startTime)) +
           " · 截止：" + esc(fmtDate(ev.dueTime)) + "</p>" +
-        (exHtml ? "<h3>关联练习</h3><ul>" + exHtml + "</ul>" : "") +
-        "<h3>学生完成情况</h3>" +
-        '<table class="teacher-table"><thead><tr><th>学生</th><th>状态</th><th>完成时间</th></tr></thead>' +
-        "<tbody>" + (studentsHtml || '<tr><td colspan="3" class="teacher-empty-row">暂无</td></tr>') +
+        (exHtml ? "<h3>关联练习</h3><ul>" + exHtml + "</ul>" +
+          "<p class=\"profile-hint\">学生须完成以上全部练习后，任务才会自动变为「已完成」。</p>" : "") +
+        "<h3>学生完成情况 <span class=\"cal-detail__count\">" + doneN + "/" + totalN + " 人已完成</span></h3>" +
+        '<table class="teacher-table cal-status-table"><thead><tr>' +
+          "<th>学生</th><th>状态</th><th>练习进度</th><th>完成时间</th></tr></thead>" +
+        "<tbody>" + (studentsHtml || '<tr><td colspan="4" class="teacher-empty-row">暂无</td></tr>') +
         "</tbody></table>";
     }).catch(function (e) {
       document.getElementById("detail-body").innerHTML = "<p class=\"auth-msg auth-msg--err\">" + esc(e.message) + "</p>";

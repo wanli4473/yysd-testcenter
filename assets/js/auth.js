@@ -281,6 +281,8 @@ window.YYSD_AUTH = (function () {
     if (!getToken()) return;
     var name = pageName();
     if (PUBLIC_PAGES[name] || name === "exam.html") return;
+    // Teacher pages own their nav (sidebar / explicit shell-compact-nav).
+    if (name.indexOf("teacher") === 0 || name === "admin-assign.html") return;
     if (document.body.classList.contains("viewer")) return;
     document.body.classList.add("shell-compact-nav");
     var nav = document.querySelector(".minimal-nav");

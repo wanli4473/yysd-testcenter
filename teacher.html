@@ -8,66 +8,78 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260711avatar">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260714shell">
 </head>
-<body class="home-minimal teacher-page">
+<body class="home-minimal teacher-page teacher-layout shell-compact-nav">
 
   <header class="minimal-topbar">
     <div class="minimal-shell minimal-topbar__inner">
-      <a href="index.html" class="minimal-brand" aria-label="优益思达国际课程中心首页">
+      <a href="teacher.html" class="minimal-brand" aria-label="教师端">
         <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
         <span class="minimal-brand__text">
           <b>优益思达国际课程中心</b>
           <span>Teacher Portal</span>
         </span>
       </a>
-      <nav class="minimal-nav" aria-label="教师导航">
-        <a href="index.html">学生端首页</a>
-        <a href="teacher.html" class="is-active">学情看板</a>
-        <a href="teacher-calendar.html">任务日历</a>
-        <a href="profile.html">个人中心</a>
-        <button type="button" class="btn btn--ghost btn--sm" id="logout-btn">退出</button>
+      <nav class="minimal-nav" aria-label="教师快捷">
+        <a class="nav-mobile-only" href="teacher.html">学情看板</a>
+        <a class="nav-mobile-only" href="teacher-calendar.html">任务日历</a>
+        <a class="nav-persist" href="profile.html" id="nav-auth">个人中心</a>
+        <button type="button" class="btn btn--ghost btn--sm nav-persist" id="logout-btn">退出</button>
       </nav>
     </div>
   </header>
 
-  <section class="minimal-shell minimal-page-head">
-    <div class="minimal-crumb"><a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> 教师端</div>
-    <div class="minimal-eyebrow">TEACHER DASHBOARD</div>
-    <div class="teacher-head-row">
-      <div class="profile-avatar teacher-head-avatar" id="teacher-avatar" aria-hidden="true">—</div>
-      <div>
-        <h1>学生成绩与模考记录</h1>
-        <p class="minimal-page-desc" id="teacher-welcome">加载中…</p>
-        <label class="btn btn--ghost btn--sm pressable profile-avatar__btn">
-          更换头像
-          <input type="file" id="teacher-avatar-input" accept="image/jpeg,image/png,image/webp" hidden>
-        </label>
-        <p class="auth-msg" id="teacher-avatar-msg" role="status"></p>
-      </div>
-    </div>
-  </section>
+  <div class="teacher-shell">
+    <aside class="teacher-side" aria-label="教师导航">
+      <p class="teacher-side__label">COURSE</p>
+      <a href="teacher.html" class="teacher-side__link is-active">学情看板</a>
+      <a href="teacher-calendar.html" class="teacher-side__link">任务日历</a>
+      <a href="admin-assign.html" class="teacher-side__link" data-admin-only hidden>学生分配</a>
+      <a href="profile.html" class="teacher-side__link">个人中心</a>
+      <a href="index.html" class="teacher-side__link teacher-side__link--muted">学生端首页</a>
+    </aside>
 
-  <main class="minimal-shell minimal-main">
-    <div class="teacher-toolbar">
-      <div class="teacher-filters" role="tablist" aria-label="记录筛选">
-        <button type="button" class="teacher-filter is-active" data-zone="">全部记录</button>
-        <button type="button" class="teacher-filter" data-zone="mock">模考区</button>
-        <button type="button" class="teacher-filter" data-zone="practice">练习区</button>
-        <button type="button" class="teacher-filter" data-zone="study">学习区</button>
-      </div>
-      <label class="teacher-search">
-        <span class="sr-only">搜索学生</span>
-        <input type="search" id="student-search" placeholder="搜索用户名或手机号" autocomplete="off">
-      </label>
-      <button type="button" class="btn btn--ghost btn--sm" id="refresh-btn">刷新</button>
-    </div>
+    <div class="teacher-content">
+      <section class="minimal-page-head">
+        <div class="minimal-crumb">教师端</div>
+        <div class="minimal-eyebrow">TEACHER DASHBOARD</div>
+        <div class="teacher-head-row">
+          <div class="profile-avatar teacher-head-avatar" id="teacher-avatar" aria-hidden="true">—</div>
+          <div>
+            <h1>学生成绩与模考记录</h1>
+            <p class="minimal-page-desc" id="teacher-welcome">加载中…</p>
+            <label class="btn btn--ghost btn--sm pressable profile-avatar__btn">
+              更换头像
+              <input type="file" id="teacher-avatar-input" accept="image/jpeg,image/png,image/webp" hidden>
+            </label>
+            <p class="auth-msg" id="teacher-avatar-msg" role="status"></p>
+          </div>
+        </div>
+      </section>
 
-    <div id="teacher-stats" class="teacher-stats"></div>
-    <div id="teacher-students" class="teacher-students">
-      <div class="state state--brand"><div class="spinner spinner--brand"></div></div>
+      <main class="minimal-main">
+        <div class="teacher-toolbar">
+          <div class="teacher-filters" role="tablist" aria-label="记录筛选">
+            <button type="button" class="teacher-filter is-active" data-zone="">全部记录</button>
+            <button type="button" class="teacher-filter" data-zone="mock">模考区</button>
+            <button type="button" class="teacher-filter" data-zone="practice">练习区</button>
+            <button type="button" class="teacher-filter" data-zone="study">学习区</button>
+          </div>
+          <label class="teacher-search">
+            <span class="visually-hidden">搜索学生</span>
+            <input type="search" id="student-search" placeholder="搜索用户名或手机号" autocomplete="off">
+          </label>
+          <button type="button" class="btn btn--ghost btn--sm" id="refresh-btn">刷新</button>
+        </div>
+
+        <div id="teacher-stats" class="teacher-stats"></div>
+        <div id="teacher-students" class="teacher-students">
+          <div class="state state--brand"><div class="spinner spinner--brand"></div></div>
+        </div>
+      </main>
     </div>
-  </main>
+  </div>
 
   <footer class="minimal-footer minimal-footer--rich">
     <div class="minimal-shell minimal-footer__inner">
@@ -76,9 +88,9 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260711f"></script>
-  <script src="assets/js/auth.js?v=20260711avatar"></script>
-  <script src="assets/js/teacher-auth.js?v=20260711avatar"></script>
+  <script src="assets/js/auth.js?v=20260715teachernav"></script>
+  <script src="assets/js/teacher-auth.js?v=20260714shell"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/teacher.js?v=20260711avatar"></script>
+  <script src="assets/js/teacher.js?v=20260714shell"></script>
 </body>
 </html>
