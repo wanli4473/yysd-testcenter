@@ -145,9 +145,9 @@
     var mockRecords = rows.reduce(function (n, s) { return n + (s.mockCount || 0); }, 0);
     statsEl.innerHTML =
       '<div class="teacher-stat"><b>' + totalStudents + '</b><span>学生</span></div>' +
-      '<div class="teacher-stat"><b>' + withScores + '</b><span>有任务完成</span></div>' +
-      '<div class="teacher-stat"><b>' + totalRecords + '</b><span>任务完成条数</span></div>' +
-      '<div class="teacher-stat"><b>' + mockRecords + '</b><span>其中模考</span></div>';
+      '<div class="teacher-stat"><b>' + withScores + '</b><span>有完成记录</span></div>' +
+      '<div class="teacher-stat"><b>' + totalRecords + '</b><span>记录条数</span></div>' +
+      '<div class="teacher-stat"><b>' + mockRecords + '</b><span>其中真题模考</span></div>';
   }
 
   function renderStudentCard(student) {
@@ -170,17 +170,17 @@
           '</tr>';
         }).join("")
       : '<tr><td colspan="8" class="teacher-empty-row">暂无' +
-        (zoneFilter ? zoneLabel(zoneFilter) : "") + '布置任务完成记录</td></tr>';
+        (zoneFilter ? zoneLabel(zoneFilter) : "") + '完成记录</td></tr>';
 
     return '<article class="teacher-card">' +
       '<header class="teacher-card__head">' +
         '<div><b>' + Y.esc(studentLabel(student)) + '</b>' +
         '<span class="teacher-card__meta">' + Y.esc(student.phone) +
         ' · 注册 ' + fmtDate(student.createdAt) +
-        ' · 最近任务 ' + fmtDate(student.lastScoreAt || student.lastLoginAt) + '</span></div>' +
+        ' · 最近完成 ' + fmtDate(student.lastScoreAt || student.lastLoginAt) + '</span></div>' +
         '<div class="teacher-card__badges">' +
-          '<span class="teacher-badge">' + (student.scoreCount || 0) + ' 条任务</span>' +
-          '<span class="teacher-badge teacher-badge--mock">' + (student.mockCount || 0) + ' 次模考任务</span>' +
+          '<span class="teacher-badge">' + (student.scoreCount || 0) + ' 条记录</span>' +
+          '<span class="teacher-badge teacher-badge--mock">' + (student.mockCount || 0) + ' 次真题模考</span>' +
         '</div>' +
       '</header>' +
       '<div class="table-wrap"><table class="data teacher-table">' +

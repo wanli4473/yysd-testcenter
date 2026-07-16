@@ -1252,6 +1252,13 @@ function isTeacherAssignmentAttempt(score, studentId, index) {
   return !!(itemMap && itemMap[sid]);
 }
 
+// Teacher board: assignment completions + self-practice 模考/真题 (zone=mock)
+function isVisibleTeacherScore(score, studentId, index) {
+  if (!score) return false;
+  if (score.zone === "mock") return true;
+  return isTeacherAssignmentAttempt(score, studentId, index);
+}
+
 app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
   var zone = clipText(req.query.zone, 40);
   var allowed = allowedStudentIdsForTeacher(req);
@@ -1266,7 +1273,7 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
   });
   var students = rows.map(function (row) {
     var scores = stmts.listStudentAttempts.all(row.id).map(parseScorePayload)
-      .filter(function (s) { return isTeacherAssignmentAttempt(s, row.id, assignIndex); });
+      .filter(function (s) { return isVisibleTeacherScore(s, row.id, assignIndex); });
     var filtered = zone ? scores.filter(function (s) { return s.zone === zone; }) : scores;
     var mockCount = scores.filter(function (s) { return s.zone === "mock"; }).length;
     return {
@@ -1298,7 +1305,7 @@ app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function 
   var zone = clipText(req.query.zone, 40);
   var assignIndex = teacherAssignmentIndex(req.user.sub);
   var scores = stmts.listStudentAttempts.all(userId).map(parseScorePayload)
-    .filter(function (s) { return isTeacherAssignmentAttempt(s, userId, assignIndex); });
+    .filter(function (s) { return isVisibleTeacherScore(s, userId, assignIndex); });
   if (zone) scores = scores.filter(function (s) { return s.zone === zone; });
   res.json({
     ok: true,
