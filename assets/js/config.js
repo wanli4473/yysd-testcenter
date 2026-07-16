@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260715timing";
+  var CONTENT_VER = "20260716vocabskill";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -378,6 +378,9 @@ window.YYSD = (function () {
     if (!n) return (item && item.title) || "";
     if (s === "vocab") return "高中词汇单元" + n;
     if (s === "vocab-cet4") return "四级词汇单元" + n;
+    if (s === "vocab-special-listening") return "听力词汇单元" + n;
+    if (s === "vocab-special-reading") return "阅读词汇单元" + n;
+    if (s === "vocab-special-writing") return "写作词汇单元" + n;
     if (isVocabSpecial(s)) return "雅思词汇单元" + n;
     return (item && item.title) || "";
   }

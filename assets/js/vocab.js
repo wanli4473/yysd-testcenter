@@ -59,7 +59,7 @@
       '<div class="meta">' + Y.esc(sub) + ' · ' + Y.esc(progLine) + '</div>' +
       '<label class="vocab-search">搜索单元' +
       '<input type="search" id="vocab-q" placeholder="如：' +
-      Y.esc(book.key === "cet4" ? "四级词汇单元1" : (book.key === "special" ? "雅思词汇单元1" : "高中词汇单元1")) +
+      Y.esc(book.key === "cet4" ? "四级词汇单元1" : (book.key === "special" ? "听力词汇单元1" : "高中词汇单元1")) +
       '" autocomplete="off"></label>' +
       actions +
       '</div></div>';
