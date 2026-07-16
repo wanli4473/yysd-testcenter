@@ -21,16 +21,6 @@
     else nav.appendChild(results);
   }
 
-  if (!nav.querySelector('a[href*="calendar.html"]')) {
-    var authEl2 = document.getElementById("nav-auth");
-    var cal = document.createElement("a");
-    cal.href = "calendar.html";
-    cal.setAttribute("data-nav", "calendar");
-    cal.textContent = "任务日历";
-    if (authEl2) nav.insertBefore(cal, authEl2);
-    else nav.appendChild(cal);
-  }
-
   var menuBtn = document.createElement("button");
   menuBtn.type = "button";
   menuBtn.className = "nav-menu-btn";
@@ -66,9 +56,14 @@
   var drawerNav = document.createElement("nav");
   drawerNav.className = "nav-drawer__links";
   drawerNav.setAttribute("aria-label", "页面导航");
-  nav.querySelectorAll("a").forEach(function (a) {
-    drawerNav.appendChild(a.cloneNode(true));
-  });
+
+  function rebuildDrawer() {
+    drawerNav.innerHTML = "";
+    nav.querySelectorAll("a").forEach(function (a) {
+      drawerNav.appendChild(a.cloneNode(true));
+    });
+  }
+  rebuildDrawer();
 
   drawer.appendChild(drawerHead);
   drawer.appendChild(drawerNav);
@@ -93,10 +88,10 @@
   tabs.className = "mobile-tabs";
   tabs.setAttribute("aria-label", "快捷导航");
   [
-    { href: "dashboard.html", label: "工作台", key: "dash" },
-    { href: "zone.html?zone=study", label: "学习", key: "study" },
+    { href: "dashboard.html", label: "待办", key: "dash" },
+    { href: "zone.html?zone=study", label: "单词", key: "study" },
     { href: "zone.html?zone=practice", label: "练习", key: "practice" },
-    { href: "zone.html?zone=mock", label: "模考", key: "mock" },
+    { href: "zone.html?zone=mock", label: "真题", key: "mock" },
     { href: meHref(), label: "我的", key: "me", dynamic: true }
   ].forEach(function (t) {
     var a = document.createElement("a");
@@ -121,6 +116,7 @@
   }
 
   menuBtn.addEventListener("click", function () {
+    rebuildDrawer();
     setDrawer(drawer.hidden);
   });
   closeBtn.addEventListener("click", function () { setDrawer(false); });
@@ -150,7 +146,7 @@
       });
     }
 
-    if (path === "dashboard.html") {
+    if (path === "dashboard.html" || path === "calendar.html") {
       activate(nav.querySelectorAll("a"), function (a) {
         return a.getAttribute("data-nav") === "dashboard" || (a.getAttribute("href") || "").indexOf("dashboard") >= 0;
       });
@@ -177,21 +173,27 @@
       });
       return;
     }
-    if (path === "results.html" || path === "profile.html" || path === "login.html") {
+    if (path === "cambridge.html" || path.indexOf("alevel") === 0) {
       activate(nav.querySelectorAll("a"), function (a) {
-        return a.getAttribute("data-nav") === "results" || a.id === "nav-auth";
+        return a.getAttribute("data-zone") === "mock";
       });
       activate(tabs.querySelectorAll("a"), function (a) {
-        return a.dataset.tab === "me";
+        return a.dataset.tab === "mock";
       });
       return;
     }
-    if (path === "calendar.html") {
+    if (path === "vocab.html" || path === "wrong-words.html" || path === "saved-words.html") {
       activate(nav.querySelectorAll("a"), function (a) {
-        return a.getAttribute("data-nav") === "calendar";
+        return a.getAttribute("data-zone") === "study";
       });
-      activate(drawerNav.querySelectorAll("a"), function (a) {
-        return a.getAttribute("data-nav") === "calendar";
+      activate(tabs.querySelectorAll("a"), function (a) {
+        return a.dataset.tab === "study";
+      });
+      return;
+    }
+    if (path === "results.html" || path === "profile.html" || path === "login.html") {
+      activate(nav.querySelectorAll("a"), function (a) {
+        return a.getAttribute("data-nav") === "results" || a.id === "nav-auth";
       });
       activate(tabs.querySelectorAll("a"), function (a) {
         return a.dataset.tab === "me";
@@ -200,7 +202,10 @@
   }
 
   markActive();
-  document.addEventListener("DOMContentLoaded", markActive);
+  document.addEventListener("DOMContentLoaded", function () {
+    rebuildDrawer();
+    markActive();
+  });
 
   try {
     if (localStorage.getItem("yysd:mascot-off") === "1") {

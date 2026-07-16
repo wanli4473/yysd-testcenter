@@ -323,14 +323,20 @@
       catalogById = {};
       (res[1] || []).forEach(function (it) { catalogById[it.id] = it; });
       render();
+      openFromHash();
     }).catch(function (e) {
       if (String(e.message).indexOf("登录") >= 0) {
         A.setToken("");
-        location.href = "login.html?next=" + encodeURIComponent("calendar.html");
+        location.href = "login.html?next=" + encodeURIComponent("dashboard.html");
         return;
       }
       viewEl.innerHTML = '<div class="state state--brand"><h3>加载失败</h3><p>' + esc(e.message) + "</p></div>";
     });
+  }
+
+  function openFromHash() {
+    var m = /^#event-(\d+)$/.exec(location.hash || "");
+    if (m) openDetail(Number(m[1]));
   }
 
   document.querySelectorAll("[data-view]").forEach(function (btn) {
@@ -373,6 +379,8 @@
       });
     }
   });
+
+  window.addEventListener("hashchange", openFromHash);
 
   load();
 })();

@@ -9,14 +9,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
   <link rel="stylesheet" href="assets/css/style.css?v=20260714shell">
-  <link rel="stylesheet" href="assets/css/ai-tutor.css?v=20260714c">
+  <link rel="stylesheet" href="assets/css/ai-tutor.css?v=20260714exam">
   <link rel="stylesheet" href="assets/css/mascot.css?v=20260709a">
 </head>
-<body class="home-minimal student-layout shell-compact-nav ai-tutor-page">
+<body class="home-minimal ai-tutor-page">
 
-  <header class="minimal-topbar">
+  <header class="minimal-topbar" id="site-header">
     <div class="minimal-shell minimal-topbar__inner">
-      <a href="dashboard.html" class="minimal-brand" aria-label="工作台">
+      <a href="dashboard.html" class="minimal-brand" aria-label="待办事项">
         <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
         <span class="minimal-brand__text">
           <b>优益思达国际课程中心</b>
@@ -24,88 +24,163 @@
         </span>
       </a>
       <nav class="minimal-nav" id="nav" aria-label="主导航">
-        <a href="dashboard.html" data-nav="dashboard">工作台</a>
-        <a href="zone.html?zone=study" data-zone="study">学习区</a>
+        <a href="dashboard.html" data-nav="dashboard">待办事项</a>
+        <a href="zone.html?zone=study" data-zone="study">单词区</a>
         <a href="zone.html?zone=practice" data-zone="practice" class="is-active">练习区</a>
-        <a href="zone.html?zone=mock" data-zone="mock">模考区</a>
-        <a href="calendar.html" data-nav="calendar">任务日历</a>
+        <a href="zone.html?zone=mock" data-zone="mock">真题区</a>
         <a href="results.html" data-nav="results">我的成绩</a>
         <a href="login.html" id="nav-auth">登录</a>
       </nav>
     </div>
   </header>
 
-  <section class="minimal-shell minimal-page-head">
-    <div class="minimal-crumb"><a href="zone.html?zone=practice">练习区</a> <span class="crumb-sep" aria-hidden="true">★</span> <span>AI 雅思老师</span></div>
-    <h1>AI 雅思老师</h1>
-    <p class="minimal-page-desc">机经练习 / 全真模考，或向老师请教口语与写作。支持文字与语音。</p>
+  <section class="minimal-shell minimal-page-head" id="page-head">
+    <div class="minimal-crumb"><a href="zone.html?zone=practice">练习区</a> <span class="crumb-sep" aria-hidden="true">★</span> <span id="crumb-here">AI 雅思老师</span></div>
+    <h1 id="page-title">AI 雅思老师</h1>
+    <p class="minimal-page-desc" id="page-desc">选择口语或写作。口语侧重机经练习与全真模考；写作选题干后粘贴作文批改。</p>
   </section>
 
   <main class="minimal-shell minimal-main ai-tutor" id="ai-tutor-root">
-    <aside class="ai-tutor__side" aria-label="历史会话">
-      <div class="ai-tutor__side-head">
-        <strong>历史会话</strong>
-        <button type="button" class="btn btn--primary btn--sm" id="btn-new">新建辅导</button>
+
+    <!-- Hub: 口语 / 写作 -->
+    <section class="ai-hub" id="view-hub">
+      <button type="button" class="ai-hub__card" data-track="speaking">
+        <b>口语</b>
+        <span>机经练习 · 全真模考 · 辅导聊天（练习/模考仅麦克风）</span>
+      </button>
+      <button type="button" class="ai-hub__card" data-track="writing">
+        <b>写作</b>
+        <span>选题干 · 粘贴作文 · 四项评分与范文批改</span>
+      </button>
+    </section>
+
+    <!-- Speaking home -->
+    <section class="ai-hub" id="view-speaking-home" hidden>
+      <button type="button" class="btn btn--ghost btn--sm ai-back" data-back="hub">← 返回</button>
+      <div class="ai-hub__row">
+        <button type="button" class="ai-hub__card" data-speak="practice"><b>机经练习</b><span>自选 Part1 + Part2，可重听 / 重录</span></button>
+        <button type="button" class="ai-hub__card ai-hub__card--accent" data-speak="mock"><b>机经模考</b><span>全真考场计时 · 自动语音对答</span></button>
+        <button type="button" class="ai-hub__card" data-speak="tutor"><b>辅导聊天</b><span>可打字，麦克风可选</span></button>
       </div>
       <div class="ai-tutor__quota" id="quota-box">加载额度…</div>
-      <ul class="ai-tutor__sessions" id="session-list"></ul>
       <div class="ai-tutor__admin" id="admin-upload" hidden>
         <strong>更新机经题库</strong>
         <input type="file" id="jiijing-file" accept="application/pdf,.pdf">
         <button type="button" class="btn btn--ghost btn--sm" id="btn-upload-jiijing">上传 PDF</button>
         <p class="ai-tutor__admin-hint" id="upload-hint"></p>
       </div>
-    </aside>
+    </section>
 
-    <section class="ai-tutor__main">
-      <div class="ai-tutor__toolbar">
-        <div class="ai-tutor__modes" role="group" aria-label="模式">
-          <button type="button" class="chip is-active" data-mode="teacher">辅导老师</button>
-          <button type="button" class="chip" data-mode="examiner">口语考官</button>
+    <!-- Speaking practice / tutor workspace -->
+    <section class="ai-workspace" id="view-speak-room" hidden>
+      <aside class="ai-tutor__side" aria-label="历史会话">
+        <div class="ai-tutor__side-head">
+          <strong id="side-title">会话</strong>
+          <button type="button" class="btn btn--ghost btn--sm" data-back="speaking-home">返回</button>
         </div>
-        <div class="ai-tutor__exam" id="exam-opts" hidden>
-          <button type="button" class="chip chip--sub is-active" data-exam-mode="practice">机经练习</button>
-          <button type="button" class="chip chip--sub" data-exam-mode="mock">机经模考</button>
-        </div>
-        <div class="ai-tutor__prep" id="prep-bar" hidden>
-          <span id="prep-label">Part 2 准备</span>
-          <strong id="prep-time">01:00</strong>
-          <button type="button" class="btn btn--ghost btn--sm" id="btn-prep">开始 60 秒准备</button>
-        </div>
-      </div>
+        <ul class="ai-tutor__sessions" id="session-list"></ul>
+      </aside>
 
-      <div class="ai-tutor__picker" id="topic-picker" hidden>
-        <div class="ai-tutor__bank-title" id="bank-title">机经题库</div>
-        <div class="ai-tutor__pick-cols">
-          <div>
-            <h3>Part 1（可多选）</h3>
-            <div class="ai-tutor__pick-list" id="part1-list"></div>
+      <div class="ai-tutor__main">
+        <div class="ai-tutor__toolbar">
+          <span id="room-label">口语</span>
+        </div>
+
+        <div class="ai-tutor__picker" id="topic-picker" hidden>
+          <div class="ai-tutor__bank-title" id="bank-title">机经题库</div>
+          <div class="ai-tutor__pick-cols">
+            <div>
+              <h3>Part 1（可多选）</h3>
+              <div class="ai-tutor__pick-list" id="part1-list"></div>
+            </div>
+            <div>
+              <h3>Part 2（单选，含 Part 3）</h3>
+              <div class="ai-tutor__pick-list" id="part2-list"></div>
+            </div>
           </div>
-          <div>
-            <h3>Part 2（单选，含 Part 3）</h3>
-            <div class="ai-tutor__pick-list" id="part2-list"></div>
+          <div class="ai-tutor__pick-actions">
+            <button type="button" class="btn btn--primary" id="btn-start-practice">开始练习</button>
           </div>
         </div>
-        <div class="ai-tutor__pick-actions">
-          <button type="button" class="btn btn--primary" id="btn-start-practice">开始练习</button>
-          <button type="button" class="btn btn--primary" id="btn-start-mock" hidden>开始模考（随机抽题）</button>
-        </div>
-      </div>
 
-      <div class="ai-tutor__messages" id="messages" aria-live="polite"></div>
+        <div class="ai-tutor__messages" id="messages" aria-live="polite"></div>
 
-      <div class="ai-tutor__composer">
-        <p class="ai-tutor__hint" id="status-hint"></p>
-        <div class="ai-tutor__input-row">
-          <textarea id="input" rows="2" placeholder="输入消息…（写作可直接粘贴作文）" maxlength="8000"></textarea>
-          <button type="button" class="btn btn--ghost ai-tutor__mic" id="btn-mic" aria-pressed="false" title="点一下开始录音，再点结束">🎤</button>
-          <button type="button" class="btn btn--primary" id="btn-send">发送</button>
+        <div class="ai-tutor__composer" id="composer">
+          <p class="ai-tutor__hint" id="status-hint"></p>
+          <div class="ai-practice-bar" id="practice-bar" hidden>
+            <button type="button" class="btn btn--ghost btn--sm" id="btn-replay">重听考官</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="btn-rerecord" hidden>重新录制</button>
+            <button type="button" class="btn btn--primary btn--sm" id="btn-confirm-rec" hidden>确认发送</button>
+          </div>
+          <div class="ai-tutor__input-row" id="input-row">
+            <textarea id="input" rows="2" placeholder="输入消息…" maxlength="8000"></textarea>
+            <button type="button" class="btn btn--ghost ai-tutor__mic" id="btn-mic" aria-pressed="false" title="点一下开始录音，再点结束">🎤</button>
+            <button type="button" class="btn btn--primary" id="btn-send">发送</button>
+          </div>
         </div>
       </div>
     </section>
+
+    <!-- Writing -->
+    <section class="ai-writing" id="view-writing" hidden>
+      <button type="button" class="btn btn--ghost btn--sm ai-back" data-back="hub">← 返回</button>
+      <div class="ai-writing__toolbar">
+        <label>题型
+          <select id="w-task">
+            <option value="task1">Task 1</option>
+            <option value="task2">Task 2</option>
+          </select>
+        </label>
+        <label class="ai-writing__grow">题干
+          <select id="w-prompt"></select>
+        </label>
+      </div>
+      <pre class="ai-writing__prompt" id="w-prompt-text"></pre>
+      <textarea id="w-essay" rows="12" maxlength="8000" placeholder="在此粘贴你的作文…"></textarea>
+      <div class="ai-writing__actions">
+        <button type="button" class="btn btn--primary" id="btn-grade">提交批改</button>
+        <p class="ai-tutor__hint" id="w-hint"></p>
+      </div>
+      <div id="w-result"></div>
+    </section>
   </main>
 
-  <footer class="minimal-footer minimal-footer--rich">
+  <!-- Fullscreen mock exam -->
+  <div class="ai-exam" id="exam-overlay" hidden>
+    <div class="ai-exam__top">
+      <div>
+        <div class="ai-exam__brand">IELTS Speaking Mock</div>
+        <div class="ai-exam__phase" id="exam-phase">Part 1</div>
+      </div>
+      <div class="ai-exam__timers">
+        <div><span>Total</span><strong id="exam-total">00:00</strong></div>
+        <div id="exam-subwrap" hidden><span id="exam-sublabel">Prep</span><strong id="exam-sub">01:00</strong></div>
+      </div>
+      <button type="button" class="btn btn--ghost btn--sm" id="btn-abandon">退出（未完成）</button>
+    </div>
+    <div class="ai-exam__stage">
+      <div class="ai-exam__cue" id="exam-cue" hidden></div>
+      <p class="ai-exam__status" id="exam-status">准备开始…</p>
+      <div class="ai-exam__viz" id="exam-viz" aria-hidden="true"></div>
+    </div>
+    <div class="ai-exam__bottom">
+      <button type="button" class="btn btn--primary" id="btn-exam-start">开始考试（解锁声音）</button>
+      <button type="button" class="btn btn--primary" id="btn-exam-submit" hidden>说完了 / 提交</button>
+    </div>
+  </div>
+
+  <!-- Post-mock review -->
+  <div class="ai-review" id="review-overlay" hidden>
+    <div class="ai-review__panel">
+      <h2>模考回顾</h2>
+      <div id="review-score"></div>
+      <div id="review-tips"></div>
+      <div id="review-turns"></div>
+      <button type="button" class="btn btn--primary" id="btn-review-close">返回口语首页</button>
+    </div>
+  </div>
+
+  <footer class="minimal-footer minimal-footer--rich" id="site-footer">
     <div class="minimal-shell minimal-footer__inner">
       <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心
         <span class="site-icp" data-icp></span>
@@ -113,11 +188,10 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260714canvas"></script>
-  <script src="assets/js/auth.js?v=20260714localapi"></script>
-  <script src="assets/js/nav.js?v=20260714dash"></script>
+  <script src="assets/js/config.js?v=20260716nav"></script>
+  <script src="assets/js/auth.js?v=20260716nav"></script>
+  <script src="assets/js/nav.js?v=20260716nav"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/ai-tutor.js?v=20260714c"></script>
-  <script src="assets/js/mascot.js?v=20260709a"></script>
+  <script src="assets/js/ai-tutor.js?v=20260714exam"></script>
 </body>
 </html>

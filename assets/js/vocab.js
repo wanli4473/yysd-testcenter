@@ -1,6 +1,6 @@
 /* =========================================================================
    vocab.js — vocabulary book hub (Plan A)
-   Opened from 学习区: vocab.html?book=gaozhong | cet4 | special
+   Opened from 单词区: vocab.html?book=gaozhong | cet4 | special
    Optional: &range=11-20 for initial LIST tab
    ========================================================================= */
 (function () {
@@ -24,7 +24,7 @@
 
   function fail(msg) {
     contentEl.innerHTML = '<div class="state"><h3>无法打开</h3><p>' + Y.esc(msg) +
-      '</p><p><a href="zone.html?zone=study&s=vocab">返回学习区</a></p></div>';
+      '</p><p><a href="zone.html?zone=study&s=vocab">返回单词区</a></p></div>';
   }
 
   function listBadge(item) {
@@ -210,7 +210,7 @@
     var stats = Y.vocabBookStats(study, bookKey);
 
     if (!stats || !stats.total) {
-      fail("未找到该单词书内容，请从<a href=\"zone.html?zone=study&s=vocab\">学习区</a>重新进入。");
+      fail("未找到该单词书内容，请从<a href=\"zone.html?zone=study&s=vocab\">单词区</a>重新进入。");
       return;
     }
 

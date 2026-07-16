@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260707d">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260714shell">
   <link rel="stylesheet" href="assets/css/mascot.css?v=20260709a">
 </head>
 <body class="home-minimal">
@@ -23,10 +23,11 @@
         </span>
       </a>
       <nav class="minimal-nav" id="nav" aria-label="主导航">
-        <a href="zone.html?zone=study">学习区</a>
-        <a href="zone.html?zone=practice">练习区</a>
-        <a href="zone.html?zone=mock">模考区</a>
-        <a href="results.html" data-nav="results" class="is-active">我的成绩</a>
+        <a href="dashboard.html" data-nav="dashboard">待办事项</a>
+        <a href="zone.html?zone=study" data-zone="study">单词区</a>
+        <a href="zone.html?zone=practice" data-zone="practice">练习区</a>
+        <a href="zone.html?zone=mock" data-zone="mock">真题区</a>
+        <a href="results.html" data-nav="results">我的成绩</a>
         <a href="login.html" id="nav-auth">登录</a>
       </nav>
     </div>
@@ -58,9 +59,9 @@
         </div>
       </div>
       <nav class="minimal-footer__links" aria-label="页脚导航">
-        <a href="zone.html?zone=study">学习区</a>
+        <a href="zone.html?zone=study">单词区</a>
         <a href="zone.html?zone=practice">练习区</a>
-        <a href="zone.html?zone=mock">模考区</a>
+        <a href="zone.html?zone=mock">真题区</a>
         <a href="admin/index.html">管理后台</a>
       </nav>
       <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心 · YYSD International Course Center
@@ -69,9 +70,9 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260708i"></script>
-  <script src="assets/js/auth.js?v=20260711b"></script>
-  <script src="assets/js/nav.js?v=20260708i"></script>
+  <script src="assets/js/config.js?v=20260716nav"></script>
+  <script src="assets/js/auth.js?v=20260716nav"></script>
+  <script src="assets/js/nav.js?v=20260716nav"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
@@ -104,10 +105,10 @@
         if (summaryEl) summaryEl.innerHTML = "";
         area.innerHTML = '<div class="state state--brand results-empty">' +
           '<h3>还没有成绩记录</h3>' +
-          '<p>完成一份剑桥模考并交卷后，得分和 Band 预估会自动出现在这里。</p>' +
+          '<p>完成一份剑桥真题并交卷后，得分和 Band 预估会自动出现在这里。</p>' +
           '<div class="results-empty__actions">' +
-          '<a class="btn btn--primary pressable" href="zone.html?zone=mock&s=ielts">去做第一套模考 →</a>' +
-          '<a class="btn btn--ghost" href="zone.html?zone=study">先去学习区</a>' +
+          '<a class="btn btn--primary pressable" href="zone.html?zone=mock&s=ielts">去做第一套真题 →</a>' +
+          '<a class="btn btn--ghost" href="zone.html?zone=study">先去单词区</a>' +
           '</div></div>';
         return;
       }

@@ -299,22 +299,48 @@ window.YYSD_AUTH = (function () {
     nav.appendChild(btn);
   }
 
-  function applyCompactShell() {
+  // ponytail: logout only — student top nav stays visible (no left sidebar)
+  function applyStudentChrome() {
     if (!getToken()) return;
     var name = pageName();
     if (PUBLIC_PAGES[name] || name === "exam.html") return;
-    // Teacher pages own their nav (sidebar / explicit shell-compact-nav).
     if (name.indexOf("teacher") === 0 || name === "admin-assign.html") return;
     if (document.body.classList.contains("viewer")) return;
-    document.body.classList.add("shell-compact-nav");
     var nav = document.querySelector(".minimal-nav");
     if (nav) ensureLogoutBtn(nav);
+  }
+
+  // Canonical student top nav: 待办事项 · 单词区 · 练习区 · 真题区 · 我的成绩 · 个人中心
+  function syncStudentTopNav(nav) {
+    if (!nav || isTeacher()) return;
+    var authEl = document.getElementById("nav-auth");
+    var links = [
+      { href: "dashboard.html", label: "待办事项", attr: "data-nav", val: "dashboard" },
+      { href: "zone.html?zone=study", label: "单词区", attr: "data-zone", val: "study" },
+      { href: "zone.html?zone=practice", label: "练习区", attr: "data-zone", val: "practice" },
+      { href: "zone.html?zone=mock", label: "真题区", attr: "data-zone", val: "mock" },
+      { href: "results.html", label: "我的成绩", attr: "data-nav", val: "results" }
+    ];
+    Array.prototype.slice.call(nav.children).forEach(function (node) {
+      if (node !== authEl && node.id !== "logout-btn" && node.id !== "nav-logout") {
+        nav.removeChild(node);
+      }
+    });
+    var before = authEl || document.getElementById("nav-logout") || document.getElementById("logout-btn");
+    links.forEach(function (L) {
+      var a = document.createElement("a");
+      a.href = L.href;
+      a.textContent = L.label;
+      a.setAttribute(L.attr, L.val);
+      if (before) nav.insertBefore(a, before);
+      else nav.appendChild(a);
+    });
   }
 
   function bindNav() {
     var el = document.getElementById("nav-auth");
     if (!el) {
-      applyCompactShell();
+      applyStudentChrome();
       return;
     }
     if (getToken()) {
@@ -336,7 +362,11 @@ window.YYSD_AUTH = (function () {
         el.textContent = "个人中心";
         el.removeAttribute("aria-label");
       }
-      applyCompactShell();
+      if (!isTeacher()) {
+        var nav = document.querySelector(".minimal-nav");
+        if (nav) syncStudentTopNav(nav);
+      }
+      applyStudentChrome();
     } else {
       el.href = "login.html";
       el.classList.remove("is-logged-in");
@@ -400,80 +430,19 @@ window.YYSD_AUTH = (function () {
     var name = pageName();
     if (PUBLIC_PAGES[name]) return;
     if (name === "exam.html" || name === "admin-assign.html" || name.indexOf("teacher") === 0) return;
-    if (document.querySelector(".student-shell")) return;
     var header = document.querySelector(".minimal-topbar");
     if (!header) return;
-
-    document.body.classList.add("student-layout", "shell-compact-nav");
-
+    document.body.classList.remove("student-layout", "shell-compact-nav");
     var brand = header.querySelector(".minimal-brand");
-    if (brand) brand.setAttribute("href", "dashboard.html");
+    if (brand) {
+      brand.setAttribute("href", "dashboard.html");
+      brand.setAttribute("aria-label", "待办事项");
+    }
     var nav = header.querySelector(".minimal-nav");
-    if (nav) ensureLogoutBtn(nav);
-
-    var shell = document.createElement("div");
-    shell.className = "student-shell";
-
-    var side = document.createElement("aside");
-    side.className = "student-side";
-    side.setAttribute("aria-label", "课程导航");
-
-    var links = [
-      { href: "dashboard.html", label: "工作台", key: "dashboard" },
-      { href: "zone.html?zone=study", label: "学习区", key: "study" },
-      { href: "zone.html?zone=practice", label: "练习区", key: "practice" },
-      { href: "zone.html?zone=mock", label: "模考区", key: "mock" },
-      { href: "calendar.html", label: "任务日历", key: "calendar" },
-      { href: "results.html", label: "我的成绩", key: "results" },
-      { href: "profile.html", label: "个人中心", key: "profile" }
-    ];
-    if (isAdmin()) {
-      links.push({ href: "admin-assign.html", label: "学生分配", key: "admin" });
+    if (nav) {
+      syncStudentTopNav(nav);
+      ensureLogoutBtn(nav);
     }
-
-    var path = location.pathname + location.search;
-    var label = document.createElement("p");
-    label.className = "student-side__label";
-    label.textContent = "优益思达备考";
-    side.appendChild(label);
-
-    links.forEach(function (L) {
-      var a = document.createElement("a");
-      a.className = "student-side__link";
-      a.href = L.href;
-      a.textContent = L.label;
-      var active = false;
-      if (L.key === "dashboard" && name === "dashboard.html") active = true;
-      else if (L.key === "study" && /zone=study/.test(path)) active = true;
-      else if (L.key === "practice" && /zone=practice/.test(path)) active = true;
-      else if (L.key === "mock" && (/zone=mock/.test(path) || name === "cambridge.html" || name.indexOf("alevel") === 0)) active = true;
-      else if (L.key === "calendar" && name === "calendar.html") active = true;
-      else if (L.key === "results" && (name === "results.html" || name === "wrong-words.html")) active = true;
-      else if (L.key === "profile" && name === "profile.html") active = true;
-      else if (L.key === "admin" && name === "admin-assign.html") active = true;
-      else if (L.key === "study" && (name === "vocab.html" || name.indexOf("vocab") >= 0)) active = true;
-      else if (L.key === "practice" && name.indexOf("speaking") === 0) active = true;
-      if (active) a.classList.add("is-active");
-      side.appendChild(a);
-    });
-
-    var content = document.createElement("div");
-    content.className = "student-content";
-
-    var node = header.nextSibling;
-    var footer = document.querySelector(".minimal-footer, footer.site-footer");
-    while (node && node !== footer) {
-      var next = node.nextSibling;
-      if (node.nodeType === 1 || (node.nodeType === 3 && String(node.textContent).trim())) {
-        content.appendChild(node);
-      }
-      node = next;
-    }
-
-    shell.appendChild(side);
-    shell.appendChild(content);
-    if (footer) header.parentNode.insertBefore(shell, footer);
-    else header.parentNode.appendChild(shell);
   }
 
   function guardPage() {

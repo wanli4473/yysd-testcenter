@@ -10,15 +10,15 @@ window.YYSD = (function () {
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
-  // Homepage display order: 学习区 → 练习区 → 模考区
+  // Homepage display order: 单词区 → 练习区 → 真题区
   var ZONES = ["study", "practice", "mock"];
 
   var ZONE = {
-    study:    { label: "学习区", en: "Study", icon: "📚",
-                desc: "单词系统精讲，边学边测，打牢基础。" },
+    study:    { label: "单词区", en: "Words", icon: "📚",
+                desc: "词书、错题本与 AI 查词，边学边测，打牢基础。" },
     practice: { label: "练习区", en: "Practice", icon: "✏️",
                 desc: "长难句、数字听写、听力精听等专项训练，针对性提分。" },
-    mock:     { label: "模考区", en: "Mock Tests", icon: "🎯",
+    mock:     { label: "真题区", en: "Past Papers", icon: "🎯",
                 desc: "剑桥雅思 / A-Level 历年真题，在线预览与下载。" }
   };
 
@@ -335,7 +335,7 @@ window.YYSD = (function () {
       '</a>';
   }
 
-  // ---- Vocabulary book grouping (学习区单词 → vocab.html?book=…) ----
+  // ---- Vocabulary book grouping (单词区单词 → vocab.html?book=…) ----
   var VOCAB_BOOKS = {
     gaozhong: { key: "gaozhong", label: "高中词汇", subject: "vocab", tag: "雅思基础", chunk: 10 },
     cet4:     { key: "cet4",     label: "四级词汇", subject: "vocab-cet4", tag: "CET-4", chunk: 10 },
@@ -496,7 +496,7 @@ window.YYSD = (function () {
       '</a>';
   }
 
-  // ---- Cambridge series grouping (模考区 shows one card per volume) ----
+  // ---- Cambridge series grouping (真题区 shows one card per volume) ----
   function isCambridge(subject) {
     return subject === "cambridge-listening" || subject === "cambridge-reading" || subject === "cambridge-writing";
   }
@@ -584,7 +584,7 @@ window.YYSD = (function () {
         '</div>' +
         '<div class="vol-card__foot">' +
           '<span class="vol-card__skills">' + skills + '</span>' +
-          '<span class="vol-card__go">开始模考 ›</span>' +
+          '<span class="vol-card__go">开始真题 ›</span>' +
         '</div>' +
         '</div>' +
       '</a>';
@@ -707,9 +707,9 @@ window.YYSD = (function () {
   function homeIeltsHTML(items, prefix) {
     var p = prefix || "";
     var zones = [
-      { step: "01", label: "学习区", sub: "词汇 · 语法 · 课程资料", href: p + "zone.html?zone=study" },
+      { step: "01", label: "单词区", sub: "词汇 · 语法 · 课程资料", href: p + "zone.html?zone=study" },
       { step: "02", label: "练习区", sub: "听力精听 · 专项训练", href: p + "zone.html?zone=practice" },
-      { step: "03", label: "模考区", sub: "剑桥雅思真题", href: p + "zone.html?zone=mock&s=ielts" }
+      { step: "03", label: "真题区", sub: "剑桥雅思真题", href: p + "zone.html?zone=mock&s=ielts" }
     ];
     var zoneCards = zones.map(function (z) {
       return '<a class="home-ielts__zone pressable" href="' + z.href + '">' +
@@ -725,11 +725,11 @@ window.YYSD = (function () {
           "<div>" +
             '<span class="home-ielts__eyebrow">IELTS PREPARATION</span>' +
             "<h2>雅思备考</h2>" +
-            "<p>学习 · 练习 · 模考一站完成 · 剑桥雅思真题 · 词汇语法系统精讲</p>" +
+            "<p>单词 · 练习 · 真题一站完成 · 剑桥雅思真题 · 词汇语法系统精讲</p>" +
           "</div>" +
           '<div class="home-ielts__actions">' +
-            '<a class="btn btn--primary pressable" href="' + p + 'zone.html?zone=study">进入学习区</a>' +
-            '<a class="btn btn--gold pressable" href="' + p + 'zone.html?zone=mock&s=ielts">开始模考</a>' +
+            '<a class="btn btn--primary pressable" href="' + p + 'zone.html?zone=study">进入单词区</a>' +
+            '<a class="btn btn--gold pressable" href="' + p + 'zone.html?zone=mock&s=ielts">开始真题</a>' +
           "</div>" +
         "</div>" +
         '<div class="home-ielts__zones">' + zoneCards + "</div>" +
@@ -739,9 +739,9 @@ window.YYSD = (function () {
   function homeJourneyHTML(items, prefix) {
     var counts = journeyStats(items);
     var steps = [
-      { zone: "study", step: "01", label: "学习", sub: "词汇 · 语法", href: (prefix || "") + "zone.html?zone=study" },
+      { zone: "study", step: "01", label: "单词", sub: "词汇 · 语法", href: (prefix || "") + "zone.html?zone=study" },
       { zone: "practice", step: "02", label: "练习", sub: "精听 · 专项", href: (prefix || "") + "zone.html?zone=practice" },
-      { zone: "mock", step: "03", label: "模考", sub: "剑桥真题", href: (prefix || "") + "zone.html?zone=mock" }
+      { zone: "mock", step: "03", label: "真题", sub: "剑桥真题", href: (prefix || "") + "zone.html?zone=mock" }
     ];
     var current = "study";
     if (counts.mock) current = "mock";
@@ -781,10 +781,10 @@ window.YYSD = (function () {
         '<div class="home-dashboard__inner">' +
           '<span class="home-dashboard__eyebrow">YOUR COCKPIT</span>' +
           "<h2>开始你的备考路径</h2>" +
-          "<p>从学习区或模考区任选入口，进度会保存在本浏览器。</p>" +
+          "<p>从单词区或真题区任选入口，进度会保存在本浏览器。</p>" +
           '<div class="home-dashboard__actions">' +
-            '<a class="btn btn--gold btn--sm" href="' + p + 'zone.html?zone=mock">开始模考</a>' +
-            '<a class="btn btn--ghost-dark btn--sm" href="' + p + 'zone.html?zone=study">进入学习区</a>' +
+            '<a class="btn btn--gold btn--sm" href="' + p + 'zone.html?zone=mock">开始真题</a>' +
+            '<a class="btn btn--ghost-dark btn--sm" href="' + p + 'zone.html?zone=study">进入单词区</a>' +
           "</div></div></section>";
     }
 

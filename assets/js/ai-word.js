@@ -1,4 +1,4 @@
-/* ai-word.js — 学习区 AI 查词（本页结果 + 追问 + 生词本） */
+/* ai-word.js — 单词区 AI 查词（本页结果 + 追问 + 生词本） */
 window.YYSD_AI_WORD = (function () {
   "use strict";
 

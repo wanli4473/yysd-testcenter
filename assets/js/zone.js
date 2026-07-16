@@ -240,10 +240,11 @@
       var vbooks = Y.vocabBooksForZone(allItems);
       var aiWord = (window.YYSD_AI_WORD && window.YYSD_AI_WORD.shellHTML)
         ? window.YYSD_AI_WORD.shellHTML() : "";
-      body = aiWord + Y.savedWordsStripHTML("") + Y.wrongWordsStripHTML("") +
-        (vbooks.length
+      // order: 词书 → 错题本 → 生词本 → AI 查词
+      body = (vbooks.length
         ? '<div class="vol-grid">' + vbooks.map(function (s) { return Y.vocabBookCardHTML(s, ""); }).join("") + "</div>"
-        : '<div class="soon-box">暂无单词内容，上传后会显示在这里。</div>');
+        : '<div class="soon-box">暂无单词内容，上传后会显示在这里。</div>') +
+        Y.wrongWordsStripHTML("") + Y.savedWordsStripHTML("") + aiWord;
     } else if (cat.children) {
       body = '<div class="leaf-wrap">' + cat.children.map(nodeBlockHTML).join("") + "</div>";
     } else {
@@ -259,14 +260,12 @@
       html = '<div class="catalog-search-meta">找到 ' + matched.length + " 条结果</div>" +
         Y.searchResultsHTML(matched, "");
     } else {
-      var recent = Y.recentActivity(allItems, 3);
-      var continueHTML = recent.length ? Y.continueStripHTML(recent, "") : "";
       var aiTutorHTML = zone === "practice"
         ? '<a class="ai-tutor-entry pressable" href="ai-tutor.html">' +
           "<b>AI 雅思老师</b><span>口语机经练习/全真模考 · 写作批改</span></a>"
         : "";
       var cats = activeCat === "all" ? visibleNav() : visibleNav().filter(function (c) { return c.key === activeCat; });
-      html = aiTutorHTML + continueHTML + cats.map(categoryHTML).join("");
+      html = aiTutorHTML + cats.map(categoryHTML).join("");
     }
     function afterRender() {
       if (window.YYSD_AI_WORD && window.YYSD_AI_WORD.bind) window.YYSD_AI_WORD.bind(contentEl);

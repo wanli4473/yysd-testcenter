@@ -43,7 +43,7 @@
 
     if (!cam.length) {
       contentEl.innerHTML = '<div class="state state--brand"><h3>未找到该册内容</h3>' +
-        '<p>请从<a href="zone.html?zone=mock&s=ielts">模考区</a>重新进入。</p></div>';
+        '<p>请从<a href="zone.html?zone=mock&s=ielts">真题区</a>重新进入。</p></div>';
       return;
     }
 
@@ -58,7 +58,7 @@
 
     var crumb = '<div class="minimal-crumb cam-crumb">' +
       '<a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
-      '<a href="zone.html?zone=mock&s=ielts">模考区</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
+      '<a href="zone.html?zone=mock&s=ielts">真题区</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
       "剑桥雅思 " + Y.esc(vol) + "</div>";
 
     var hero = '<div class="cam-hero">' +

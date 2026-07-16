@@ -21,7 +21,7 @@
 
   function fail(msg) {
     contentEl.innerHTML = '<div class="state"><h3>无法打开</h3><p>' + Y.esc(msg) +
-      '</p><p><a href="zone.html?zone=study&s=vocab">返回学习区</a></p></div>';
+      '</p><p><a href="zone.html?zone=study&s=vocab">返回单词区</a></p></div>';
   }
 
   if (!book) { fail("无效的错题本类型。"); return; }
@@ -30,7 +30,7 @@
       ' 错题本正在制作中，请先使用高中或四级词汇错题本。</p>' +
       '<p><a class="btn btn--primary btn--sm" href="wrong-words.html?book=gaozhong">前往高中错题本</a> ' +
       '<a class="btn btn--ghost btn--sm" href="wrong-words.html?book=cet4">四级错题本</a> ' +
-      '<a class="btn btn--ghost btn--sm" href="zone.html?zone=study&s=vocab">返回学习区</a></p></div>';
+      '<a class="btn btn--ghost btn--sm" href="zone.html?zone=study&s=vocab">返回单词区</a></p></div>';
     document.title = "单词错题本 · 优益思达国际课程中心";
     return;
   }

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260711c">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260714dash">
 </head>
 <body class="home-minimal">
 
@@ -22,9 +22,10 @@
         </span>
       </a>
       <nav class="minimal-nav" id="nav" aria-label="主导航">
-        <a href="zone.html?zone=study">学习区</a>
-        <a href="zone.html?zone=practice">练习区</a>
-        <a href="zone.html?zone=mock">模考区</a>
+        <a href="dashboard.html" data-nav="dashboard">待办事项</a>
+        <a href="zone.html?zone=study" data-zone="study">单词区</a>
+        <a href="zone.html?zone=practice" data-zone="practice">练习区</a>
+        <a href="zone.html?zone=mock" data-zone="mock">真题区</a>
         <a href="results.html" data-nav="results">我的成绩</a>
         <a href="login.html" id="nav-auth">登录</a>
       </nav>
@@ -95,9 +96,9 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260707d"></script>
-  <script src="assets/js/auth.js?v=20260711c"></script>
-  <script src="assets/js/nav.js?v=20260707b"></script>
+  <script src="assets/js/config.js?v=20260716nav"></script>
+  <script src="assets/js/auth.js?v=20260716nav"></script>
+  <script src="assets/js/nav.js?v=20260716nav"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
@@ -109,12 +110,13 @@
     var confirmEl = document.getElementById("confirm");
     var sendBtn = document.getElementById("send-btn");
     var msgEl = document.getElementById("msg");
-    var next = new URLSearchParams(location.search).get("next") || "index.html";
+    var nextRaw = new URLSearchParams(location.search).get("next") || "dashboard.html";
+    var next = A.postLoginPath ? A.postLoginPath(nextRaw) : nextRaw;
     var cooldown = 0;
     var tick;
 
     if (A.getToken()) {
-      location.replace(next.indexOf("register") !== -1 ? "index.html" : next);
+      location.replace(A.postLoginPath ? A.postLoginPath(nextRaw) : "dashboard.html");
       return;
     }
 
@@ -171,7 +173,7 @@
           A.setToken(d.token);
           A.setUser({ phone: phoneEl.value.trim() });
           A.syncScoresFromCloud().finally(function () {
-            location.href = next;
+            location.href = A.postLoginPath ? A.postLoginPath(nextRaw) : next;
           });
         })
         .catch(function (e) { showMsg(e.message); });

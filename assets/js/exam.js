@@ -138,7 +138,7 @@
       scoreLine = "已完成";
     }
     if (wrongN && !payload.syncSub) {
-      sub = "本次新增 " + wrongN + " 个错词，可在学习区错题本复习";
+      sub = "本次新增 " + wrongN + " 个错词，可在单词区错题本复习";
     }
 
     toastHost.innerHTML =
@@ -351,7 +351,7 @@
       backBtn.href = "vocab.html?book=special";
     } else if (isStudy) {
       backBtn.href = "zone.html?zone=study";
-      backBtn.textContent = "← 返回学习区";
+      backBtn.textContent = "← 返回单词区";
     } else if (item.zone === "mock") {
       backBtn.href = "zone.html?zone=mock&s=ielts";
     }
@@ -396,10 +396,10 @@
     metaEl.textContent = [subjLabel, zoneLabel, item._attachmentName || ""].filter(Boolean).join(" · ");
     if (hintEl) {
       hintEl.hidden = false;
-      hintEl.textContent = "交卷后成绩会自动同步到「我的成绩」与任务日历";
+      hintEl.textContent = "交卷后成绩会自动同步到「我的成绩」与待办事项";
     }
-    backBtn.textContent = "← 返回任务日历";
-    backBtn.href = "calendar.html";
+    backBtn.textContent = "← 返回待办事项";
+    backBtn.href = "dashboard.html";
 
     var blob = new Blob([html], { type: "text/html;charset=utf-8" });
     var url = URL.createObjectURL(blob);
