@@ -5001,45 +5001,18 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   .cal-todo-row { flex-direction: column; align-items: flex-start; }
 }
 
-/* ---- Student Canvas shell (light) ---- */
+/* ---- Student shell retired: top nav only ---- */
+/* ponytail: kill-switch if cached old auth.js still injects .student-side */
+.student-side { display: none !important; }
 .student-shell {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 0;
-  max-width: 1280px;
-  margin: 0 auto;
-  min-height: calc(100vh - 120px);
-  border-top: 1px solid var(--border);
-}
-.student-side {
-  padding: 28px 18px 40px;
-  border-right: 1px solid var(--border);
-  background: #fffcf7;
-}
-.student-side__label {
-  margin: 0 10px 12px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .08em;
-  color: var(--text-faint);
-}
-.student-side__link {
   display: block;
-  padding: 10px 12px;
-  margin-bottom: 4px;
-  border-radius: 8px;
-  text-decoration: none;
-  color: var(--brand-navy);
-  font-weight: 600;
-  font-size: 14px;
-}
-.student-side__link:hover { background: rgba(199, 164, 93, .12); }
-.student-side__link.is-active {
-  background: var(--brand-navy);
-  color: #fff;
+  max-width: none;
+  margin: 0;
+  min-height: 0;
+  border-top: 0;
 }
 .student-content {
-  padding: 8px 28px 48px;
+  padding: 0;
   min-width: 0;
 }
 .student-layout .minimal-page-head,
@@ -5047,10 +5020,9 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
 .student-content > .minimal-shell {
   max-width: none;
 }
-/* Desktop: only brand + persist (个人中心/退出); mobile: show full top nav */
 .shell-compact-nav .minimal-nav > a:not(.nav-persist):not(#nav-auth),
 .shell-compact-nav .minimal-nav > .nav-mobile-only {
-  display: none;
+  display: inline-flex;
 }
 .shell-compact-nav .minimal-nav > #nav-auth,
 .shell-compact-nav .minimal-nav > .nav-persist,
@@ -5058,24 +5030,6 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
 .shell-compact-nav .minimal-nav > #nav-logout {
   display: inline-flex;
   align-items: center;
-}
-@media (max-width: 900px) {
-  .student-shell { grid-template-columns: 1fr; }
-  .student-side {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-    padding: 14px 16px;
-  }
-  .student-side__label { width: 100%; margin: 0 0 4px; }
-  .student-side__link { margin: 0; }
-  .student-content { padding: 8px 16px 40px; }
-  .shell-compact-nav .minimal-nav > a:not(.nav-persist):not(#nav-auth),
-  .shell-compact-nav .minimal-nav > .nav-mobile-only {
-    display: inline-flex;
-  }
 }
 
 /* ---- Dashboard workbench ---- */

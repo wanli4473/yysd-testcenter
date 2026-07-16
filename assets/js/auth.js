@@ -424,6 +424,18 @@ window.YYSD_AUTH = (function () {
     return true;
   }
 
+  function dismantleStudentSide() {
+    document.body.classList.remove("student-layout", "shell-compact-nav");
+    var shell = document.querySelector(".student-shell");
+    if (!shell) return;
+    var content = shell.querySelector(".student-content");
+    var parent = shell.parentNode;
+    if (content && parent) {
+      while (content.firstChild) parent.insertBefore(content.firstChild, shell);
+    }
+    shell.remove();
+  }
+
   function mountStudentShell() {
     if (!getToken() || isTeacher()) return;
     if (document.body.classList.contains("viewer")) return;
@@ -432,7 +444,7 @@ window.YYSD_AUTH = (function () {
     if (name === "exam.html" || name === "admin-assign.html" || name.indexOf("teacher") === 0) return;
     var header = document.querySelector(".minimal-topbar");
     if (!header) return;
-    document.body.classList.remove("student-layout", "shell-compact-nav");
+    dismantleStudentSide();
     var brand = header.querySelector(".minimal-brand");
     if (brand) {
       brand.setAttribute("href", "dashboard.html");
