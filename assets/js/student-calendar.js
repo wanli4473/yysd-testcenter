@@ -44,6 +44,11 @@
 
   function esc(s) { return Y.esc(s); }
 
+  function examHref(itemId, eventId) {
+    return "exam.html?id=" + encodeURIComponent(itemId) +
+      "&event=" + encodeURIComponent(eventId);
+  }
+
   function typeClass(t) {
     if (t === "ASSIGNMENT") return "cal-tag--assignment";
     if (t === "LESSON") return "cal-tag--lesson";
@@ -208,7 +213,7 @@
       var cta = ev.status === "COMPLETED"
         ? '<button type="button" class="btn btn--ghost btn--sm" data-open="' + ev.id + '">查看</button>'
         : (ids.length === 1
-          ? '<a class="btn btn--primary btn--sm" href="exam.html?id=' + encodeURIComponent(ids[0]) + '">去做</a>'
+          ? '<a class="btn btn--primary btn--sm" href="' + examHref(ids[0], ev.id) + '">去做</a>'
           : '<button type="button" class="btn btn--primary btn--sm" data-open="' + ev.id + '">去做</button>');
       return '<article class="cal-todo-row ' + statusClass(ev.status) + '">' +
         '<div class="cal-todo-row__main">' +
@@ -258,7 +263,7 @@
         ? (ev.attachmentName || "老师上传的练习")
         : (it ? Y.displayTitle(it) : xid);
       var done = !!doneSet[xid];
-      var href = "exam.html?id=" + encodeURIComponent(xid);
+      var href = examHref(xid, ev.id);
       return '<li class="cal-ex-row' + (done ? " is-done" : "") + '">' +
         "<span><b>" + esc(title) + "</b>" +
           (done ? '<small class="cal-ex-done">已完成</small>' : "") +
@@ -296,8 +301,8 @@
       acts += '<span class="profile-hint">已完成' +
         (ev.completedAt ? " · " + esc(fmtDate(ev.completedAt)) : "") + "</span>";
     } else if ((ev.linkedExerciseIds || []).length === 1) {
-      acts += '<a class="btn btn--primary" href="exam.html?id=' +
-        encodeURIComponent(ev.linkedExerciseIds[0]) + '">立即去做</a>';
+      acts += '<a class="btn btn--primary" href="' +
+        examHref(ev.linkedExerciseIds[0], ev.id) + '">立即去做</a>';
     }
     detailActions.innerHTML = acts;
     modal.hidden = false;

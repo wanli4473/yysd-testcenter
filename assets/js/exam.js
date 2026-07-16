@@ -5,7 +5,9 @@
   "use strict";
   var Y = window.YYSD;
 
-  var id = new URLSearchParams(location.search).get("id");
+  var qs = new URLSearchParams(location.search);
+  var id = qs.get("id");
+  var assignmentEventId = (qs.get("event") || "").replace(/\D/g, "") || "";
   var frame = document.getElementById("exam-frame");
   var titleEl = document.getElementById("v-title");
   var metaEl = document.getElementById("v-meta");
@@ -19,6 +21,7 @@
   var timerHandle = null;
   var toastTimer = null;
   var lastScorePushKey = null;
+  var sessionStartedMs = null;
   var examLockOn = false;
   var examLockVoided = false;
   var examLockBound = null;
@@ -36,6 +39,7 @@
       return;
     }
     var eventId = Number(uploadMatch[1]);
+    if (!assignmentEventId) assignmentEventId = String(eventId);
     var isTeach = YYSD_AUTH.isTeacher && YYSD_AUTH.isTeacher();
     var metaReq = isTeach
       ? YYSD_AUTH.api("/api/calendar/events/" + eventId)
@@ -527,6 +531,23 @@
   }
 
   // ponytail: scrape iframe result DOM — avoids patching 100+ paper HTML files
+  function resolveStartedAt(d) {
+    if (d && d.startedAt) {
+      var parsed = Date.parse(d.startedAt);
+      if (isFinite(parsed)) return new Date(parsed).toISOString();
+    }
+    try {
+      var st = frame.contentWindow && frame.contentWindow.startTime;
+      if (!st && frame.contentWindow) {
+        st = frame.contentWindow.eval("typeof startTime==='undefined'?0:startTime");
+      }
+      var n = Number(st);
+      if (n > 0) return new Date(n).toISOString();
+    } catch (e) { /* ponytail: cross-origin or no startTime */ }
+    if (sessionStartedMs) return new Date(sessionStartedMs).toISOString();
+    return null;
+  }
+
   function scrapeWrongFromFrame() {
     try {
       var doc = frame.contentDocument;
@@ -558,14 +579,20 @@
     if (!d || !frame.contentWindow || e.source !== frame.contentWindow) return;
 
     if (d.type === "yysd:exam-lock") {
+      if (d.active && !sessionStartedMs) sessionStartedMs = Date.now();
       setExamLock(d.active, d.voided);
       return;
     }
 
-    if (d.type === "yysd:timer-sync" && item && item.duration > 0) {
-      var remain = Math.max(0, item.duration * 60 - (d.elapsedSec || 0));
-      if (timerHandle) clearInterval(timerHandle);
-      startTimer(remain);
+    if (d.type === "yysd:timer-sync") {
+      if (!sessionStartedMs && d.elapsedSec != null) {
+        sessionStartedMs = Date.now() - Math.max(0, Number(d.elapsedSec) || 0) * 1000;
+      }
+      if (item && item.duration > 0) {
+        var remain = Math.max(0, item.duration * 60 - (d.elapsedSec || 0));
+        if (timerHandle) clearInterval(timerHandle);
+        startTimer(remain);
+      }
       return;
     }
 
@@ -586,6 +613,15 @@
     var store = {};
     try { store = JSON.parse(localStorage.getItem("yysd:results") || "{}"); } catch (err) {}
     var attemptAt = new Date().toISOString();
+    var startedAt = resolveStartedAt(d);
+    var durationSec = null;
+    if (startedAt) {
+      var startMs = Date.parse(startedAt);
+      var endMs = Date.parse(attemptAt);
+      if (isFinite(startMs) && isFinite(endMs) && endMs >= startMs) {
+        durationSec = Math.round((endMs - startMs) / 1000);
+      }
+    }
     var wrong = Array.isArray(d.wrong) && d.wrong.length ? d.wrong : scrapeWrongFromFrame();
     var record = {
       id: item.id, title: item.title, zone: item.zone, subject: item.subject,
@@ -594,6 +630,9 @@
       band: (d.band != null ? d.band : null),
       writingWords: d.writingWords || null,
       date: attemptAt,
+      startedAt: startedAt,
+      durationSec: durationSec,
+      assignmentEventId: assignmentEventId || null,
       _scoreKey: key
     };
     store[item.id] = record;

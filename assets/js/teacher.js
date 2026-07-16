@@ -98,6 +98,7 @@
   }
 
   function zoneLabel(zone) {
+    if (zone === "assignment") return "布置练习";
     return (Y.ZONE[zone] || {}).label || zone || "—";
   }
 
@@ -108,6 +109,17 @@
   function fmtDate(iso) {
     if (!iso) return "—";
     try { return new Date(iso).toLocaleString("zh-CN"); } catch (e) { return iso; }
+  }
+
+  function fmtDuration(sec) {
+    if (sec == null || sec === "" || !isFinite(Number(sec))) return "—";
+    var n = Math.max(0, Math.round(Number(sec)));
+    var h = Math.floor(n / 3600);
+    var m = Math.floor((n % 3600) / 60);
+    var s = n % 60;
+    if (h > 0) return h + "小时" + (m ? m + "分" : "");
+    if (m > 0) return m + "分" + (s ? s + "秒" : "");
+    return s + "秒";
   }
 
   function fmtScore(row) {
@@ -132,10 +144,10 @@
     var totalRecords = rows.reduce(function (n, s) { return n + (s.scoreCount || 0); }, 0);
     var mockRecords = rows.reduce(function (n, s) { return n + (s.mockCount || 0); }, 0);
     statsEl.innerHTML =
-      '<div class="teacher-stat"><b>' + totalStudents + '</b><span>注册学生</span></div>' +
-      '<div class="teacher-stat"><b>' + withScores + '</b><span>有成绩记录</span></div>' +
-      '<div class="teacher-stat"><b>' + totalRecords + '</b><span>成绩总条数</span></div>' +
-      '<div class="teacher-stat"><b>' + mockRecords + '</b><span>模考记录</span></div>';
+      '<div class="teacher-stat"><b>' + totalStudents + '</b><span>学生</span></div>' +
+      '<div class="teacher-stat"><b>' + withScores + '</b><span>有任务完成</span></div>' +
+      '<div class="teacher-stat"><b>' + totalRecords + '</b><span>任务完成条数</span></div>' +
+      '<div class="teacher-stat"><b>' + mockRecords + '</b><span>其中模考</span></div>';
   }
 
   function renderStudentCard(student) {
@@ -149,27 +161,31 @@
             '<td>' + Y.esc(zoneLabel(r.zone)) + '</td>' +
             '<td>' + Y.esc(subjectLabel(r.subject)) + '</td>' +
             '<td><span class="score-pill">' + Y.esc(fmtScore(r)) + '</span></td>' +
+            '<td>' + fmtDate(r.startedAt) + '</td>' +
             '<td>' + fmtDate(r.date) + '</td>' +
+            '<td>' + Y.esc(fmtDuration(r.durationSec)) + '</td>' +
             '<td><button type="button" class="btn btn--ghost btn--sm" data-attempt="' +
               Y.esc(String(r.attemptId || "")) + '" data-student="' + student.id + '">' +
               btnLabel + '</button></td>' +
           '</tr>';
         }).join("")
-      : '<tr><td colspan="6" class="teacher-empty-row">暂无' + (zoneFilter ? zoneLabel(zoneFilter) : "") + '记录</td></tr>';
+      : '<tr><td colspan="8" class="teacher-empty-row">暂无' +
+        (zoneFilter ? zoneLabel(zoneFilter) : "") + '布置任务完成记录</td></tr>';
 
     return '<article class="teacher-card">' +
       '<header class="teacher-card__head">' +
         '<div><b>' + Y.esc(studentLabel(student)) + '</b>' +
         '<span class="teacher-card__meta">' + Y.esc(student.phone) +
         ' · 注册 ' + fmtDate(student.createdAt) +
-        ' · 最近活跃 ' + fmtDate(student.lastScoreAt || student.lastLoginAt) + '</span></div>' +
+        ' · 最近任务 ' + fmtDate(student.lastScoreAt || student.lastLoginAt) + '</span></div>' +
         '<div class="teacher-card__badges">' +
-          '<span class="teacher-badge">' + (student.scoreCount || 0) + ' 条成绩</span>' +
-          '<span class="teacher-badge teacher-badge--mock">' + (student.mockCount || 0) + ' 次模考</span>' +
+          '<span class="teacher-badge">' + (student.scoreCount || 0) + ' 条任务</span>' +
+          '<span class="teacher-badge teacher-badge--mock">' + (student.mockCount || 0) + ' 次模考任务</span>' +
         '</div>' +
       '</header>' +
       '<div class="table-wrap"><table class="data teacher-table">' +
-        '<thead><tr><th>内容</th><th>板块</th><th>科目</th><th>得分</th><th>完成时间</th><th>错题</th></tr></thead>' +
+        '<thead><tr><th>内容</th><th>板块</th><th>科目</th><th>得分</th>' +
+        '<th>开始时间</th><th>完成时间</th><th>总用时</th><th>错题</th></tr></thead>' +
         '<tbody>' + rowsHtml + '</tbody></table></div>' +
     '</article>';
   }
@@ -198,8 +214,10 @@
     title.textContent = (r.title || r.id) + " · " + fmtScore(r);
     var head =
       '<p class="teacher-attempt-meta">' + Y.esc(studentLabel(hit.student)) +
-      ' · ' + fmtDate(r.date) +
-      (r.band != null ? ' · Band ' + r.band : '') + '</p>';
+      (r.band != null ? ' · Band ' + r.band : '') + '</p>' +
+      '<p class="teacher-attempt-meta">开始 ' + fmtDate(r.startedAt) +
+      ' · 完成 ' + fmtDate(r.date) +
+      ' · 总用时 ' + Y.esc(fmtDuration(r.durationSec)) + '</p>';
     var list;
     if (!wrong.length) {
       list = '<p class="teacher-empty-row">本题次无错题明细' +
@@ -230,7 +248,7 @@
     if (!visible.length) {
       listEl.innerHTML = '<div class="state state--brand teacher-empty">' +
         '<h3>' + (searchQuery ? "未找到匹配的学生" : "暂无学生记录") + '</h3>' +
-        '<p>' + (searchQuery ? "请尝试其他用户名或手机号。" : "学生登录并完成练习或模考后，成绩会自动同步到这里。") + '</p></div>';
+        '<p>' + (searchQuery ? "请尝试其他用户名或手机号。" : "学生从任务日历完成你布置的练习后，记录会出现在这里。") + '</p></div>';
       return;
     }
     listEl.innerHTML = visible.map(renderStudentCard).join("");
@@ -244,7 +262,7 @@
     ]).then(function (res) {
       var me = res[0].teacher || {};
       var label = me.name ? me.name + "（" + me.phone + "）" : me.phone;
-      welcomeEl.textContent = "欢迎，" + label + "。以下为全部学生的云端成绩与模考记录。";
+      welcomeEl.textContent = "欢迎，" + label + "。以下为布置任务的完成记录（含开始/完成时间与总用时）。";
       renderTeacherAvatar(me.avatarUrl, me.phone);
       T.setTeacher({
         phone: me.phone,

@@ -1186,6 +1186,15 @@ function parseScorePayload(row) {
       };
     }).filter(Boolean);
   }
+  var durationSec = rec.durationSec != null ? Number(rec.durationSec) : null;
+  if (!isFinite(durationSec) || durationSec < 0) durationSec = null;
+  else durationSec = Math.round(durationSec);
+  var startedAt = clipText(rec.startedAt, 40) || null;
+  var date = clipText(rec.date, 40) || row.created_at || row.updated_at;
+  if (durationSec == null && startedAt && date) {
+    var a = Date.parse(startedAt), b = Date.parse(date);
+    if (isFinite(a) && isFinite(b) && b >= a) durationSec = Math.round((b - a) / 1000);
+  }
   return {
     id: row.item_id,
     attemptId: row.id != null ? row.id : null,
@@ -1196,10 +1205,51 @@ function parseScorePayload(row) {
     total: rec.total != null ? rec.total : null,
     band: rec.band != null ? rec.band : null,
     writingWords: rec.writingWords != null ? rec.writingWords : null,
-    date: clipText(rec.date, 40) || row.created_at || row.updated_at,
+    date: date,
+    startedAt: startedAt,
+    durationSec: durationSec,
+    assignmentEventId: clipText(rec.assignmentEventId != null ? String(rec.assignmentEventId) : "", 40) || null,
     updatedAt: row.created_at || row.updated_at,
     wrong: wrong
   };
+}
+
+function teacherAssignmentIndex(teacherId) {
+  var events = stmts.listTeacherEvents.all(teacherId);
+  var byEventId = {};
+  var itemToStudents = {};
+  events.forEach(function (row) {
+    if (row.event_type !== "ASSIGNMENT") return;
+    var eventId = String(row.id);
+    var targets = [];
+    try { targets = JSON.parse(row.target_student_ids || "[]"); } catch (e) { targets = []; }
+    var targetSet = {};
+    targets.forEach(function (sid) {
+      var n = Number(sid);
+      if (n > 0) targetSet[n] = 1;
+    });
+    var ids = [];
+    try { ids = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) { ids = []; }
+    byEventId[eventId] = { targetSet: targetSet, itemIds: ids };
+    ids.forEach(function (itemId) {
+      var key = String(itemId);
+      if (!itemToStudents[key]) itemToStudents[key] = {};
+      Object.keys(targetSet).forEach(function (sid) { itemToStudents[key][sid] = 1; });
+    });
+  });
+  return { byEventId: byEventId, itemToStudents: itemToStudents };
+}
+
+function isTeacherAssignmentAttempt(score, studentId, index) {
+  if (!score || !index) return false;
+  var sid = String(studentId);
+  if (score.assignmentEventId) {
+    var ev = index.byEventId[String(score.assignmentEventId)];
+    return !!(ev && ev.targetSet[sid]);
+  }
+  // ponytail: legacy rows without event id — same paper self-practice may match
+  var itemMap = index.itemToStudents[String(score.id)];
+  return !!(itemMap && itemMap[sid]);
 }
 
 app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
@@ -1210,11 +1260,13 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
     allowedSet = {};
     allowed.forEach(function (id) { allowedSet[id] = 1; });
   }
+  var assignIndex = teacherAssignmentIndex(req.user.sub);
   var rows = stmts.listStudents.all().filter(function (row) {
     return !allowedSet || allowedSet[row.id];
   });
   var students = rows.map(function (row) {
-    var scores = stmts.listStudentAttempts.all(row.id).map(parseScorePayload);
+    var scores = stmts.listStudentAttempts.all(row.id).map(parseScorePayload)
+      .filter(function (s) { return isTeacherAssignmentAttempt(s, row.id, assignIndex); });
     var filtered = zone ? scores.filter(function (s) { return s.zone === zone; }) : scores;
     var mockCount = scores.filter(function (s) { return s.zone === "mock"; }).length;
     return {
@@ -1225,7 +1277,7 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
       lastLoginAt: row.last_login_at,
       scoreCount: scores.length,
       mockCount: mockCount,
-      lastScoreAt: row.last_score_at || null,
+      lastScoreAt: scores.length ? (scores[0].date || row.last_score_at || null) : null,
       scores: filtered
     };
   });
@@ -1244,7 +1296,9 @@ app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function 
   var user = db.prepare("SELECT id, phone, display_name, created_at, last_login_at FROM users WHERE id = ?").get(userId);
   if (!user) return res.status(404).json({ error: "学生不存在" });
   var zone = clipText(req.query.zone, 40);
-  var scores = stmts.listStudentAttempts.all(userId).map(parseScorePayload);
+  var assignIndex = teacherAssignmentIndex(req.user.sub);
+  var scores = stmts.listStudentAttempts.all(userId).map(parseScorePayload)
+    .filter(function (s) { return isTeacherAssignmentAttempt(s, userId, assignIndex); });
   if (zone) scores = scores.filter(function (s) { return s.zone === zone; });
   res.json({
     ok: true,
@@ -1585,7 +1639,13 @@ function sanitizeScore(body) {
     var n = Number(v);
     return isFinite(n) ? n : null;
   }
-  return {
+  var startedAt = clipText(body.startedAt, 40) || null;
+  if (startedAt && !isFinite(Date.parse(startedAt))) startedAt = null;
+  var durationSec = numOrNull(body.durationSec);
+  if (durationSec != null) durationSec = Math.max(0, Math.round(durationSec));
+  var assignmentEventId = clipText(body.assignmentEventId != null ? String(body.assignmentEventId) : "", 40) || null;
+  if (assignmentEventId && !/^\d+$/.test(assignmentEventId)) assignmentEventId = null;
+  var out = {
     id: id,
     title: clipText(body.title, 200),
     zone: clipText(body.zone, 40),
@@ -1597,6 +1657,10 @@ function sanitizeScore(body) {
     date: clipText(body.date, 40) || new Date().toISOString(),
     _scoreKey: clipText(body._scoreKey, 80)
   };
+  if (startedAt) out.startedAt = startedAt;
+  if (durationSec != null) out.durationSec = durationSec;
+  if (assignmentEventId) out.assignmentEventId = assignmentEventId;
+  return out;
 }
 
 app.get("/api/scores", authMiddleware, function (req, res) {

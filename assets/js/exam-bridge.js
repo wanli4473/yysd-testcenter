@@ -232,11 +232,21 @@
     if (e.data.type === "yysd:exam-restart") examLock.restart();
   });
 
+  function scoreStartedAt() {
+    var st = pageGet("startTime");
+    var n = Number(st);
+    if (!n || n <= 0) return null;
+    try { return new Date(n).toISOString(); } catch (e) { return null; }
+  }
+
   function postScore(payload) {
     if (posted) return;
     posted = true;
     try {
-      window.parent.postMessage(Object.assign({ type: "yysd:score" }, payload), "*");
+      var startedAt = scoreStartedAt();
+      var msg = Object.assign({ type: "yysd:score" }, payload);
+      if (startedAt && !msg.startedAt) msg.startedAt = startedAt;
+      window.parent.postMessage(msg, "*");
     } catch (e) { /* ponytail: iframe edge */ }
   }
 
