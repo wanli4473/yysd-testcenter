@@ -588,7 +588,7 @@ function submitDictation() {
     const userSpelling = inputSpelling.value.trim();
     const userMeaning = inputMeaning.value.trim();
 
-    if (!userSpelling || !userMeaning) {
+    if ((!userSpelling || !userMeaning) && !window.__vocabTestTimedOut) {
         alert('请同时填写英文拼写和中文含义！');
         return;
     }
@@ -716,8 +716,8 @@ function renderQuizQuestion() {
 function submitQuiz() {
     if (submitted) return;
     if (quizSelected === null) {
-        alert('请先选择一个选项！');
-        return;
+        if (!window.__vocabTestTimedOut) { alert('请先选择一个选项！'); return; }
+        quizSelected = '';
     }
 
     submitted = true;

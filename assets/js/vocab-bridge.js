@@ -1,6 +1,7 @@
 /* =========================================================================
    vocab-bridge.js — injected into vocab LIST iframes by exam.js
    Posts score + wrong words when the test results panel becomes visible.
+   Also enforces per-question 20s limit (after audio) + 2s feedback auto-next.
    ponytail: DOM scrape — works for new LISTs that follow template hooks;
    upgrade path: add ids/classes listed in scripts/verify_vocab_wrongword_hooks.py
    ========================================================================= */
@@ -9,6 +10,15 @@
   var script = document.currentScript;
   var book = (script && script.dataset.book) || "gaozhong";
   var posted = false;
+  var testStartedMs = 0;
+
+  // --- timed question (20s after audio / on show; 2s feedback then next) ---
+  var QUESTION_SECS = 20;
+  var FEEDBACK_MS = 2000;
+  var tickTimer = null;
+  var autoNextTimer = null;
+  var remaining = 0;
+  var playWatchersReady = false;
 
   function resultsPanel() {
     return document.getElementById("testResults") ||
@@ -178,18 +188,26 @@
     return { score: 0, total: 0 };
   }
 
+  function timingPayload() {
+    if (!testStartedMs) return {};
+    return {
+      startedAt: new Date(testStartedMs).toISOString(),
+      durationSec: Math.max(0, Math.round((Date.now() - testStartedMs) / 1000))
+    };
+  }
+
   function postScore() {
     var wrongWords = collectWrongWordsFromData();
     if (!wrongWords) wrongWords = collectWrongWordsFromDom();
     var parsed = parseScore();
     try {
-      window.parent.postMessage({
+      window.parent.postMessage(Object.assign({
         type: "yysd:score",
         score: parsed.score,
         total: parsed.total,
         book: book,
         wrongWords: wrongWords
-      }, "*");
+      }, timingPayload()), "*");
     } catch (e) { /* ponytail: iframe edge — parent may be unreachable */ }
   }
 
@@ -234,10 +252,250 @@
     return true;
   }
 
+  function hookStartTest() {
+    if (typeof startTest !== "function" || startTest.__yysdHooked) return false;
+    var orig = startTest;
+    startTest = function () {
+      testStartedMs = Date.now();
+      return orig.apply(this, arguments);
+    };
+    startTest.__yysdHooked = true;
+    return true;
+  }
+
+  function activeRoot() {
+    return document.getElementById("testActiveArea") ||
+      document.getElementById("testActive");
+  }
+
+  function isTestRunning() {
+    var root = activeRoot();
+    var results = resultsPanel();
+    return !!(root && root.classList.contains("visible") &&
+      !(results && results.classList.contains("visible")));
+  }
+
+  function elSubmit() { return document.getElementById("btnSubmit"); }
+  function elNext() { return document.getElementById("btnNext"); }
+
+  function playButtons() {
+    return [
+      document.getElementById("btnPlayTest"),
+      document.getElementById("btnPlayDict")
+    ].filter(Boolean);
+  }
+
+  function submitReady() {
+    var sub = elSubmit();
+    if (!sub) return false;
+    if (sub.disabled) return false;
+    if (sub.style.display === "none") return false;
+    return true;
+  }
+
+  function visiblePlayButtons() {
+    return playButtons().filter(function (b) { return b.offsetParent !== null; });
+  }
+
+  function ensureTimerUI() {
+    if (document.getElementById("yysd-vocab-timer-style")) return;
+    var style = document.createElement("style");
+    style.id = "yysd-vocab-timer-style";
+    style.textContent =
+      "#yysd-vocab-timer{display:none;margin:10px auto 0;max-width:280px;font:600 0.95rem/1.3 system-ui,sans-serif;color:#1a3a5c;text-align:center}" +
+      "#yysd-vocab-timer.is-on{display:block}" +
+      "#yysd-vocab-timer .yysd-vocab-timer__secs{font-variant-numeric:tabular-nums;font-size:1.35rem}" +
+      "#yysd-vocab-timer.is-low{color:#c0392b}" +
+      "#yysd-vocab-timer-bar{height:4px;margin-top:6px;border-radius:2px;background:#e8eef4;overflow:hidden}" +
+      "#yysd-vocab-timer-bar>i{display:block;height:100%;width:100%;background:#3a7d5a;transform-origin:left center;transition:transform .2s linear}" +
+      "#yysd-vocab-timer.is-low #yysd-vocab-timer-bar>i{background:#c0392b}" +
+      "#yysd-vocab-timer.is-wait{color:#888;font-weight:500}";
+    document.head.appendChild(style);
+  }
+
+  function timerEl() {
+    var el = document.getElementById("yysd-vocab-timer");
+    if (el) return el;
+    ensureTimerUI();
+    el = document.createElement("div");
+    el.id = "yysd-vocab-timer";
+    el.setAttribute("aria-live", "polite");
+    el.innerHTML =
+      '<div><span class="yysd-vocab-timer__label">剩余 </span>' +
+      '<span class="yysd-vocab-timer__secs">20</span>' +
+      '<span class="yysd-vocab-timer__unit"> 秒</span></div>' +
+      '<div id="yysd-vocab-timer-bar"><i></i></div>';
+    var root = activeRoot();
+    var progress = root && root.querySelector(".test-progress");
+    if (progress) progress.insertAdjacentElement("afterend", el);
+    else if (root) root.insertBefore(el, root.firstChild);
+    else document.body.appendChild(el);
+    return el;
+  }
+
+  function clearTick() {
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+    remaining = 0;
+    var el = document.getElementById("yysd-vocab-timer");
+    if (el) {
+      el.classList.remove("is-on", "is-low", "is-wait");
+      el.style.display = "none";
+    }
+  }
+
+  function clearAutoNext() {
+    if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  }
+
+  function renderTimer(secs, waiting) {
+    var el = timerEl();
+    var secsEl = el.querySelector(".yysd-vocab-timer__secs");
+    var label = el.querySelector(".yysd-vocab-timer__label");
+    var unit = el.querySelector(".yysd-vocab-timer__unit");
+    var bar = el.querySelector("#yysd-vocab-timer-bar > i");
+    el.classList.add("is-on");
+    el.style.display = "block";
+    if (waiting) {
+      el.classList.add("is-wait");
+      el.classList.remove("is-low");
+      if (label) label.textContent = "";
+      if (secsEl) secsEl.textContent = "听读音中…";
+      if (unit) unit.textContent = "";
+      if (bar) bar.style.transform = "scaleX(1)";
+      return;
+    }
+    el.classList.remove("is-wait");
+    if (label) label.textContent = "剩余 ";
+    if (secsEl) secsEl.textContent = String(secs);
+    if (unit) unit.textContent = " 秒";
+    el.classList.toggle("is-low", secs <= 5);
+    if (bar) bar.style.transform = "scaleX(" + Math.max(0, secs / QUESTION_SECS) + ")";
+  }
+
+  function startCountdown() {
+    if (!isTestRunning() || !submitReady()) return;
+    clearTick();
+    remaining = QUESTION_SECS;
+    renderTimer(remaining, false);
+    tickTimer = setInterval(function () {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearTick();
+        onQuestionTimeout();
+        return;
+      }
+      renderTimer(remaining, false);
+    }, 1000);
+  }
+
+  function onQuestionTimeout() {
+    if (!isTestRunning() || !submitReady()) return;
+    window.__vocabTestTimedOut = true;
+    try {
+      elSubmit().click();
+    } finally {
+      setTimeout(function () { window.__vocabTestTimedOut = false; }, 0);
+    }
+  }
+
+  function scheduleAutoNext() {
+    clearAutoNext();
+    autoNextTimer = setTimeout(function () {
+      autoNextTimer = null;
+      var next = elNext();
+      if (next && next.classList.contains("visible") && isTestRunning()) next.click();
+    }, FEEDBACK_MS);
+  }
+
+  function maybeStartWithoutAudio() {
+    if (!isTestRunning() || !submitReady()) return;
+    if (visiblePlayButtons().length) {
+      renderTimer(QUESTION_SECS, true);
+      return;
+    }
+    startCountdown();
+  }
+
+  function onPlayClassChange(btn) {
+    if (!isTestRunning()) return;
+    if (btn.classList.contains("playing")) {
+      clearTick();
+      if (submitReady()) renderTimer(QUESTION_SECS, true);
+      return;
+    }
+    if (submitReady()) startCountdown();
+  }
+
+  function watchPlayButtons() {
+    if (playWatchersReady) return;
+    var btns = playButtons();
+    if (!btns.length) return;
+    playWatchersReady = true;
+    btns.forEach(function (btn) {
+      new MutationObserver(function () { onPlayClassChange(btn); })
+        .observe(btn, { attributes: true, attributeFilter: ["class"] });
+    });
+  }
+
+  function watchNextButton() {
+    var next = elNext();
+    if (!next || next.__yysdTimerWatched) return;
+    next.__yysdTimerWatched = true;
+    new MutationObserver(function () {
+      if (next.classList.contains("visible")) {
+        clearTick();
+        scheduleAutoNext();
+      } else {
+        clearAutoNext();
+        watchPlayButtons();
+        setTimeout(maybeStartWithoutAudio, 50);
+      }
+    }).observe(next, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  function watchActiveRoot() {
+    var root = activeRoot();
+    if (!root || root.__yysdTimerWatched) return;
+    root.__yysdTimerWatched = true;
+    new MutationObserver(function () {
+      if (!root.classList.contains("visible")) {
+        clearTick();
+        clearAutoNext();
+        return;
+      }
+      testStartedMs = testStartedMs || Date.now();
+      watchPlayButtons();
+      watchNextButton();
+      setTimeout(maybeStartWithoutAudio, 80);
+    }).observe(root, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  function bootTimer() {
+    ensureTimerUI();
+    watchActiveRoot();
+    watchPlayButtons();
+    watchNextButton();
+    // #btnStartTest may reveal active area without class mutation if already wired
+    var startBtn = document.getElementById("btnStartTest");
+    if (startBtn && !startBtn.__yysdTimerHook) {
+      startBtn.__yysdTimerHook = true;
+      startBtn.addEventListener("click", function () {
+        testStartedMs = Date.now();
+        setTimeout(function () {
+          watchPlayButtons();
+          watchNextButton();
+          maybeStartWithoutAudio();
+        }, 500);
+      });
+    }
+  }
+
   function boot() {
+    hookStartTest();
     watchResultsPanel();
     hookShowFinalResults();
     hookShowResults();
+    bootTimer();
   }
 
   if (document.readyState === "loading") {

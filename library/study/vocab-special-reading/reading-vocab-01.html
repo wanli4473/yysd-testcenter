@@ -581,8 +581,8 @@ function submitAnswer() {
     const q = questions[currentIndex];
 
     if (selected === null) {
-        alert('请先选择一个选项！');
-        return;
+        if (!window.__vocabTestTimedOut) { alert('请先选择一个选项！'); return; }
+        selected = '';
     }
 
     submitted = true;

@@ -577,7 +577,7 @@ function submitAnswer() {
         const input = document.getElementById('spellInput');
         if (!input) return;
         userAnswer = input.value.trim();
-        if (!userAnswer) {
+        if (!userAnswer && !window.__vocabTestTimedOut) {
             alert('请输入英文短语！');
             return;
         }
@@ -617,8 +617,8 @@ function submitAnswer() {
     }
 
     if (selected === null) {
-        alert('请先选择一个选项！');
-        return;
+        if (!window.__vocabTestTimedOut) { alert('请先选择一个选项！'); return; }
+        selected = '';
     }
 
     submitted = true;
