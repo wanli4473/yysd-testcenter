@@ -1205,6 +1205,8 @@ function parseScorePayload(row) {
     total: rec.total != null ? rec.total : null,
     band: rec.band != null ? rec.band : null,
     writingWords: rec.writingWords != null ? rec.writingWords : null,
+    writingTask1: clipText(rec.writingTask1, 8000) || null,
+    writingTask2: clipText(rec.writingTask2, 8000) || null,
     date: date,
     startedAt: startedAt,
     durationSec: durationSec,
@@ -1252,10 +1254,11 @@ function isTeacherAssignmentAttempt(score, studentId, index) {
   return !!(itemMap && itemMap[sid]);
 }
 
-// Teacher board: assignment completions + self-practice 模考/真题 (zone=mock)
-function isVisibleTeacherScore(score, studentId, index) {
+// Teacher board: admin sees all; others see 真题 + 上传作业 + 自己布置任务完成的练习
+function isVisibleTeacherScore(score, studentId, index, isAdmin) {
   if (!score) return false;
-  if (score.zone === "mock") return true;
+  if (isAdmin) return true;
+  if (score.zone === "mock" || score.zone === "assignment") return true;
   return isTeacherAssignmentAttempt(score, studentId, index);
 }
 
@@ -1267,15 +1270,20 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
     allowedSet = {};
     allowed.forEach(function (id) { allowedSet[id] = 1; });
   }
+  var isAdmin = isAdminPhone(req.user.phone);
   var assignIndex = teacherAssignmentIndex(req.user.sub);
   var rows = stmts.listStudents.all().filter(function (row) {
     return !allowedSet || allowedSet[row.id];
   });
   var students = rows.map(function (row) {
     var scores = stmts.listStudentAttempts.all(row.id).map(parseScorePayload)
-      .filter(function (s) { return isVisibleTeacherScore(s, row.id, assignIndex); });
+      .filter(function (s) { return isVisibleTeacherScore(s, row.id, assignIndex, isAdmin); });
     var filtered = zone ? scores.filter(function (s) { return s.zone === zone; }) : scores;
     var mockCount = scores.filter(function (s) { return s.zone === "mock"; }).length;
+    var homeworkCount = scores.filter(function (s) {
+      return s.zone === "assignment" || s.assignmentEventId ||
+        (s.zone !== "mock" && isTeacherAssignmentAttempt(s, row.id, assignIndex));
+    }).length;
     return {
       id: row.id,
       phone: maskPhone(row.phone),
@@ -1284,6 +1292,7 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
       lastLoginAt: row.last_login_at,
       scoreCount: scores.length,
       mockCount: mockCount,
+      homeworkCount: homeworkCount,
       lastScoreAt: scores.length ? (scores[0].date || row.last_score_at || null) : null,
       scores: filtered
     };
@@ -1291,7 +1300,7 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
   if (zone) {
     students = students.filter(function (s) { return s.scores.length > 0; });
   }
-  res.json({ ok: true, students: students, isAdmin: isAdminPhone(req.user.phone) });
+  res.json({ ok: true, students: students, isAdmin: isAdmin });
 });
 
 app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function (req, res) {
@@ -1303,9 +1312,10 @@ app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function 
   var user = db.prepare("SELECT id, phone, display_name, created_at, last_login_at FROM users WHERE id = ?").get(userId);
   if (!user) return res.status(404).json({ error: "学生不存在" });
   var zone = clipText(req.query.zone, 40);
+  var isAdmin = isAdminPhone(req.user.phone);
   var assignIndex = teacherAssignmentIndex(req.user.sub);
   var scores = stmts.listStudentAttempts.all(userId).map(parseScorePayload)
-    .filter(function (s) { return isVisibleTeacherScore(s, userId, assignIndex); });
+    .filter(function (s) { return isVisibleTeacherScore(s, userId, assignIndex, isAdmin); });
   if (zone) scores = scores.filter(function (s) { return s.zone === zone; });
   res.json({
     ok: true,
@@ -1664,6 +1674,10 @@ function sanitizeScore(body) {
     date: clipText(body.date, 40) || new Date().toISOString(),
     _scoreKey: clipText(body._scoreKey, 80)
   };
+  var task1 = clipText(body.writingTask1, 8000);
+  var task2 = clipText(body.writingTask2, 8000);
+  if (task1) out.writingTask1 = task1;
+  if (task2) out.writingTask2 = task2;
   if (startedAt) out.startedAt = startedAt;
   if (durationSec != null) out.durationSec = durationSec;
   if (assignmentEventId) out.assignmentEventId = assignmentEventId;
@@ -2072,22 +2086,40 @@ app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res
   if (!studentOnly(req, res)) return;
   var taskType = clipText(req.body && req.body.taskType, 10);
   var promptId = clipText(req.body && req.body.promptId, 80);
+  var promptText = clipText(req.body && req.body.prompt, 4000);
+  var chartNote = clipText(req.body && req.body.chartNote, 1000);
   var essay = clipText(req.body && req.body.essay, 8000);
   if (taskType !== "task1" && taskType !== "task2") {
     return res.status(400).json({ error: "请选择 Task 1 或 Task 2" });
   }
-  if (!promptId || !essay) return res.status(400).json({ error: "缺少题干或作文" });
+  if (!essay) return res.status(400).json({ error: "缺少作文" });
   if (essay.length < 80) return res.status(400).json({ error: "作文过短，请粘贴完整作答" });
-  var prompt = findWritingPrompt(taskType, promptId);
-  if (!prompt) return res.status(400).json({ error: "题干不存在" });
+  var promptMeta = null;
+  var promptBody = "";
+  if (promptId) {
+    promptMeta = findWritingPrompt(taskType, promptId);
+    if (!promptMeta) return res.status(400).json({ error: "题干不存在" });
+    promptBody = promptMeta.prompt;
+  } else if (promptText) {
+    promptBody = promptText;
+    promptMeta = { id: "custom", title: "模考题干", prompt: promptText };
+  } else {
+    return res.status(400).json({ error: "缺少题干或作文" });
+  }
   var u = getUsage(req.user.sub);
   if (u.textCount >= AI_QUOTA.text) {
     return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: quotaPayload(u) });
   }
+  var chartBlock = "";
+  if (chartNote) {
+    chartBlock =
+      "Chart / figure captions (you cannot see the actual image; grade Task Achievement conservatively from this text only):\n" +
+      chartNote + "\n";
+  }
   var system =
     "You are an IELTS Writing examiner and teacher for YYSD. Reply mainly in Chinese for explanations; " +
     "keep example sentences and the model essay in English. Grade " + (taskType === "task1" ? "Task 1" : "Task 2") + ". " +
-    "Prompt:\n" + prompt.prompt + "\n" +
+    "Prompt:\n" + promptBody + "\n" + chartBlock +
     "Return useful feedback, then on its own final line exactly: " +
     "WRITING_JSON:{\"overall\":6.0,\"task\":6.0,\"coherence\":6.0,\"lexical\":6.0,\"grammar\":6.0," +
     "\"comment\":\"简短总评\",\"paragraphNotes\":[\"段1批注\",\"段2批注\"]," +
@@ -2106,7 +2138,7 @@ app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res
       ok: true,
       feedback: prose,
       grade: grade,
-      prompt: { id: prompt.id, title: prompt.title, taskType: taskType },
+      prompt: { id: promptMeta.id, title: promptMeta.title, taskType: taskType },
       quota: quotaPayload(getUsage(req.user.sub))
     });
   } catch (e) {
@@ -2427,12 +2459,12 @@ function stripWordMarker(text) {
 }
 
 app.get("/api/ai-word/quota", authMiddleware, function (req, res) {
-  if (!studentOnly(req, res)) return;
+  // ponytail: teachers browse 单词区 — allow quota read (usage keyed by jwt sub)
   res.json({ ok: true, quota: wordQuotaPayload(getWordUsage(req.user.sub)) });
 });
 
 app.post("/api/ai-word/ask", authMiddleware, async function (req, res) {
-  if (!studentOnly(req, res)) return;
+  // ponytail: teachers may look up words while previewing 单词区
   var content = clipText(req.body && req.body.content, 500);
   if (!content) return res.status(400).json({ error: "请输入要查询的内容" });
   var history = Array.isArray(req.body && req.body.history) ? req.body.history : [];

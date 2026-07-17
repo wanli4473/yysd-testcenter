@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260717vocabtimer2";
+  var CONTENT_VER = "20260717writingai";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -391,6 +391,70 @@ window.YYSD = (function () {
       return vocabDisplayTitle(item);
     }
     return item.title || "";
+  }
+
+  // Assignable part ids: cambridge-20-test-1-s1 / cambridge-20-test-1-reading-p1
+  function parsePartId(id) {
+    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?)-(s|p)(\d+)$/i);
+    if (!m) return null;
+    return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]) };
+  }
+
+  function makePartItem(parent, kind, num) {
+    if (!parent || !num) return null;
+    var label = kind === "s" ? ("Section " + num) : ("Passage " + num);
+    var base = String(parent.title || "").replace(/（[^）]*）\s*$/, "").replace(/\s+$/, "");
+    return Object.assign({}, parent, {
+      id: parent.id + "-" + kind + num,
+      title: base + " · " + label,
+      partKind: kind,
+      partNum: num,
+      parentId: parent.id,
+      duration: kind === "s" ? 10 : 20
+    });
+  }
+
+  function resolveItem(items, id) {
+    var list = items || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) return list[i];
+    }
+    var part = parsePartId(id);
+    if (!part) return null;
+    var parent = null;
+    for (var j = 0; j < list.length; j++) {
+      if (list[j].id === part.parentId) { parent = list[j]; break; }
+    }
+    return parent ? makePartItem(parent, part.kind, part.num) : null;
+  }
+
+  // Teacher assignment picker: full paper + each listening section / reading passage
+  function expandAssignableParts(items) {
+    var out = [];
+    (items || []).forEach(function (it) {
+      out.push(it);
+      if (it.subject === "cambridge-listening") {
+        for (var s = 1; s <= 4; s++) out.push(makePartItem(it, "s", s));
+      } else if (it.subject === "cambridge-reading") {
+        for (var p = 1; p <= 3; p++) out.push(makePartItem(it, "p", p));
+      }
+    });
+    return out;
+  }
+
+  function partSearchText(item) {
+    if (!item || !item.partNum) return "";
+    var v = camVolume(item);
+    var t = camTestNo(item);
+    var k = item.partKind === "s" ? "s" : "p";
+    var skill = item.subject === "cambridge-listening" ? "听力" : "阅读";
+    return [
+      "c" + v, "c" + v + skill,
+      "t" + t + k + item.partNum,
+      "t" + t + (item.partKind === "s" ? "section" : "passage") + item.partNum,
+      (item.partKind === "s" ? "section" : "passage") + item.partNum,
+      skill + "t" + t + k + item.partNum
+    ].join(" ");
   }
 
   // Topic after "·" for special units (secondary line only).
@@ -902,7 +966,9 @@ window.YYSD = (function () {
     searchResultsHTML: searchResultsHTML, compactItemRowHTML: compactItemRowHTML,
     VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,
     needsVocabBridge: needsVocabBridge,
-    vocabListNo: vocabListNo, vocabDisplayTitle: vocabDisplayTitle, displayTitle: displayTitle,
+    vocabListNo: vocabListNo, vocabDisplayTitle: vocabDisplayTitle,     displayTitle: displayTitle,
+    parsePartId: parsePartId, makePartItem: makePartItem, resolveItem: resolveItem,
+    expandAssignableParts: expandAssignableParts, partSearchText: partSearchText,
     vocabTopic: vocabTopic,
     vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
     vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML,

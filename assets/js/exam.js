@@ -70,7 +70,7 @@
       });
   } else {
     Y.load().then(function (items) {
-      item = items.filter(function (e) { return e.id === id; })[0];
+      item = Y.resolveItem ? Y.resolveItem(items, id) : items.filter(function (e) { return e.id === id; })[0];
       if (!item) { fail("找不到该内容，可能已被移除。"); return; }
       start();
     }).catch(function () {
@@ -117,21 +117,52 @@
       (badges.skill ? '<span class="v-badge v-badge--skill">' + Y.esc(badges.skill) + "</span>" : "");
   }
 
-  function showScoreToast(record, payload) {
+  function isScoredReveal(payload) {
+    // ponytail: 听读模考 + 有分数练习；写作另说
+    if (payload.score == null || !isFinite(Number(payload.score))) return false;
+    if (item.subject === "cambridge-writing" || item.subject === "ielts-writing") return false;
+    if (payload.completed && payload.score == null) return false;
+    return true;
+  }
+
+  function animateScoreNum(el, from, to, ms) {
+    if (!el) return;
+    var start = performance.now();
+    var a = Number(from) || 0;
+    var b = Number(to) || 0;
+    function frame(now) {
+      var t = Math.min(1, (now - start) / (ms || 500));
+      var eased = 1 - Math.pow(1 - t, 3);
+      var n = Math.round(a + (b - a) * eased);
+      el.textContent = String(n);
+      if (t < 1) requestAnimationFrame(frame);
+      else el.textContent = String(b);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function showScoreToast(record, payload, prevScore) {
     if (!toastHost) return;
     clearTimeout(toastTimer);
 
     var isStudy = item.zone === "study";
-    var isWriting = item.subject === "cambridge-writing" || payload.completed;
-    var heading = isStudy ? "学习进度已保存" : (isWriting ? "写作练习已保存" : "成绩已保存");
+    var isWriting = item.subject === "cambridge-writing" || item.subject === "ielts-writing" ||
+      (payload.completed && payload.score == null);
+    var reveal = isScoredReveal(payload);
+    var heading = isStudy ? "学习进度已保存" : (isWriting ? "写作练习已保存" : (reveal ? "成绩揭晓" : "成绩已保存"));
     var sub = payload.syncSub || "已保存在本浏览器，可在「我的成绩」查看";
     var scoreLine = "";
     var wrongN = payload.wrongWords && payload.wrongWords.length;
+    var deltaLine = "";
 
     if (payload.score != null) {
       scoreLine = String(payload.score);
       if (payload.total != null) scoreLine += " / " + payload.total;
       if (payload.band != null) scoreLine += " · Band " + payload.band;
+      if (prevScore != null && isFinite(Number(prevScore)) && Number(prevScore) !== Number(payload.score)) {
+        var dlt = Number(payload.score) - Number(prevScore);
+        deltaLine = dlt > 0 ? "比上次 +" + dlt : (dlt < 0 ? "比上次 " + dlt : "");
+      }
     } else if (isWriting) {
       scoreLine = payload.writingWords ? payload.writingWords + " 词" : "已完成";
     } else if (isStudy) {
@@ -139,6 +170,46 @@
     }
     if (wrongN && !payload.syncSub) {
       sub = "本次新增 " + wrongN + " 个错词，可在单词区错题本复习";
+    }
+    if (deltaLine) sub = deltaLine + (sub ? " · " + sub : "");
+
+    var primaryHref = wrongN
+      ? "wrong-words.html?book=" + encodeURIComponent(payload.book || "gaozhong")
+      : "results.html";
+    var primaryLabel = wrongN ? "看错题 →" : "我的成绩 →";
+
+    if (reveal) {
+      toastHost.innerHTML =
+        '<div class="score-reveal" role="status">' +
+          '<div class="score-reveal__veil" aria-hidden="true">交卷中</div>' +
+          '<div class="score-reveal__card">' +
+            '<p class="score-reveal__eyebrow">' + Y.esc(heading) + "</p>" +
+            '<div class="score-reveal__num" data-score-num>0</div>' +
+            (payload.total != null
+              ? '<div class="score-reveal__denom">/ ' + Y.esc(String(payload.total)) +
+                (payload.band != null ? " · Band " + Y.esc(String(payload.band)) : "") + "</div>"
+              : (payload.band != null
+                ? '<div class="score-reveal__denom">Band ' + Y.esc(String(payload.band)) + "</div>"
+                : "")) +
+            (deltaLine ? '<p class="score-reveal__delta">' + Y.esc(deltaLine) + "</p>" : "") +
+            '<p class="score-reveal__sub">' + Y.esc(sub) + "</p>" +
+            '<div class="score-reveal__acts">' +
+              '<a class="btn btn--primary btn--sm" href="' + primaryHref + '">' + primaryLabel + "</a>" +
+              '<a class="btn btn--ghost btn--sm" href="dashboard.html">回待办</a>' +
+            "</div>" +
+            '<button type="button" class="score-toast__close score-reveal__x" aria-label="关闭">×</button>' +
+          "</div>" +
+        "</div>";
+      toastHost.classList.add("is-visible", "is-reveal");
+      var veil = toastHost.querySelector(".score-reveal__veil");
+      var numEl = toastHost.querySelector("[data-score-num]");
+      setTimeout(function () {
+        if (veil) veil.classList.add("is-done");
+        animateScoreNum(numEl, 0, payload.score, 520);
+      }, 380);
+      toastHost.querySelector(".score-reveal__x").addEventListener("click", hideToast);
+      toastTimer = setTimeout(hideToast, 9000);
+      return;
     }
 
     toastHost.innerHTML =
@@ -155,6 +226,7 @@
         '<button type="button" class="score-toast__close" aria-label="关闭">×</button>' +
       '</div>';
 
+    toastHost.classList.remove("is-reveal");
     toastHost.classList.add("is-visible");
 
     toastHost.querySelector(".score-toast__close").addEventListener("click", hideToast);
@@ -163,13 +235,13 @@
 
   function setToastSyncSub(text) {
     if (!toastHost) return;
-    var el = toastHost.querySelector(".score-toast__sub");
+    var el = toastHost.querySelector(".score-toast__sub, .score-reveal__sub");
     if (el) el.textContent = text;
   }
 
   function hideToast() {
     if (!toastHost) return;
-    toastHost.classList.remove("is-visible");
+    toastHost.classList.remove("is-visible", "is-reveal");
     clearTimeout(toastTimer);
   }
 
@@ -356,7 +428,12 @@
       backBtn.href = "zone.html?zone=mock&s=ielts";
     }
 
-    frame.src = "library/" + item.file + "?v=" + encodeURIComponent(Y.CONTENT_VER || "1");
+    var src = "library/" + item.file + "?v=" + encodeURIComponent(Y.CONTENT_VER || "1");
+    if (item.partNum) {
+      src += "&assignPart=" + encodeURIComponent(item.partNum) +
+        "&assignKind=" + encodeURIComponent(item.partKind || "s");
+    }
+    frame.src = src;
 
     frame.addEventListener("load", onFrameLoad);
 
@@ -406,6 +483,7 @@
     frame.src = url;
     frame.addEventListener("load", function () {
       try { URL.revokeObjectURL(url); } catch (e) {}
+      sessionStartedMs = null;
       onFrameLoad();
     }, { once: true });
 
@@ -453,13 +531,13 @@
   }
 
   function injectVocabBridge() {
-    if (!item || !Y.needsVocabBridge(item.subject)) return;
+    if (!item || (!Y.needsVocabBridge(item.subject) && item.subject !== "teacher-upload")) return;
     var doc = frame.contentDocument;
     if (!doc || !doc.body || doc.getElementById("yysd-vocab-bridge-js")) return;
 
     var v = encodeURIComponent(Y.CONTENT_VER || "1");
     var base = new URL("./", location.href).href;
-    var book = Y.vocabBookOfSubject(item.subject) || "gaozhong";
+    var book = Y.vocabBookOfSubject(item.subject) || (item.subject === "teacher-upload" ? "assignment" : "gaozhong");
 
     var script = doc.createElement("script");
     script.id = "yysd-vocab-bridge-js";
@@ -481,6 +559,10 @@
     script.src = base + "assets/js/exam-bridge.js?v=" + v;
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
+    if (item.partNum) {
+      script.dataset.assignPart = String(item.partNum);
+      script.dataset.assignKind = item.partKind || "s";
+    }
     doc.body.appendChild(script);
   }
 
@@ -602,6 +684,44 @@
       return;
     }
 
+    if (d.type === "yysd:writing-grade-req") {
+      var reqId = d.reqId;
+      function replyGrade(payload) {
+        try {
+          frame.contentWindow.postMessage(Object.assign({
+            type: "yysd:writing-grade-res",
+            reqId: reqId
+          }, payload), "*");
+        } catch (err) { /* iframe gone */ }
+      }
+      if (!window.YYSD_AUTH || !YYSD_AUTH.getToken || !YYSD_AUTH.getToken()) {
+        replyGrade({ error: "请先登录后再使用 AI 批改" });
+        return;
+      }
+      if (YYSD_AUTH.isTeacher && YYSD_AUTH.isTeacher()) {
+        replyGrade({ error: "老师账号请在学生端体验 AI 批改" });
+        return;
+      }
+      YYSD_AUTH.api("/api/ai-tutor/writing-grade", {
+        method: "POST",
+        body: {
+          taskType: d.taskType,
+          prompt: d.prompt,
+          chartNote: d.chartNote || "",
+          essay: d.essay
+        }
+      }).then(function (res) {
+        replyGrade({
+          grade: res.grade,
+          feedback: res.feedback,
+          quota: res.quota
+        });
+      }).catch(function (err) {
+        replyGrade({ error: (err && err.message) || "批改失败" });
+      });
+      return;
+    }
+
     if (d.type !== "yysd:score" || !item) return;
 
     var key = scoreKeyOf(d);
@@ -612,10 +732,13 @@
 
     var store = {};
     try { store = JSON.parse(localStorage.getItem("yysd:results") || "{}"); } catch (err) {}
+    var prevScore = store[item.id] && store[item.id].score != null ? store[item.id].score : null;
     var attemptAt = new Date().toISOString();
     var startedAt = resolveStartedAt(d);
     var durationSec = null;
-    if (startedAt) {
+    if (d.durationSec != null && isFinite(Number(d.durationSec))) {
+      durationSec = Math.max(0, Math.round(Number(d.durationSec)));
+    } else if (startedAt) {
       var startMs = Date.parse(startedAt);
       var endMs = Date.parse(attemptAt);
       if (isFinite(startMs) && isFinite(endMs) && endMs >= startMs) {
@@ -629,6 +752,8 @@
       total: (d.total != null ? d.total : null),
       band: (d.band != null ? d.band : null),
       writingWords: d.writingWords || null,
+      writingTask1: d.writingTask1 || null,
+      writingTask2: d.writingTask2 || null,
       date: attemptAt,
       startedAt: startedAt,
       durationSec: durationSec,
@@ -647,7 +772,19 @@
       }
     }
 
-    showScoreToast(record, d);
+    if (assignmentEventId) {
+      try {
+        var seenKey = "yysd:cal-seen-ids";
+        var seen = JSON.parse(localStorage.getItem(seenKey) || "[]");
+        var eid = Number(assignmentEventId);
+        if (eid && seen.indexOf(eid) < 0) {
+          seen.push(eid);
+          localStorage.setItem(seenKey, JSON.stringify(seen.slice(-200)));
+        }
+      } catch (err) {}
+    }
+
+    showScoreToast(record, d, prevScore);
     if (window.YYSD_AUTH && YYSD_AUTH.pushScoreRecord) {
       YYSD_AUTH.pushScoreRecord(Object.assign({}, record, { attemptAt: attemptAt, wrong: wrong }))
         .then(function (ok) {

@@ -261,6 +261,8 @@
   if (bridgeMode === "writing") {
     examId = resolveExamId();
     var writingObserved = false;
+    var gradeReqSeq = 0;
+    var gradePending = {};
 
     function hookWritingStart() {
       var fn = window.startTest;
@@ -299,6 +301,210 @@
       backToCover._yysdHooked = true;
     }
 
+    function readWritingTask(n) {
+      var ta = document.getElementById("t" + n);
+      if (ta && ta.value) return ta.value;
+      var dump = document.getElementById("dump" + n);
+      if (dump && dump.textContent && dump.textContent !== "（未作答）") return dump.textContent;
+      return "";
+    }
+
+    function plainPrompt(html) {
+      return String(html || "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function escHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function chartNoteFromTest() {
+      var test = pageGet("TEST");
+      if (test && test.task1) {
+        var charts = test.task1.charts || test.task1.tables || [];
+        if (Array.isArray(charts) && charts.length) {
+          var fromTest = charts.map(function (c) {
+            return (c && (c.caption || c.title)) || "";
+          }).filter(Boolean).join("\n");
+          if (fromTest) return fromTest;
+        }
+      }
+      var caps = [];
+      document.querySelectorAll("#task1Tables figcaption").forEach(function (el) {
+        var t = (el.textContent || "").trim();
+        if (t) caps.push(t);
+      });
+      return caps.join("\n");
+    }
+
+    function promptForTask(taskType) {
+      var test = pageGet("TEST");
+      if (test) {
+        var block = taskType === "task1" ? test.task1 : test.task2;
+        var fromTest = plainPrompt(block && block.prompt);
+        if (fromTest) return fromTest;
+      }
+      var el = document.getElementById(taskType === "task1" ? "task1Prompt" : "task2Prompt");
+      return el ? plainPrompt(el.innerHTML) : "";
+    }
+
+    function renderGradeHtml(d) {
+      var g = d && d.grade;
+      var html = "";
+      if (g) {
+        html += '<div class="yysd-ai-grade__score"><h4>写作评分 · Overall ' + escHtml(g.overall) + "</h4><dl>" +
+          "<dt>Task</dt><dd>" + escHtml(g.task) + "</dd>" +
+          "<dt>Coherence</dt><dd>" + escHtml(g.coherence) + "</dd>" +
+          "<dt>Lexical</dt><dd>" + escHtml(g.lexical) + "</dd>" +
+          "<dt>Grammar</dt><dd>" + escHtml(g.grammar) + "</dd></dl>" +
+          (g.comment ? "<p>" + escHtml(g.comment) + "</p>" : "") + "</div>";
+        if (g.paragraphNotes && g.paragraphNotes.length) {
+          html += "<h4>逐段批注</h4><ul>" + g.paragraphNotes.map(function (n) {
+            return "<li>" + escHtml(n) + "</li>";
+          }).join("") + "</ul>";
+        }
+        if (g.corrections && g.corrections.length) {
+          html += "<h4>用词 / 语法纠错</h4><ul>" + g.corrections.map(function (c) {
+            return "<li><s>" + escHtml(c.bad) + "</s> → <b>" + escHtml(c.good) + "</b>" +
+              (c.why ? "（" + escHtml(c.why) + "）" : "") + "</li>";
+          }).join("") + "</ul>";
+        }
+        if (g.modelEssay) {
+          html += "<h4>改写范文</h4><pre class=\"yysd-ai-grade__model\">" + escHtml(g.modelEssay) + "</pre>";
+        }
+      }
+      if (d && d.feedback) {
+        html += "<div class=\"yysd-ai-grade__feedback\">" + escHtml(d.feedback) + "</div>";
+      }
+      return html || "<p>未返回结构化评分，请重试</p>";
+    }
+
+    function ensureAiPanel() {
+      var ra = document.getElementById("resultArea");
+      if (!ra || getComputedStyle(ra).display === "none") return null;
+      var panel = document.getElementById("yysd-ai-grade");
+      if (panel) return panel;
+      panel = document.createElement("div");
+      panel.id = "yysd-ai-grade";
+      panel.className = "yysd-ai-grade";
+      panel.innerHTML =
+        '<style>' +
+        ".yysd-ai-grade{margin:18px 0;padding:16px 18px;border:1px solid #c7d2fe;border-radius:12px;background:#eef2ff;}" +
+        ".yysd-ai-grade h3{margin:0 0 8px;font-size:16px;color:#312e81;}" +
+        ".yysd-ai-grade__note{font-size:13px;color:#4338ca;margin:0 0 12px;line-height:1.5;}" +
+        ".yysd-ai-grade__actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}" +
+        ".yysd-ai-grade__actions button{appearance:none;border:0;border-radius:8px;padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer;background:#4f46e5;color:#fff;}" +
+        ".yysd-ai-grade__actions button:disabled{opacity:.55;cursor:not-allowed;}" +
+        ".yysd-ai-grade__hint{font-size:13px;color:#445;min-height:1.2em;margin:0 0 8px;}" +
+        ".yysd-ai-grade__hint.is-error{color:#b91c1c;}" +
+        ".yysd-ai-grade__block{margin-top:12px;padding-top:12px;border-top:1px solid #c7d2fe;}" +
+        ".yysd-ai-grade__block h4{margin:12px 0 6px;font-size:14px;color:#312e81;}" +
+        ".yysd-ai-grade__score dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0;font-size:14px;}" +
+        ".yysd-ai-grade__score dt{color:#64748b;} .yysd-ai-grade__score dd{margin:0;font-weight:700;}" +
+        ".yysd-ai-grade__model{white-space:pre-wrap;font-size:13px;line-height:1.55;background:#fff;padding:10px;border-radius:8px;border:1px solid #e2e8f0;}" +
+        ".yysd-ai-grade__feedback{font-size:13px;white-space:pre-wrap;color:#334155;margin-top:8px;}" +
+        ".yysd-ai-grade ul{margin:6px 0 0;padding-left:1.2em;font-size:13px;line-height:1.5;}" +
+        "</style>" +
+        "<h3>AI 考官批改</h3>" +
+        '<p class="yysd-ai-grade__note">按雅思四项标准估分，并给出点评、纠错与范文。' +
+        "<b>AI 估分仅供练习参考，非正式考分</b>。Task 1 本版不读原图，仅依据题干与图表说明文字。" +
+        "每次批改消耗 1 次当日 AI 文字额度。</p>" +
+        '<div class="yysd-ai-grade__actions">' +
+        '<button type="button" data-task="task1">AI 批改 Task 1</button>' +
+        '<button type="button" data-task="task2">AI 批改 Task 2</button>' +
+        "</div>" +
+        '<p class="yysd-ai-grade__hint" id="yysd-ai-grade-hint"></p>' +
+        '<div class="yysd-ai-grade__block" id="yysd-ai-grade-task1" hidden></div>' +
+        '<div class="yysd-ai-grade__block" id="yysd-ai-grade-task2" hidden></div>';
+      var crit = ra.querySelector(".crit");
+      if (crit) ra.insertBefore(panel, crit);
+      else ra.appendChild(panel);
+      panel.addEventListener("click", function (e) {
+        var btn = e.target.closest("button[data-task]");
+        if (!btn || btn.disabled) return;
+        requestWritingGrade(btn.getAttribute("data-task"));
+      });
+      return panel;
+    }
+
+    function setGradeHint(msg, isError) {
+      var el = document.getElementById("yysd-ai-grade-hint");
+      if (!el) return;
+      el.textContent = msg || "";
+      el.className = "yysd-ai-grade__hint" + (isError ? " is-error" : "");
+    }
+
+    function setGradeButtonsBusy(busy) {
+      var panel = document.getElementById("yysd-ai-grade");
+      if (!panel) return;
+      panel.querySelectorAll("button[data-task]").forEach(function (b) { b.disabled = !!busy; });
+    }
+
+    function requestWritingGrade(taskType) {
+      var essay = readWritingTask(taskType === "task1" ? 1 : 2).trim();
+      if (!essay || essay.length < 80) {
+        setGradeHint(taskType === "task1" ? "Task 1 作文过短或未作答" : "Task 2 作文过短或未作答", true);
+        return;
+      }
+      var prompt = promptForTask(taskType);
+      if (!prompt) {
+        setGradeHint("未能读取本题题干", true);
+        return;
+      }
+      var reqId = "wg-" + (++gradeReqSeq);
+      gradePending[reqId] = taskType;
+      setGradeButtonsBusy(true);
+      setGradeHint("批改中…");
+      try {
+        window.parent.postMessage({
+          type: "yysd:writing-grade-req",
+          reqId: reqId,
+          taskType: taskType,
+          prompt: prompt,
+          chartNote: taskType === "task1" ? chartNoteFromTest() : "",
+          essay: essay
+        }, "*");
+      } catch (e) {
+        delete gradePending[reqId];
+        setGradeButtonsBusy(false);
+        setGradeHint("无法联系父页面，请刷新重试", true);
+      }
+    }
+
+    function onWritingGradeRes(d) {
+      if (!d || !d.reqId || !gradePending[d.reqId]) return;
+      var taskType = gradePending[d.reqId];
+      delete gradePending[d.reqId];
+      setGradeButtonsBusy(Object.keys(gradePending).length > 0);
+      if (d.error) {
+        setGradeHint(d.error, true);
+        return;
+      }
+      setGradeHint("");
+      var box = document.getElementById("yysd-ai-grade-" + taskType);
+      if (!box) return;
+      box.hidden = false;
+      box.innerHTML = "<h3>" + (taskType === "task1" ? "Task 1" : "Task 2") + " 批改结果</h3>" + renderGradeHtml(d);
+      if (d.quota && d.quota.textLeft != null) {
+        setGradeHint("今日文字额度剩余 " + d.quota.textLeft + "/" + d.quota.textLimit);
+      }
+    }
+
+    function onResultVisible() {
+      reportWriting();
+      ensureAiPanel();
+    }
+
     function reportWriting() {
       if (posted) return;
       var ra = document.getElementById("resultArea");
@@ -307,22 +513,35 @@
       var r2 = document.getElementById("r2");
       var n1 = r1 ? parseInt(r1.textContent, 10) || 0 : 0;
       var n2 = r2 ? parseInt(r2.textContent, 10) || 0 : 0;
-      postScore({ score: null, total: null, writingWords: n1 + n2, completed: true });
+      // ponytail: store essays for teacher grading; 8k/task covers IELTS length
+      postScore({
+        score: null, total: null, writingWords: n1 + n2, completed: true,
+        writingTask1: readWritingTask(1),
+        writingTask2: readWritingTask(2)
+      });
     }
 
     function initWriting() {
       hookWritingStart();
       hookWritingFinish();
       hookWritingBack();
-      if (writingObserved) return;
+      if (writingObserved) {
+        onResultVisible();
+        return;
+      }
       var ra = document.getElementById("resultArea");
       if (!ra) return;
       writingObserved = true;
-      new MutationObserver(reportWriting).observe(ra, {
+      new MutationObserver(onResultVisible).observe(ra, {
         attributes: true, attributeFilter: ["style"], childList: true, subtree: true
       });
-      reportWriting();
+      onResultVisible();
     }
+
+    window.addEventListener("message", function (e) {
+      if (!e.data || e.data.type !== "yysd:writing-grade-res") return;
+      onWritingGradeRes(e.data);
+    });
 
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initWriting);
     else initWriting();
@@ -558,11 +777,41 @@
   }
 
   var draftListenersBound = false;
+  var assignedBooted = false;
+  function bootAssignedPart() {
+    if (assignedBooted) return;
+    var part = Number((script && script.dataset.assignPart) || 0);
+    if (!part) {
+      try {
+        part = Number(new URLSearchParams(location.search).get("assignPart") || 0);
+      } catch (e) { part = 0; }
+    }
+    if (!part) return;
+    function go() {
+      if (assignedBooted || typeof startTest !== "function") return false;
+      if (typeof openMode === "function") openMode();
+      var boxes = document.querySelectorAll(".secbox");
+      if (!boxes.length) return false;
+      var found = false;
+      boxes.forEach(function (cb) {
+        var on = Number(cb.value) === part;
+        cb.checked = on;
+        if (on) found = true;
+      });
+      if (!found) return false;
+      assignedBooted = true;
+      startTest("practice");
+      return true;
+    }
+    if (!go()) setTimeout(go, 80);
+  }
+
   function initDraft() {
     hookStartTest();
     hookSubmitTest();
     hookBackToCover();
-    showResumeBanner();
+    bootAssignedPart();
+    if (!script || !script.dataset.assignPart) showResumeBanner();
     if (draftListenersBound) return;
     draftListenersBound = true;
     window.addEventListener("pagehide", saveDraftNow);
