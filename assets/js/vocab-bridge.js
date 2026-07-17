@@ -19,6 +19,8 @@
   var autoNextTimer = null;
   var remaining = 0;
   var playWatchersReady = false;
+  // ponytail: one countdown per question — replay must not refresh the 20s
+  var countdownStarted = false;
 
   function resultsPanel() {
     return document.getElementById("testResults") ||
@@ -336,6 +338,7 @@
   function clearTick() {
     if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
     remaining = 0;
+    countdownStarted = false;
     var el = document.getElementById("yysd-vocab-timer");
     if (el) {
       el.classList.remove("is-on", "is-low", "is-wait");
@@ -374,13 +377,21 @@
 
   function startCountdown() {
     if (!isTestRunning() || !submitReady()) return;
-    clearTick();
+    if (countdownStarted) return;
+    countdownStarted = true;
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
     remaining = QUESTION_SECS;
     renderTimer(remaining, false);
     tickTimer = setInterval(function () {
       remaining -= 1;
       if (remaining <= 0) {
-        clearTick();
+        if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+        remaining = 0;
+        var el = document.getElementById("yysd-vocab-timer");
+        if (el) {
+          el.classList.remove("is-on", "is-low", "is-wait");
+          el.style.display = "none";
+        }
         onQuestionTimeout();
         return;
       }
@@ -410,7 +421,7 @@
   function maybeStartWithoutAudio() {
     if (!isTestRunning() || !submitReady()) return;
     if (visiblePlayButtons().length) {
-      renderTimer(QUESTION_SECS, true);
+      if (!countdownStarted) renderTimer(QUESTION_SECS, true);
       return;
     }
     startCountdown();
@@ -419,8 +430,8 @@
   function onPlayClassChange(btn) {
     if (!isTestRunning()) return;
     if (btn.classList.contains("playing")) {
-      clearTick();
-      if (submitReady()) renderTimer(QUESTION_SECS, true);
+      // First play of this question: show waiting. Replay: leave countdown alone.
+      if (!countdownStarted && submitReady()) renderTimer(QUESTION_SECS, true);
       return;
     }
     if (submitReady()) startCountdown();
