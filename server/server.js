@@ -2099,7 +2099,21 @@ function bumpUsage(userId, fields) {
   ).run(userId, day, fields.text || 0, fields.voiceSec || 0, fields.fullMocks || 0);
 }
 
-function quotaPayload(u) {
+function quotaPayload(u, unlimited) {
+  if (unlimited) {
+    return {
+      unlimited: true,
+      textLimit: null,
+      textUsed: u.textCount,
+      textLeft: 999999,
+      voiceSecLimit: null,
+      voiceSecUsed: Math.round(u.voiceSec),
+      voiceSecLeft: 999999,
+      fullMockLimit: null,
+      fullMockUsed: u.fullMocks,
+      fullMockLeft: 999999
+    };
+  }
   return {
     textLimit: AI_QUOTA.text,
     textUsed: u.textCount,
@@ -2111,6 +2125,10 @@ function quotaPayload(u) {
     fullMockUsed: u.fullMocks,
     fullMockLeft: Math.max(0, AI_QUOTA.fullMocks - u.fullMocks)
   };
+}
+
+function aiTutorQuota(req) {
+  return quotaPayload(getUsage(req.user.sub), isAdminPhone(req.user.phone));
 }
 
 function newSessionId() {
@@ -2182,7 +2200,7 @@ function staffAuthMiddleware(req, res, next) {
 
 app.get("/api/ai-tutor/quota", authMiddleware, function (req, res) {
   if (!studentOnly(req, res)) return;
-  res.json({ ok: true, quota: quotaPayload(getUsage(req.user.sub)) });
+  res.json({ ok: true, quota: aiTutorQuota(req) });
 });
 
 app.get("/api/ai-tutor/bank", authMiddleware, function (req, res) {
@@ -2235,8 +2253,8 @@ app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res
     return res.status(400).json({ error: "缺少题干或作文" });
   }
   var u = getUsage(req.user.sub);
-  if (u.textCount >= AI_QUOTA.text) {
-    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: quotaPayload(u) });
+  if (!isAdminPhone(req.user.phone) && u.textCount >= AI_QUOTA.text) {
+    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: aiTutorQuota(req) });
   }
   var chartBlock = "";
   if (chartNote) {
@@ -2253,7 +2271,7 @@ app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res
       { role: "system", content: system },
       { role: "user", content: userMsg }
     ], 0.25, 4500);
-    bumpUsage(req.user.sub, { text: 1 });
+    if (!isAdminPhone(req.user.phone)) bumpUsage(req.user.sub, { text: 1 });
     var grade = parseWritingGrade(raw);
     if (!grade) {
       console.error("[yysd-api] writing-grade parse fail", String(raw || "").slice(0, 400));
@@ -2264,7 +2282,7 @@ app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res
       feedback: "",
       grade: grade,
       prompt: { id: promptMeta.id, title: promptMeta.title, taskType: taskType },
-      quota: quotaPayload(getUsage(req.user.sub))
+      quota: aiTutorQuota(req)
     });
   } catch (e) {
     console.error("[yysd-api] writing-grade", e.message);
@@ -2306,18 +2324,18 @@ app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
     } catch (e) {
       return res.status(400).json({ error: e.message || "无法生成考题包" });
     }
-    if (examMode === "mock") {
+    if (examMode === "mock" && !isAdminPhone(req.user.phone)) {
       var uMock = getUsage(req.user.sub);
       if (uMock.fullMocks >= AI_QUOTA.fullMocks) {
-        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: quotaPayload(uMock) });
+        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: aiTutorQuota(req) });
       }
     }
   } else if (mode === "examiner") {
     if (["full", "part1", "part2", "part3"].indexOf(examType) < 0) examType = "full";
-    if (examType === "full") {
+    if (examType === "full" && !isAdminPhone(req.user.phone)) {
       var u = getUsage(req.user.sub);
       if (u.fullMocks >= AI_QUOTA.fullMocks) {
-        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: quotaPayload(u) });
+        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: aiTutorQuota(req) });
       }
     }
   } else {
@@ -2331,7 +2349,7 @@ app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
     ? "考官 · " + examTypeLabel(examMode || examType)
     : "老师辅导";
   tutorInsertSession.run(id, req.user.sub, mode, examType || null, examMode || null, packStr, title, now, now, "active");
-  if (mode === "examiner" && (examMode === "mock" || examType === "full")) {
+  if (mode === "examiner" && (examMode === "mock" || examType === "full") && !isAdminPhone(req.user.phone)) {
     bumpUsage(req.user.sub, { fullMocks: 1 });
   }
 
@@ -2360,7 +2378,7 @@ app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
     },
     opener: opener,
     examPack: examPack,
-    quota: quotaPayload(getUsage(req.user.sub))
+    quota: aiTutorQuota(req)
   });
 });
 
@@ -2397,16 +2415,18 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
     content = "[ANSWER_INVALID] Candidate remained silent for 5 seconds. Treat this answer as invalid and move to the next question.";
   }
   var u = getUsage(req.user.sub);
-  if (u.textCount >= AI_QUOTA.text) {
-    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: quotaPayload(u) });
+  if (!isAdminPhone(req.user.phone) && u.textCount >= AI_QUOTA.text) {
+    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: aiTutorQuota(req) });
   }
-  if (audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
-    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: quotaPayload(u) });
+  if (!isAdminPhone(req.user.phone) && audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
+    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: aiTutorQuota(req) });
   }
   var now = new Date().toISOString();
   var userMeta = answerInvalid ? JSON.stringify({ answerInvalid: true }) : null;
   tutorInsertMessage.run(sessionId, "user", content, audioSec, userMeta, now);
-  bumpUsage(req.user.sub, { text: 1, voiceSec: audioSec });
+  if (!isAdminPhone(req.user.phone)) {
+    bumpUsage(req.user.sub, { text: 1, voiceSec: audioSec });
+  }
   if (s.title === "老师辅导" || String(s.title || "").indexOf("考官 ·") === 0) {
     var short = content.slice(0, 24).replace(/\s+/g, " ");
     if (short && !answerInvalid) tutorTouchSession.run(now, short + (content.length > 24 ? "…" : ""), sessionId);
@@ -2436,7 +2456,7 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
       reply: reply,
       score: score,
       status: score ? "complete" : "active",
-      quota: quotaPayload(getUsage(req.user.sub))
+      quota: aiTutorQuota(req)
     });
   } catch (e) {
     console.error("[yysd-api] ai-tutor/chat", e.message);
@@ -2632,8 +2652,8 @@ app.post("/api/ai-tutor/asr", authMiddleware, async function (req, res) {
   var audioSec = Math.max(0, Math.min(600, Number(req.body && req.body.audioSec) || 0));
   if (!audio || audio.indexOf("data:") !== 0) return res.status(400).json({ error: "缺少 audio（data URL）" });
   var u = getUsage(req.user.sub);
-  if (audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
-    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: quotaPayload(u) });
+  if (!isAdminPhone(req.user.phone) && audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
+    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: aiTutorQuota(req) });
   }
   try {
     var r = await fetch(DASHSCOPE_MM_URL, {
@@ -2669,7 +2689,7 @@ app.post("/api/ai-tutor/asr", authMiddleware, async function (req, res) {
     text = clipText(text, 4000);
     if (!text) return res.status(502).json({ error: "未能识别出语音内容，请重试或改用文字输入" });
     // ponytail: voice_sec counted on /chat when client sends audioSec
-    res.json({ ok: true, text: text, quota: quotaPayload(u) });
+    res.json({ ok: true, text: text, quota: aiTutorQuota(req) });
   } catch (e) {
     console.error("[yysd-api] ai-tutor/asr", e.message);
     res.status(502).json({ error: "语音识别失败，请稍后再试或改用文字" });
@@ -2732,7 +2752,10 @@ if (require.main === module) {
   console.assert(parseExerciseIds(["a", "a", "b"]).join(",") === "a,b");
   console.assert(parseStudentIds([1, "2", 1, 0]).join(",") === "1,2");
   console.assert(isAdminPhone("15901754473") === true);
+  console.assert(isAdminPhone("15609693333") === true);
   console.assert(isAdminPhone("13800138000") === false);
+  console.assert(quotaPayload({ textCount: 99, voiceSec: 9999, fullMocks: 99 }, true).unlimited === true);
+  console.assert(quotaPayload({ textCount: 99, voiceSec: 9999, fullMocks: 99 }, true).fullMockLeft > 0);
   console.assert(examTypeLabel("full") === "完整模拟考");
   console.assert(buildTutorSystem("teacher", "", null).indexOf("口语") >= 0);
   console.assert(parseWordFromReply('x\nWORD_JSON:{"word":"cat","ipa":"/kæt/","meaning":"猫"}').word === "cat");

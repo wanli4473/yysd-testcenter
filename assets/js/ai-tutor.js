@@ -158,6 +158,7 @@
   function renderQuota(q) {
     var html;
     if (!q) html = "额度加载失败";
+    else if (q.unlimited) html = "管理员账号：AI 口语 / 写作额度不限";
     else {
       html =
         "今日剩余：文字 <b>" + q.textLeft + "</b>/" + q.textLimit +
