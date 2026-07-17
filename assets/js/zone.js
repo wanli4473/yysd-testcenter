@@ -262,7 +262,7 @@
     } else {
       var aiTutorHTML = zone === "practice"
         ? '<a class="ai-tutor-entry pressable" href="ai-tutor.html">' +
-          "<b>AI 雅思老师</b><span>口语机经练习/全真模考 · 写作批改</span></a>"
+          "<b>AI 雅思老师</b><span>口语机经练习/模考 · 写作批改</span></a>"
         : "";
       var cats = activeCat === "all" ? visibleNav() : visibleNav().filter(function (c) { return c.key === activeCat; });
       html = aiTutorHTML + cats.map(categoryHTML).join("");
