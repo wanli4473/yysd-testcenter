@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
   <link rel="stylesheet" href="assets/css/style.css?v=20260716side">
-  <link rel="stylesheet" href="assets/css/ai-tutor.css?v=20260717examui">
+  <link rel="stylesheet" href="assets/css/ai-tutor.css?v=20260717ui2">
   <link rel="stylesheet" href="assets/css/mascot.css?v=20260709a">
 </head>
-<body class="home-minimal ai-tutor-page">
+<body class="home-minimal ai-tutor-page" data-ai-view="hub">
 
   <header class="minimal-topbar" id="site-header">
     <div class="minimal-shell minimal-topbar__inner">
@@ -35,86 +35,113 @@
   </header>
 
   <section class="minimal-shell minimal-page-head" id="page-head">
-    <div class="minimal-crumb"><a href="zone.html?zone=practice">练习区</a> <span class="crumb-sep" aria-hidden="true">★</span> <span id="crumb-here">AI 雅思老师</span></div>
-    <h1 id="page-title">AI 雅思老师</h1>
-    <p class="minimal-page-desc" id="page-desc">选择口语或写作。口语侧重机经练习与全真模考；写作选题干后粘贴作文批改。</p>
+    <div class="minimal-crumb">
+      <a href="zone.html?zone=practice">练习区</a>
+      <span class="crumb-sep" aria-hidden="true">★</span>
+      <span id="crumb-here">AI 雅思老师</span>
+    </div>
+    <div class="ai-page-title-row">
+      <button type="button" class="ai-page-back" id="page-back" hidden data-back="hub">← 返回</button>
+      <div>
+        <h1 id="page-title">AI 雅思老师</h1>
+        <p class="minimal-page-desc" id="page-desc">先选口语或写作，一次只做一件事。</p>
+      </div>
+    </div>
   </section>
 
   <main class="minimal-shell minimal-main ai-tutor" id="ai-tutor-root">
 
-    <!-- Hub: 口语 / 写作 -->
-    <section class="ai-hub" id="view-hub">
-      <button type="button" class="ai-hub__card" data-track="speaking">
-        <b>口语</b>
-        <span>机经练习 · 全真模考 · 辅导聊天（练习/模考仅麦克风）</span>
-      </button>
-      <button type="button" class="ai-hub__card" data-track="writing">
-        <b>写作</b>
-        <span>选题干 · 粘贴作文 · 四项评分与范文批改</span>
-      </button>
+    <!-- Hub -->
+    <section class="ai-view" id="view-hub">
+      <div class="ai-path-grid">
+        <button type="button" class="ai-path" data-track="speaking">
+          <span class="ai-path__kicker">Speaking</span>
+          <strong>口语</strong>
+          <span class="ai-path__desc">机经练习、全真模考、辅导聊天</span>
+          <span class="ai-path__cta">进入口语 →</span>
+        </button>
+        <button type="button" class="ai-path" data-track="writing">
+          <span class="ai-path__kicker">Writing</span>
+          <strong>写作</strong>
+          <span class="ai-path__desc">选题干、粘贴作文、四项评分与范文</span>
+          <span class="ai-path__cta">进入写作 →</span>
+        </button>
+      </div>
+      <p class="ai-quota-line" id="quota-hub">加载额度…</p>
     </section>
 
     <!-- Speaking home -->
-    <section class="ai-hub" id="view-speaking-home" hidden>
-      <button type="button" class="btn btn--ghost btn--sm ai-back" data-back="hub">← 返回</button>
-      <div class="ai-hub__row">
-        <button type="button" class="ai-hub__card" data-speak="practice"><b>机经练习</b><span>自选 Part1 + Part2，可重听 / 重录</span></button>
-        <button type="button" class="ai-hub__card ai-hub__card--accent" data-speak="mock"><b>机经模考</b><span>全真考场计时 · 自动语音对答</span></button>
-        <button type="button" class="ai-hub__card" data-speak="tutor"><b>辅导聊天</b><span>可打字，麦克风可选</span></button>
+    <section class="ai-view" id="view-speaking-home" hidden>
+      <div class="ai-mode-list">
+        <button type="button" class="ai-mode" data-speak="mock">
+          <span class="ai-mode__badge">推荐</span>
+          <strong>机经模考</strong>
+          <span>全真考场计时 · 考官自动出声 · 说完点提交</span>
+        </button>
+        <button type="button" class="ai-mode" data-speak="practice">
+          <strong>机经练习</strong>
+          <span>自选 Part 1 / Part 2 · 可重听、重录</span>
+        </button>
+        <button type="button" class="ai-mode" data-speak="tutor">
+          <strong>辅导聊天</strong>
+          <span>可打字讲解 · 麦克风可选</span>
+        </button>
       </div>
-      <div class="ai-tutor__quota" id="quota-box">加载额度…</div>
-      <div class="ai-tutor__admin" id="admin-upload" hidden>
-        <strong>更新机经题库</strong>
-        <input type="file" id="jiijing-file" accept="application/pdf,.pdf">
-        <button type="button" class="btn btn--ghost btn--sm" id="btn-upload-jiijing">上传 PDF</button>
-        <p class="ai-tutor__admin-hint" id="upload-hint"></p>
-      </div>
+      <p class="ai-quota-line" id="quota-box">加载额度…</p>
+      <details class="ai-admin" id="admin-upload" hidden>
+        <summary>更新机经题库（管理员 / 老师）</summary>
+        <div class="ai-admin__body">
+          <input type="file" id="jiijing-file" accept="application/pdf,.pdf">
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-upload-jiijing">上传 PDF</button>
+          <p class="ai-admin__hint" id="upload-hint"></p>
+        </div>
+      </details>
     </section>
 
-    <!-- Speaking practice / tutor workspace -->
-    <section class="ai-workspace" id="view-speak-room" hidden>
-      <aside class="ai-tutor__side" aria-label="历史会话">
-        <div class="ai-tutor__side-head">
+    <!-- Speaking practice / tutor -->
+    <section class="ai-view ai-room" id="view-speak-room" hidden>
+      <aside class="ai-room__side" aria-label="历史会话">
+        <div class="ai-room__side-head">
           <strong id="side-title">会话</strong>
-          <button type="button" class="btn btn--ghost btn--sm" data-back="speaking-home">返回</button>
         </div>
-        <ul class="ai-tutor__sessions" id="session-list"></ul>
+        <ul class="ai-room__sessions" id="session-list"></ul>
       </aside>
 
-      <div class="ai-tutor__main">
-        <div class="ai-tutor__toolbar">
-          <span id="room-label">口语</span>
+      <div class="ai-room__main">
+        <div class="ai-room__bar">
+          <span class="ai-room__label" id="room-label">口语</span>
+          <span class="ai-room__hint-inline" id="status-hint"></span>
         </div>
 
-        <div class="ai-tutor__picker" id="topic-picker" hidden>
-          <div class="ai-tutor__bank-title" id="bank-title">机经题库</div>
-          <div class="ai-tutor__pick-cols">
+        <div class="ai-picker" id="topic-picker" hidden>
+          <div class="ai-picker__title" id="bank-title">机经题库</div>
+          <div class="ai-picker__cols">
             <div>
               <h3>Part 1（可多选）</h3>
-              <div class="ai-tutor__pick-list" id="part1-list"></div>
+              <div class="ai-picker__list" id="part1-list"></div>
             </div>
             <div>
               <h3>Part 2（单选，含 Part 3）</h3>
-              <div class="ai-tutor__pick-list" id="part2-list"></div>
+              <div class="ai-picker__list" id="part2-list"></div>
             </div>
           </div>
-          <div class="ai-tutor__pick-actions">
-            <button type="button" class="btn btn--primary" id="btn-start-practice">开始练习</button>
-          </div>
+          <button type="button" class="btn btn--primary" id="btn-start-practice">开始练习</button>
         </div>
 
-        <div class="ai-tutor__messages" id="messages" aria-live="polite"></div>
+        <div class="ai-room__messages" id="messages" aria-live="polite"></div>
 
-        <div class="ai-tutor__composer" id="composer">
-          <p class="ai-tutor__hint" id="status-hint"></p>
+        <div class="ai-room__composer" id="composer">
           <div class="ai-practice-bar" id="practice-bar" hidden>
             <button type="button" class="btn btn--ghost btn--sm" id="btn-replay">重听考官</button>
             <button type="button" class="btn btn--ghost btn--sm" id="btn-rerecord" hidden>重新录制</button>
             <button type="button" class="btn btn--primary btn--sm" id="btn-confirm-rec" hidden>确认发送</button>
           </div>
-          <div class="ai-tutor__input-row" id="input-row">
+          <div class="ai-room__input-row" id="input-row">
             <textarea id="input" rows="2" placeholder="输入消息…" maxlength="8000"></textarea>
-            <button type="button" class="btn btn--ghost ai-tutor__mic" id="btn-mic" aria-pressed="false" title="点一下开始录音，再点结束">🎤</button>
+            <button type="button" class="ai-mic" id="btn-mic" aria-pressed="false" title="点一下开始录音，再点结束">
+              <span class="ai-mic__icon" aria-hidden="true"></span>
+              <span class="ai-mic__label">录音</span>
+            </button>
             <button type="button" class="btn btn--primary" id="btn-send">发送</button>
           </div>
         </div>
@@ -122,26 +149,34 @@
     </section>
 
     <!-- Writing -->
-    <section class="ai-writing" id="view-writing" hidden>
-      <button type="button" class="btn btn--ghost btn--sm ai-back" data-back="hub">← 返回</button>
-      <div class="ai-writing__toolbar">
-        <label>题型
+    <section class="ai-view ai-write" id="view-writing" hidden>
+      <ol class="ai-write__steps" aria-hidden="true">
+        <li class="is-on">选题</li>
+        <li>粘贴</li>
+        <li>批改</li>
+      </ol>
+      <div class="ai-write__select">
+        <label>
+          <span>题型</span>
           <select id="w-task">
             <option value="task1">Task 1</option>
             <option value="task2">Task 2</option>
           </select>
         </label>
-        <label class="ai-writing__grow">题干
+        <label class="ai-write__grow">
+          <span>题干</span>
           <select id="w-prompt"></select>
         </label>
       </div>
-      <pre class="ai-writing__prompt" id="w-prompt-text"></pre>
-      <textarea id="w-essay" rows="12" maxlength="8000" placeholder="在此粘贴你的作文…"></textarea>
-      <div class="ai-writing__actions">
+      <pre class="ai-write__prompt" id="w-prompt-text"></pre>
+      <label class="ai-write__essay-label" for="w-essay">作文</label>
+      <textarea id="w-essay" rows="14" maxlength="8000" placeholder="在此粘贴你的作文…"></textarea>
+      <div class="ai-write__meta">
+        <span id="w-wordcount">0 词</span>
+        <p class="ai-write__hint" id="w-hint"></p>
         <button type="button" class="btn btn--primary" id="btn-grade">提交批改</button>
-        <p class="ai-tutor__hint" id="w-hint"></p>
       </div>
-      <div id="w-result"></div>
+      <div class="ai-write__result" id="w-result"></div>
     </section>
   </main>
 
@@ -169,14 +204,13 @@
     </div>
   </div>
 
-  <!-- Post-mock review -->
   <div class="ai-review" id="review-overlay" hidden>
     <div class="ai-review__panel">
       <h2>模考回顾</h2>
       <div id="review-score"></div>
       <div id="review-tips"></div>
       <div id="review-turns"></div>
-      <button type="button" class="btn btn--primary" id="btn-review-close">返回口语首页</button>
+      <button type="button" class="btn btn--primary" id="btn-review-close">返回口语</button>
     </div>
   </div>
 
@@ -192,6 +226,6 @@
   <script src="assets/js/auth.js?v=20260716side"></script>
   <script src="assets/js/nav.js?v=20260716side"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/ai-tutor.js?v=20260717examui"></script>
+  <script src="assets/js/ai-tutor.js?v=20260717ui2"></script>
 </body>
 </html>

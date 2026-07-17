@@ -45,6 +45,7 @@
   var inPart2Speak = false;
 
   var elQuota = document.getElementById("quota-box");
+  var elQuotaHub = document.getElementById("quota-hub");
   var elList = document.getElementById("session-list");
   var elMsgs = document.getElementById("messages");
   var elHint = document.getElementById("status-hint");
@@ -54,6 +55,7 @@
   var elPicker = document.getElementById("topic-picker");
   var elPracticeBar = document.getElementById("practice-bar");
   var elInputRow = document.getElementById("input-row");
+  var elPageBack = document.getElementById("page-back");
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
@@ -66,7 +68,7 @@
   function hint(msg, kind) {
     if (!elHint) return;
     elHint.textContent = msg || "";
-    elHint.className = "ai-tutor__hint" + (kind ? " is-" + kind : "");
+    elHint.className = "ai-room__hint-inline" + (kind ? " is-" + kind : "");
   }
 
   function api(path, opts) {
@@ -96,6 +98,7 @@
 
   function showView(name) {
     track = name;
+    document.body.setAttribute("data-ai-view", name);
     ["view-hub", "view-speaking-home", "view-speak-room", "view-writing"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.hidden = true;
@@ -113,17 +116,37 @@
     var title = document.getElementById("page-title");
     var desc = document.getElementById("page-desc");
     var crumb = document.getElementById("crumb-here");
+    if (elPageBack) {
+      if (name === "hub") {
+        elPageBack.hidden = true;
+      } else if (name === "speaking-home" || name === "writing") {
+        elPageBack.hidden = false;
+        elPageBack.setAttribute("data-back", "hub");
+      } else {
+        elPageBack.hidden = false;
+        elPageBack.setAttribute("data-back", "speaking-home");
+      }
+    }
     if (name === "hub") {
       title.textContent = "AI 雅思老师";
-      desc.textContent = "选择口语或写作。口语侧重机经练习与全真模考；写作选题干后粘贴作文批改。";
+      desc.textContent = "先选口语或写作，一次只做一件事。";
       crumb.textContent = "AI 雅思老师";
-    } else if (name === "speaking-home" || name === "practice" || name === "tutor") {
-      title.textContent = "口语 · AI 雅思老师";
+    } else if (name === "speaking-home") {
+      title.textContent = "口语";
+      desc.textContent = "模考按真考节奏；练习可选题并重录；辅导可打字。";
       crumb.textContent = "口语";
+    } else if (name === "practice") {
+      title.textContent = "机经练习";
+      desc.textContent = "勾选话题后开始；仅用麦克风作答，可重听 / 重录。";
+      crumb.textContent = "口语 · 练习";
+    } else if (name === "tutor") {
+      title.textContent = "辅导聊天";
+      desc.textContent = "口语思路与表达问题可打字，也可语音。";
+      crumb.textContent = "口语 · 辅导";
     } else if (name === "writing") {
-      title.textContent = "写作 · AI 雅思老师";
+      title.textContent = "写作批改";
+      desc.textContent = "先选题干，再粘贴作文提交批改。";
       crumb.textContent = "写作";
-      desc.textContent = "先选 Task 1 / Task 2 与题干，再粘贴作文提交批改。";
     }
 
     var examOn = !document.getElementById("exam-overlay").hidden;
@@ -133,17 +156,21 @@
   }
 
   function renderQuota(q) {
-    if (!elQuota) return;
-    if (!q) { elQuota.textContent = "额度加载失败"; return; }
-    elQuota.innerHTML =
-      "今日剩余：文字 <b>" + q.textLeft + "</b>/" + q.textLimit +
-      " · 语音 <b>" + Math.floor(q.voiceSecLeft / 60) + ":" + String(q.voiceSecLeft % 60).padStart(2, "0") + "</b>" +
-      " · 模考 <b>" + q.fullMockLeft + "</b>/" + q.fullMockLimit;
+    var html;
+    if (!q) html = "额度加载失败";
+    else {
+      html =
+        "今日剩余：文字 <b>" + q.textLeft + "</b>/" + q.textLimit +
+        " · 语音 <b>" + Math.floor(q.voiceSecLeft / 60) + ":" + String(q.voiceSecLeft % 60).padStart(2, "0") + "</b>" +
+        " · 模考 <b>" + q.fullMockLeft + "</b>/" + q.fullMockLimit;
+    }
+    if (elQuota) elQuota.innerHTML = html;
+    if (elQuotaHub) elQuotaHub.innerHTML = html;
   }
 
   function loadQuota() {
     return api("/api/ai-tutor/quota").then(function (d) { renderQuota(d.quota); })
-      .catch(function () { if (elQuota) elQuota.textContent = "额度加载失败"; });
+      .catch(function () { renderQuota(null); });
   }
 
   function scoreCardHTML(score) {
@@ -615,11 +642,10 @@
     elInput.hidden = !isTutor;
     elSend.hidden = !isTutor;
     elMic.hidden = false;
+    elInputRow.classList.toggle("is-mic-only", isPractice);
     if (isPractice) {
-      elInputRow.style.gridTemplateColumns = "1fr auto";
-      hint(sessionId ? "仅麦克风作答；可重听 / 重录" : "请选题后开始练习");
+      hint(sessionId ? "仅麦克风作答 · 可重听 / 重录" : "请先选题，再开始练习");
     } else {
-      elInputRow.style.gridTemplateColumns = "1fr auto auto";
       hint("可打字，也可点麦克风");
     }
   }
@@ -823,9 +849,9 @@
     var taskType = document.getElementById("w-task").value;
     var promptId = document.getElementById("w-prompt").value;
     var essay = document.getElementById("w-essay").value.trim();
-    if (!essay) { wh.textContent = "请粘贴作文"; wh.className = "ai-tutor__hint is-error"; return; }
+    if (!essay) { wh.textContent = "请粘贴作文"; wh.className = "ai-write__hint is-error"; return; }
     wh.textContent = "批改中…";
-    wh.className = "ai-tutor__hint";
+    wh.className = "ai-write__hint";
     api("/api/ai-tutor/writing-grade", {
       method: "POST",
       body: { taskType: taskType, promptId: promptId, essay: essay }
@@ -867,19 +893,27 @@
           }).join("") + "</ul>";
         }
         if (g.modelEssay) {
-          html += "<h3>同题高分范文</h3><pre class=\"ai-writing__model\">" + esc(g.modelEssay) + "</pre>";
+          html += "<h3>同题高分范文</h3><pre class=\"ai-write__model\">" + esc(g.modelEssay) + "</pre>";
         }
       }
       var fb = d.feedback ? String(d.feedback).trim() : "";
       if (fb && fb.indexOf("WRITING_JSON") < 0 && fb.charAt(0) !== "{") {
-        html += "<div class=\"ai-writing__feedback\">" + esc(fb) + "</div>";
+        html += "<div class=\"ai-write__hint\">" + esc(fb) + "</div>";
       }
       document.getElementById("w-result").innerHTML = html || "<p>未返回结构化评分，请重试</p>";
     }).catch(function (e) {
       if (e.quota) renderQuota(e.quota);
       wh.textContent = e.message || "批改失败";
-      wh.className = "ai-tutor__hint is-error";
+      wh.className = "ai-write__hint is-error";
     });
+  }
+
+  function updateWordCount() {
+    var el = document.getElementById("w-essay");
+    var out = document.getElementById("w-wordcount");
+    if (!el || !out) return;
+    var n = String(el.value || "").trim().split(/\s+/).filter(Boolean).length;
+    out.textContent = n + " 词";
   }
 
   /* Events */
@@ -988,10 +1022,12 @@
   document.getElementById("w-task").addEventListener("change", fillWritingPrompts);
   document.getElementById("w-prompt").addEventListener("change", showWritingPrompt);
   document.getElementById("btn-grade").addEventListener("click", gradeWriting);
+  document.getElementById("w-essay").addEventListener("input", updateWordCount);
 
   var elAdmin = document.getElementById("admin-upload");
-  if (A.isAdmin && A.isAdmin()) elAdmin.hidden = false;
-  else if (A.isTeacher && A.isTeacher()) elAdmin.hidden = false;
+  if ((A.isAdmin && A.isAdmin()) || (A.isTeacher && A.isTeacher())) {
+    elAdmin.hidden = false;
+  }
   document.getElementById("btn-upload-jiijing").addEventListener("click", function () {
     var file = document.getElementById("jiijing-file").files[0];
     var uh = document.getElementById("upload-hint");
