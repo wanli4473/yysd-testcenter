@@ -359,7 +359,8 @@
     opts = opts || {};
     recMode = opts.auto ? "auto" : "manual";
     inPart2Speak = !!opts.part2;
-    if (busy) return;
+    // ponytail: mock auto-open runs inside sendChat while busy=true; don't block system mic
+    if (busy && !opts.auto) return;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       hint("当前浏览器不支持录音", "error");
       setExamStatus("无法使用麦克风");
@@ -493,6 +494,9 @@
     return api("/api/ai-tutor/chat", { method: "POST", body: body }).then(function (d) {
       if (d.quota) renderQuota(d.quota);
       currentQ = d.reply || "";
+      // release busy before auto-mic / TTS follow-up so the next turn can open mic
+      busy = false;
+      elSend.disabled = false;
       if (track !== "mock") {
         appendMsg("assistant", d.reply || "", d.score ? { score: d.score } : null);
       }
