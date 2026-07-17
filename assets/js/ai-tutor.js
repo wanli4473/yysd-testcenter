@@ -171,7 +171,11 @@
 
   function loadQuota() {
     return api("/api/ai-tutor/quota").then(function (d) { renderQuota(d.quota); })
-      .catch(function () { renderQuota(null); });
+      .catch(function (e) {
+        var msg = (e && e.message) || "额度加载失败";
+        if (elQuota) elQuota.textContent = msg;
+        if (elQuotaHub) elQuotaHub.textContent = msg;
+      });
   }
 
   function scoreCardHTML(score) {

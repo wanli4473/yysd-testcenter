@@ -2073,6 +2073,11 @@ function studentOnly(req, res) {
   return true;
 }
 
+// AI 雅思老师：登录即可（学生 / 教师都可测）；管理员手机号额度不限
+function aiTutorAllowed(req, res) {
+  return true;
+}
+
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -2199,12 +2204,12 @@ function staffAuthMiddleware(req, res, next) {
 }
 
 app.get("/api/ai-tutor/quota", authMiddleware, function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   res.json({ ok: true, quota: aiTutorQuota(req) });
 });
 
 app.get("/api/ai-tutor/bank", authMiddleware, function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   try {
     res.json({ ok: true, bank: bankSummary(loadActiveBank()) });
   } catch (e) {
@@ -2213,7 +2218,7 @@ app.get("/api/ai-tutor/bank", authMiddleware, function (req, res) {
 });
 
 app.get("/api/ai-tutor/writing-bank", authMiddleware, function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   try {
     var bank = loadWritingBank();
     res.json({
@@ -2229,7 +2234,7 @@ app.get("/api/ai-tutor/writing-bank", authMiddleware, function (req, res) {
 });
 
 app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   var taskType = clipText(req.body && req.body.taskType, 10);
   var promptId = clipText(req.body && req.body.promptId, 80);
   var promptText = clipText(req.body && req.body.prompt, 4000);
@@ -2291,7 +2296,7 @@ app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res
 });
 
 app.post("/api/ai-tutor/sessions/:id/abandon", authMiddleware, function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   var id = clipText(req.params.id, 64);
   var s = tutorGetSession.get(id, req.user.sub);
   if (!s) return res.status(404).json({ error: "会话不存在" });
@@ -2303,12 +2308,12 @@ app.post("/api/ai-tutor/sessions/:id/abandon", authMiddleware, function (req, re
 });
 
 app.get("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   res.json({ ok: true, sessions: tutorListSessions.all(req.user.sub) });
 });
 
 app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   var mode = clipText(req.body && req.body.mode, 20) || "teacher";
   if (mode !== "examiner" && mode !== "teacher") mode = "teacher";
   var examMode = clipText(req.body && req.body.examMode, 20) || "";
@@ -2383,7 +2388,7 @@ app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
 });
 
 app.get("/api/ai-tutor/sessions/:id", authMiddleware, function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   var s = tutorGetSession.get(clipText(req.params.id, 64), req.user.sub);
   if (!s) return res.status(404).json({ error: "会话不存在" });
   var pack = null;
@@ -2397,7 +2402,7 @@ app.get("/api/ai-tutor/sessions/:id", authMiddleware, function (req, res) {
 });
 
 app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   var sessionId = clipText(req.body && req.body.sessionId, 64);
   var content = clipText(req.body && req.body.content, 8000);
   var audioSec = Math.max(0, Math.min(600, Number(req.body && req.body.audioSec) || 0));
@@ -2646,7 +2651,7 @@ app.post("/api/ai-word/ask", authMiddleware, async function (req, res) {
 });
 
 app.post("/api/ai-tutor/asr", authMiddleware, async function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   if (!DASHSCOPE_KEY) return res.status(503).json({ error: "DASHSCOPE_API_KEY 未配置" });
   var audio = clipText(req.body && req.body.audio, 12 * 1024 * 1024);
   var audioSec = Math.max(0, Math.min(600, Number(req.body && req.body.audioSec) || 0));
@@ -2697,7 +2702,7 @@ app.post("/api/ai-tutor/asr", authMiddleware, async function (req, res) {
 });
 
 app.post("/api/ai-tutor/tts", authMiddleware, async function (req, res) {
-  if (!studentOnly(req, res)) return;
+  if (!aiTutorAllowed(req, res)) return;
   if (!DASHSCOPE_KEY) return res.status(503).json({ error: "DASHSCOPE_API_KEY 未配置" });
   var text = clipText(req.body && req.body.text, 600);
   if (!text) return res.status(400).json({ error: "缺少 text" });
