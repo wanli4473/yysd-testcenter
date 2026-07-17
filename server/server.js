@@ -828,25 +828,151 @@ function buildTutorSystem(mode, examType, examPack) {
   );
 }
 
-function parseWritingGrade(raw) {
-  var m = String(raw || "").match(/WRITING_JSON:\s*(\{[\s\S]*\})/);
-  if (!m) return null;
-  try {
-    var o = JSON.parse(m[1]);
-    return {
-      overall: o.overall,
-      task: o.task,
-      coherence: o.coherence,
-      lexical: o.lexical,
-      grammar: o.grammar,
-      paragraphNotes: Array.isArray(o.paragraphNotes) ? o.paragraphNotes : [],
-      corrections: Array.isArray(o.corrections) ? o.corrections : [],
-      modelEssay: String(o.modelEssay || "").trim(),
-      comment: String(o.comment || "").trim()
-    };
-  } catch (e) {
-    return null;
+function clampBand(n) {
+  var x = Number(n);
+  if (!isFinite(x)) return null;
+  if (x < 0) x = 0;
+  if (x > 9) x = 9;
+  return Math.round(x * 2) / 2;
+}
+
+// Official IELTS Writing: overall = mean of 4 criteria, then nearest 0.5
+function overallFromCriteria(task, coherence, lexical, grammar) {
+  var parts = [task, coherence, lexical, grammar].map(Number).filter(isFinite);
+  if (parts.length !== 4) return null;
+  var avg = (parts[0] + parts[1] + parts[2] + parts[3]) / 4;
+  return Math.round(avg * 2) / 2;
+}
+
+function extractWritingJsonObject(raw) {
+  var s = String(raw || "").trim();
+  var marked = s.match(/WRITING_JSON:\s*(\{[\s\S]*\})/);
+  if (marked) s = marked[1];
+  else {
+    var fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenced) s = fenced[1].trim();
+    var start = s.indexOf("{");
+    var end = s.lastIndexOf("}");
+    if (start >= 0 && end > start) s = s.slice(start, end + 1);
   }
+  try {
+    return JSON.parse(s);
+  } catch (e1) {
+    // ponytail: modelEssay often breaks JSON with raw newlines — salvage scores/text fields
+    try {
+      var loose = s
+        .replace(/\r\n/g, "\n")
+        .replace(/[\u0000-\u001f]/g, function (ch) {
+          return ch === "\n" || ch === "\t" ? ch : "";
+        });
+      return JSON.parse(loose);
+    } catch (e2) {
+      return null;
+    }
+  }
+}
+
+function parseWritingGrade(raw) {
+  var o = extractWritingJsonObject(raw);
+  if (!o || typeof o !== "object") return null;
+  var task = clampBand(o.task);
+  var coherence = clampBand(o.coherence);
+  var lexical = clampBand(o.lexical);
+  var grammar = clampBand(o.grammar);
+  if (task == null || coherence == null || lexical == null || grammar == null) return null;
+  var overall = overallFromCriteria(task, coherence, lexical, grammar);
+  var criteriaNotes = o.criteriaNotes && typeof o.criteriaNotes === "object" ? o.criteriaNotes : {};
+  return {
+    overall: overall,
+    task: task,
+    coherence: coherence,
+    lexical: lexical,
+    grammar: grammar,
+    criteriaNotes: {
+      task: String(criteriaNotes.task || "").trim(),
+      coherence: String(criteriaNotes.coherence || "").trim(),
+      lexical: String(criteriaNotes.lexical || "").trim(),
+      grammar: String(criteriaNotes.grammar || "").trim()
+    },
+    paragraphNotes: Array.isArray(o.paragraphNotes) ? o.paragraphNotes.map(function (n) { return String(n || "").trim(); }).filter(Boolean) : [],
+    corrections: Array.isArray(o.corrections) ? o.corrections.map(function (c) {
+      return {
+        bad: String((c && c.bad) || "").trim(),
+        good: String((c && c.good) || "").trim(),
+        why: String((c && c.why) || "").trim()
+      };
+    }).filter(function (c) { return c.bad && c.good; }) : [],
+    modelEssay: String(o.modelEssay || "").trim(),
+    comment: String(o.comment || "").trim(),
+    nextSteps: Array.isArray(o.nextSteps) ? o.nextSteps.map(function (n) { return String(n || "").trim(); }).filter(Boolean) : []
+  };
+}
+
+function buildWritingGradeSystem(taskType, promptBody, chartBlock) {
+  var isT1 = taskType === "task1";
+  var taskName = isT1 ? "Task 1 (Academic)" : "Task 2";
+  var taskRubric = isT1
+    ? (
+      "Task Achievement (TA):\n" +
+      "- 5: addresses task only partially; limited overview; details may be irrelevant/inaccurate; may not cover key features.\n" +
+      "- 6: addresses requirements; presents overview; selects main features but may be mechanical; details may be inaccurate/irrelevant at times.\n" +
+      "- 7: covers requirements; clear overview; clearly presents & highlights key features; may under/over-generalise occasionally.\n" +
+      "- 8: covers all requirements sufficiently; clear well-selected key features; well-developed with accurate details.\n" +
+      "- 9: fully satisfies; insightful overview; key features clearly highlighted & fully extended.\n"
+    )
+    : (
+      "Task Response (TR):\n" +
+      "- 5: partially addresses; position unclear/repetitive; ideas limited; may lack focus; format may be inappropriate.\n" +
+      "- 6: addresses all parts though some more fully; relevant position; conclusions may be unclear/repetitive; ideas relevant but unevenly developed.\n" +
+      "- 7: addresses all parts; clear position throughout; presents/extends/supports main ideas but may over-generalise or lack focus at times.\n" +
+      "- 8: sufficiently addresses all parts; well-developed response; well-supported & extended ideas.\n" +
+      "- 9: fully addresses; fully developed position; relevant, fully extended & well-supported ideas.\n"
+    );
+  return (
+    "You are a certified IELTS Writing examiner for YYSD. Grade " + taskName + " using PUBLIC IELTS band descriptors only.\n" +
+    "Explanations/advice in Chinese; quote student English & write modelEssay in English.\n\n" +
+    "Rubric anchors (use these; do NOT default everything to 6.0):\n" +
+    taskRubric +
+    "Coherence & Cohesion (CC):\n" +
+    "- 5: organisation inadequate; limited progression; cohesive devices faulty/repetitive; paragraphing may be inadequate.\n" +
+    "- 6: arranges info coherently; clear overall progression; cohesive devices used but faulty/mechanical; referencing may be unclear; paragraphing may not always be logical.\n" +
+    "- 7: logically organised; clear progression; range of cohesive devices used well with occasional under/over-use; clear central topic per paragraph.\n" +
+    "- 8: sequences information skilfully; managed cohesion; paragraphing sufficient & appropriate.\n" +
+    "- 9: cohesion subtle; paragraphing skillful.\n" +
+    "Lexical Resource (LR):\n" +
+    "- 5: limited range; noticeable errors in word choice/formation that may cause difficulty; may be repetitive.\n" +
+    "- 6: adequate range for task; attempts less common vocab with some inaccuracy; some errors in spelling/word formation do not impede communication.\n" +
+    "- 7: sufficient range & flexibility; less common items with some awareness of style/collocation; occasional errors in word choice/spelling/formation.\n" +
+    "- 8: wide range fluently & flexibly; skilful uncommon items; rare errors only as 'slips'.\n" +
+    "- 9: full flexibility & precise use; natural & sophisticated control.\n" +
+    "Grammatical Range & Accuracy (GRA):\n" +
+    "- 5: limited range; frequent errors that may cause difficulty; complex sentences attempted but usually faulty.\n" +
+    "- 6: mix of simple & complex; errors occur but rarely impede communication; complex structures may lack flexibility.\n" +
+    "- 7: variety of complex structures; frequent error-free sentences; good control with occasional errors.\n" +
+    "- 8: wide range; majority error-free; rare slips.\n" +
+    "- 9: full flexibility & accuracy; rare minor errors as slips.\n\n" +
+    "Scoring rules:\n" +
+    "- Each criterion 0–9 in 0.5 steps. Differ scores when evidence differs; do not copy sample numbers.\n" +
+    "- Under-length (<150 T1 / <250 T2) must lower TA/TR.\n" +
+    "- Off-topic or memorised material: lower TA/TR sharply.\n" +
+    "- overall MUST equal the mean of the four criteria, rounded to nearest 0.5 (official method).\n" +
+    "- Be fair like an examiner: neither flattering nor stuck at 6.0.\n" +
+    (chartBlock
+      ? "- Task 1 chart image is NOT visible; use captions only and be conservative on TA data accuracy.\n"
+      : "") +
+    "\nQuestion prompt:\n" + promptBody + "\n" + chartBlock +
+    "\nReturn ONLY one line starting with WRITING_JSON: then a single JSON object (no markdown, no prose outside JSON). " +
+    "Escape newlines inside strings as \\n. Schema:\n" +
+    "WRITING_JSON:{" +
+    "\"overall\":6.5,\"task\":6.5,\"coherence\":6.0,\"lexical\":7.0,\"grammar\":6.5," +
+    "\"comment\":\"中文总评（对照四项，说明为何是这个总分）\"," +
+    "\"criteriaNotes\":{\"task\":\"中文：对照TA/TR描述语说明为何给该分\"," +
+    "\"coherence\":\"中文：对照CC\",\"lexical\":\"中文：对照LR\",\"grammar\":\"中文：对照GRA\"}," +
+    "\"paragraphNotes\":[\"段1：中文具体优缺点\",\"段2：...\"]," +
+    "\"corrections\":[{\"bad\":\"exact student phrase\",\"good\":\"improved English\",\"why\":\"中文原因（语法/词汇/连贯）\"}]," +
+    "\"nextSteps\":[\"中文可执行改进建议1\",\"建议2\",\"建议3\"]," +
+    "\"modelEssay\":\"Band 8-ish model answer for THIS prompt only, English, use \\\\n between paragraphs\"}"
+  );
 }
 
 app.get("/api/health", function (req, res) {
@@ -1713,16 +1839,18 @@ app.put("/api/scores/:itemId", authMiddleware, function (req, res) {
   res.json({ ok: true, score: rec });
 });
 
-async function qwenChatMessages(messages, temperature) {
+async function qwenChatMessages(messages, temperature, maxTokens) {
   if (!DASHSCOPE_KEY) throw new Error("DASHSCOPE_API_KEY 未配置");
+  var body = {
+    model: DASHSCOPE_MODEL,
+    messages: messages,
+    temperature: temperature == null ? 0.2 : temperature
+  };
+  if (maxTokens) body.max_tokens = maxTokens;
   var res = await fetch(DASHSCOPE_URL, {
     method: "POST",
     headers: { Authorization: "Bearer " + DASHSCOPE_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: DASHSCOPE_MODEL,
-      messages: messages,
-      temperature: temperature == null ? 0.2 : temperature
-    })
+    body: JSON.stringify(body)
   });
   var data = await res.json();
   if (!res.ok) throw new Error((data && data.error && data.error.message) || "DashScope 请求失败");
@@ -2113,30 +2241,27 @@ app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res
   var chartBlock = "";
   if (chartNote) {
     chartBlock =
-      "Chart / figure captions (you cannot see the actual image; grade Task Achievement conservatively from this text only):\n" +
+      "Chart / figure captions (image not visible — grade TA data accuracy conservatively from captions only):\n" +
       chartNote + "\n";
   }
-  var system =
-    "You are an IELTS Writing examiner and teacher for YYSD. Reply mainly in Chinese for explanations; " +
-    "keep example sentences and the model essay in English. Grade " + (taskType === "task1" ? "Task 1" : "Task 2") + ". " +
-    "Prompt:\n" + promptBody + "\n" + chartBlock +
-    "Return useful feedback, then on its own final line exactly: " +
-    "WRITING_JSON:{\"overall\":6.0,\"task\":6.0,\"coherence\":6.0,\"lexical\":6.0,\"grammar\":6.0," +
-    "\"comment\":\"简短总评\",\"paragraphNotes\":[\"段1批注\",\"段2批注\"]," +
-    "\"corrections\":[{\"bad\":\"原句\",\"good\":\"改写\",\"why\":\"原因\"}]," +
-    "\"modelEssay\":\"full model essay in English\"} " +
-    "Bands 0-9 in 0.5 steps; be conservative.";
+  var system = buildWritingGradeSystem(taskType, promptBody, chartBlock);
+  var userMsg =
+    "Student essay to grade (do not invent missing sentences):\n\n" + essay +
+    "\n\nRespond with WRITING_JSON: only.";
   try {
     var raw = await qwenChatMessages([
       { role: "system", content: system },
-      { role: "user", content: essay }
-    ], 0.35);
+      { role: "user", content: userMsg }
+    ], 0.25, 4500);
     bumpUsage(req.user.sub, { text: 1 });
     var grade = parseWritingGrade(raw);
-    var prose = String(raw || "").replace(/\n?WRITING_JSON:\s*\{[\s\S]*\}\s*$/, "").trim();
+    if (!grade) {
+      console.error("[yysd-api] writing-grade parse fail", String(raw || "").slice(0, 400));
+      return res.status(502).json({ error: "批改结果解析失败，请重试" });
+    }
     res.json({
       ok: true,
-      feedback: prose,
+      feedback: "",
       grade: grade,
       prompt: { id: promptMeta.id, title: promptMeta.title, taskType: taskType },
       quota: quotaPayload(getUsage(req.user.sub))

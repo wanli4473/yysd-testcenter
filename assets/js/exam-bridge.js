@@ -362,12 +362,22 @@
       var g = d && d.grade;
       var html = "";
       if (g) {
-        html += '<div class="yysd-ai-grade__score"><h4>写作评分 · Overall ' + escHtml(g.overall) + "</h4><dl>" +
+        html += '<div class="yysd-ai-grade__score"><h4>写作评分 · Overall ' + escHtml(g.overall) +
+          " <span style=\"font-weight:500;font-size:12px;color:#64748b\">（AI 估分 · 非正式考分）</span></h4><dl>" +
           "<dt>Task</dt><dd>" + escHtml(g.task) + "</dd>" +
           "<dt>Coherence</dt><dd>" + escHtml(g.coherence) + "</dd>" +
           "<dt>Lexical</dt><dd>" + escHtml(g.lexical) + "</dd>" +
           "<dt>Grammar</dt><dd>" + escHtml(g.grammar) + "</dd></dl>" +
           (g.comment ? "<p>" + escHtml(g.comment) + "</p>" : "") + "</div>";
+        var cn = g.criteriaNotes || {};
+        if (cn.task || cn.coherence || cn.lexical || cn.grammar) {
+          html += "<h4>对照官方四项说明</h4><ul>" +
+            (cn.task ? "<li><b>Task</b>：" + escHtml(cn.task) + "</li>" : "") +
+            (cn.coherence ? "<li><b>Coherence</b>：" + escHtml(cn.coherence) + "</li>" : "") +
+            (cn.lexical ? "<li><b>Lexical</b>：" + escHtml(cn.lexical) + "</li>" : "") +
+            (cn.grammar ? "<li><b>Grammar</b>：" + escHtml(cn.grammar) + "</li>" : "") +
+            "</ul>";
+        }
         if (g.paragraphNotes && g.paragraphNotes.length) {
           html += "<h4>逐段批注</h4><ul>" + g.paragraphNotes.map(function (n) {
             return "<li>" + escHtml(n) + "</li>";
@@ -379,12 +389,19 @@
               (c.why ? "（" + escHtml(c.why) + "）" : "") + "</li>";
           }).join("") + "</ul>";
         }
+        if (g.nextSteps && g.nextSteps.length) {
+          html += "<h4>提分建议</h4><ul>" + g.nextSteps.map(function (n) {
+            return "<li>" + escHtml(n) + "</li>";
+          }).join("") + "</ul>";
+        }
         if (g.modelEssay) {
-          html += "<h4>改写范文</h4><pre class=\"yysd-ai-grade__model\">" + escHtml(g.modelEssay) + "</pre>";
+          html += "<h4>同题高分范文</h4><pre class=\"yysd-ai-grade__model\">" + escHtml(g.modelEssay) + "</pre>";
         }
       }
-      if (d && d.feedback) {
-        html += "<div class=\"yysd-ai-grade__feedback\">" + escHtml(d.feedback) + "</div>";
+      // ponytail: ignore raw LLM dumps that look like failed JSON payloads
+      var fb = d && d.feedback ? String(d.feedback).trim() : "";
+      if (fb && fb.indexOf("WRITING_JSON") < 0 && fb.charAt(0) !== "{") {
+        html += "<div class=\"yysd-ai-grade__feedback\">" + escHtml(fb) + "</div>";
       }
       return html || "<p>未返回结构化评分，请重试</p>";
     }
