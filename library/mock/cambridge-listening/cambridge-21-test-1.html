@@ -20,6 +20,23 @@
   .timer.warn { background:#e67e22; } .timer.danger { background:#c0392b; animation:pulse 1s infinite; }
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
   .container { max-width:1080px; margin:24px auto; padding:0 24px; }
+  .container.practice-wide { max-width:1280px; }
+
+  /* 练习模式：左题右文 */
+  .practice-split { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+  .practice-split.exam-mode { display:block; }
+  .practice-split.exam-mode .transcript-pane { display:none; }
+  .transcript-pane { background:#fff; border:1px solid #e2e8f0; border-radius:12px; position:sticky; top:140px; max-height:calc(100vh - 160px); display:flex; flex-direction:column; box-shadow:0 4px 18px rgba(0,0,0,.04); }
+  .transcript-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-bottom:1px solid #eef2f7; flex-shrink:0; }
+  .transcript-head .th-title { font-size:14px; font-weight:700; color:#1b4f8a; }
+  .transcript-toggle { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:#33475b; cursor:pointer; user-select:none; }
+  .transcript-toggle input { width:16px; height:16px; accent-color:#2563eb; }
+  .transcript-body { overflow:auto; padding:14px 16px 20px; line-height:1.75; font-size:14.5px; color:#243447; }
+  .transcript-body.hidden { display:none; }
+  .tx-sent { display:block; width:100%; text-align:left; border:none; background:transparent; padding:6px 8px; margin:0 0 2px; border-radius:8px; cursor:pointer; color:inherit; font:inherit; line-height:1.75; }
+  .tx-sent:hover { background:#f0f6ff; }
+  .tx-sent.active { background:#dbeafe; color:#0f3d7a; font-weight:600; }
+  .tx-empty { color:#8a96a5; font-size:13.5px; padding:12px 4px; }
 
   /* 封面 */
   .cover-hero { display:flex; align-items:center; gap:24px; background:#fff; border-radius:16px; padding:26px 30px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
@@ -227,8 +244,19 @@
     <div class="audio-note" id="aNote">🔊 点击各部分的「▶ 听本部分录音」可单独播放该部分；模考模式下会自动连播。</div>
     <audio id="player" preload="none"></audio>
   </div>
-  <div id="questionsHolder"></div>
-  <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+  <div class="practice-split exam-mode" id="practiceSplit">
+    <div id="questionsCol">
+      <div id="questionsHolder"></div>
+      <button class="submit-btn" onclick="confirmSubmit()">提交并查看批改报告</button>
+    </div>
+    <aside class="transcript-pane" id="transcriptPane" aria-label="听力原文">
+      <div class="transcript-head">
+        <span class="th-title">原文 · Section <span id="txSecLabel">1</span></span>
+        <label class="transcript-toggle"><input type="checkbox" id="txShow" checked onchange="toggleTranscript()"> 显示原文</label>
+      </div>
+      <div class="transcript-body" id="transcriptBody"><div class="tx-empty">加载原文中…</div></div>
+    </aside>
+  </div>
 </div>
 
 <!-- 结果区 -->
@@ -913,7 +941,14 @@ function startTest(m){
   document.getElementById('coverArea').style.display='none';
   document.getElementById('resultArea').style.display='none';
   document.getElementById('testArea').style.display='block';
+  document.getElementById('testArea').classList.toggle('practice-wide', m==='practice');
+  const split=document.getElementById('practiceSplit');
+  split.classList.toggle('exam-mode', m!=='practice');
+  document.getElementById('aNote').textContent = m==='practice'
+    ? '🔊 练习模式：右侧可看原文；点击句子会跳到对应音频位置。也可点「▶ 听本部分录音」。'
+    : '🔊 点击各部分的「▶ 听本部分录音」可单独播放该部分；模考模式下会自动连播。';
   renderPaper(); setupTimer(); initAudio();
+  if(m==='practice') loadTranscriptData();
   window.scrollTo(0,0);
 }
 
@@ -921,6 +956,7 @@ function renderPaper(){
   document.getElementById('testTitle').textContent=`剑桥雅思21 · Test 1 — 听力`;
   document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
   document.getElementById('questionsHolder').innerHTML = currentPaper.map(sectionHtml).join('');
+  if(mode==='practice') renderTranscript(curAudioSec||currentPaper[0].id);
 }
 function sectionHtml(s){
   return `<div class="section-banner" id="anchor_${s.id}">
@@ -994,18 +1030,20 @@ function fmt(s){ const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+
 
 /* 音频（真实文件，每部分一段；模考自动连播） */
 let curAudioSec=null;
+let TRANSCRIPT=null, txActiveIdx=-1;
 const player=document.getElementById('player');
 function initAudio(){ curAudioSec=currentPaper[0].id; loadSection(curAudioSec,false); paintAudio(); }
 function loadSection(id,autoplay){
   curAudioSec=id; const s=TEST.sections.find(x=>x.id===id);
   if(!s||!s.audio){console.warn('loadSection: missing section',id);return;}
   player.src=s.audio; document.getElementById('aCur').textContent='Section '+id;
+  if(mode==='practice') renderTranscript(id);
   if(autoplay){ player.play().catch(()=>{}); }
 }
 function playSection(id){ loadSection(id,true); document.getElementById('aPlay').textContent='⏸'; const a=document.getElementById('anchor_'+id); if(a) a.scrollIntoView({behavior:'smooth',block:'start'}); }
 function togglePlay(){ if(player.paused){ player.play().catch(()=>{}); document.getElementById('aPlay').textContent='⏸'; } else { player.pause(); document.getElementById('aPlay').textContent='▶'; } }
 function seekAudio(e){ if(!player.duration) return; const r=document.getElementById('aProg').getBoundingClientRect(); player.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*player.duration; }
-player.addEventListener('timeupdate',paintAudio);
+player.addEventListener('timeupdate',()=>{ paintAudio(); syncTranscriptHighlight(); });
 player.addEventListener('play',()=>document.getElementById('aPlay').textContent='⏸');
 player.addEventListener('pause',()=>document.getElementById('aPlay').textContent='▶');
 player.addEventListener('ended',()=>{
@@ -1013,6 +1051,80 @@ player.addEventListener('ended',()=>{
   if(mode==='exam'){ const idx=currentPaper.findIndex(s=>s.id===curAudioSec); if(idx>-1&&idx<currentPaper.length-1) loadSection(currentPaper[idx+1].id,true); }
 });
 function paintAudio(){ const d=player.duration||0,c=player.currentTime||0; document.getElementById('aFill').style.width=(d?c/d*100:0)+'%'; document.getElementById('aTime').textContent=fmt(Math.floor(c))+' / '+fmt(Math.floor(d)); }
+
+/* 练习模式原文同步 */
+function loadTranscriptData(){
+  if(TRANSCRIPT){ renderTranscript(curAudioSec); return; }
+  fetch('cambridge-21-test-1-transcript.json').then(r=>{
+    if(!r.ok) throw new Error('transcript missing');
+    return r.json();
+  }).then(data=>{ TRANSCRIPT=data; renderTranscript(curAudioSec); })
+    .catch(()=>{ document.getElementById('transcriptBody').innerHTML='<div class="tx-empty">原文暂不可用。</div>'; });
+}
+function txPart(secId){
+  if(!TRANSCRIPT) return null;
+  return (TRANSCRIPT.parts||[]).find(p=>p.section===secId)||null;
+}
+function renderTranscript(secId){
+  const body=document.getElementById('transcriptBody');
+  const show=document.getElementById('txShow');
+  document.getElementById('txSecLabel').textContent=secId||'—';
+  if(show && !show.checked){ body.classList.add('hidden'); return; }
+  body.classList.remove('hidden');
+  const part=txPart(secId);
+  if(!part){ body.innerHTML='<div class="tx-empty">该部分原文加载中…</div>'; return; }
+  body.innerHTML=part.sentences.map((s,i)=>
+    `<button type="button" class="tx-sent" data-i="${i}" data-start="${s.start}" onclick="seekTranscript(${s.start},${i})">${escapeHtml(s.text)}</button>`
+  ).join('');
+  txActiveIdx=-1; syncTranscriptHighlight();
+}
+function escapeHtml(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toggleTranscript(){
+  const on=document.getElementById('txShow').checked;
+  const body=document.getElementById('transcriptBody');
+  if(!on) body.classList.add('hidden');
+  else { body.classList.remove('hidden'); renderTranscript(curAudioSec); }
+}
+function seekTranscript(t,i){
+  if(!isFinite(t)) return;
+  const apply=()=>{
+    try { player.currentTime=Math.max(0, Number(t)); } catch(e) {}
+    player.play().catch(()=>{});
+  };
+  apply();
+  // ponytail: some MP3s need a second apply after canplay when seek index was missing
+  if(!(player.seekable.length && player.seekable.end(0) > t)){
+    const once=()=>{ apply(); player.removeEventListener('canplay', once); };
+    player.addEventListener('canplay', once);
+  }
+  setTranscriptActive(i);
+}
+function setTranscriptActive(i){
+  if(i===txActiveIdx) return;
+  const body=document.getElementById('transcriptBody');
+  const prev=body.querySelector('.tx-sent.active');
+  if(prev) prev.classList.remove('active');
+  const el=body.querySelector(`.tx-sent[data-i="${i}"]`);
+  if(el){ el.classList.add('active');
+    const br=body.getBoundingClientRect(), er=el.getBoundingClientRect();
+    if(er.top<br.top+8 || er.bottom>br.bottom-8) el.scrollIntoView({block:'nearest', behavior:'smooth'});
+  }
+  txActiveIdx=i;
+}
+function syncTranscriptHighlight(){
+  if(mode!=='practice' || !document.getElementById('txShow').checked) return;
+  const part=txPart(curAudioSec);
+  if(!part || !part.sentences.length) return;
+  const t=player.currentTime||0;
+  let idx=-1;
+  for(let i=0;i<part.sentences.length;i++){
+    const s=part.sentences[i];
+    if(t>=s.start && t<s.end){ idx=i; break; }
+    if(t>=s.start) idx=i;
+  }
+  if(idx<0) idx=0;
+  setTranscriptActive(idx);
+}
 
 /* 批改 */
 function norm(s){ return (s||'').toString().toLowerCase().replace(/[£$,.;:!?"'’]/g,'').replace(/\s+/g,' ').trim().replace(/^(a|an|the)\s+/,''); }

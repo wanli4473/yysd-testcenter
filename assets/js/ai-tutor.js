@@ -15,6 +15,7 @@
   var examPack = null;
   var bank = null;
   var writingBank = null;
+  var lastQuota = null;
   var busy = false;
   var audioUnlocked = false;
   var lastAssistantText = "";
@@ -46,12 +47,14 @@
 
   var elQuota = document.getElementById("quota-box");
   var elQuotaHub = document.getElementById("quota-hub");
+  var elQuotaWriting = document.getElementById("quota-writing");
   var elList = document.getElementById("session-list");
   var elMsgs = document.getElementById("messages");
   var elHint = document.getElementById("status-hint");
   var elInput = document.getElementById("input");
   var elMic = document.getElementById("btn-mic");
   var elSend = document.getElementById("btn-send");
+  var elGrade = document.getElementById("btn-grade");
   var elPicker = document.getElementById("topic-picker");
   var elPracticeBar = document.getElementById("practice-bar");
   var elInputRow = document.getElementById("input-row");
@@ -71,6 +74,19 @@
     elHint.className = "ai-room__hint-inline" + (kind ? " is-" + kind : "");
   }
 
+  // ponytail: quota UX — one place for 429 copy so buttons don't look "dead"
+  function quotaMsg(msg) {
+    msg = String(msg || "今日额度已用完");
+    if (/明日|明天/.test(msg)) return msg;
+    if (/上限|用完|额度|quota/i.test(msg)) return msg.replace(/[。！!]?$/, "") + "，明日再来";
+    return msg;
+  }
+
+  function looksLikeJsonLeak(s) {
+    s = String(s || "").trim();
+    return !s ? false : (s.indexOf("WRITING_JSON") >= 0 || s.charAt(0) === "{" || s.charAt(0) === "[");
+  }
+
   function api(path, opts) {
     opts = opts || {};
     var headers = opts.headers || { "Content-Type": "application/json" };
@@ -87,8 +103,10 @@
           throw new Error("服务器返回异常（" + r.status + "）");
         }
         if (!r.ok) {
-          var err = new Error((d && d.error) || "请求失败");
+          var raw = (d && d.error) || "请求失败";
+          var err = new Error(r.status === 429 ? quotaMsg(raw) : raw);
           err.quota = d && d.quota;
+          err.status = r.status;
           throw err;
         }
         return d;
@@ -156,17 +174,48 @@
   }
 
   function renderQuota(q) {
+    if (q) lastQuota = q;
     var html;
+    var exhausted = false;
     if (!q) html = "额度加载失败";
     else if (q.unlimited) html = "管理员账号：AI 口语 / 写作额度不限";
     else {
+      exhausted = (q.textLeft <= 0 && q.voiceSecLeft <= 0 && q.fullMockLeft <= 0);
       html =
         "今日剩余：文字 <b>" + q.textLeft + "</b>/" + q.textLimit +
         " · 语音 <b>" + Math.floor(q.voiceSecLeft / 60) + ":" + String(q.voiceSecLeft % 60).padStart(2, "0") + "</b>" +
         " · 模考 <b>" + q.fullMockLeft + "</b>/" + q.fullMockLimit;
+      if (exhausted) html += " · <b>今日已用完，明日再来</b>";
+      else if (q.textLeft <= 0) html += " · 文字额度已用完，明日再来";
     }
     if (elQuota) elQuota.innerHTML = html;
     if (elQuotaHub) elQuotaHub.innerHTML = html;
+    if (elQuotaWriting) elQuotaWriting.innerHTML = html;
+    applyQuotaControls();
+  }
+
+  function applyQuotaControls() {
+    var q = lastQuota;
+    var unlimited = !!(q && q.unlimited);
+    var textGone = !!(q && !unlimited && q.textLeft <= 0);
+    var voiceGone = !!(q && !unlimited && q.voiceSecLeft <= 0);
+    if (elSend) {
+      elSend.disabled = busy || textGone;
+      if (textGone) elSend.title = "今日文字额度已用完，明日再来";
+      else elSend.removeAttribute("title");
+    }
+    if (elMic) {
+      // keep stoppable while recording even if voice quota just hit
+      var micOn = elMic.classList.contains("is-on");
+      elMic.disabled = !micOn && (busy || voiceGone);
+      if (voiceGone && !micOn) elMic.title = "今日语音额度已用完，明日再来";
+      else elMic.removeAttribute("title");
+    }
+    if (elGrade) {
+      elGrade.disabled = busy || textGone;
+      if (textGone) elGrade.title = "今日文字额度已用完，明日再来";
+      else elGrade.removeAttribute("title");
+    }
   }
 
   function loadQuota() {
@@ -352,6 +401,17 @@
     }
   }
 
+  function reopenMockMic(msg) {
+    if (track !== "mock" || phase === "done" || phase === "part2_prep") return;
+    setExamStatus((msg || "出错") + " — 请再答一次");
+    // next tick: busy may still be clearing in sendChat.finally
+    setTimeout(function () {
+      if (track !== "mock" || phase === "done" || phase === "part2_prep") return;
+      if (recorder && recorder.state === "recording") return;
+      startRec({ auto: true, part2: inPart2Speak });
+    }, 80);
+  }
+
   function finishRec(reason) {
     clearSilenceWatch();
     clearHardStop();
@@ -385,6 +445,7 @@
         var reason = recorder._stopReason || "manual";
         elMic.classList.remove("is-on");
         elMic.setAttribute("aria-pressed", "false");
+        applyQuotaControls();
         document.getElementById("btn-exam-submit").hidden = true;
         var sec = Math.max(1, Math.round((Date.now() - recStartedAt) / 1000));
         var blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
@@ -435,6 +496,7 @@
           if (e.quota) renderQuota(e.quota);
           hint(e.message || "语音识别失败", "error");
           setExamStatus(e.message || "识别失败");
+          reopenMockMic(e.message || "识别失败");
         });
       };
 
@@ -442,6 +504,7 @@
       recStartedAt = Date.now();
       elMic.classList.add("is-on");
       elMic.setAttribute("aria-pressed", "true");
+      applyQuotaControls();
 
       if (opts.auto) {
         document.getElementById("btn-exam-submit").hidden = false;
@@ -478,7 +541,7 @@
     if (busy) return Promise.resolve();
     if (!sessionId) return Promise.resolve();
     busy = true;
-    elSend.disabled = true;
+    applyQuotaControls();
     var body = {
       sessionId: sessionId,
       content: opts.content || "",
@@ -501,7 +564,7 @@
       currentQ = d.reply || "";
       // release busy before auto-mic / TTS follow-up so the next turn can open mic
       busy = false;
-      elSend.disabled = false;
+      applyQuotaControls();
       if (track !== "mock") {
         appendMsg("assistant", d.reply || "", d.score ? { score: d.score } : null);
       }
@@ -521,9 +584,10 @@
       if (e.quota) renderQuota(e.quota);
       hint(e.message || "发送失败", "error");
       setExamStatus(e.message || "发送失败");
+      reopenMockMic(e.message || "发送失败");
     }).then(function () {
       busy = false;
-      elSend.disabled = false;
+      applyQuotaControls();
       loadSessions();
     });
   }
@@ -697,11 +761,17 @@
       btn.type = "button";
       btn.className = s.id === sessionId ? "is-active" : "";
       var st = s.status === "incomplete" ? "未完成" : (s.status === "complete" ? "已完成" : "");
+      var noResume = s.status === "incomplete" &&
+        (s.exam_mode === "mock" || (s.mode === "examiner" && s.exam_mode === "practice"));
       btn.innerHTML = "<span>" + esc(s.title || "会话") + '</span><span class="meta">' +
         esc(st + " · " + String(s.updated_at || "").slice(0, 16).replace("T", " ")) + "</span>";
+      if (noResume) {
+        btn.disabled = true;
+        btn.title = "未完成，不可续考 — 请重新开一场";
+      }
       btn.addEventListener("click", function () {
-        if (s.status === "incomplete") {
-          hint("该模考未完成，不可续考，请重新开一场", "error");
+        if (noResume) {
+          hint("未完成，不可续考 — 请重新开一场", "error");
           return;
         }
         openSession(s.id);
@@ -741,6 +811,7 @@
     if (!p2el) { hint("请选择 1 个 Part 2 话题", "error"); return; }
     if (busy) return;
     busy = true;
+    applyQuotaControls();
     hint("正在组卷…");
     api("/api/ai-tutor/sessions", {
       method: "POST",
@@ -760,12 +831,13 @@
     }).catch(function (e) {
       if (e.quota) renderQuota(e.quota);
       hint(e.message || "开始失败", "error");
-    }).then(function () { busy = false; });
+    }).then(function () { busy = false; applyQuotaControls(); });
   }
 
   function startTutor() {
     if (busy) return;
     busy = true;
+    applyQuotaControls();
     api("/api/ai-tutor/sessions", { method: "POST", body: { mode: "teacher" } })
       .then(function (d) {
         if (d.quota) renderQuota(d.quota);
@@ -778,13 +850,18 @@
       }).catch(function (e) {
         if (e.quota) renderQuota(e.quota);
         hint(e.message || "创建失败", "error");
-      }).then(function () { busy = false; });
+      }).then(function () { busy = false; applyQuotaControls(); });
   }
 
   function startMock() {
     if (busy) return;
+    if (lastQuota && !lastQuota.unlimited && lastQuota.fullMockLeft <= 0) {
+      hint("今日模考次数已用完，明日再来", "error");
+      return;
+    }
     turnLog = [];
     busy = true;
+    applyQuotaControls();
     openMockOverlay();
     setExamStatus("正在组卷…");
     api("/api/ai-tutor/sessions", { method: "POST", body: { mode: "examiner", examMode: "mock" } })
@@ -800,7 +877,7 @@
         setExamStatus(e.message || "开始失败");
         closeMockOverlay();
         showView("speaking-home");
-      }).then(function () { busy = false; });
+      }).then(function () { busy = false; applyQuotaControls(); });
   }
 
   function abandonMock() {
@@ -820,7 +897,9 @@
         sessionId = null;
         closeMockOverlay();
         showView("speaking-home");
+        hint("本场已放弃（未完成），不可续考；可重新开一场");
         loadQuota();
+        loadSessions();
       });
   }
 
@@ -859,6 +938,15 @@
     var promptId = document.getElementById("w-prompt").value;
     var essay = document.getElementById("w-essay").value.trim();
     if (!essay) { wh.textContent = "请粘贴作文"; wh.className = "ai-write__hint is-error"; return; }
+    if (lastQuota && !lastQuota.unlimited && lastQuota.textLeft <= 0) {
+      wh.textContent = "今日文字额度已用完，明日再来";
+      wh.className = "ai-write__hint is-error";
+      applyQuotaControls();
+      return;
+    }
+    if (busy) return;
+    busy = true;
+    applyQuotaControls();
     wh.textContent = "批改中…";
     wh.className = "ai-write__hint";
     api("/api/ai-tutor/writing-grade", {
@@ -869,51 +957,61 @@
       wh.textContent = "";
       var g = d.grade;
       var html = "";
-      if (g) {
-        html += '<div class="ai-score"><h3>写作评分 · Overall ' + esc(g.overall) + "</h3><dl>" +
+      if (g && !looksLikeJsonLeak(g.overall)) {
+        html += '<div class="ai-score"><h3>写作评分 · Overall ' + esc(g.overall) +
+          ' <span style="font-weight:500;font-size:12px;color:#64748b">（AI 估分 · 非正式考分）</span></h3><dl>' +
           "<dt>Task</dt><dd>" + esc(g.task) + "</dd>" +
           "<dt>Coherence</dt><dd>" + esc(g.coherence) + "</dd>" +
           "<dt>Lexical</dt><dd>" + esc(g.lexical) + "</dd>" +
           "<dt>Grammar</dt><dd>" + esc(g.grammar) + "</dd></dl>" +
-          (g.comment ? "<p>" + esc(g.comment) + "</p>" : "") + "</div>";
+          (g.comment && !looksLikeJsonLeak(g.comment) ? "<p>" + esc(g.comment) + "</p>" : "") + "</div>";
         var cn = g.criteriaNotes || {};
         if (cn.task || cn.coherence || cn.lexical || cn.grammar) {
           html += "<h3>对照官方四项说明</h3><ul>" +
-            (cn.task ? "<li><b>Task</b>：" + esc(cn.task) + "</li>" : "") +
-            (cn.coherence ? "<li><b>Coherence</b>：" + esc(cn.coherence) + "</li>" : "") +
-            (cn.lexical ? "<li><b>Lexical</b>：" + esc(cn.lexical) + "</li>" : "") +
-            (cn.grammar ? "<li><b>Grammar</b>：" + esc(cn.grammar) + "</li>" : "") +
+            (cn.task && !looksLikeJsonLeak(cn.task) ? "<li><b>Task</b>：" + esc(cn.task) + "</li>" : "") +
+            (cn.coherence && !looksLikeJsonLeak(cn.coherence) ? "<li><b>Coherence</b>：" + esc(cn.coherence) + "</li>" : "") +
+            (cn.lexical && !looksLikeJsonLeak(cn.lexical) ? "<li><b>Lexical</b>：" + esc(cn.lexical) + "</li>" : "") +
+            (cn.grammar && !looksLikeJsonLeak(cn.grammar) ? "<li><b>Grammar</b>：" + esc(cn.grammar) + "</li>" : "") +
             "</ul>";
         }
         if (g.paragraphNotes && g.paragraphNotes.length) {
-          html += "<h3>逐段批注</h3><ul>" + g.paragraphNotes.map(function (n) {
+          html += "<h3>逐段批注</h3><ul>" + g.paragraphNotes.filter(function (n) { return !looksLikeJsonLeak(n); }).map(function (n) {
             return "<li>" + esc(n) + "</li>";
           }).join("") + "</ul>";
         }
         if (g.corrections && g.corrections.length) {
-          html += "<h3>用词 / 语法纠错</h3><ul>" + g.corrections.map(function (c) {
+          html += "<h3>用词 / 语法纠错</h3><ul>" + g.corrections.filter(function (c) {
+            return c && !looksLikeJsonLeak(c.bad) && !looksLikeJsonLeak(c.good);
+          }).map(function (c) {
             return "<li><s>" + esc(c.bad) + "</s> → <b>" + esc(c.good) + "</b>" +
               (c.why ? "（" + esc(c.why) + "）" : "") + "</li>";
           }).join("") + "</ul>";
         }
         if (g.nextSteps && g.nextSteps.length) {
-          html += "<h3>提分建议</h3><ul>" + g.nextSteps.map(function (n) {
+          html += "<h3>提分建议</h3><ul>" + g.nextSteps.filter(function (n) { return !looksLikeJsonLeak(n); }).map(function (n) {
             return "<li>" + esc(n) + "</li>";
           }).join("") + "</ul>";
         }
-        if (g.modelEssay) {
+        if (g.modelEssay && !looksLikeJsonLeak(g.modelEssay)) {
           html += "<h3>同题高分范文</h3><pre class=\"ai-write__model\">" + esc(g.modelEssay) + "</pre>";
         }
       }
       var fb = d.feedback ? String(d.feedback).trim() : "";
-      if (fb && fb.indexOf("WRITING_JSON") < 0 && fb.charAt(0) !== "{") {
+      if (fb && !looksLikeJsonLeak(fb)) {
         html += "<div class=\"ai-write__hint\">" + esc(fb) + "</div>";
       }
-      document.getElementById("w-result").innerHTML = html || "<p>未返回结构化评分，请重试</p>";
+      var emptyMsg = lastQuota && !lastQuota.unlimited && lastQuota.textLeft <= 0
+        ? "批改结果不完整（今日文字额度已用完，明日再来）"
+        : "未返回结构化评分，请再点一次「提交批改」重试";
+      document.getElementById("w-result").innerHTML = html || "<p>" + emptyMsg + "</p>";
+      if (!html) wh.textContent = emptyMsg;
     }).catch(function (e) {
       if (e.quota) renderQuota(e.quota);
-      wh.textContent = e.message || "批改失败";
+      wh.textContent = (e.message || "批改失败") + (e.status === 502 ? " — 可再点提交重试" : "");
       wh.className = "ai-write__hint is-error";
+    }).then(function () {
+      busy = false;
+      applyQuotaControls();
     });
   }
 

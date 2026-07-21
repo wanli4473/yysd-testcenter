@@ -263,6 +263,7 @@
     var writingObserved = false;
     var gradeReqSeq = 0;
     var gradePending = {};
+    var gradeTimers = {};
 
     function hookWritingStart() {
       var fn = window.startTest;
@@ -358,52 +359,59 @@
       return el ? plainPrompt(el.innerHTML) : "";
     }
 
+    function looksLikeJsonLeak(s) {
+      s = String(s || "").trim();
+      return !s ? false : (s.indexOf("WRITING_JSON") >= 0 || s.charAt(0) === "{" || s.charAt(0) === "[");
+    }
+
     function renderGradeHtml(d) {
       var g = d && d.grade;
       var html = "";
-      if (g) {
+      if (g && !looksLikeJsonLeak(g.overall)) {
         html += '<div class="yysd-ai-grade__score"><h4>写作评分 · Overall ' + escHtml(g.overall) +
           " <span style=\"font-weight:500;font-size:12px;color:#64748b\">（AI 估分 · 非正式考分）</span></h4><dl>" +
           "<dt>Task</dt><dd>" + escHtml(g.task) + "</dd>" +
           "<dt>Coherence</dt><dd>" + escHtml(g.coherence) + "</dd>" +
           "<dt>Lexical</dt><dd>" + escHtml(g.lexical) + "</dd>" +
           "<dt>Grammar</dt><dd>" + escHtml(g.grammar) + "</dd></dl>" +
-          (g.comment ? "<p>" + escHtml(g.comment) + "</p>" : "") + "</div>";
+          (g.comment && !looksLikeJsonLeak(g.comment) ? "<p>" + escHtml(g.comment) + "</p>" : "") + "</div>";
         var cn = g.criteriaNotes || {};
         if (cn.task || cn.coherence || cn.lexical || cn.grammar) {
           html += "<h4>对照官方四项说明</h4><ul>" +
-            (cn.task ? "<li><b>Task</b>：" + escHtml(cn.task) + "</li>" : "") +
-            (cn.coherence ? "<li><b>Coherence</b>：" + escHtml(cn.coherence) + "</li>" : "") +
-            (cn.lexical ? "<li><b>Lexical</b>：" + escHtml(cn.lexical) + "</li>" : "") +
-            (cn.grammar ? "<li><b>Grammar</b>：" + escHtml(cn.grammar) + "</li>" : "") +
+            (cn.task && !looksLikeJsonLeak(cn.task) ? "<li><b>Task</b>：" + escHtml(cn.task) + "</li>" : "") +
+            (cn.coherence && !looksLikeJsonLeak(cn.coherence) ? "<li><b>Coherence</b>：" + escHtml(cn.coherence) + "</li>" : "") +
+            (cn.lexical && !looksLikeJsonLeak(cn.lexical) ? "<li><b>Lexical</b>：" + escHtml(cn.lexical) + "</li>" : "") +
+            (cn.grammar && !looksLikeJsonLeak(cn.grammar) ? "<li><b>Grammar</b>：" + escHtml(cn.grammar) + "</li>" : "") +
             "</ul>";
         }
         if (g.paragraphNotes && g.paragraphNotes.length) {
-          html += "<h4>逐段批注</h4><ul>" + g.paragraphNotes.map(function (n) {
+          html += "<h4>逐段批注</h4><ul>" + g.paragraphNotes.filter(function (n) { return !looksLikeJsonLeak(n); }).map(function (n) {
             return "<li>" + escHtml(n) + "</li>";
           }).join("") + "</ul>";
         }
         if (g.corrections && g.corrections.length) {
-          html += "<h4>用词 / 语法纠错</h4><ul>" + g.corrections.map(function (c) {
+          html += "<h4>用词 / 语法纠错</h4><ul>" + g.corrections.filter(function (c) {
+            return c && !looksLikeJsonLeak(c.bad) && !looksLikeJsonLeak(c.good);
+          }).map(function (c) {
             return "<li><s>" + escHtml(c.bad) + "</s> → <b>" + escHtml(c.good) + "</b>" +
               (c.why ? "（" + escHtml(c.why) + "）" : "") + "</li>";
           }).join("") + "</ul>";
         }
         if (g.nextSteps && g.nextSteps.length) {
-          html += "<h4>提分建议</h4><ul>" + g.nextSteps.map(function (n) {
+          html += "<h4>提分建议</h4><ul>" + g.nextSteps.filter(function (n) { return !looksLikeJsonLeak(n); }).map(function (n) {
             return "<li>" + escHtml(n) + "</li>";
           }).join("") + "</ul>";
         }
-        if (g.modelEssay) {
+        if (g.modelEssay && !looksLikeJsonLeak(g.modelEssay)) {
           html += "<h4>同题高分范文</h4><pre class=\"yysd-ai-grade__model\">" + escHtml(g.modelEssay) + "</pre>";
         }
       }
       // ponytail: ignore raw LLM dumps that look like failed JSON payloads
       var fb = d && d.feedback ? String(d.feedback).trim() : "";
-      if (fb && fb.indexOf("WRITING_JSON") < 0 && fb.charAt(0) !== "{") {
+      if (fb && !looksLikeJsonLeak(fb)) {
         html += "<div class=\"yysd-ai-grade__feedback\">" + escHtml(fb) + "</div>";
       }
-      return html || "<p>未返回结构化评分，请重试</p>";
+      return html || "<p>未返回结构化评分，请再点上方按钮重试</p>";
     }
 
     function ensureAiPanel() {
@@ -468,6 +476,10 @@
     }
 
     function requestWritingGrade(taskType) {
+      if (Object.keys(gradePending).length) {
+        setGradeHint("上一题仍在批改中，请稍候…");
+        return;
+      }
       var essay = readWritingTask(taskType === "task1" ? 1 : 2).trim();
       if (!essay || essay.length < 80) {
         setGradeHint(taskType === "task1" ? "Task 1 作文过短或未作答" : "Task 2 作文过短或未作答", true);
@@ -482,6 +494,13 @@
       gradePending[reqId] = taskType;
       setGradeButtonsBusy(true);
       setGradeHint("批改中…");
+      gradeTimers[reqId] = setTimeout(function () {
+        if (!gradePending[reqId]) return;
+        delete gradePending[reqId];
+        delete gradeTimers[reqId];
+        setGradeButtonsBusy(Object.keys(gradePending).length > 0);
+        setGradeHint("批改超时，请再点按钮重试", true);
+      }, 120000);
       try {
         window.parent.postMessage({
           type: "yysd:writing-grade-req",
@@ -492,6 +511,8 @@
           essay: essay
         }, "*");
       } catch (e) {
+        clearTimeout(gradeTimers[reqId]);
+        delete gradeTimers[reqId];
         delete gradePending[reqId];
         setGradeButtonsBusy(false);
         setGradeHint("无法联系父页面，请刷新重试", true);
@@ -502,9 +523,19 @@
       if (!d || !d.reqId || !gradePending[d.reqId]) return;
       var taskType = gradePending[d.reqId];
       delete gradePending[d.reqId];
+      if (gradeTimers[d.reqId]) {
+        clearTimeout(gradeTimers[d.reqId]);
+        delete gradeTimers[d.reqId];
+      }
       setGradeButtonsBusy(Object.keys(gradePending).length > 0);
       if (d.error) {
-        setGradeHint(d.error, true);
+        var err = String(d.error || "批改失败");
+        if (/上限|用完|额度/i.test(err) && !/明日|明天/.test(err)) {
+          err = err.replace(/[。！!]?$/, "") + "，明日再来";
+        } else if (/解析|失败|稍后/i.test(err)) {
+          err = err.replace(/[。！!]?$/, "") + " — 可再点按钮重试";
+        }
+        setGradeHint(err, true);
         return;
       }
       setGradeHint("");
@@ -513,7 +544,9 @@
       box.hidden = false;
       box.innerHTML = "<h3>" + (taskType === "task1" ? "Task 1" : "Task 2") + " 批改结果</h3>" + renderGradeHtml(d);
       if (d.quota && d.quota.textLeft != null) {
-        setGradeHint("今日文字额度剩余 " + d.quota.textLeft + "/" + d.quota.textLimit);
+        var qHint = "今日文字额度剩余 " + d.quota.textLeft + "/" + d.quota.textLimit;
+        if (d.quota.textLeft <= 0) qHint += "（已用完，明日再来）";
+        setGradeHint(qHint);
       }
     }
 

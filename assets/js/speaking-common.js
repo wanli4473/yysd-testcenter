@@ -144,12 +144,23 @@ window.YYSD_SPEAKING = (function () {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ part: part, topics: topics, answers: answers }),
       signal: ctrl.signal
-    }).then(function (r) { return r.json(); })
-      .then(function (d) {
+    }).then(function (r) {
+      return r.text().then(function (text) {
+        var d = null;
+        try { d = text ? JSON.parse(text) : {}; } catch (e) {
+          throw new Error("评分失败（" + r.status + "）— 请稍后重试");
+        }
+        if (!r.ok) {
+          var msg = (d && d.error) || ("评分失败（" + r.status + "）");
+          if (/上限|用完|额度/i.test(msg) && !/明日/.test(msg)) msg = msg.replace(/[。！!]?$/, "") + "，明日再来";
+          else if (/失败|稍后|502|503|解析/.test(msg)) msg = msg.replace(/[。！!]?$/, "") + " — 请稍后重试";
+          throw new Error(msg);
+        }
         if (d.error) throw new Error(d.error);
-        if (!d.ok || !d.report) throw new Error("评分返回无效");
+        if (!d.ok || !d.report) throw new Error("评分返回无效，请稍后重试");
         return d.report;
-      })
+      });
+    })
       .finally(function () { clearTimeout(timer); });
   }
 
