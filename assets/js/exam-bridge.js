@@ -92,10 +92,12 @@
       savedAlert = window.alert;
       window.confirm = function () {
         pauseVoid(12000);
+        try { window.parent.postMessage({ type: "yysd:exam-dialog", ms: 12000 }, "*"); } catch (e) {}
         return savedConfirm.apply(window, arguments);
       };
       window.alert = function () {
         pauseVoid(8000);
+        try { window.parent.postMessage({ type: "yysd:exam-dialog", ms: 8000 }, "*"); } catch (e) {}
         return savedAlert.apply(window, arguments);
       };
     }

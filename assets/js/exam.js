@@ -672,6 +672,11 @@
       return;
     }
 
+    if (d.type === "yysd:exam-dialog") {
+      parentPauseVoid(d.ms || 12000);
+      return;
+    }
+
     if (d.type === "yysd:timer-sync") {
       if (!sessionStartedMs && d.elapsedSec != null) {
         sessionStartedMs = Date.now() - Math.max(0, Number(d.elapsedSec) || 0) * 1000;
