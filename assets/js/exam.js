@@ -118,11 +118,8 @@
   }
 
   function isScoredReveal(payload) {
-    // ponytail: 听读模考 + 有分数练习；写作另说
-    if (payload.score == null || !isFinite(Number(payload.score))) return false;
-    if (item.subject === "cambridge-writing" || item.subject === "ielts-writing") return false;
-    if (payload.completed && payload.score == null) return false;
-    return true;
+    // ponytail: paper already paints 批改报告 — full-screen reveal stacked "交卷中/成绩揭晓" on top of it
+    return false;
   }
 
   function animateScoreNum(el, from, to, ms) {
@@ -149,8 +146,8 @@
     var isWriting = item.subject === "cambridge-writing" || item.subject === "ielts-writing" ||
       (payload.completed && payload.score == null);
     var reveal = isScoredReveal(payload);
-    var heading = isStudy ? "学习进度已保存" : (isWriting ? "写作练习已保存" : (reveal ? "成绩揭晓" : "成绩已保存"));
-    var sub = payload.syncSub || "已保存在本浏览器，可在「我的成绩」查看";
+    var heading = isStudy ? "学习进度已保存" : (isWriting ? "写作练习已保存" : "成绩已保存");
+    var sub = payload.syncSub || "正在同步到云端…";
     var scoreLine = "";
     var wrongN = payload.wrongWords && payload.wrongWords.length;
     var deltaLine = "";
@@ -181,7 +178,6 @@
     if (reveal) {
       toastHost.innerHTML =
         '<div class="score-reveal" role="status">' +
-          '<div class="score-reveal__veil" aria-hidden="true">交卷中</div>' +
           '<div class="score-reveal__card">' +
             '<p class="score-reveal__eyebrow">' + Y.esc(heading) + "</p>" +
             '<div class="score-reveal__num" data-score-num>0</div>' +
@@ -201,12 +197,7 @@
           "</div>" +
         "</div>";
       toastHost.classList.add("is-visible", "is-reveal");
-      var veil = toastHost.querySelector(".score-reveal__veil");
-      var numEl = toastHost.querySelector("[data-score-num]");
-      setTimeout(function () {
-        if (veil) veil.classList.add("is-done");
-        animateScoreNum(numEl, 0, payload.score, 520);
-      }, 380);
+      animateScoreNum(toastHost.querySelector("[data-score-num]"), 0, payload.score, 520);
       toastHost.querySelector(".score-reveal__x").addEventListener("click", hideToast);
       toastTimer = setTimeout(hideToast, 9000);
       return;
@@ -222,7 +213,7 @@
         '</div>' +
         (wrongN
           ? '<a class="score-toast__link" href="wrong-words.html?book=' + encodeURIComponent(payload.book || "gaozhong") + '">错题本 →</a>'
-          : '<a class="score-toast__link" href="results.html">查看 →</a>') +
+          : '<a class="score-toast__link" href="results.html">我的成绩 →</a>') +
         '<button type="button" class="score-toast__close" aria-label="关闭">×</button>' +
       '</div>';
 
