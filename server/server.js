@@ -397,25 +397,44 @@ var SCORE_BRIDGE_SCRIPT =
   "<script>(function(){" +
   "if(window.__yysdScoreBridge)return;window.__yysdScoreBridge=1;" +
   "var sent='';" +
-  "function report(){" +
+  "function report(score,total){" +
+  "if(!(total>0))return;" +
+  "var key=score+'|'+total;" +
+  "if(sent===key)return;sent=key;" +
+  "try{parent.postMessage({type:'yysd:score',score:score,total:total,completed:true},'*');}catch(e){}" +
+  "}" +
+  "function fromSummary(){" +
   "var sum=document.getElementById('summary');" +
   "if(!sum)return;" +
   "var num=sum.querySelector('.item .num');" +
   "if(!num)return;" +
   "var m=String(num.textContent||'').match(/(\\d+)\\s*\\/\\s*(\\d+)/);" +
-  "if(!m)return;" +
-  "var score=Number(m[1]),total=Number(m[2]);" +
-  "var key=score+'|'+total;" +
-  "if(sent===key)return;sent=key;" +
-  "try{parent.postMessage({type:'yysd:score',score:score,total:total,completed:true},'*');}catch(e){}" +
+  "if(m)report(Number(m[1]),Number(m[2]));" +
   "}" +
+  "function fromVocabResults(){" +
+  "var box=document.getElementById('testResults');" +
+  "if(!box||!box.classList.contains('visible'))return;" +
+  "var scoreEl=document.getElementById('resultsScore');" +
+  "var detail=document.getElementById('resultsDetail');" +
+  "var score=scoreEl?Number(String(scoreEl.textContent||'').replace(/[^0-9.]/g,'')):NaN;" +
+  "var total=0;" +
+  "var tm=detail&&String(detail.textContent||'').match(/(\\d+)\\s*\\/\\s*(\\d+)/);" +
+  "if(tm){score=Number(tm[1]);total=Number(tm[2]);}" +
+  "else{" +
+  "var rows=document.querySelectorAll('#resultsTableBody tr');" +
+  "total=rows.length;" +
+  "}" +
+  "if(total>0&&isFinite(score))report(score,total);" +
+  "}" +
+  "function run(){fromSummary();fromVocabResults();}" +
   "function watch(){" +
-  "var el=document.getElementById('testResults');" +
+  "var el=document.getElementById('testResults')||document.getElementById('resultArea');" +
   "if(!el){setTimeout(watch,400);return;}" +
-  "var run=function(){if(el.classList.contains('visible'))report();};" +
-  "new MutationObserver(run).observe(el,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});" +
+  "new MutationObserver(run).observe(el,{attributes:true,attributeFilter:['class','style'],childList:true,subtree:true});" +
   "var sum=document.getElementById('summary');" +
-  "if(sum)new MutationObserver(report).observe(sum,{childList:true,subtree:true,characterData:true});" +
+  "if(sum)new MutationObserver(run).observe(sum,{childList:true,subtree:true,characterData:true});" +
+  "var rs=document.getElementById('resultsScore');" +
+  "if(rs)new MutationObserver(run).observe(rs,{childList:true,characterData:true,subtree:true});" +
   "run();" +
   "}" +
   "if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch);else watch();" +
@@ -2259,7 +2278,7 @@ app.post("/api/ai-tutor/writing-grade", authMiddleware, async function (req, res
   }
   var u = getUsage(req.user.sub);
   if (!isAdminPhone(req.user.phone) && u.textCount >= AI_QUOTA.text) {
-    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: aiTutorQuota(req) });
+    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条），明日再来", quota: aiTutorQuota(req) });
   }
   var chartBlock = "";
   if (chartNote) {
@@ -2332,7 +2351,7 @@ app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
     if (examMode === "mock" && !isAdminPhone(req.user.phone)) {
       var uMock = getUsage(req.user.sub);
       if (uMock.fullMocks >= AI_QUOTA.fullMocks) {
-        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: aiTutorQuota(req) });
+        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场），明日再来", quota: aiTutorQuota(req) });
       }
     }
   } else if (mode === "examiner") {
@@ -2340,7 +2359,7 @@ app.post("/api/ai-tutor/sessions", authMiddleware, function (req, res) {
     if (examType === "full" && !isAdminPhone(req.user.phone)) {
       var u = getUsage(req.user.sub);
       if (u.fullMocks >= AI_QUOTA.fullMocks) {
-        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场）", quota: aiTutorQuota(req) });
+        return res.status(429).json({ error: "今日完整模拟考次数已用完（" + AI_QUOTA.fullMocks + " 场），明日再来", quota: aiTutorQuota(req) });
       }
     }
   } else {
@@ -2421,10 +2440,10 @@ app.post("/api/ai-tutor/chat", authMiddleware, async function (req, res) {
   }
   var u = getUsage(req.user.sub);
   if (!isAdminPhone(req.user.phone) && u.textCount >= AI_QUOTA.text) {
-    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条）", quota: aiTutorQuota(req) });
+    return res.status(429).json({ error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条），明日再来", quota: aiTutorQuota(req) });
   }
   if (!isAdminPhone(req.user.phone) && audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
-    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: aiTutorQuota(req) });
+    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟），明日再来", quota: aiTutorQuota(req) });
   }
   var now = new Date().toISOString();
   var userMeta = answerInvalid ? JSON.stringify({ answerInvalid: true }) : null;
@@ -2658,7 +2677,7 @@ app.post("/api/ai-tutor/asr", authMiddleware, async function (req, res) {
   if (!audio || audio.indexOf("data:") !== 0) return res.status(400).json({ error: "缺少 audio（data URL）" });
   var u = getUsage(req.user.sub);
   if (!isAdminPhone(req.user.phone) && audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
-    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟）", quota: aiTutorQuota(req) });
+    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟），明日再来", quota: aiTutorQuota(req) });
   }
   try {
     var r = await fetch(DASHSCOPE_MM_URL, {

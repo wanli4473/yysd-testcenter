@@ -272,7 +272,10 @@
 
   function parentFocusLost() {
     if (!examLockOn || examLockVoided || Date.now() < parentVoidPausedUntil) return false;
-    return document.hidden || !document.hasFocus();
+    if (document.hidden) return true;
+    // Focus inside the exam iframe still counts as in-exam (parent hasFocus is often false)
+    if (frame && document.activeElement === frame) return false;
+    return !document.hasFocus();
   }
 
   function scheduleParentVoidCheck() {
@@ -327,8 +330,11 @@
     if (examLockBound) return;
     function onVis() {
       if (!examLockOn || examLockVoided) return;
-      if (document.hidden) triggerParentVoid();
-      else clearTimeout(parentVoidTimer);
+      // ponytail: native confirm / fullscreen exit can flicker hidden — honor pause
+      if (document.hidden) {
+        if (Date.now() < parentVoidPausedUntil) return;
+        triggerParentVoid();
+      } else clearTimeout(parentVoidTimer);
     }
     function onBlur() {
       if (!examLockOn || examLockVoided) return;
@@ -380,6 +386,7 @@
     if (examLockOn) {
       bindParentExamLock();
       hideParentExamLock();
+      parentPauseVoid(5000);
       try {
         document.documentElement.requestFullscreen().catch(function () {});
       } catch (e) { /* ponytail: fullscreen denied */ }
@@ -478,11 +485,10 @@
     backBtn.textContent = "← 返回待办事项";
     backBtn.href = "dashboard.html";
 
-    var blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    var url = URL.createObjectURL(blob);
-    frame.src = url;
+    // srcdoc keeps same-origin with parent (blob: is opaque and breaks some uploads)
+    frame.removeAttribute("src");
+    frame.srcdoc = html;
     frame.addEventListener("load", function () {
-      try { URL.revokeObjectURL(url); } catch (e) {}
       sessionStartedMs = null;
       onFrameLoad();
     }, { once: true });
@@ -717,7 +723,13 @@
           quota: res.quota
         });
       }).catch(function (err) {
-        replyGrade({ error: (err && err.message) || "批改失败" });
+        var msg = (err && err.message) || "批改失败";
+        if (/上限|用完|额度/i.test(msg) && !/明日|明天/.test(msg)) {
+          msg = msg.replace(/[。！!]?$/, "") + "，明日再来";
+        } else if (/解析|失败|稍后/i.test(msg)) {
+          msg = msg.replace(/[。！!]?$/, "") + " — 可再点按钮重试";
+        }
+        replyGrade({ error: msg });
       });
       return;
     }

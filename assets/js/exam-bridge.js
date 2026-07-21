@@ -130,8 +130,11 @@
 
     function onVis() {
       if (!on || voided) return;
-      if (document.hidden) voidExam();
-      else clearTimeout(voidCheckTimer);
+      // ponytail: confirm()/fullscreen flicker can set hidden; honor pauseVoid
+      if (document.hidden) {
+        if (Date.now() < voidPausedUntil) return;
+        voidExam();
+      } else clearTimeout(voidCheckTimer);
     }
 
     function onBlur() {
@@ -203,6 +206,7 @@
       enable: function () {
         voided = false;
         on = true;
+        pauseVoid(5000);
         bind();
         tryFullscreen();
         notifyParent();
