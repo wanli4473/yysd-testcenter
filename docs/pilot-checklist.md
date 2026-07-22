@@ -34,6 +34,8 @@
 
 | 问题 | 严重度 | 处理 |
 |------|--------|------|
-|      |        |      |
+| ECS `sync-web.sh` 内 git pull 偶发 GitHub 超时 | 中 | 已用手动 `rsync` 从 `/opt/yysd/repo` 同步；可改脚本跳过二次 pull |
+| 任意新 slug 子域 HTTPS 需扩证书 SAN | 低 | DNS 通配符已 OK；待 DNS-01 通配符证书或开户时 certbot --expand |
+| ease 管理员密钥仅 1 次，验收后需为正式负责人换新密钥 | 低 | 主控台 reg-keys 加次或 regenerate |
 
 试点通过后再谈规模化拓客。对方自助上传、在线支付等见阶段 7+（延后）。

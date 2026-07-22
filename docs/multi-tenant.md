@@ -58,6 +58,6 @@
 
 ## 验收（阶段 0）
 
-- [ ] DNS `*.youyisida.com` 已解析
-- [ ] HTTPS 通配符证书生效（或暂用 HTTP 内测）
-- [ ] 打开 `https://任意测试slug.youyisida.com/` 能出页面（品牌改造在阶段 2）
+- [x] DNS `*.youyisida.com` 已解析（2026-07-22 验证 random slug → 139.224.0.221）
+- [ ] HTTPS 通配符证书生效（当前为 SAN 列表；ease/youyisi 已覆盖）
+- [x] 打开 `https://ease.youyisida.com/` 能出页面（品牌改造已完成）
