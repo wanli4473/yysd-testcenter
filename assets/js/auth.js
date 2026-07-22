@@ -16,7 +16,169 @@ window.YYSD_AUTH = (function () {
   var AUTH_COOKIE = "yysd_auth";
   var ICP_TEXT = "皖ICP备2026021555号-1";
   var ICP_URL = "https://beian.miit.gov.cn/";
-  var PUBLIC_PAGES = { "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1, "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1 };
+  var PUBLIC_PAGES = {
+    "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
+    "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
+    "suspended.html": 1, "platform.html": 1
+  };
+  var ORG_KEY = "yysd:org";
+
+  function tenantSlug() {
+    try {
+      var q = new URLSearchParams(location.search).get("tenant");
+      if (q && /^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$/.test(q)) return q.toLowerCase();
+    } catch (e) {}
+    var h = (location.hostname || "").toLowerCase();
+    if (!h || h === "localhost" || h === "127.0.0.1") return "yysd";
+    if (h === "youyisida.com" || h === "www.youyisida.com") return "yysd";
+    var m = h.match(/^([a-z0-9-]+)\.youyisida\.com$/);
+    if (!m) return "yysd";
+    var s = m[1];
+    if (/^(www|api|admin|platform|mail|static|cdn|test|dev|staging)$/.test(s)) return "yysd";
+    return s;
+  }
+
+  function getOrg() {
+    try { return JSON.parse(localStorage.getItem(ORG_KEY) || "null"); } catch (e) { return null; }
+  }
+
+  function setOrg(org) {
+    try {
+      if (org) localStorage.setItem(ORG_KEY, JSON.stringify(org));
+      else localStorage.removeItem(ORG_KEY);
+    } catch (e) {}
+  }
+
+  function isHqSite() {
+    return tenantSlug() === "yysd";
+  }
+
+  function logoSrc(url) {
+    if (!url) return "assets/img/logo.svg?v=20260702-logo";
+    if (/^https?:\/\//i.test(url) || url.indexOf("data:") === 0) return url;
+    return API_BASE + url;
+  }
+
+  function brandName(org) {
+    return (org && org.name) || "优益思达国际课程中心";
+  }
+
+  /** 客户站白标：去掉可见的优益思达/YYSD（备案号除外） */
+  function scrubTenantBrandText(orgName) {
+    if (isHqSite()) return;
+    var replacers = [
+      [/优益思达国际课程中心/g, orgName],
+      [/优益思达备考/g, orgName],
+      [/优益思达学习中心/g, orgName],
+      [/优益思达/g, orgName],
+      [/YYSD International Course Center/gi, orgName],
+      [/YYSD\s*·\s*IELTS/gi, orgName],
+      [/YYSD\s*·\s*TEACHER/gi, orgName + " · 教师端"],
+      [/\bYYSD\b/g, orgName]
+    ];
+    var walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    var node;
+    while ((node = walk.nextNode())) {
+      var p = node.parentElement;
+      if (!p) continue;
+      var tag = p.tagName;
+      if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT") continue;
+      if (p.getAttribute && p.getAttribute("data-icp") != null) continue;
+      if (p.closest && p.closest("[data-icp]")) continue;
+      var t = node.nodeValue;
+      if (!t || (t.indexOf("优益思达") < 0 && t.indexOf("YYSD") < 0 && t.indexOf("Yysd") < 0)) continue;
+      var next = t;
+      replacers.forEach(function (pair) {
+        next = next.replace(pair[0], pair[1]);
+      });
+      if (next !== t) node.nodeValue = next;
+    }
+    document.querySelectorAll(".auth-aside__eyebrow").forEach(function (el) {
+      el.textContent = orgName;
+    });
+    document.querySelectorAll(".minimal-brand__text span").forEach(function (el) {
+      el.textContent = "";
+      el.hidden = true;
+    });
+    document.querySelectorAll(".minimal-footer__copy").forEach(function (el) {
+      var year = el.querySelector("#year");
+      var yearText = year ? year.textContent : String(new Date().getFullYear());
+      var icp = el.querySelector("[data-icp]");
+      el.innerHTML = "© <span id=\"year\">" + yearText + "</span> ";
+      if (icp) el.appendChild(icp);
+      else {
+        var span = document.createElement("span");
+        span.className = "site-icp";
+        span.setAttribute("data-icp", "");
+        el.appendChild(span);
+      }
+    });
+  }
+
+  function applyOrgBrand(org) {
+    if (!org) return;
+    setOrg(org);
+    var name = brandName(org);
+    var tenant = !isHqSite();
+
+    document.querySelectorAll(".minimal-brand").forEach(function (a) {
+      a.setAttribute("aria-label", name + "首页");
+    });
+    document.querySelectorAll(".minimal-brand__text b, .minimal-brand b").forEach(function (el) {
+      el.textContent = name;
+    });
+    document.querySelectorAll(".minimal-brand__logo, .auth-aside__logo img, .viewer-bar__logo").forEach(function (img) {
+      if (tenant && org.logoUrl) {
+        img.src = logoSrc(org.logoUrl);
+      } else if (org.logoUrl) {
+        img.src = logoSrc(org.logoUrl);
+      }
+      img.alt = name;
+    });
+    if (tenant && org.logoUrl) {
+      var href = logoSrc(org.logoUrl);
+      var icon = document.querySelector('link[rel="icon"]');
+      if (!icon) {
+        icon = document.createElement("link");
+        icon.rel = "icon";
+        document.head.appendChild(icon);
+      }
+      icon.href = href;
+      icon.type = "image/png";
+    }
+    var sideLabel = document.querySelector(".student-side__label");
+    if (sideLabel) sideLabel.textContent = name;
+
+    if (document.title) {
+      if (document.title.indexOf("·") >= 0) {
+        document.title = document.title.replace(/^[^·]+·/, name + " ·");
+      } else if (tenant) {
+        document.title = name;
+      }
+    }
+
+    if (tenant) scrubTenantBrandText(name);
+  }
+
+  function bootstrapTenant() {
+    return fetch(API_BASE + "/api/tenant/bootstrap", {
+      headers: { "X-Tenant-Slug": tenantSlug() }
+    }).then(function (r) {
+      return r.json().then(function (d) {
+        if (!r.ok) throw new Error((d && d.error) || "机构加载失败");
+        return d.org;
+      });
+    }).then(function (org) {
+      applyOrgBrand(org);
+      if (!org.usable && pageName() !== "suspended.html" && pageName() !== "platform.html") {
+        location.replace("suspended.html");
+        return null;
+      }
+      return org;
+    }).catch(function () {
+      return getOrg();
+    });
+  }
 
   function pageName() {
     var parts = location.pathname.split("/").filter(Boolean);
@@ -75,14 +237,16 @@ window.YYSD_AUTH = (function () {
           phone: teacher.phone || "",
           name: teacher.name || "",
           avatarUrl: teacher.avatarUrl || "",
-          isAdmin: !!teacher.isAdmin
+          isAdmin: !!teacher.isAdmin,
+          isPlatformAdmin: !!teacher.isPlatformAdmin
         }));
         setUser({
           phone: teacher.phone || "",
           role: "teacher",
           displayName: teacher.name || "",
           avatarUrl: teacher.avatarUrl || "",
-          isAdmin: !!teacher.isAdmin
+          isAdmin: !!teacher.isAdmin,
+          isPlatformAdmin: !!teacher.isPlatformAdmin
         });
       } else {
         localStorage.removeItem(TEACHER_TOKEN_KEY);
@@ -93,9 +257,11 @@ window.YYSD_AUTH = (function () {
           role: "student",
           displayName: stu.displayName || "",
           avatarUrl: stu.avatarUrl || "",
-          isAdmin: !!stu.isAdmin
+          isAdmin: !!stu.isAdmin,
+          isPlatformAdmin: !!stu.isPlatformAdmin
         });
       }
+      if (d.org) applyOrgBrand(d.org);
     } catch (e) {}
     setAuthCookie(true);
     bindNav();
@@ -113,7 +279,8 @@ window.YYSD_AUTH = (function () {
           role: u.role || "",
           displayName: u.displayName || "",
           avatarUrl: u.avatarUrl || "",
-          isAdmin: !!u.isAdmin
+          isAdmin: !!u.isAdmin,
+          isPlatformAdmin: !!u.isPlatformAdmin
         }));
       } else localStorage.removeItem(USER_KEY);
     } catch (e) {}
@@ -125,6 +292,14 @@ window.YYSD_AUTH = (function () {
       if (getUser().isAdmin) return true;
       var t = JSON.parse(localStorage.getItem(TEACHER_USER_KEY) || "{}");
       return !!t.isAdmin;
+    } catch (e) { return false; }
+  }
+
+  function isPlatformAdmin() {
+    try {
+      if (getUser().isPlatformAdmin) return true;
+      var t = JSON.parse(localStorage.getItem(TEACHER_USER_KEY) || "{}");
+      return !!t.isPlatformAdmin;
     } catch (e) { return false; }
   }
 
@@ -192,7 +367,7 @@ window.YYSD_AUTH = (function () {
   }
 
   function authHeaders() {
-    var h = { "Content-Type": "application/json" };
+    var h = { "Content-Type": "application/json", "X-Tenant-Slug": tenantSlug() };
     var t = getToken();
     if (t) h.Authorization = "Bearer " + t;
     return h;
@@ -220,7 +395,7 @@ window.YYSD_AUTH = (function () {
 
   // HTML responses (uploaded assignments) — do not JSON.parse
   function apiHtml(path) {
-    var h = {};
+    var h = { "X-Tenant-Slug": tenantSlug() };
     var t = getToken();
     if (t) h.Authorization = "Bearer " + t;
     return fetch(API_BASE + path, { method: "GET", headers: h }).then(function (r) {
@@ -348,12 +523,13 @@ window.YYSD_AUTH = (function () {
     document.querySelectorAll("[data-icp]").forEach(function (el) {
       var link = el.tagName === "A" ? el : document.createElement("a");
       if (link !== el) {
-        link.className = el.className;
+        link.className = el.className || "site-icp";
         el.replaceWith(link);
       }
       link.href = ICP_URL;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
+      link.setAttribute("data-icp", "");
       link.textContent = ICP_TEXT;
     });
   }
@@ -377,6 +553,10 @@ window.YYSD_AUTH = (function () {
 
   function postLoginPath(next) {
     var n = String(next || "").trim() || studentHome();
+    // 主控台仅总部站可进；客户站即使带 next=platform 也回工作台
+    if (n.indexOf("platform") >= 0) {
+      return isHqSite() ? "platform.html" : studentHome();
+    }
     if (isTeacher()) return "teacher.html";
     if (!n || n === "/" || n === "index.html" || n.indexOf("login") >= 0 || n.indexOf("register") >= 0) {
       return studentHome();
@@ -427,11 +607,14 @@ window.YYSD_AUTH = (function () {
     if (isAdmin()) {
       links.push({ href: "admin-assign.html", label: "学生分配", key: "admin" });
     }
+    if (isPlatformAdmin() && isHqSite()) {
+      links.push({ href: "platform.html", label: "平台主控台", key: "platform" });
+    }
 
     var path = location.pathname + location.search;
     var label = document.createElement("p");
     label.className = "student-side__label";
-    label.textContent = "优益思达备考";
+    label.textContent = (getOrg() && getOrg().name) || (isHqSite() ? "优益思达备考" : "学习中心");
     side.appendChild(label);
 
     links.forEach(function (L) {
@@ -448,6 +631,7 @@ window.YYSD_AUTH = (function () {
       else if (L.key === "results" && (name === "results.html" || name === "wrong-words.html")) active = true;
       else if (L.key === "profile" && name === "profile.html") active = true;
       else if (L.key === "admin" && name === "admin-assign.html") active = true;
+      else if (L.key === "platform" && name === "platform.html") active = true;
       else if (L.key === "study" && (name === "vocab.html" || name.indexOf("vocab") >= 0)) active = true;
       else if (L.key === "practice" && name.indexOf("speaking") === 0) active = true;
       if (active) a.classList.add("is-active");
@@ -483,13 +667,45 @@ window.YYSD_AUTH = (function () {
     return true;
   }
 
+  function refreshSessionFlags() {
+    if (!getToken()) return Promise.resolve();
+    return api("/api/auth/me").then(function (d) {
+      var u = d.user || {};
+      setUser({
+        phone: u.phone || getUser().phone,
+        role: u.role || getUser().role || "",
+        displayName: u.displayName || u.name || getUser().displayName || "",
+        avatarUrl: u.avatarUrl || getUser().avatarUrl || "",
+        isAdmin: !!u.isAdmin,
+        isPlatformAdmin: !!u.isPlatformAdmin
+      });
+      if (u.role === "teacher" || isTeacher()) {
+        try {
+          localStorage.setItem(TEACHER_USER_KEY, JSON.stringify({
+            phone: u.phone || "",
+            name: u.displayName || u.name || "",
+            avatarUrl: u.avatarUrl || "",
+            isAdmin: !!u.isAdmin,
+            isPlatformAdmin: !!u.isPlatformAdmin
+          }));
+        } catch (e) {}
+      }
+      return u;
+    }).catch(function () { return null; });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
-    if (redirectLoggedInAwayFromMarketing()) return;
-    if (!guardPage()) return;
-    bindNav();
-    bindIcp();
-    mountStudentShell();
-    if (getToken() && !isPublicPage() && !isTeacher()) syncScoresFromCloud();
+    bootstrapTenant().then(function () {
+      if (redirectLoggedInAwayFromMarketing()) return;
+      if (!guardPage()) return;
+      return refreshSessionFlags().then(function () {
+        bindNav();
+        bindIcp();
+        mountStudentShell();
+        applyOrgBrand(getOrg());
+        if (getToken() && !isPublicPage() && !isTeacher()) syncScoresFromCloud();
+      });
+    });
   });
 
   return {
@@ -500,8 +716,14 @@ window.YYSD_AUTH = (function () {
     applyLogin: applyLogin,
     isTeacher: isTeacher,
     isAdmin: isAdmin,
+    isPlatformAdmin: isPlatformAdmin,
     getUser: getUser,
     setUser: setUser,
+    getOrg: getOrg,
+    tenantSlug: tenantSlug,
+    isHqSite: isHqSite,
+    applyOrgBrand: applyOrgBrand,
+    brandName: brandName,
     api: api,
     apiHtml: apiHtml,
     bindNav: bindNav,
@@ -512,13 +734,18 @@ window.YYSD_AUTH = (function () {
     syncScoresFromCloud: syncScoresFromCloud,
     pushScoreRecord: pushScoreRecord,
     uploadAvatar: uploadAvatar,
-    avatarSrc: avatarSrc
+    avatarSrc: avatarSrc,
+    logoSrc: logoSrc
   };
 })();
 
 (function () {
   "use strict";
-  var PUBLIC = { "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1, "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1 };
+  var PUBLIC = {
+    "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
+    "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
+    "suspended.html": 1, "platform.html": 1
+  };
   var name = location.pathname.split("/").filter(Boolean).pop() || "index.html";
   if (PUBLIC[name]) return;
   try {

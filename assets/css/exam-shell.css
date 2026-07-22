@@ -55,10 +55,26 @@ body.yysd-embedded .nav-tab.active {
   color: #07192f !important;
 }
 
+/* Non-fullscreen: parent viewer-bar owns the countdown */
 body.yysd-embedded .header .timer,
 body.yysd-embedded > .header .timer,
 body.yysd-embedded #timer.timer:not(.show) {
   display: none !important;
+}
+
+/* Fullscreen mock: iframe is the FS root, parent bar gone — float paper timer top-right */
+:fullscreen body.yysd-embedded .header .timer.show,
+:-webkit-full-screen body.yysd-embedded .header .timer.show,
+:fullscreen body.yysd-embedded > .header .timer.show,
+:-webkit-full-screen body.yysd-embedded > .header .timer.show,
+:fullscreen body.yysd-embedded #timer.timer.show,
+:-webkit-full-screen body.yysd-embedded #timer.timer.show {
+  display: flex !important;
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 10000;
+  margin: 0;
 }
 
 body.yysd-embedded .test-topbar {

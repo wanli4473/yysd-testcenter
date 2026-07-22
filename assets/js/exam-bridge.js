@@ -4,6 +4,46 @@
 (function () {
   "use strict";
 
+  /** 客户站 iframe 卷面白标：读父页 YYSD_AUTH，替换 title / brandtag / 页头 */
+  function applyTenantPaperBrand() {
+    var A;
+    try { A = window.parent && window.parent.YYSD_AUTH; } catch (e) { return; }
+    if (!A || !A.isHqSite || A.isHqSite()) return;
+    var org = (A.getOrg && A.getOrg()) || null;
+    var name = (A.brandName && A.brandName(org)) || (org && org.name) || "";
+    if (!name) return;
+    var replacers = [
+      [/优益思达国际课程中心/g, name],
+      [/优益思达备考/g, name],
+      [/优益思达学习中心/g, name],
+      [/优益思达/g, name],
+      [/YYSD International Course Center/gi, name],
+      [/\bYYSD\b/g, name]
+    ];
+    if (document.title) {
+      var t = document.title;
+      replacers.forEach(function (pair) { t = t.replace(pair[0], pair[1]); });
+      document.title = t;
+    }
+    document.querySelectorAll(".brandtag").forEach(function (el) {
+      var bt = el.textContent || "";
+      if (bt.indexOf("优益思达") >= 0 || bt.indexOf("YYSD") >= 0) el.textContent = name;
+    });
+    document.querySelectorAll(".header h1, h1 .brandtag").forEach(function (el) {
+      var walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+      var node;
+      while ((node = walk.nextNode())) {
+        var txt = node.nodeValue;
+        if (!txt || txt.indexOf("优益思达") < 0) continue;
+        var next = txt;
+        replacers.forEach(function (pair) { next = next.replace(pair[0], pair[1]); });
+        if (next !== txt) node.nodeValue = next;
+      }
+    });
+  }
+
+  applyTenantPaperBrand();
+
   var script = document.currentScript;
   var bridgeMode = (script && script.dataset.mode) || "exam";
   var examId = (script && script.dataset.examId) || "";
@@ -150,6 +190,8 @@
 
     function onPageHide() {
       if (!on || voided) return;
+      // ponytail: confirm() on some mobile browsers fires pagehide — honor pauseVoid
+      if (Date.now() < voidPausedUntil) return;
       voidExam();
     }
 
@@ -609,6 +651,33 @@
   examId = resolveExamId();
   if (!examId) return;
 
+  // ponytail: older Cam7–15 papers call lookupBand/levelLabel but omit the defs — submit then throws after locking `submitted`
+  function ensureBandHelpers() {
+    if (typeof window.lookupBand === "function" && typeof window.levelLabel === "function") return;
+    var isReading = /reading/i.test(examId);
+    var bands = isReading
+      ? [[39, 9.0], [37, 8.5], [35, 8.0], [33, 7.5], [30, 7.0], [27, 6.5], [23, 6.0], [19, 5.5], [15, 5.0], [13, 4.5], [10, 4.0], [8, 3.5], [6, 3.0], [4, 2.5], [0, 2.0]]
+      : [[39, 9.0], [37, 8.5], [35, 8.0], [32, 7.5], [30, 7.0], [26, 6.5], [23, 6.0], [18, 5.5], [16, 5.0], [13, 4.5], [10, 4.0], [6, 3.5], [4, 3.0], [0, 2.5]];
+    var levels = [[8.5, "Expert / Very good user"], [7.0, "Good user"], [6.0, "Competent user"], [5.0, "Modest user"], [4.0, "Limited user"], [0, "Basic user"]];
+    if (!window.BAND_TABLE) window.BAND_TABLE = bands;
+    if (!window.LEVEL_LABEL) window.LEVEL_LABEL = levels;
+    if (typeof window.lookupBand !== "function") {
+      window.lookupBand = function (correct, total) {
+        var scaled = total === 40 ? correct : Math.round(correct / Math.max(1, total) * 40);
+        var table = window.BAND_TABLE || bands;
+        for (var i = 0; i < table.length; i++) if (scaled >= table[i][0]) return table[i][1];
+        return isReading ? 2.0 : 2.5;
+      };
+    }
+    if (typeof window.levelLabel !== "function") {
+      window.levelLabel = function (b) {
+        var table = window.LEVEL_LABEL || levels;
+        for (var i = 0; i < table.length; i++) if (b >= table[i][0]) return table[i][1];
+        return "";
+      };
+    }
+  }
+
   var DRAFT_KEY = "yysd:draft:" + examId;
   var saveTimer = null;
   var restorePending = null;
@@ -769,9 +838,18 @@
     if (typeof fn !== "function" || fn._yysdHooked) return;
     window.submitTest = function () {
       clearDraft();
-      var ret = fn.apply(this, arguments);
-      examLock.disable();
-      return ret;
+      ensureBandHelpers();
+      try {
+        var ret = fn.apply(this, arguments);
+        examLock.disable();
+        return ret;
+      } catch (err) {
+        // ponytail: papers set submitted=true before scoring — unlock so student can retry
+        pageSet("submitted", false);
+        console.error("[yysd] submitTest failed", err);
+        try { alert("交卷失败，请再试一次。若仍不行请联系老师。"); } catch (e) {}
+        return;
+      }
     };
     submitTest._yysdHooked = true;
   }
@@ -863,6 +941,7 @@
   }
 
   function initDraft() {
+    ensureBandHelpers();
     hookStartTest();
     hookSubmitTest();
     hookBackToCover();

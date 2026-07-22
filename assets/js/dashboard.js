@@ -1,12 +1,14 @@
 /* =========================================================================
-   dashboard.js — 待办事项（待办列表；日历由 student-calendar.js 渲染）
+   dashboard.js — 待办事项（今日焦点 + 近期待办；日历由 student-calendar.js）
    ========================================================================= */
 (function () {
   "use strict";
   var Y = window.YYSD;
   var A = window.YYSD_AUTH;
   var root = document.getElementById("dash-root");
+  var focusEl = document.getElementById("dash-focus");
   var hello = document.getElementById("dash-hello");
+  var SEEN_KEY = "yysd:cal-seen-ids";
 
   document.getElementById("year").textContent = new Date().getFullYear();
 
@@ -43,6 +45,131 @@
     } catch (e) { return ""; }
   }
 
+  function readSeen() {
+    try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"); }
+    catch (e) { return []; }
+  }
+
+  function markSeen(id) {
+    var n = Number(id);
+    if (!n) return;
+    var s = readSeen();
+    if (s.indexOf(n) >= 0) return;
+    s.push(n);
+    if (s.length > 200) s = s.slice(-200);
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch (e) {}
+  }
+
+  function isNew(ev) {
+    if (!ev || (ev.status !== "PENDING" && ev.status !== "OVERDUE")) return false;
+    return readSeen().indexOf(Number(ev.id)) < 0;
+  }
+
+  function isDueToday(iso) {
+    if (!iso) return false;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return false;
+    var n = new Date();
+    return d.getFullYear() === n.getFullYear() &&
+      d.getMonth() === n.getMonth() &&
+      d.getDate() === n.getDate();
+  }
+
+  // ponytail: 最新布置(未见) > 今日截止 > 逾期 > 其余未完成
+  function pickFocus(events) {
+    var open = (events || []).filter(function (ev) {
+      return ev.status === "PENDING" || ev.status === "OVERDUE";
+    });
+    if (!open.length) return null;
+
+    function byCreatedDesc(a, b) {
+      return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+    }
+    function byDueAsc(a, b) {
+      return String(a.dueTime || a.startTime || "").localeCompare(String(b.dueTime || b.startTime || ""));
+    }
+
+    var fresh = open.filter(isNew).sort(byCreatedDesc);
+    if (fresh.length) return { ev: fresh[0], reason: "new" };
+
+    var today = open.filter(function (ev) { return isDueToday(ev.dueTime); }).sort(byDueAsc);
+    if (today.length) return { ev: today[0], reason: "today" };
+
+    var overdue = open.filter(function (ev) { return ev.status === "OVERDUE"; }).sort(byDueAsc);
+    if (overdue.length) return { ev: overdue[0], reason: "overdue" };
+
+    open.sort(byDueAsc);
+    return { ev: open[0], reason: "pending" };
+  }
+
+  function focusCta(ev) {
+    var ids = ev.linkedExerciseIds || [];
+    if (ev.status !== "COMPLETED" && ids.length === 1) {
+      return { href: "exam.html?id=" + encodeURIComponent(ids[0]) +
+        "&event=" + encodeURIComponent(ev.id), label: "开始这项" };
+    }
+    return { href: "#event-" + ev.id, label: ev.status === "COMPLETED" ? "查看" : "查看详情" };
+  }
+
+  function reasonLabel(reason, ev) {
+    if (reason === "new") return "老师刚布置";
+    if (reason === "today") return "今日截止";
+    if (reason === "overdue") return "已逾期";
+    if (ev.dueTime) return "截止 " + fmtDate(ev.dueTime);
+    return TYPE_LABEL[ev.eventType] || "待办";
+  }
+
+  function renderFocus(events) {
+    if (!focusEl) return;
+    var openN = (events || []).filter(function (ev) {
+      return ev.status === "PENDING" || ev.status === "OVERDUE";
+    }).length;
+    var hit = pickFocus(events);
+
+    if (!hit) {
+      focusEl.hidden = false;
+      focusEl.innerHTML =
+        '<div class="dash-focus dash-focus--clear">' +
+          '<div class="dash-focus__text">' +
+            "<b>今日任务已清</b>" +
+            "<span>去真题区加练，或等老师布置新任务</span>" +
+          "</div>" +
+          '<a class="btn btn--primary btn--sm" href="zone.html?zone=mock">去真题区</a>' +
+        "</div>";
+      return;
+    }
+
+    var ev = hit.ev;
+    var cta = focusCta(ev);
+    var neu = isNew(ev);
+    focusEl.hidden = false;
+    focusEl.innerHTML =
+      '<div class="dash-focus' + (neu ? " is-new" : "") + '" data-focus-id="' + esc(String(ev.id)) + '">' +
+        '<div class="dash-focus__text">' +
+          '<p class="dash-focus__eyebrow">' +
+            (neu ? '<span class="dash-focus__dot" aria-hidden="true"></span>' : "") +
+            esc(reasonLabel(hit.reason, ev)) +
+            (openN > 1 ? " · 另有 " + (openN - 1) + " 项" : "") +
+          "</p>" +
+          "<b>" + esc(ev.title) + "</b>" +
+          '<span>' +
+            (ev.dueTime ? "截止 " + esc(fmtDate(ev.dueTime)) : (ev.startTime ? "开始 " + esc(fmtDate(ev.startTime)) : "")) +
+          "</span>" +
+        "</div>" +
+        '<div class="dash-focus__acts">' +
+          '<a class="btn btn--primary btn--sm" href="' + esc(cta.href) + '" data-focus-cta="1">' +
+            esc(cta.label) + "</a>" +
+          '<a class="btn btn--ghost btn--sm" href="#dash-calendar">全部任务</a>' +
+        "</div>" +
+      "</div>";
+
+    focusEl.onclick = function (e) {
+      var a = e.target.closest("[data-focus-cta], a[href^='#event-']");
+      if (!a) return;
+      markSeen(ev.id);
+    };
+  }
+
   function todosHTML(events) {
     var open = (events || []).filter(function (ev) {
       return ev.status === "PENDING" || ev.status === "OVERDUE";
@@ -67,6 +194,7 @@
             '<span class="cal-status-pill cal-status--' +
               (st === "COMPLETED" ? "done" : st === "OVERDUE" ? "overdue" : "pending") +
               '">' + esc(STATUS_LABEL[st] || st) + "</span>" +
+            (isNew(ev) ? ' <span class="dash-todo__new">新</span>' : "") +
             "<b>" + esc(ev.title) + "</b>" +
             '<span class="dash-todo__meta">' +
               (ev.dueTime ? "截止 " + esc(fmtDate(ev.dueTime)) : (ev.startTime ? "开始 " + esc(fmtDate(ev.startTime)) : "")) +
@@ -76,17 +204,17 @@
         '<a class="dash-more" href="#dash-calendar">全部任务 →</a>';
     }
 
-    return '<section class="dash-section" aria-label="待办">' +
-      '<div class="dash-section__head"><h2>待办</h2><p>本周作业与截止</p></div>' +
-      body + "</section>";
+    return '<div class="dash-section__head"><h2>近期待办</h2><p>本周作业与截止</p></div>' + body;
   }
 
   function fail(msg) {
     root.innerHTML = '<div class="state state--brand"><h3>加载失败</h3><p>' + esc(msg) + "</p></div>";
+    if (focusEl) focusEl.hidden = true;
   }
 
   A.api("/api/student/calendar").then(function (res) {
     var events = (res && res.events) || [];
+    renderFocus(events);
     root.innerHTML = todosHTML(events);
   }).catch(function (e) {
     fail(e.message || "请刷新重试");

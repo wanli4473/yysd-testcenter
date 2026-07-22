@@ -164,7 +164,10 @@
   function leafBody(subject) {
     if (subject === "ielts-speaking") {
       return '<div class="exam-grid"><a class="spk-zone-card pressable" href="speaking.html">' +
-        '<b>雅思口语专项练习</b><span>Part 1 选题 · 录音作答 · AI 四维评分</span></a></div>';
+        '<span class="spk-zone-card__badge">AI 评分</span>' +
+        '<b>雅思口语专项练习</b>' +
+        '<span>Part 1 选题 · 录音作答 · AI 四维评分</span>' +
+        '<span class="spk-zone-card__go">开始练习 →</span></a></div>';
     }
     if (Y.isCambridge(subject)) {
       var vols = Y.camVolumes(allItems.filter(function (it) { return it.subject === subject; }));
@@ -262,7 +265,14 @@
     } else {
       var aiTutorHTML = zone === "practice"
         ? '<a class="ai-tutor-entry pressable" href="ai-tutor.html">' +
-          "<b>AI 雅思老师</b><span>口语机经练习/模考 · 写作批改</span></a>"
+            '<span class="ai-tutor-entry__badge" aria-hidden="true">AI</span>' +
+            '<span class="ai-tutor-entry__body">' +
+              '<span class="ai-tutor-entry__kicker">Featured</span>' +
+              "<b>AI 雅思老师</b>" +
+              "<span>口语机经练习 / 全真模考 · 写作批改 · 随时开练</span>" +
+            "</span>" +
+            '<span class="ai-tutor-entry__cta">立即开始 <span aria-hidden="true">→</span></span>' +
+          "</a>"
         : "";
       var cats = activeCat === "all" ? visibleNav() : visibleNav().filter(function (c) { return c.key === activeCat; });
       html = aiTutorHTML + cats.map(categoryHTML).join("");

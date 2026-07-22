@@ -336,6 +336,8 @@
     }
     function onPageHide() {
       if (!examLockOn || examLockVoided) return;
+      // ponytail: confirm() may fire pagehide — honor pause from yysd:exam-dialog
+      if (Date.now() < parentVoidPausedUntil) return;
       triggerParentVoid();
     }
     function onUnload(e) {
@@ -396,7 +398,7 @@
 
     var shown = Y.displayTitle(item);
     titleEl.textContent = shown;
-    document.title = shown + " · 优益思达学习中心";
+    document.title = shown + " · " + ((window.YYSD_AUTH && YYSD_AUTH.brandName && YYSD_AUTH.brandName(YYSD_AUTH.getOrg && YYSD_AUTH.getOrg())) || "学习中心");
     renderBadges(badges);
 
     if (badges) {
@@ -466,7 +468,7 @@
     var zoneLabel = (Y.ZONE[item.zone] || {}).label || "";
     var subjLabel = "老师布置";
     titleEl.textContent = item.title;
-    document.title = item.title + " · 优益思达学习中心";
+    document.title = item.title + " · " + ((window.YYSD_AUTH && YYSD_AUTH.brandName && YYSD_AUTH.brandName(YYSD_AUTH.getOrg && YYSD_AUTH.getOrg())) || "学习中心");
     renderBadges(null);
     metaEl.textContent = [subjLabel, zoneLabel, item._attachmentName || ""].filter(Boolean).join(" · ");
     if (hintEl) {

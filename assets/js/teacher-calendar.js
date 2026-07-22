@@ -106,15 +106,19 @@
     var items = catalog.filter(function (it) {
       if (zone && it.zone !== zone) return false;
       if (!q) return true;
-      var hay = (Y.displayTitle(it) + " " + it.title + " " + it.id + " " + (it.subject || "")).toLowerCase();
+      var hay = (Y.displayTitle(it) + " " + it.title + " " + it.id + " " +
+        (it.subject || "") + " " + (Y.partSearchText ? Y.partSearchText(it) : "")).toLowerCase();
       return hay.indexOf(q) >= 0;
-    }).slice(0, 80);
+    }).slice(0, 120);
     var html = items.map(function (it) {
       var checked = selectedExercises[it.id] ? " checked" : "";
       var zoneLbl = (Y.ZONE[it.zone] || {}).label || it.zone;
+      var partHint = it.partNum
+        ? (it.partKind === "s" ? " · 单 Section" : " · 单 Passage")
+        : "";
       return '<label class="cal-check">' +
         '<input type="checkbox" data-exercise="' + esc(it.id) + '"' + checked + ">" +
-        "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(zoneLbl) + "</small></span></label>";
+        "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(zoneLbl + partHint) + "</small></span></label>";
     }).join("");
     document.getElementById("exercise-list").innerHTML =
       html || '<p class="profile-hint">没有匹配的练习</p>';
@@ -275,7 +279,8 @@
         if (String(xid).indexOf("upload-") === 0) {
           return "<li>上传练习：" + esc(ev.attachmentName || xid) + "</li>";
         }
-        var it = catalog.filter(function (c) { return c.id === xid; })[0];
+        var it = catalog.filter(function (c) { return c.id === xid; })[0]
+          || (Y.resolveItem ? Y.resolveItem(catalog, xid) : null);
         return "<li>" + esc(it ? Y.displayTitle(it) : xid) + "</li>";
       }).join("");
       var doneN = (ev.students || []).filter(function (s) { return s.status === "COMPLETED"; }).length;
@@ -312,14 +317,12 @@
       students = (res[1].students || []).map(function (s) {
         return { id: s.id, phone: s.phone, displayName: s.displayName || "" };
       });
-      catalog = res[2] || [];
+      catalog = Y.expandAssignableParts ? Y.expandAssignableParts(res[2] || []) : (res[2] || []);
       render();
     }).catch(function (e) {
-      if (String(e.message).indexOf("登录") >= 0 || String(e.message).indexOf("教师") >= 0) {
-        T.logout();
-        return;
-      }
-      viewEl.innerHTML = '<div class="state state--brand"><h3>加载失败</h3><p>' + esc(e.message) + "</p></div>";
+      // ponytail: stay put — same as teacher.js
+      viewEl.innerHTML = '<div class="state state--brand"><h3>加载失败</h3><p>' + esc(e.message) +
+        '</p><p><a class="btn btn--ghost btn--sm" href="teacher-login.html">重新登录</a></p></div>';
     });
   }
 
@@ -429,7 +432,7 @@
       showMsg("发布中…");
       return T.api("/api/calendar/events", { method: "POST", body: body })
         .then(function () {
-          showMsg("已发布", true);
+          showMsg("已发给 " + targetStudentIds.length + " 名学生 · 他们打开待办即可看到", true);
           closeCreate();
           load();
         })

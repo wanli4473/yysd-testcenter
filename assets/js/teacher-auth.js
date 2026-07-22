@@ -75,7 +75,8 @@ window.YYSD_TEACHER = (function () {
           phone: t.phone,
           name: t.name || "",
           avatarUrl: t.avatarUrl || "",
-          isAdmin: !!t.isAdmin
+          isAdmin: !!t.isAdmin,
+          isPlatformAdmin: !!t.isPlatformAdmin
         }));
       } else localStorage.removeItem(TEACHER_KEY);
     } catch (e) {}
@@ -90,10 +91,28 @@ window.YYSD_TEACHER = (function () {
     document.querySelectorAll("[data-admin-only]").forEach(function (el) {
       el.hidden = !show;
     });
+    var onHq = true;
+    try {
+      onHq = !(window.YYSD_AUTH && YYSD_AUTH.isHqSite) || YYSD_AUTH.isHqSite();
+    } catch (e) {}
+    var plat = !!(getTeacher().isPlatformAdmin) && onHq;
+    document.querySelectorAll("[data-platform-only]").forEach(function (el) {
+      el.hidden = !plat;
+    });
   }
 
   function authHeaders() {
     var h = { "Content-Type": "application/json" };
+    var slug = "yysd";
+    try {
+      if (window.YYSD_AUTH && YYSD_AUTH.tenantSlug) slug = YYSD_AUTH.tenantSlug();
+      else {
+        var host = (location.hostname || "").toLowerCase();
+        var m = host.match(/^([a-z0-9-]+)\.youyisida\.com$/);
+        if (m && !/^(www|api)$/.test(m[1])) slug = m[1];
+      }
+    } catch (e) {}
+    h["X-Tenant-Slug"] = slug;
     var t = getToken();
     if (t) h.Authorization = "Bearer " + t;
     return h;
@@ -131,20 +150,56 @@ window.YYSD_TEACHER = (function () {
 
   document.addEventListener("DOMContentLoaded", function () {
     if (!isTeacherPage()) return;
+    // Cross-subdomain impersonation handoff
+    try {
+      var m = location.search.match(/[?&]impersonate=([^&]+)/);
+      if (m) {
+        var tok = decodeURIComponent(m[1]);
+        if (tok) {
+          setToken(tok);
+          setTeacher({ phone: "客服", name: "平台客服", isAdmin: true, isPlatformAdmin: true });
+          if (window.YYSD_AUTH && YYSD_AUTH.applyLogin) {
+            YYSD_AUTH.applyLogin({
+              token: tok,
+              role: "teacher",
+              teacher: { phone: "客服", name: "平台客服", isAdmin: true, isPlatformAdmin: true }
+            });
+          }
+          history.replaceState({}, "", location.pathname);
+        }
+      }
+    } catch (e) {}
     if (!guardPage()) return;
     revealAdminNav();
-    if (getToken() && !isPublicPage() && pageName() !== "admin-assign.html") {
-      api("/api/teacher/me").then(function (d) {
-        var me = d.teacher || {};
-        setTeacher({
-          phone: me.phone,
-          name: me.name || "",
-          avatarUrl: me.avatarUrl || "",
-          isAdmin: !!me.isAdmin
-        });
-        revealAdminNav();
-      }).catch(function () {});
-    }
+    if (!getToken() || isPublicPage()) return;
+    var mePath = pageName() === "admin-assign.html" ? "/api/auth/me" : "/api/teacher/me";
+    api(mePath).then(function (d) {
+      var me = d.teacher || d.user || {};
+      setTeacher({
+        phone: me.phone,
+        name: me.name || me.displayName || "",
+        avatarUrl: me.avatarUrl || "",
+        isAdmin: !!me.isAdmin,
+        isPlatformAdmin: !!me.isPlatformAdmin
+      });
+      revealAdminNav();
+    }).catch(function () {
+      // 学生超管 token 也可进教师页看主控台入口：再试 /api/auth/me
+      if (window.YYSD_AUTH && YYSD_AUTH.api) {
+        YYSD_AUTH.api("/api/auth/me").then(function (d) {
+          var me = d.user || {};
+          if (!me.isPlatformAdmin) return;
+          setTeacher({
+            phone: me.phone,
+            name: me.displayName || "",
+            avatarUrl: me.avatarUrl || "",
+            isAdmin: true,
+            isPlatformAdmin: true
+          });
+          revealAdminNav();
+        }).catch(function () {});
+      }
+    });
   });
 
   return {

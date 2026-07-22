@@ -40,7 +40,7 @@
         </div>
         <span class="auth-aside__eyebrow">YYSD · IELTS</span>
         <h2 class="auth-aside__title">学习 · 练习 · 模考<br>一站完成</h2>
-        <p class="auth-aside__desc">使用手机号与密码登录；新用户请先注册并设置密码。</p>
+        <p class="auth-aside__desc" id="aside-desc">使用手机号与密码登录；新用户请先注册并设置密码。</p>
         <ul class="auth-aside__points">
           <li>剑桥雅思真题模考</li>
           <li>成绩云端同步</li>
@@ -53,7 +53,7 @@
           <a class="auth-tabs__item" href="register.html">注册</a>
         </div>
         <h1 class="auth-card__title">账号登录</h1>
-        <p class="auth-card__desc">使用注册时的手机号和密码登录；教师账号也可在此登录。</p>
+        <p class="auth-card__desc" id="card-desc">使用注册时的手机号和密码登录；教师账号也可在此登录。</p>
 
         <form class="auth-form" id="login-form" novalidate>
           <label class="auth-field">
@@ -70,7 +70,7 @@
         </form>
 
         <p class="auth-legal">
-          还没有账号？<a href="register.html">立即注册</a>
+          还没有账号？<a href="register.html" id="reg-link">立即注册</a>
           · <a href="teacher-login.html">教师入口</a>
           · 登录即表示同意
           <a href="agreement.html">《用户服务协议》</a>
@@ -90,7 +90,7 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260716nav"></script>
-  <script src="assets/js/auth.js?v=20260716side"></script>
+  <script src="assets/js/auth.js?v=20260722p0"></script>
   <script src="assets/js/nav.js?v=20260716side"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
@@ -104,11 +104,19 @@
     var next = A.postLoginPath ? A.postLoginPath(nextRaw) : nextRaw;
 
     if (A.getToken()) {
-      location.replace(A.isTeacher && A.isTeacher() ? "teacher.html" : (A.postLoginPath ? A.postLoginPath(nextRaw) : "dashboard.html"));
+      location.replace(A.postLoginPath ? A.postLoginPath(nextRaw) : (A.isTeacher && A.isTeacher() ? "teacher.html" : "dashboard.html"));
       return;
     }
 
     document.getElementById("year").textContent = new Date().getFullYear();
+
+    if (A.isHqSite && !A.isHqSite()) {
+      document.getElementById("aside-desc").textContent =
+        "使用手机号与密码登录。新用户请先用学校发放的注册密钥完成注册。";
+      document.getElementById("card-desc").textContent =
+        "登录使用手机号 + 密码；注册需注册密钥（向学校索取）。";
+      document.getElementById("reg-link").textContent = "密钥注册";
+    }
 
     function showMsg(text, ok) {
       msgEl.textContent = text || "";

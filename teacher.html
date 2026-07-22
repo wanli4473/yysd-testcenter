@@ -7,10 +7,11 @@
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260715attempts">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260717restore">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260717restore">
 </head>
-<body class="home-minimal teacher-page teacher-layout shell-compact-nav">
+<body class="home-minimal teacher-page teacher-layout shell-compact-nav page-premium">
 
   <header class="minimal-topbar">
     <div class="minimal-shell minimal-topbar__inner">
@@ -36,8 +37,12 @@
       <a href="teacher.html" class="teacher-side__link is-active">学情看板</a>
       <a href="teacher-calendar.html" class="teacher-side__link">任务日历</a>
       <a href="admin-assign.html" class="teacher-side__link" data-admin-only hidden>学生分配</a>
+      <a href="platform.html" class="teacher-side__link" data-platform-only hidden>平台主控台</a>
+      <p class="teacher-side__label">内容库</p>
+      <a href="zone.html?zone=study" class="teacher-side__link">单词区</a>
+      <a href="zone.html?zone=practice" class="teacher-side__link">练习区</a>
+      <a href="zone.html?zone=mock" class="teacher-side__link">真题区</a>
       <a href="profile.html" class="teacher-side__link">个人中心</a>
-      <a href="index.html" class="teacher-side__link teacher-side__link--muted">学生端首页</a>
     </aside>
 
     <div class="teacher-content">
@@ -63,8 +68,9 @@
           <div class="teacher-filters" role="tablist" aria-label="记录筛选">
             <button type="button" class="teacher-filter is-active" data-zone="">全部</button>
             <button type="button" class="teacher-filter" data-zone="mock">真题模考</button>
+            <button type="button" class="teacher-filter" data-zone="assignment">上传作业</button>
+            <button type="button" class="teacher-filter" data-zone="study">单词作业</button>
             <button type="button" class="teacher-filter" data-zone="practice">练习</button>
-            <button type="button" class="teacher-filter" data-zone="assignment">上传练习</button>
           </div>
           <label class="teacher-search">
             <span class="visually-hidden">搜索学生</span>
@@ -102,9 +108,9 @@
   </div>
 
   <script src="assets/js/config.js?v=20260716vocabskill"></script>
-  <script src="assets/js/auth.js?v=20260715stable"></script>
-  <script src="assets/js/teacher-auth.js?v=20260715stable"></script>
+  <script src="assets/js/auth.js?v=20260722p0"></script>
+  <script src="assets/js/teacher-auth.js?v=20260722p0"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/teacher.js?v=20260716mockvis"></script>
+  <script src="assets/js/teacher.js?v=20260717restore"></script>
 </body>
 </html>

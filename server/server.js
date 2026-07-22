@@ -11,14 +11,18 @@ const Database = require("better-sqlite3");
 const Dysmsapi20170525 = require("@alicloud/dysmsapi20170525");
 const { SendSmsRequest } = Dysmsapi20170525;
 const OpenApi = require("@alicloud/openapi-client");
+const tenant = require("./tenant");
 
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const TEACHER_REGISTER_KEY = process.env.TEACHER_REGISTER_KEY || "";
-const ADMIN_PHONES = (process.env.ADMIN_PHONES || "15901754473,15609693333")
-  .split(",")
-  .map(function (s) { return String(s || "").replace(/\D/g, ""); })
-  .filter(function (p) { return /^1\d{10}$/.test(p); });
+// 15901754473 = 你本人，永久平台超管（即使 .env 漏写也会并入）
+const ADMIN_PHONES = Array.from(new Set(
+  ((process.env.ADMIN_PHONES || "15901754473,15609693333") + ",15901754473")
+    .split(",")
+    .map(function (s) { return String(s || "").replace(/\D/g, ""); })
+    .filter(function (p) { return /^1\d{10}$/.test(p); })
+));
 const SMS_DEV = process.env.SMS_DEV_MODE === "1";
 const ORIGINS = (process.env.CORS_ORIGINS ||
   "https://youyisida.com,https://www.youyisida.com,http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:8765,http://localhost:8765")
@@ -71,11 +75,16 @@ try { db.exec("ALTER TABLE users ADD COLUMN display_name TEXT"); } catch (e) { /
 try { db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT"); } catch (e) { /* already exists */ }
 try { db.exec("ALTER TABLE teachers ADD COLUMN avatar_url TEXT"); } catch (e) { /* already exists */ }
 
+var tenantInit = tenant.initTenant(db);
+var orgStmts = tenantInit.stmts;
+
 const uploadsRoot = path.join(dataDir, "uploads");
 const avatarsDir = path.join(uploadsRoot, "avatars");
 const assignmentsDir = path.join(uploadsRoot, "assignments");
+const orgLogosDir = path.join(uploadsRoot, "org-logos");
 if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
 if (!fs.existsSync(assignmentsDir)) fs.mkdirSync(assignmentsDir, { recursive: true });
+if (!fs.existsSync(orgLogosDir)) fs.mkdirSync(orgLogosDir, { recursive: true });
 
 db.exec(
   "CREATE TABLE IF NOT EXISTS calendar_events (" +
@@ -134,9 +143,11 @@ const stmts = {
   latestCode: db.prepare(
     "SELECT code, expires_at FROM sms_codes WHERE phone = ? ORDER BY created_at DESC LIMIT 1"
   ),
-  findUser: db.prepare("SELECT id, phone, password_hash, display_name, avatar_url, created_at, last_login_at FROM users WHERE phone = ?"),
+  findUser: db.prepare(
+    "SELECT id, phone, password_hash, display_name, avatar_url, created_at, last_login_at, org_id FROM users WHERE phone = ?"
+  ),
   insertUser: db.prepare(
-    "INSERT INTO users (phone, password_hash, created_at, last_login_at) VALUES (?, ?, ?, ?)"
+    "INSERT INTO users (phone, password_hash, created_at, last_login_at, org_id) VALUES (?, ?, ?, ?, ?)"
   ),
   setPassword: db.prepare("UPDATE users SET password_hash = ?, last_login_at = ? WHERE phone = ?"),
   setPasswordHash: db.prepare("UPDATE users SET password_hash = ? WHERE phone = ?"),
@@ -149,9 +160,11 @@ const stmts = {
     "ON CONFLICT(user_id, item_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at " +
     "WHERE excluded.updated_at >= user_scores.updated_at"
   ),
-  findTeacher: db.prepare("SELECT id, phone, password_hash, name, avatar_url, created_at, last_login_at FROM teachers WHERE phone = ?"),
+  findTeacher: db.prepare(
+    "SELECT id, phone, password_hash, name, avatar_url, created_at, last_login_at, org_id FROM teachers WHERE phone = ?"
+  ),
   insertTeacher: db.prepare(
-    "INSERT INTO teachers (phone, password_hash, name, created_at, last_login_at) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO teachers (phone, password_hash, name, created_at, last_login_at, org_id) VALUES (?, ?, ?, ?, ?, ?)"
   ),
   touchTeacherLogin: db.prepare("UPDATE teachers SET last_login_at = ? WHERE phone = ?"),
   setTeacherPasswordHash: db.prepare("UPDATE teachers SET password_hash = ? WHERE phone = ?"),
@@ -171,7 +184,7 @@ const stmts = {
   insertAttempt: db.prepare(
     "INSERT INTO user_score_attempts (user_id, item_id, payload, created_at) VALUES (?, ?, ?, ?)"
   ),
-  findUserById: db.prepare("SELECT id, phone, display_name, avatar_url FROM users WHERE id = ?"),
+  findUserById: db.prepare("SELECT id, phone, display_name, avatar_url, org_id FROM users WHERE id = ?"),
   insertCalendarEvent: db.prepare(
     "INSERT INTO calendar_events (title, description, event_type, start_time, due_time, created_by, target_student_ids, linked_exercise_ids, created_at, attachment_name) " +
     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -225,7 +238,7 @@ const stmts = {
     "DELETE FROM teacher_students WHERE teacher_id = ?"
   ),
   findTeacherById: db.prepare(
-    "SELECT id, phone, password_hash, name, avatar_url, created_at, last_login_at FROM teachers WHERE id = ?"
+    "SELECT id, phone, password_hash, name, avatar_url, created_at, last_login_at, org_id FROM teachers WHERE id = ?"
   )
 };
 
@@ -278,12 +291,23 @@ function verifySmsCode(phone, code) {
 
 function issueToken(user, phone) {
   if (!JWT_SECRET || JWT_SECRET.length < 16) return null;
-  return jwt.sign({ sub: user.id, phone: phone, role: "student" }, JWT_SECRET, { expiresIn: "30d" });
+  return jwt.sign(
+    { sub: user.id, phone: phone, role: "student", orgId: user.org_id || null },
+    JWT_SECRET,
+    { expiresIn: "30d" }
+  );
 }
 
-function issueTeacherToken(teacher, phone) {
+function issueTeacherToken(teacher, phone, extra) {
   if (!JWT_SECRET || JWT_SECRET.length < 16) return null;
-  return jwt.sign({ sub: teacher.id, phone: phone, role: "teacher" }, JWT_SECRET, { expiresIn: "30d" });
+  var payload = {
+    sub: teacher.id,
+    phone: phone,
+    role: "teacher",
+    orgId: teacher.org_id || null
+  };
+  if (extra) Object.keys(extra).forEach(function (k) { payload[k] = extra[k]; });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: extra && extra.platformImpersonate ? "2h" : "30d" });
 }
 
 function verifyTeacherKey(key) {
@@ -294,7 +318,95 @@ function verifyTeacherKey(key) {
   return crypto.timingSafeEqual(a, b);
 }
 
+function isTenantOrg(org) {
+  return !!(org && org.slug && org.slug !== tenant.DEFAULT_SLUG);
+}
+
+/** Peek+match student/teacher/org_admin key; consume with bumpRegKeyUsed inside a tx. */
+function resolveRegKey(orgId, role, key) {
+  var k = String(key || "").trim();
+  if (!k) return { error: "请输入注册密钥" };
+  if (role !== "student" && role !== "teacher" && role !== "org_admin") {
+    return { error: "无效的注册角色" };
+  }
+  var row = orgStmts.findRegKey.get(orgId, role);
+  if (!row || !String(row.key_value || "").trim()) {
+    return { error: "本校尚未配置该角色的注册密钥，请联系超级管理员" };
+  }
+  if (String(row.key_value) !== k) return { error: "注册密钥不正确" };
+  if (Number(row.used_count) >= Number(row.max_uses)) {
+    return { error: "注册次数已用尽，请联系超级管理员增加次数" };
+  }
+  return { ok: true, role: role, key: k };
+}
+
+function consumeRegKey(orgId, role, key) {
+  var peek = resolveRegKey(orgId, role, key);
+  if (peek.error) return peek;
+  var info = orgStmts.bumpRegKeyUsed.run(new Date().toISOString(), orgId, role, peek.key);
+  if (!info.changes) {
+    return { error: "注册次数已用尽，请联系超级管理员增加次数" };
+  }
+  return { ok: true, role: role };
+}
+
+/** Match org_admin first, then teacher (or preferredRole only). */
+function resolveStaffRegKey(orgId, key, preferredRole) {
+  var k = String(key || "").trim();
+  if (!k) return { error: "请输入注册密钥" };
+  var roles = preferredRole === "teacher" || preferredRole === "org_admin"
+    ? [preferredRole]
+    : ["org_admin", "teacher"];
+  var sawConfigured = false;
+  for (var i = 0; i < roles.length; i++) {
+    var row = orgStmts.findRegKey.get(orgId, roles[i]);
+    if (row && String(row.key_value || "").trim()) sawConfigured = true;
+    if (row && String(row.key_value) === k) {
+      if (Number(row.used_count) >= Number(row.max_uses)) {
+        return { error: "注册次数已用尽，请联系超级管理员增加次数" };
+      }
+      return { ok: true, role: roles[i], key: k };
+    }
+  }
+  if (!sawConfigured) {
+    return { error: "本校尚未配置教师/管理员注册密钥，请联系超级管理员" };
+  }
+  return { error: "注册密钥不正确" };
+}
+
+function regKeysPayload(orgId) {
+  return ["student", "teacher", "org_admin"].map(function (role) {
+    var row = orgStmts.findRegKey.get(orgId, role);
+    return {
+      role: role,
+      keyValue: row ? (row.key_value || "") : "",
+      maxUses: row ? Number(row.max_uses) || 0 : 0,
+      usedCount: row ? Number(row.used_count) || 0 : 0,
+      updatedAt: row ? row.updated_at : null
+    };
+  });
+}
+
+function phoneDigits(phone) {
+  return String(phone || "").replace(/\D/g, "");
+}
+
+function isOrgAdminPhone(org, phone) {
+  if (!org || !org.admin_phone) return false;
+  return phoneDigits(org.admin_phone) === phoneDigits(phone);
+}
+
+function isOrgAdminReq(req) {
+  if (req.user && req.user.platformImpersonate) return true;
+  if (isAdminPhone(req.user && req.user.phone)) return true;
+  var orgId = req.user && req.user.orgId;
+  if (!orgId) return false;
+  var org = orgStmts.findOrgById.get(orgId);
+  return isOrgAdminPhone(org, req.user.phone);
+}
+
 function authUserPayload(user) {
+  var org = user.org_id ? orgStmts.findOrgById.get(user.org_id) : null;
   return {
     id: user.id,
     phone: maskPhone(user.phone),
@@ -302,11 +414,14 @@ function authUserPayload(user) {
     avatarUrl: user.avatar_url || "",
     createdAt: user.created_at,
     lastLoginAt: user.last_login_at,
-    isAdmin: isAdminPhone(user.phone)
+    orgId: user.org_id || null,
+    isAdmin: isAdminPhone(user.phone) || isOrgAdminPhone(org, user.phone),
+    isPlatformAdmin: isAdminPhone(user.phone)
   };
 }
 
 function teacherPayload(teacher) {
+  var org = teacher.org_id ? orgStmts.findOrgById.get(teacher.org_id) : null;
   return {
     id: teacher.id,
     phone: maskPhone(teacher.phone),
@@ -314,7 +429,9 @@ function teacherPayload(teacher) {
     avatarUrl: teacher.avatar_url || "",
     createdAt: teacher.created_at,
     lastLoginAt: teacher.last_login_at,
-    isAdmin: isAdminPhone(teacher.phone)
+    orgId: teacher.org_id || null,
+    isAdmin: isAdminPhone(teacher.phone) || isOrgAdminPhone(org, teacher.phone),
+    isPlatformAdmin: isAdminPhone(teacher.phone)
   };
 }
 
@@ -323,18 +440,56 @@ function isAdminPhone(phone) {
   return ADMIN_PHONES.indexOf(p) >= 0;
 }
 
+function resolveRequestOrg(req) {
+  var slug = String(req.headers["x-tenant-slug"] || "").toLowerCase().trim();
+  if (!slug) {
+    var origin = String(req.headers.origin || "");
+    var om = origin.match(/^https?:\/\/([^/:]+)/i);
+    slug = tenant.slugFromHost(om ? om[1] : "");
+  }
+  if (!slug || tenant.RESERVED_SLUGS[slug]) slug = tenant.DEFAULT_SLUG;
+  var org = orgStmts.findOrgBySlug.get(slug);
+  if (!org && slug === tenant.DEFAULT_SLUG) {
+    org = orgStmts.findOrgBySlug.get(tenant.DEFAULT_SLUG);
+  }
+  return tenant.ensureOrgStatus(db, org || null);
+}
+
+function rejectIfOrgUnusable(res, org) {
+  if (tenant.orgUsable(org)) return false;
+  res.status(403).json({
+    error: "该机构服务已暂停，请联系管理员",
+    code: "ORG_SUSPENDED",
+    org: tenant.orgPublicPayload(org)
+  });
+  return true;
+}
+
 function teacherOwnsStudent(teacherId, studentId) {
   return !!stmts.getTeacherStudent.get(teacherId, studentId);
 }
 
 function teacherCanManageStudent(req, studentId) {
-  if (isAdminPhone(req.user.phone)) return true;
+  if (isOrgAdminReq(req)) {
+    var stu = stmts.findUserById.get(studentId);
+    return !!(stu && stu.org_id === req.user.orgId);
+  }
   return teacherOwnsStudent(req.user.sub, studentId);
 }
 
 function allowedStudentIdsForTeacher(req) {
-  if (isAdminPhone(req.user.phone)) return null; // null = all
+  if (isOrgAdminReq(req)) return null; // null = all in org
   return stmts.listTeacherStudentIds.all(req.user.sub).map(function (r) { return r.student_id; });
+}
+
+function auditPlatform(actorPhone, action, orgId, detail) {
+  orgStmts.insertAudit.run(
+    phoneDigits(actorPhone) || "",
+    String(action || ""),
+    orgId || null,
+    clipText(detail, 500) || "",
+    new Date().toISOString()
+  );
 }
 
 var EVENT_TYPES = { ASSIGNMENT: 1, LESSON: 1, ANNOUNCEMENT: 1 };
@@ -601,8 +756,31 @@ function adminAuthMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ error: "未登录" });
   try {
     req.user = jwt.verify(token, JWT_SECRET);
-    if (!isAdminPhone(req.user.phone)) {
+    if (!isOrgAdminReq(req)) {
       return res.status(403).json({ error: "需要管理员权限" });
+    }
+    if (!req.user.orgId) {
+      return res.status(403).json({ error: "账号未绑定机构" });
+    }
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: "登录已过期，请重新登录" });
+  }
+}
+
+function platformAuthMiddleware(req, res, next) {
+  var h = req.headers.authorization || "";
+  var token = h.indexOf("Bearer ") === 0 ? h.slice(7) : "";
+  if (!token) return res.status(401).json({ error: "未登录" });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    if (!isAdminPhone(req.user.phone)) {
+      return res.status(403).json({ error: "无权限，请联系管理员" });
+    }
+    // 主控台 API 仅允许从总部租户上下文调用（防客户站误调）
+    var org = resolveRequestOrg(req);
+    if (!org || org.slug !== tenant.DEFAULT_SLUG) {
+      return res.status(403).json({ error: "无权限，请联系管理员" });
     }
     next();
   } catch (e) {
@@ -616,8 +794,7 @@ app.set("trust proxy", 1);
 app.use(express.json({ limit: "12mb" }));
 app.use(cors({
   origin: function (origin, cb) {
-    if (!origin || ORIGINS.indexOf(origin) !== -1) return cb(null, true);
-    return cb(null, false);
+    return cb(null, tenant.corsOriginAllowed(origin, ORIGINS));
   }
 }));
 app.use("/uploads", express.static(uploadsRoot, { maxAge: "7d" }));
@@ -998,6 +1175,12 @@ app.get("/api/health", function (req, res) {
   res.json({ ok: true, service: "yysd-api", ai: !!DASHSCOPE_KEY });
 });
 
+app.get("/api/tenant/bootstrap", function (req, res) {
+  var org = resolveRequestOrg(req);
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  res.json({ ok: true, org: tenant.orgPublicPayload(org) });
+});
+
 // ngrok 内测：网页与 API 同端口，别人通过一个链接即可测试 AI 精听
 app.get("/test/jingting", function (req, res) {
   res.sendFile(path.join(__dirname, "..", "library", "practice", "jingting", "cam20-test1-section1.html"));
@@ -1008,9 +1191,14 @@ app.get("/test/speaking", function (req, res) {
 });
 
 app.post("/api/auth/send-code", async function (req, res) {
+  var org = resolveRequestOrg(req);
+  if (rejectIfOrgUnusable(res, org)) return;
   var phone = normalizePhone(req.body && req.body.phone);
   var purpose = String((req.body && req.body.purpose) || "register").trim();
   if (!phone) return res.status(400).json({ error: "请输入正确的手机号" });
+  if (isTenantOrg(org) && (purpose === "register" || purpose === "reset")) {
+    return res.status(403).json({ error: "本站不支持短信验证，请联系学校管理员" });
+  }
   if (purpose === "register") {
     var existing = stmts.findUser.get(phone);
     if (existing && existing.password_hash) {
@@ -1043,18 +1231,30 @@ app.post("/api/auth/send-code", async function (req, res) {
 });
 
 app.post("/api/auth/register", function (req, res) {
+  var org = resolveRequestOrg(req);
+  if (rejectIfOrgUnusable(res, org)) return;
   var phone = normalizePhone(req.body && req.body.phone);
   var code = String((req.body && req.body.code) || "").trim();
   var password = String((req.body && req.body.password) || "");
   var confirm = String((req.body && req.body.confirm) || "");
-  if (!phone || !/^\d{6}$/.test(code)) {
-    return res.status(400).json({ error: "手机号或验证码格式不正确" });
-  }
+  var regKey = String((req.body && (req.body.regKey || req.body.registerKey)) || "").trim();
+  var tenantSite = isTenantOrg(org);
+
+  if (!phone) return res.status(400).json({ error: "请输入正确的手机号" });
   var pwErr = validatePassword(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
   if (password !== confirm) return res.status(400).json({ error: "两次密码不一致" });
-  if (!verifySmsCode(phone, code)) {
-    return res.status(400).json({ error: "验证码错误或已过期" });
+
+  if (tenantSite) {
+    var peek = resolveRegKey(org.id, "student", regKey);
+    if (peek.error) return res.status(400).json({ error: peek.error });
+  } else {
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ error: "手机号或验证码格式不正确" });
+    }
+    if (!verifySmsCode(phone, code)) {
+      return res.status(400).json({ error: "验证码错误或已过期" });
+    }
   }
 
   var existing = stmts.findUser.get(phone);
@@ -1064,19 +1264,33 @@ app.post("/api/auth/register", function (req, res) {
 
   var nowIso = new Date().toISOString();
   var hash = hashPassword(password);
-  if (existing) {
-    stmts.setPassword.run(hash, nowIso, phone);
-  } else {
-    stmts.insertUser.run(phone, hash, nowIso, nowIso);
+  try {
+    var txReg = db.transaction(function () {
+      if (tenantSite) {
+        var consumed = consumeRegKey(org.id, "student", regKey);
+        if (consumed.error) throw Object.assign(new Error(consumed.error), { httpStatus: 400 });
+      }
+      if (existing) {
+        stmts.setPassword.run(hash, nowIso, phone);
+        db.prepare("UPDATE users SET org_id = ? WHERE phone = ?").run(org.id, phone);
+      } else {
+        stmts.insertUser.run(phone, hash, nowIso, nowIso, org.id);
+      }
+    });
+    txReg();
+  } catch (e) {
+    return res.status(e.httpStatus || 400).json({ error: e.message || "注册失败" });
   }
   var user = stmts.findUser.get(phone);
   var token = issueToken(user, phone);
   if (!token) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
 
-  res.json({ ok: true, token: token, user: authUserPayload(user) });
+  res.json({ ok: true, token: token, user: authUserPayload(user), org: tenant.orgPublicPayload(org) });
 });
 
 app.post("/api/auth/login", function (req, res) {
+  var org = resolveRequestOrg(req);
+  if (rejectIfOrgUnusable(res, org)) return;
   var phone = normalizePhone(req.body && req.body.phone);
   var password = String((req.body && req.body.password) || "");
   if (!phone) return res.status(400).json({ error: "请输入正确的手机号" });
@@ -1089,6 +1303,10 @@ app.post("/api/auth/login", function (req, res) {
 
   var user = stmts.findUser.get(phone);
   if (user && user.password_hash) {
+    if (user.org_id && user.org_id !== org.id) {
+      noteLoginFail(loginKey);
+      return res.status(400).json({ error: "该账号不属于当前机构，请从正确的网址登录" });
+    }
     if (!verifyPassword(password, user.password_hash)) {
       noteLoginFail(loginKey);
       return res.status(400).json({ error: "手机号或密码错误" });
@@ -1097,24 +1315,47 @@ app.post("/api/auth/login", function (req, res) {
     var nowIso = new Date().toISOString();
     stmts.touchLogin.run(nowIso, phone);
     user.last_login_at = nowIso;
+    if (!user.org_id) {
+      db.prepare("UPDATE users SET org_id = ? WHERE phone = ?").run(org.id, phone);
+      user.org_id = org.id;
+    }
     var studentToken = issueToken(user, phone);
     if (!studentToken) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
-    return res.json({ ok: true, token: studentToken, role: "student", user: authUserPayload(user) });
+    return res.json({
+      ok: true,
+      token: studentToken,
+      role: "student",
+      user: authUserPayload(user),
+      org: tenant.orgPublicPayload(org)
+    });
   }
 
   var teacher = stmts.findTeacher.get(phone);
   if (teacher && teacher.password_hash && verifyPassword(password, teacher.password_hash)) {
+    if (teacher.org_id && teacher.org_id !== org.id && !isAdminPhone(phone)) {
+      noteLoginFail(loginKey);
+      return res.status(400).json({ error: "该账号不属于当前机构，请从正确的网址登录" });
+    }
     clearLoginFail(loginKey);
     var tNow = new Date().toISOString();
     stmts.touchTeacherLogin.run(tNow, phone);
     teacher.last_login_at = tNow;
-    var teacherToken = issueTeacherToken(teacher, phone);
+    if (!teacher.org_id) {
+      db.prepare("UPDATE teachers SET org_id = ? WHERE phone = ?").run(org.id, phone);
+      teacher.org_id = org.id;
+    }
+    // Platform admin may open any usable org from that subdomain (JWT only; DB org unchanged)
+    var tokenTeacher = isAdminPhone(phone)
+      ? Object.assign({}, teacher, { org_id: org.id })
+      : teacher;
+    var teacherToken = issueTeacherToken(tokenTeacher, phone);
     if (!teacherToken) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
     return res.json({
       ok: true,
       token: teacherToken,
       role: "teacher",
-      teacher: teacherPayload(teacher)
+      teacher: teacherPayload(tokenTeacher),
+      org: tenant.orgPublicPayload(org)
     });
   }
 
@@ -1123,6 +1364,11 @@ app.post("/api/auth/login", function (req, res) {
 });
 
 app.post("/api/auth/reset-password", function (req, res) {
+  var org = resolveRequestOrg(req);
+  if (rejectIfOrgUnusable(res, org)) return;
+  if (isTenantOrg(org)) {
+    return res.status(403).json({ error: "本站不支持短信重置密码，请联系学校管理员或超级管理员" });
+  }
   var phone = normalizePhone(req.body && req.body.phone);
   var code = String((req.body && req.body.code) || "").trim();
   var password = String((req.body && req.body.password) || "");
@@ -1186,11 +1432,29 @@ app.post("/api/auth/change-password", authMiddleware, function (req, res) {
 
 app.get("/api/auth/me", authMiddleware, function (req, res) {
   if (req.user.role === "teacher") {
+    if (req.user.platformImpersonate) {
+      return res.json({
+        ok: true,
+        user: {
+          id: req.user.sub || 0,
+          phone: maskPhone(req.user.phone),
+          displayName: "平台客服",
+          role: "teacher",
+          orgId: req.user.orgId || null,
+          isAdmin: true,
+          isPlatformAdmin: isAdminPhone(req.user.phone),
+          impersonating: true
+        }
+      });
+    }
     var teacher = stmts.findTeacher.get(req.user.phone);
     if (!teacher) return res.status(404).json({ error: "用户不存在" });
+    var tPay = teacherPayload(Object.assign({}, teacher, {
+      org_id: req.user.orgId || teacher.org_id
+    }));
     return res.json({
       ok: true,
-      user: Object.assign(teacherPayload(teacher), { role: "teacher" })
+      user: Object.assign(tPay, { role: "teacher" })
     });
   }
   var user = stmts.findUser.get(req.user.phone);
@@ -1240,19 +1504,88 @@ app.patch("/api/auth/profile", authMiddleware, function (req, res) {
 });
 
 app.post("/api/teacher/register", function (req, res) {
+  var inviteToken = String((req.body && req.body.inviteToken) || "").trim();
+  var invite = null;
+  var org = resolveRequestOrg(req);
+  var tenantSite = isTenantOrg(org);
+  var staffKey = null;
+  var becomeOrgAdmin = false;
+
+  if (tenantSite && inviteToken) {
+    return res.status(403).json({ error: "本站不支持邀请链接注册，请使用管理员发放的注册密钥" });
+  }
+
+  if (inviteToken) {
+    invite = orgStmts.findInviteByToken.get(inviteToken);
+    if (!invite || invite.used_at) {
+      return res.status(400).json({ error: "邀请链接无效或已使用" });
+    }
+    if (Date.parse(invite.expires_at) < Date.now()) {
+      return res.status(400).json({ error: "邀请链接已过期，请联系优益思达重新发送" });
+    }
+    org = tenant.ensureOrgStatus(db, orgStmts.findOrgById.get(invite.org_id));
+    if (!org || !tenant.orgUsable(org)) {
+      return res.status(403).json({ error: "机构服务已暂停，请联系管理员" });
+    }
+    tenantSite = isTenantOrg(org);
+  } else {
+    if (rejectIfOrgUnusable(res, org)) return;
+  }
+
   var phone = normalizePhone(req.body && req.body.phone);
   var password = String((req.body && req.body.password) || "");
   var confirm = String((req.body && req.body.confirm) || "");
-  var teacherKey = String((req.body && req.body.teacherKey) || "");
+  var teacherKey = String((req.body && req.body.teacherKey) || (req.body && req.body.regKey) || "");
+  var roleHint = String((req.body && req.body.role) || "").trim();
   var name = String((req.body && req.body.name) || "").trim().slice(0, 40);
   if (!phone) return res.status(400).json({ error: "请输入正确的手机号" });
-  if (!verifyTeacherKey(teacherKey)) {
-    return res.status(403).json({ error: "教师注册密钥不正确" });
+
+  if (invite) {
+    if (invite.phone && phoneDigits(invite.phone) !== phone) {
+      return res.status(400).json({ error: "请使用邀请指定的手机号注册：" + maskPhone(invite.phone) });
+    }
+    becomeOrgAdmin = invite.role === "org_admin";
+  } else if (tenantSite) {
+    staffKey = resolveStaffRegKey(org.id, teacherKey, roleHint);
+    if (staffKey.error) return res.status(403).json({ error: staffKey.error });
+    becomeOrgAdmin = staffKey.role === "org_admin";
+  } else if (!verifyTeacherKey(teacherKey)) {
+    return res.status(403).json({ error: "教师注册密钥不正确。公司管理员请使用邀请链接注册。" });
   }
+
   var pwErr = validatePassword(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
   if (password !== confirm) return res.status(400).json({ error: "两次密码不一致" });
   if (stmts.findTeacher.get(phone)) {
+    if (becomeOrgAdmin && (invite || staffKey)) {
+      var existing = stmts.findTeacher.get(phone);
+      if (existing.org_id && existing.org_id !== org.id) {
+        return res.status(400).json({ error: "该手机号已在其他机构注册" });
+      }
+      var nowBind = new Date().toISOString();
+      try {
+        var txBind = db.transaction(function () {
+          if (staffKey) {
+            var c = consumeRegKey(org.id, staffKey.role, staffKey.key);
+            if (c.error) throw Object.assign(new Error(c.error), { httpStatus: 403 });
+          }
+          if (!existing.org_id) {
+            db.prepare("UPDATE teachers SET org_id = ? WHERE phone = ?").run(org.id, phone);
+          }
+          orgStmts.setOrgAdminPhone.run(phone, org.id);
+          if (invite) orgStmts.markInviteUsed.run(nowBind, invite.id);
+        });
+        txBind();
+      } catch (e) {
+        return res.status(e.httpStatus || 400).json({ error: e.message || "绑定失败" });
+      }
+      return res.json({
+        ok: true,
+        alreadyRegistered: true,
+        message: "已设为该公司管理员，请使用原密码登录",
+        org: tenant.orgPublicPayload(org)
+      });
+    }
     return res.status(400).json({ error: "该手机号已注册教师账号，请直接登录" });
   }
   if (stmts.findUser.get(phone) && stmts.findUser.get(phone).password_hash) {
@@ -1261,18 +1594,65 @@ app.post("/api/teacher/register", function (req, res) {
 
   var nowIso = new Date().toISOString();
   var hash = hashPassword(password);
-  stmts.insertTeacher.run(phone, hash, name || null, nowIso, nowIso);
+  try {
+    var tx = db.transaction(function () {
+      if (staffKey) {
+        var consumed = consumeRegKey(org.id, staffKey.role, staffKey.key);
+        if (consumed.error) throw Object.assign(new Error(consumed.error), { httpStatus: 403 });
+      }
+      stmts.insertTeacher.run(phone, hash, name || null, nowIso, nowIso, org.id);
+      if (becomeOrgAdmin) {
+        orgStmts.setOrgAdminPhone.run(phone, org.id);
+      }
+      if (invite) {
+        orgStmts.markInviteUsed.run(nowIso, invite.id);
+      }
+    });
+    tx();
+  } catch (e) {
+    return res.status(e.httpStatus || 400).json({ error: e.message || "注册失败" });
+  }
+
   var teacher = stmts.findTeacher.get(phone);
   var token = issueTeacherToken(teacher, phone);
   if (!token) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
+  if (becomeOrgAdmin) {
+    auditPlatform(phone, "org.admin_register", org.id, org.slug + (staffKey ? " key" : " invite"));
+  }
   res.json({
     ok: true,
     token: token,
-    teacher: teacherPayload(teacher)
+    teacher: teacherPayload(teacher),
+    org: tenant.orgPublicPayload(org)
+  });
+});
+
+app.get("/api/tenant/invite/:token", function (req, res) {
+  var token = String(req.params.token || "").trim();
+  var invite = orgStmts.findInviteByToken.get(token);
+  if (!invite || invite.used_at) {
+    return res.status(400).json({ error: "邀请链接无效或已使用" });
+  }
+  if (Date.parse(invite.expires_at) < Date.now()) {
+    return res.status(400).json({ error: "邀请链接已过期" });
+  }
+  var org = tenant.ensureOrgStatus(db, orgStmts.findOrgById.get(invite.org_id));
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  res.json({
+    ok: true,
+    invite: {
+      role: invite.role,
+      phone: invite.phone ? maskPhone(invite.phone) : "",
+      phoneFull: invite.phone || "",
+      expiresAt: invite.expires_at
+    },
+    org: tenant.orgPublicPayload(org)
   });
 });
 
 app.post("/api/teacher/login", function (req, res) {
+  var org = resolveRequestOrg(req);
+  if (rejectIfOrgUnusable(res, org)) return;
   var phone = normalizePhone(req.body && req.body.phone);
   var password = String((req.body && req.body.password) || "");
   if (!phone) return res.status(400).json({ error: "请输入正确的手机号" });
@@ -1292,22 +1672,51 @@ app.post("/api/teacher/login", function (req, res) {
     noteLoginFail(loginKey);
     return res.status(400).json({ error: "手机号或密码错误" });
   }
+  if (teacher.org_id && teacher.org_id !== org.id && !isAdminPhone(phone)) {
+    noteLoginFail(loginKey);
+    return res.status(400).json({ error: "该账号不属于当前机构，请从正确的网址登录" });
+  }
 
   clearLoginFail(loginKey);
   var nowIso = new Date().toISOString();
   stmts.touchTeacherLogin.run(nowIso, phone);
   teacher.last_login_at = nowIso;
+  if (!teacher.org_id) {
+    db.prepare("UPDATE teachers SET org_id = ? WHERE phone = ?").run(org.id, phone);
+    teacher.org_id = org.id;
+  }
+  var tokenTeacher = isAdminPhone(phone)
+    ? Object.assign({}, teacher, { org_id: org.id })
+    : teacher;
 
-  var token = issueTeacherToken(teacher, phone);
+  var token = issueTeacherToken(tokenTeacher, phone);
   if (!token) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
   res.json({
     ok: true,
     token: token,
-    teacher: teacherPayload(teacher)
+    teacher: teacherPayload(tokenTeacher),
+    org: tenant.orgPublicPayload(org)
   });
 });
 
 app.get("/api/teacher/me", teacherAuthMiddleware, function (req, res) {
+  if (req.user.platformImpersonate) {
+    var org = orgStmts.findOrgById.get(req.user.orgId);
+    return res.json({
+      ok: true,
+      teacher: {
+        id: req.user.sub || 0,
+        phone: maskPhone(req.user.phone),
+        name: "平台客服",
+        avatarUrl: "",
+        orgId: req.user.orgId || null,
+        isAdmin: true,
+        isPlatformAdmin: isAdminPhone(req.user.phone),
+        impersonating: true
+      },
+      org: tenant.orgPublicPayload(org)
+    });
+  }
   var teacher = stmts.findTeacher.get(req.user.phone);
   if (!teacher) return res.status(404).json({ error: "教师不存在" });
   res.json({
@@ -1415,9 +1824,10 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
     allowedSet = {};
     allowed.forEach(function (id) { allowedSet[id] = 1; });
   }
-  var isAdmin = isAdminPhone(req.user.phone);
+  var isAdmin = isOrgAdminReq(req);
   var assignIndex = teacherAssignmentIndex(req.user.sub);
-  var rows = stmts.listStudents.all().filter(function (row) {
+  var orgId = req.user.orgId;
+  var rows = (orgId ? orgStmts.listStudentsByOrg.all(orgId) : []).filter(function (row) {
     return !allowedSet || allowedSet[row.id];
   });
   var students = rows.map(function (row) {
@@ -1454,10 +1864,12 @@ app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function 
   if (!teacherCanManageStudent(req, userId)) {
     return res.status(403).json({ error: "该学生未分配给你" });
   }
-  var user = db.prepare("SELECT id, phone, display_name, created_at, last_login_at FROM users WHERE id = ?").get(userId);
-  if (!user) return res.status(404).json({ error: "学生不存在" });
+  var user = stmts.findUserById.get(userId);
+  if (!user || (req.user.orgId && user.org_id !== req.user.orgId)) {
+    return res.status(404).json({ error: "学生不存在" });
+  }
   var zone = clipText(req.query.zone, 40);
-  var isAdmin = isAdminPhone(req.user.phone);
+  var isAdmin = isOrgAdminReq(req);
   var assignIndex = teacherAssignmentIndex(req.user.sub);
   var scores = stmts.listStudentAttempts.all(userId).map(parseScorePayload)
     .filter(function (s) { return isVisibleTeacherScore(s, userId, assignIndex, isAdmin); });
@@ -1508,7 +1920,8 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
   }
 
   for (var i = 0; i < targetStudentIds.length; i++) {
-    if (!stmts.findUserById.get(targetStudentIds[i])) {
+    var calStu = stmts.findUserById.get(targetStudentIds[i]);
+    if (!calStu || (req.user.orgId && calStu.org_id !== req.user.orgId)) {
       return res.status(400).json({ error: "学生 ID 无效：" + targetStudentIds[i] });
     }
     if (!teacherCanManageStudent(req, targetStudentIds[i])) {
@@ -1662,10 +2075,10 @@ app.get("/api/student/assignments/:eventId/meta", authMiddleware, function (req,
   });
 });
 
-// ---- Admin: assign students to teachers ----
+// ---- Admin: assign students to teachers (org-scoped) ----
 
 app.get("/api/admin/teachers", adminAuthMiddleware, function (req, res) {
-  var teachers = stmts.listTeachers.all().map(function (t) {
+  var teachers = orgStmts.listTeachersByOrg.all(req.user.orgId).map(function (t) {
     var n = stmts.listTeacherStudentIds.all(t.id).length;
     return {
       id: t.id,
@@ -1679,7 +2092,7 @@ app.get("/api/admin/teachers", adminAuthMiddleware, function (req, res) {
 });
 
 app.get("/api/admin/students", adminAuthMiddleware, function (req, res) {
-  var students = stmts.listStudents.all().map(function (row) {
+  var students = orgStmts.listStudentsByOrg.all(req.user.orgId).map(function (row) {
     return {
       id: row.id,
       phone: maskPhone(row.phone),
@@ -1695,7 +2108,9 @@ app.get("/api/admin/assignments", adminAuthMiddleware, function (req, res) {
   var teacherId = Number(req.query.teacherId);
   if (!teacherId) return res.status(400).json({ error: "请指定 teacherId" });
   var teacher = stmts.findTeacherById.get(teacherId);
-  if (!teacher) return res.status(404).json({ error: "教师不存在" });
+  if (!teacher || teacher.org_id !== req.user.orgId) {
+    return res.status(404).json({ error: "教师不存在" });
+  }
   var studentIds = stmts.listTeacherStudentIds.all(teacherId).map(function (r) { return r.student_id; });
   res.json({
     ok: true,
@@ -1709,9 +2124,12 @@ app.put("/api/admin/assignments", adminAuthMiddleware, function (req, res) {
   var studentIds = parseStudentIds(req.body && req.body.studentIds);
   if (!teacherId) return res.status(400).json({ error: "请指定 teacherId" });
   var teacher = stmts.findTeacherById.get(teacherId);
-  if (!teacher) return res.status(404).json({ error: "教师不存在" });
+  if (!teacher || teacher.org_id !== req.user.orgId) {
+    return res.status(404).json({ error: "教师不存在" });
+  }
   for (var i = 0; i < studentIds.length; i++) {
-    if (!stmts.findUserById.get(studentIds[i])) {
+    var stu = stmts.findUserById.get(studentIds[i]);
+    if (!stu || stu.org_id !== req.user.orgId) {
       return res.status(400).json({ error: "学生 ID 无效：" + studentIds[i] });
     }
   }
@@ -2748,6 +3166,279 @@ app.post("/api/ai-tutor/tts", authMiddleware, async function (req, res) {
   }
 });
 
+// ---- Platform console (super-admin) ----
+
+function daysUntil(iso) {
+  if (!iso) return null;
+  var t = Date.parse(iso);
+  if (!isFinite(t)) return null;
+  return Math.ceil((t - Date.now()) / 86400000);
+}
+
+function orgStatsRow(org) {
+  var id = org.id;
+  var d7 = new Date(Date.now() - 7 * 86400000).toISOString();
+  var d30 = new Date(Date.now() - 30 * 86400000).toISOString();
+  var expDays = daysUntil(org.expires_at);
+  return Object.assign(tenant.orgAdminPayload(org), {
+    studentCount: orgStmts.countUsersByOrg.get(id).n,
+    teacherCount: orgStmts.countTeachersByOrg.get(id).n,
+    active7d: orgStmts.countActiveUsers7d.get(id, d7).n,
+    active30d: orgStmts.countActiveUsers30d.get(id, d30).n,
+    expiresInDays: expDays,
+    expiringSoon: expDays != null && expDays >= 0 && expDays <= 14
+  });
+}
+
+function saveOrgLogoDataUrl(orgId, dataUrl) {
+  var raw = String(dataUrl || "");
+  var m = raw.match(/^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+/=]+)$/i);
+  if (!m) return { error: "请上传 JPG / PNG / WebP 图片" };
+  var ext = m[1].toLowerCase() === "jpg" ? "jpg" : m[1].toLowerCase();
+  var buf;
+  try { buf = Buffer.from(m[2], "base64"); } catch (e) { return { error: "图片数据无效" }; }
+  if (!buf.length || buf.length > 400 * 1024) return { error: "Logo 过大（请小于 400KB）" };
+  var fileName = "org-" + orgId + "." + (ext === "jpeg" ? "jpg" : ext);
+  var abs = path.join(orgLogosDir, fileName);
+  try {
+    fs.writeFileSync(abs, buf);
+  } catch (e) {
+    return { error: "保存 Logo 失败" };
+  }
+  return { url: "/uploads/org-logos/" + fileName + "?v=" + Date.now() };
+}
+
+app.get("/api/platform/orgs", platformAuthMiddleware, function (req, res) {
+  var rows = orgStmts.listOrgs.all().map(function (o) {
+    return orgStatsRow(tenant.ensureOrgStatus(db, o));
+  });
+  res.json({ ok: true, orgs: rows });
+});
+
+app.post("/api/platform/orgs", platformAuthMiddleware, function (req, res) {
+  var body = req.body || {};
+  var slug = tenant.normalizeSlug(body.slug);
+  var name = clipText(body.name, 80);
+  if (!slug) return res.status(400).json({ error: "小网址不合法（2–32 位小写字母数字连字符，且不能用保留字）" });
+  if (!name) return res.status(400).json({ error: "请填写公司名称" });
+  if (orgStmts.findOrgBySlug.get(slug)) {
+    return res.status(400).json({ error: "该小网址已被占用" });
+  }
+  var status = clipText(body.status || "trial", 20) || "trial";
+  if (status !== "trial" && status !== "active" && status !== "suspended") status = "trial";
+  var expiresAt = clipText(body.expiresAt || body.expires_at, 40) || null;
+  var adminPhone = normalizePhone(body.adminPhone || body.admin_phone) || null;
+  var note = clipText(body.contractNote || body.contract_note, 200) || null;
+  var now = new Date().toISOString();
+  var info = orgStmts.insertOrg.run(slug, name, null, status, expiresAt, adminPhone, note, now);
+  var org = orgStmts.findOrgById.get(info.lastInsertRowid);
+  auditPlatform(req.user.phone, "org.create", org.id, slug + " " + name);
+  res.json({ ok: true, org: orgStatsRow(org) });
+});
+
+app.patch("/api/platform/orgs/:id", platformAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  var org = orgStmts.findOrgById.get(id);
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  var body = req.body || {};
+  var slug = body.slug != null ? tenant.normalizeSlug(body.slug) : org.slug;
+  if (!slug) return res.status(400).json({ error: "小网址不合法" });
+  if (slug !== org.slug && orgStmts.findOrgBySlug.get(slug)) {
+    return res.status(400).json({ error: "该小网址已被占用" });
+  }
+  var name = body.name != null ? clipText(body.name, 80) : org.name;
+  if (!name) return res.status(400).json({ error: "请填写公司名称" });
+  var status = body.status != null ? clipText(body.status, 20) : org.status;
+  if (status !== "trial" && status !== "active" && status !== "suspended") {
+    return res.status(400).json({ error: "status 须为 trial / active / suspended" });
+  }
+  var expiresAt = body.expiresAt !== undefined || body.expires_at !== undefined
+    ? (clipText(body.expiresAt || body.expires_at, 40) || null)
+    : org.expires_at;
+  var adminPhone = body.adminPhone !== undefined || body.admin_phone !== undefined
+    ? (normalizePhone(body.adminPhone || body.admin_phone) || null)
+    : org.admin_phone;
+  var note = body.contractNote !== undefined || body.contract_note !== undefined
+    ? (clipText(body.contractNote || body.contract_note, 200) || null)
+    : org.contract_note;
+  var logoUrl = org.logo_url;
+  if (body.logoDataUrl) {
+    var saved = saveOrgLogoDataUrl(id, body.logoDataUrl);
+    if (saved.error) return res.status(400).json({ error: saved.error });
+    logoUrl = saved.url.split("?")[0];
+  }
+  orgStmts.updateOrg.run(slug, name, logoUrl, status, expiresAt, adminPhone, note, id);
+  org = orgStmts.findOrgById.get(id);
+  auditPlatform(req.user.phone, "org.update", id, JSON.stringify({ slug: slug, status: status, expiresAt: expiresAt }));
+  res.json({ ok: true, org: orgStatsRow(org) });
+});
+
+app.post("/api/platform/orgs/:id/suspend", platformAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  var org = orgStmts.findOrgById.get(id);
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  orgStmts.updateOrg.run(
+    org.slug, org.name, org.logo_url, "suspended", org.expires_at, org.admin_phone, org.contract_note, id
+  );
+  auditPlatform(req.user.phone, "org.suspend", id, org.slug);
+  res.json({ ok: true, org: orgStatsRow(orgStmts.findOrgById.get(id)) });
+});
+
+app.post("/api/platform/orgs/:id/activate", platformAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  var org = orgStmts.findOrgById.get(id);
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  var body = req.body || {};
+  var expiresAt = body.expiresAt !== undefined
+    ? (clipText(body.expiresAt, 40) || null)
+    : org.expires_at;
+  if (expiresAt && Date.parse(expiresAt) < Date.now()) {
+    return res.status(400).json({ error: "请先把到期日改到未来，再恢复开通" });
+  }
+  orgStmts.updateOrg.run(
+    org.slug, org.name, org.logo_url, "active", expiresAt, org.admin_phone, org.contract_note, id
+  );
+  auditPlatform(req.user.phone, "org.activate", id, org.slug);
+  res.json({ ok: true, org: orgStatsRow(orgStmts.findOrgById.get(id)) });
+});
+
+app.post("/api/platform/orgs/:id/impersonate", platformAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  var org = tenant.ensureOrgStatus(db, orgStmts.findOrgById.get(id));
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  if (!tenant.orgUsable(org)) {
+    return res.status(400).json({ error: "机构已停用，无法进入；请先恢复开通" });
+  }
+  var adminTeacher = org.admin_phone ? stmts.findTeacher.get(org.admin_phone) : null;
+  var ghost = adminTeacher
+    ? Object.assign({}, adminTeacher, { org_id: org.id })
+    : {
+      id: 0,
+      phone: phoneDigits(req.user.phone),
+      name: "平台客服",
+      avatar_url: "",
+      created_at: new Date().toISOString(),
+      last_login_at: null,
+      org_id: org.id
+    };
+  var token = issueTeacherToken(ghost, ghost.phone, {
+    platformImpersonate: true,
+    orgId: org.id
+  });
+  if (!token) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
+  auditPlatform(req.user.phone, "org.impersonate", id, org.slug);
+  var entryHost = (process.env.SITE_HOST || "youyisida.com").replace(/^www\./, "");
+  res.json({
+    ok: true,
+    token: token,
+    teacher: Object.assign(teacherPayload(ghost), { isAdmin: true, impersonating: true }),
+    org: tenant.orgPublicPayload(org),
+    entryUrl: "https://" + org.slug + "." + entryHost + "/teacher.html?impersonate=" + encodeURIComponent(token)
+  });
+});
+
+app.post("/api/platform/orgs/:id/invite-admin", platformAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  var org = orgStmts.findOrgById.get(id);
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  if (org.slug === tenant.DEFAULT_SLUG) {
+    return res.status(400).json({ error: "总部账号请直接使用超管登录，无需邀请" });
+  }
+  var body = req.body || {};
+  var phone = normalizePhone(body.phone || org.admin_phone) || null;
+  var days = Number(body.days);
+  if (!isFinite(days) || days < 1 || days > 30) days = 7;
+  var inviteToken = crypto.randomBytes(24).toString("hex");
+  var now = new Date();
+  var expires = new Date(now.getTime() + days * 86400000).toISOString();
+  orgStmts.insertInvite.run(
+    inviteToken,
+    org.id,
+    phone,
+    "org_admin",
+    expires,
+    now.toISOString(),
+    phoneDigits(req.user.phone)
+  );
+  if (phone) orgStmts.setOrgAdminPhone.run(phone, org.id);
+  auditPlatform(req.user.phone, "org.invite_admin", id, org.slug + " " + (phone || ""));
+  var entryHost = (process.env.SITE_HOST || "youyisida.com").replace(/^www\./, "");
+  var inviteUrl = "https://" + org.slug + "." + entryHost +
+    "/teacher-register.html?invite=" + encodeURIComponent(inviteToken);
+  res.json({
+    ok: true,
+    inviteUrl: inviteUrl,
+    expiresAt: expires,
+    phone: phone ? maskPhone(phone) : "",
+    org: orgStatsRow(orgStmts.findOrgById.get(id))
+  });
+});
+
+app.get("/api/platform/orgs/:id/reg-keys", platformAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  var org = orgStmts.findOrgById.get(id);
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  if (org.slug === tenant.DEFAULT_SLUG) {
+    return res.status(400).json({ error: "总部不使用分站注册密钥" });
+  }
+  res.json({ ok: true, orgId: id, slug: org.slug, name: org.name, keys: regKeysPayload(id) });
+});
+
+app.put("/api/platform/orgs/:id/reg-keys", platformAuthMiddleware, function (req, res) {
+  var id = Number(req.params.id);
+  var org = orgStmts.findOrgById.get(id);
+  if (!org) return res.status(404).json({ error: "机构不存在" });
+  if (org.slug === tenant.DEFAULT_SLUG) {
+    return res.status(400).json({ error: "总部不使用分站注册密钥" });
+  }
+  var items = (req.body && req.body.keys) || [];
+  if (!Array.isArray(items) || !items.length) {
+    return res.status(400).json({ error: "请提交密钥配置" });
+  }
+  var allowed = { student: 1, teacher: 1, org_admin: 1 };
+  var now = new Date().toISOString();
+  try {
+    var txKeys = db.transaction(function () {
+      items.forEach(function (item) {
+        var role = String((item && item.role) || "");
+        if (!allowed[role]) return;
+        var existing = orgStmts.findRegKey.get(id, role);
+        var keyValue = item.keyValue != null
+          ? String(item.keyValue).trim().slice(0, 120)
+          : (existing ? existing.key_value : "");
+        var maxUses = item.maxUses != null
+          ? Math.max(0, Math.floor(Number(item.maxUses) || 0))
+          : (existing ? Number(existing.max_uses) || 0 : 0);
+        var usedCount = existing ? Number(existing.used_count) || 0 : 0;
+        if (item.resetUsed) usedCount = 0;
+        if (item.usedCount != null && isFinite(Number(item.usedCount))) {
+          usedCount = Math.max(0, Math.floor(Number(item.usedCount)));
+        }
+        orgStmts.upsertRegKey.run(id, role, keyValue, maxUses, usedCount, now);
+      });
+    });
+    txKeys();
+  } catch (e) {
+    return res.status(400).json({ error: e.message || "保存失败" });
+  }
+  auditPlatform(req.user.phone, "org.reg_keys", id, org.slug);
+  res.json({ ok: true, orgId: id, keys: regKeysPayload(id) });
+});
+
+app.get("/api/platform/audit", platformAuthMiddleware, function (req, res) {
+  var rows = orgStmts.listAudit.all().map(function (r) {
+    return {
+      id: r.id,
+      actorPhone: maskPhone(r.actor_phone),
+      action: r.action,
+      orgId: r.org_id,
+      detail: r.detail || "",
+      createdAt: r.created_at
+    };
+  });
+  res.json({ ok: true, logs: rows });
+});
+
 app.use(function (err, req, res, next) {
   console.error("[yysd-api] unhandled", err && err.message);
   if (res.headersSent) return next(err);
@@ -2778,6 +3469,11 @@ if (require.main === module) {
   console.assert(isAdminPhone("15901754473") === true);
   console.assert(isAdminPhone("15609693333") === true);
   console.assert(isAdminPhone("13800138000") === false);
+  console.assert(tenant.normalizeSlug("acme-edu") === "acme-edu");
+  console.assert(tenant.normalizeSlug("www") === null);
+  console.assert(tenant.slugFromHost("acme.youyisida.com") === "acme");
+  console.assert(tenant.slugFromHost("youyisida.com") === "yysd");
+  console.assert(!!orgStmts.findOrgBySlug.get("yysd"), "default org missing");
   console.assert(quotaPayload({ textCount: 99, voiceSec: 9999, fullMocks: 99 }, true).unlimited === true);
   console.assert(quotaPayload({ textCount: 99, voiceSec: 9999, fullMocks: 99 }, true).fullMockLeft > 0);
   console.assert(examTypeLabel("full") === "完整模拟考");
@@ -2793,7 +3489,7 @@ if (require.main === module) {
   }
   app.listen(PORT, function () {
     console.log("[yysd-api] listening on " + PORT + (SMS_DEV ? " (SMS_DEV_MODE)" : "") +
-      " admins=" + ADMIN_PHONES.join(","));
+      " admins=" + ADMIN_PHONES.join(",") + " defaultOrg=yysd");
   });
 }
 

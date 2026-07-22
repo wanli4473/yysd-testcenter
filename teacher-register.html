@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>教师注册 · 优益思达国际课程中心</title>
+  <title>管理员注册 · 学习平台</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,10 +14,10 @@
 
   <header class="minimal-topbar">
     <div class="minimal-shell minimal-topbar__inner">
-      <a href="index.html" class="minimal-brand" aria-label="优益思达国际课程中心首页">
+      <a href="index.html" class="minimal-brand" aria-label="首页">
         <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
         <span class="minimal-brand__text">
-          <b>优益思达国际课程中心</b>
+          <b>学习平台</b>
           <span>Teacher Portal</span>
         </span>
       </a>
@@ -30,17 +30,17 @@
 
   <main class="minimal-shell minimal-main auth-main">
     <div class="auth-layout">
-      <aside class="auth-aside reveal" aria-label="教师端介绍">
+      <aside class="auth-aside reveal" aria-label="介绍">
         <div class="auth-aside__logo" aria-hidden="true">
           <img src="assets/img/logo.svg?v=20260702-logo" alt="">
         </div>
-        <span class="auth-aside__eyebrow">YYSD · TEACHER</span>
-        <h2 class="auth-aside__title">注册教师账号<br>查看学情</h2>
-        <p class="auth-aside__desc">注册需提供机构专属密钥，注册后可查看全部学生的成绩与模考记录。</p>
-        <ul class="auth-aside__points">
-          <li>专属密钥注册</li>
+        <span class="auth-aside__eyebrow" id="aside-eyebrow">教师注册</span>
+        <h2 class="auth-aside__title" id="aside-title">注册教师账号<br>管理教学事务</h2>
+        <p class="auth-aside__desc" id="aside-desc">使用机构提供的教师注册密钥完成注册。登录后可查看学生成绩、布置练习。</p>
+        <ul class="auth-aside__points" id="aside-points">
+          <li>机构密钥注册</li>
           <li>学生成绩汇总</li>
-          <li>模考进度追踪</li>
+          <li>布置练习任务</li>
         </ul>
       </aside>
       <section class="auth-card reveal">
@@ -48,10 +48,17 @@
           <a class="auth-tabs__item" href="teacher-login.html">登录</a>
           <span class="auth-tabs__item is-active">注册</span>
         </div>
-        <h1 class="auth-card__title">教师注册</h1>
-        <p class="auth-card__desc">请向机构管理员获取教师注册密钥。</p>
+        <h1 class="auth-card__title" id="card-title">教师注册</h1>
+        <p class="auth-card__desc" id="card-desc">请向机构管理员获取教师注册密钥。</p>
 
         <form class="auth-form" id="register-form" novalidate>
+          <label class="auth-field" id="role-field" hidden>
+            <span>注册身份</span>
+            <select id="reg-role">
+              <option value="teacher">老师</option>
+              <option value="org_admin">本校管理员</option>
+            </select>
+          </label>
           <label class="auth-field">
             <span>姓名（可选）</span>
             <input type="text" id="name" autocomplete="name" maxlength="40" placeholder="便于识别，如：王老师">
@@ -60,9 +67,9 @@
             <span>手机号</span>
             <input type="tel" id="phone" inputmode="numeric" autocomplete="tel" maxlength="11" placeholder="11 位中国大陆手机号" required>
           </label>
-          <label class="auth-field">
-            <span>教师注册密钥</span>
-            <input type="password" id="teacher-key" autocomplete="off" placeholder="机构提供的专属密钥" required>
+          <label class="auth-field" id="key-field">
+            <span id="key-label">教师注册密钥</span>
+            <input type="password" id="teacher-key" autocomplete="off" placeholder="机构提供的专属密钥">
           </label>
           <label class="auth-field">
             <span>设置密码</span>
@@ -73,7 +80,7 @@
             <input type="password" id="confirm" autocomplete="new-password" minlength="6" maxlength="64" placeholder="再次输入密码" required>
           </label>
           <p class="auth-msg" id="msg" role="status" aria-live="polite"></p>
-          <button type="submit" class="btn btn--primary btn--block pressable">注册并进入教师端</button>
+          <button type="submit" class="btn btn--primary btn--block pressable" id="submit-btn">注册并进入教师端</button>
         </form>
 
         <p class="auth-legal">
@@ -85,17 +92,21 @@
 
   <footer class="minimal-footer minimal-footer--rich">
     <div class="minimal-shell minimal-footer__inner">
-      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心 · 教师端</p>
+      <p class="minimal-footer__copy">© <span id="year"></span> <span data-icp></span></p>
     </div>
   </footer>
 
-  <script src="assets/js/teacher-auth.js?v=20260715stable"></script>
+  <script src="assets/js/auth.js?v=20260722p0"></script>
+  <script src="assets/js/teacher-auth.js?v=20260722p0"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
     var T = window.YYSD_TEACHER;
+    var A = window.YYSD_AUTH;
     var form = document.getElementById("register-form");
     var msgEl = document.getElementById("msg");
+    var inviteToken = new URLSearchParams(location.search).get("invite") || "";
+    var tenantMode = A.isHqSite && !A.isHqSite();
 
     if (T.getToken()) {
       location.replace("teacher.html");
@@ -109,30 +120,91 @@
       msgEl.className = "auth-msg" + (ok ? " auth-msg--ok" : text ? " auth-msg--err" : "");
     }
 
+    function setupInvite(d) {
+      var org = d.org || {};
+      var name = org.name || "本校";
+      document.getElementById("card-title").textContent = "管理员注册";
+      document.getElementById("card-desc").textContent =
+        "您正在注册「" + name + "」的管理员账号。设置密码后即可管理本校师生。";
+      document.getElementById("aside-title").innerHTML = "成为" + name + "<br>管理员";
+      document.getElementById("aside-desc").textContent = "无需教师密钥。完成注册后请妥善保管密码。";
+      document.getElementById("aside-eyebrow").textContent = name;
+      document.getElementById("submit-btn").textContent = "完成注册并进入";
+      document.getElementById("key-field").hidden = true;
+      document.getElementById("teacher-key").required = false;
+      if (d.invite && d.invite.phoneFull) {
+        var phoneEl = document.getElementById("phone");
+        phoneEl.value = d.invite.phoneFull;
+        phoneEl.readOnly = true;
+      }
+      if (A && A.applyOrgBrand) A.applyOrgBrand(org);
+    }
+
+    if (tenantMode) {
+      inviteToken = "";
+      document.getElementById("role-field").hidden = false;
+      document.getElementById("teacher-key").required = true;
+      document.getElementById("card-title").textContent = "教师 / 管理员注册";
+      document.getElementById("card-desc").textContent =
+        "请向超级管理员索取老师或管理员注册密钥（密钥有次数限制）。";
+      document.getElementById("aside-title").innerHTML = "密钥注册<br>老师或管理员";
+      document.getElementById("aside-desc").textContent =
+        "选择身份并填写对应密钥。管理员可管理本校师生；登录使用手机号 + 密码。";
+      document.getElementById("aside-points").innerHTML =
+        "<li>老师 / 管理员密钥</li><li>次数由超管控制</li><li>手机号密码登录</li>";
+      document.getElementById("key-label").textContent = "注册密钥";
+      document.getElementById("teacher-key").placeholder = "老师或管理员密钥";
+    } else if (inviteToken && A && A.api) {
+      A.api("/api/tenant/invite/" + encodeURIComponent(inviteToken))
+        .then(setupInvite)
+        .catch(function (e) {
+          showMsg(e.message || "邀请无效");
+          form.querySelectorAll("input,button").forEach(function (el) { el.disabled = true; });
+        });
+    } else {
+      document.getElementById("teacher-key").required = true;
+    }
+
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       showMsg("");
-      T.api("/api/teacher/register", {
-        method: "POST",
-        body: {
-          name: document.getElementById("name").value.trim(),
-          phone: document.getElementById("phone").value.trim(),
-          teacherKey: document.getElementById("teacher-key").value,
-          password: document.getElementById("password").value,
-          confirm: document.getElementById("confirm").value
-        }
-      })
+      var body = {
+        name: document.getElementById("name").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        password: document.getElementById("password").value,
+        confirm: document.getElementById("confirm").value
+      };
+      if (inviteToken) body.inviteToken = inviteToken;
+      else {
+        body.teacherKey = document.getElementById("teacher-key").value;
+        if (tenantMode) body.role = document.getElementById("reg-role").value;
+      }
+
+      T.api("/api/teacher/register", { method: "POST", body: body })
         .then(function (d) {
+          if (d.alreadyRegistered) {
+            showMsg(d.message || "请直接登录", true);
+            setTimeout(function () { location.href = "teacher-login.html"; }, 1200);
+            return;
+          }
           T.setToken(d.token);
-          T.setTeacher(d.teacher || { phone: document.getElementById("phone").value.trim() });
+          T.setTeacher(d.teacher || { phone: body.phone });
           try {
             var teacher = d.teacher || {};
             localStorage.setItem("yysd:auth:user", JSON.stringify({
-              phone: teacher.phone || document.getElementById("phone").value.trim(),
+              phone: teacher.phone || body.phone,
               role: "teacher",
               displayName: teacher.name || "",
               avatarUrl: teacher.avatarUrl || "",
-              isAdmin: !!teacher.isAdmin
+              isAdmin: !!teacher.isAdmin,
+              isPlatformAdmin: !!teacher.isPlatformAdmin
+            }));
+            localStorage.setItem("yysd:teacher:user", JSON.stringify({
+              phone: teacher.phone || body.phone,
+              name: teacher.name || "",
+              avatarUrl: teacher.avatarUrl || "",
+              isAdmin: !!teacher.isAdmin,
+              isPlatformAdmin: !!teacher.isPlatformAdmin
             }));
           } catch (e) {}
           location.href = "teacher.html";

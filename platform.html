@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>平台主控台 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260721tenant">
+  <style>
+    .plat { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    .plat h1 { font-size: 1.6rem; margin: 0 0 .4rem; }
+    .plat__lead { color: #666; margin: 0 0 1.5rem; }
+    .plat-warn { background: #fff7e6; border: 1px solid #f0d9a8; padding: .75rem 1rem; margin-bottom: 1rem; border-radius: 6px; }
+    .plat-grid { display: grid; gap: 1rem; }
+    .plat-card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 1rem 1.1rem; background: #fff; }
+    .plat-card__top { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; justify-content: space-between; }
+    .plat-card__name { font-weight: 700; font-size: 1.1rem; }
+    .plat-card__meta { color: #666; font-size: .9rem; }
+    .plat-card__stats { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; margin: .75rem 0; font-size: .9rem; }
+    .plat-card__actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .plat-form { border: 1px solid #e5e5e5; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; background: #fafafa; }
+    .plat-form h2 { font-size: 1.1rem; margin: 0 0 .75rem; }
+    .plat-form .auth-field { margin-bottom: .65rem; }
+    .plat-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    @media (max-width: 640px) { .plat-form .row { grid-template-columns: 1fr; } }
+    .plat-badge { display: inline-block; padding: .1rem .45rem; border-radius: 4px; font-size: .75rem; background: #eee; }
+    .plat-badge--ok { background: #e8f5e9; color: #1b5e20; }
+    .plat-badge--warn { background: #fff3e0; color: #e65100; }
+    .plat-badge--bad { background: #ffebee; color: #b71c1c; }
+    .plat-msg { min-height: 1.2em; color: #c62828; font-size: .9rem; }
+    .plat-audit { margin-top: 2rem; font-size: .85rem; color: #555; }
+    .plat-audit li { margin: .25rem 0; }
+    .plat-key-row { border-top: 1px solid #eee; padding: .85rem 0; }
+    .plat-key-row strong { display: block; margin-bottom: .4rem; }
+    .plat-key-used { margin: .35rem 0; font-size: .85rem; color: #666; }
+  </style>
+</head>
+<body class="home-minimal">
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="index.html" class="minimal-brand">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text"><b>平台主控台</b><span>Multi-tenant control</span></span>
+      </a>
+      <nav class="minimal-nav">
+        <a href="teacher.html">教师端</a>
+        <a href="dashboard.html">学生端</a>
+        <button type="button" class="btn btn--ghost btn--sm" id="plat-logout">退出</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="plat">
+    <h1>平台主控台</h1>
+    <p class="plat__lead">开户、设小网址与 Logo、注册密钥与次数、到期关停、统计与客服进入。收款仍在线下完成。<br>
+      超管账号：尾号 <b>4473</b>（15901754473）。若看不到列表请先退出再登录。</p>
+    <div id="plat-expiring" class="plat-warn" hidden></div>
+    <p class="plat-msg" id="plat-msg" role="status"></p>
+
+    <section class="plat-form" id="plat-create">
+      <h2>新建教育公司</h2>
+      <div class="row">
+        <label class="auth-field"><span>公司名称</span><input id="c-name" placeholder="如：星辰教育" maxlength="80"></label>
+        <label class="auth-field"><span>小网址 slug</span><input id="c-slug" placeholder="如：xingchen → xingchen.youyisida.com" maxlength="32"></label>
+      </div>
+      <div class="row">
+        <label class="auth-field"><span>管理员手机号</span><input id="c-admin" type="tel" maxlength="11" placeholder="须已是教师账号"></label>
+        <label class="auth-field"><span>到期日</span><input id="c-expires" type="date"></label>
+      </div>
+      <label class="auth-field"><span>合同备注（可选）</span><input id="c-note" maxlength="200" placeholder="合同号 / 备注"></label>
+      <button type="button" class="btn btn--primary" id="c-submit">创建</button>
+    </section>
+
+    <div class="plat-grid" id="plat-list"></div>
+
+    <section class="plat-audit">
+      <h2>最近操作日志</h2>
+      <ul id="plat-audit-list"></ul>
+    </section>
+  </main>
+
+  <dialog id="plat-edit">
+    <form method="dialog" id="plat-edit-form" style="padding:1rem;min-width:min(92vw,420px)">
+      <h2 style="margin-top:0">编辑机构</h2>
+      <input type="hidden" id="e-id">
+      <label class="auth-field"><span>公司名称</span><input id="e-name" maxlength="80"></label>
+      <label class="auth-field"><span>小网址 slug</span><input id="e-slug" maxlength="32"></label>
+      <label class="auth-field"><span>管理员手机号</span><input id="e-admin" type="tel" maxlength="11"></label>
+      <label class="auth-field"><span>到期日</span><input id="e-expires" type="date"></label>
+      <label class="auth-field"><span>状态</span>
+        <select id="e-status">
+          <option value="trial">试用</option>
+          <option value="active">正常</option>
+          <option value="suspended">停用</option>
+        </select>
+      </label>
+      <label class="auth-field"><span>合同备注</span><input id="e-note" maxlength="200"></label>
+      <label class="auth-field"><span>Logo 图片</span><input id="e-logo" type="file" accept="image/*"></label>
+      <div style="display:flex;gap:.5rem;margin-top:.75rem">
+        <button type="submit" class="btn btn--primary" value="save">保存</button>
+        <button type="submit" class="btn btn--ghost" value="cancel">取消</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="plat-keys">
+    <form method="dialog" id="plat-keys-form" style="padding:1rem;min-width:min(94vw,520px)">
+      <h2 style="margin-top:0">注册密钥</h2>
+      <p style="margin:0 0 1rem;color:#666;font-size:.9rem" id="k-org-name"></p>
+      <p style="margin:0 0 1rem;font-size:.85rem;color:#555;line-height:1.5">
+        每站三类密钥各一把。注册成功扣 1 次；次数用尽后需在此加次或换新密钥。明文可复制发给客户。
+      </p>
+      <div class="plat-key-row">
+        <strong>学生</strong>
+        <label class="auth-field"><span>密钥</span>
+          <input id="k-student-key" maxlength="120" placeholder="如 STU-xxxx">
+        </label>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:end">
+          <label class="auth-field" style="flex:1;min-width:100px"><span>次数上限</span>
+            <input id="k-student-max" type="number" min="0" step="1">
+          </label>
+          <button type="button" class="btn btn--ghost btn--sm" data-k-act="add" data-role="student">+10 次</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-k-act="gen" data-role="student">换新</button>
+        </div>
+        <p class="plat-key-used" id="k-student-used">已用 0 / 0</p>
+        <label style="font-size:.85rem"><input type="checkbox" id="k-student-reset"> 保存时清零已用次数</label>
+      </div>
+      <div class="plat-key-row">
+        <strong>老师</strong>
+        <label class="auth-field"><span>密钥</span>
+          <input id="k-teacher-key" maxlength="120" placeholder="如 TCH-xxxx">
+        </label>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:end">
+          <label class="auth-field" style="flex:1;min-width:100px"><span>次数上限</span>
+            <input id="k-teacher-max" type="number" min="0" step="1">
+          </label>
+          <button type="button" class="btn btn--ghost btn--sm" data-k-act="add" data-role="teacher">+10 次</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-k-act="gen" data-role="teacher">换新</button>
+        </div>
+        <p class="plat-key-used" id="k-teacher-used">已用 0 / 0</p>
+        <label style="font-size:.85rem"><input type="checkbox" id="k-teacher-reset"> 保存时清零已用次数</label>
+      </div>
+      <div class="plat-key-row">
+        <strong>管理员</strong>
+        <label class="auth-field"><span>密钥</span>
+          <input id="k-org_admin-key" maxlength="120" placeholder="如 ADM-xxxx">
+        </label>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:end">
+          <label class="auth-field" style="flex:1;min-width:100px"><span>次数上限</span>
+            <input id="k-org_admin-max" type="number" min="0" step="1">
+          </label>
+          <button type="button" class="btn btn--ghost btn--sm" data-k-act="add" data-role="org_admin">+10 次</button>
+          <button type="button" class="btn btn--ghost btn--sm" data-k-act="gen" data-role="org_admin">换新</button>
+        </div>
+        <p class="plat-key-used" id="k-org_admin-used">已用 0 / 0</p>
+        <label style="font-size:.85rem"><input type="checkbox" id="k-org_admin-reset"> 保存时清零已用次数</label>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem">
+        <button type="submit" class="btn btn--primary" value="save">保存</button>
+        <button type="submit" class="btn btn--ghost" value="cancel">取消</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="assets/js/auth.js?v=20260722p0"></script>
+  <script src="assets/js/platform.js?v=20260722p0"></script>
+</body>
+</html>

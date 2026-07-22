@@ -53,10 +53,11 @@ window.YYSD_AI_WORD = (function () {
 
   function api(path, opts) {
     return A.api(path, opts).catch(function (err) {
-      if (String(err && err.message || "").indexOf("登录") >= 0 ||
-          String(err && err.message || "").indexOf("未登录") >= 0) {
-        loginNext();
-      }
+      var msg = String(err && err.message || "");
+      // ponytail: "请使用学生账号登录" also contains 登录 — must not bounce teachers off zone
+      if (A && A.isTeacher && A.isTeacher()) throw err;
+      if (msg.indexOf("学生账号") >= 0) throw err;
+      if (msg.indexOf("登录") >= 0 || msg.indexOf("未登录") >= 0) loginNext();
       throw err;
     });
   }

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260716side">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260721regkey3">
 </head>
 <body class="home-minimal">
 
@@ -40,8 +40,8 @@
         </div>
         <span class="auth-aside__eyebrow">YYSD · IELTS</span>
         <h2 class="auth-aside__title">注册账号<br>开始学习</h2>
-        <p class="auth-aside__desc">验证手机号后设置登录密码，即可使用全部学习、练习与模考功能。</p>
-        <ul class="auth-aside__points">
+        <p class="auth-aside__desc" id="aside-desc">验证手机号后设置登录密码，即可使用全部学习、练习与模考功能。</p>
+        <ul class="auth-aside__points" id="aside-points">
           <li>短信验证码注册</li>
           <li>密码登录，安全便捷</li>
           <li>成绩自动云端同步</li>
@@ -53,14 +53,18 @@
           <span class="auth-tabs__item is-active">注册</span>
         </div>
         <h1 class="auth-card__title">注册账号</h1>
-        <p class="auth-card__desc">每个手机号只能注册一次，请牢记您设置的密码。</p>
+        <p class="auth-card__desc" id="card-desc">每个手机号只能注册一次，请牢记您设置的密码。</p>
 
         <form class="auth-form" id="register-form" novalidate>
           <label class="auth-field">
             <span>手机号</span>
             <input type="tel" id="phone" inputmode="numeric" autocomplete="tel" maxlength="11" placeholder="11 位中国大陆手机号" required>
           </label>
-          <label class="auth-field auth-field--row">
+          <label class="auth-field" id="reg-key-field" hidden>
+            <span>注册密钥</span>
+            <input type="text" id="reg-key" autocomplete="off" maxlength="120" placeholder="向学校索取的注册密钥">
+          </label>
+          <label class="auth-field auth-field--row" id="code-field">
             <span>验证码</span>
             <input type="text" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位验证码" required>
             <button type="button" class="btn btn--ghost btn--sm" id="send-btn">获取验证码</button>
@@ -97,7 +101,7 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260716nav"></script>
-  <script src="assets/js/auth.js?v=20260716side"></script>
+  <script src="assets/js/auth.js?v=20260722p0"></script>
   <script src="assets/js/nav.js?v=20260716side"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
@@ -106,10 +110,12 @@
     var form = document.getElementById("register-form");
     var phoneEl = document.getElementById("phone");
     var codeEl = document.getElementById("code");
+    var regKeyEl = document.getElementById("reg-key");
     var passwordEl = document.getElementById("password");
     var confirmEl = document.getElementById("confirm");
     var sendBtn = document.getElementById("send-btn");
     var msgEl = document.getElementById("msg");
+    var tenantMode = A.isHqSite && !A.isHqSite();
     var nextRaw = new URLSearchParams(location.search).get("next") || "dashboard.html";
     var next = A.postLoginPath ? A.postLoginPath(nextRaw) : nextRaw;
     var cooldown = 0;
@@ -121,6 +127,23 @@
     }
 
     document.getElementById("year").textContent = new Date().getFullYear();
+
+    if (tenantMode) {
+      document.getElementById("reg-key-field").hidden = false;
+      var codeField = document.getElementById("code-field");
+      codeField.hidden = true;
+      codeField.style.display = "none";
+      codeEl.required = false;
+      codeEl.value = "";
+      sendBtn.disabled = true;
+      regKeyEl.required = true;
+      document.getElementById("aside-desc").textContent =
+        "向学校索取注册密钥后，用手机号设置密码即可注册。登录仍用手机号 + 密码。";
+      document.getElementById("aside-points").innerHTML =
+        "<li>学校发放的注册密钥</li><li>手机号 + 密码登录</li><li>成绩自动云端同步</li>";
+      document.getElementById("card-desc").textContent =
+        "请向学校管理员索取注册密钥。密钥有次数限制，每个手机号只能注册一次。";
+    }
 
     function showMsg(text, ok) {
       msgEl.textContent = text || "";
@@ -160,14 +183,17 @@
         showMsg("两次密码不一致");
         return;
       }
+      var body = {
+        phone: phoneEl.value.trim(),
+        password: passwordEl.value,
+        confirm: confirmEl.value
+      };
+      if (tenantMode) body.regKey = regKeyEl.value.trim();
+      else body.code = codeEl.value.trim();
+
       A.api("/api/auth/register", {
         method: "POST",
-        body: {
-          phone: phoneEl.value.trim(),
-          code: codeEl.value.trim(),
-          password: passwordEl.value,
-          confirm: confirmEl.value
-        }
+        body: body
       })
         .then(function (d) {
           A.setToken(d.token);

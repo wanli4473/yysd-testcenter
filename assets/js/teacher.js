@@ -154,8 +154,9 @@
     var scores = filteredScores(student.scores);
     var rowsHtml = scores.length
       ? scores.map(function (r) {
+          var hasEssay = !!(r.writingTask1 || r.writingTask2);
           var wrongN = (r.wrong && r.wrong.length) || 0;
-          var btnLabel = wrongN ? ("查看错题 (" + wrongN + ")") : "查看详情";
+          var btnLabel = hasEssay ? "查看作文" : (wrongN ? ("查看错题 (" + wrongN + ")") : "查看详情");
           return '<tr>' +
             '<td><b>' + Y.esc(r.title || r.id) + '</b></td>' +
             '<td>' + Y.esc(zoneLabel(r.zone)) + '</td>' +
@@ -181,6 +182,9 @@
         '<div class="teacher-card__badges">' +
           '<span class="teacher-badge">' + (student.scoreCount || 0) + ' 条记录</span>' +
           '<span class="teacher-badge teacher-badge--mock">' + (student.mockCount || 0) + ' 次真题模考</span>' +
+          (student.homeworkCount
+            ? '<span class="teacher-badge">' + student.homeworkCount + ' 条作业</span>'
+            : '') +
         '</div>' +
       '</header>' +
       '<div class="table-wrap"><table class="data teacher-table">' +
@@ -219,7 +223,16 @@
       ' · 完成 ' + fmtDate(r.date) +
       ' · 总用时 ' + Y.esc(fmtDuration(r.durationSec)) + '</p>';
     var list;
-    if (!wrong.length) {
+    if (r.writingTask1 || r.writingTask2) {
+      list = '<div class="teacher-essay">' +
+        (r.writingTask1
+          ? '<section><h4>Task 1</h4><pre>' + Y.esc(r.writingTask1) + '</pre></section>'
+          : '') +
+        (r.writingTask2
+          ? '<section><h4>Task 2</h4><pre>' + Y.esc(r.writingTask2) + '</pre></section>'
+          : '') +
+        '</div>';
+    } else if (!wrong.length) {
       list = '<p class="teacher-empty-row">本题次无错题明细' +
         (r.score != null && r.total != null && r.score === r.total ? '（全对）' : '（历史记录或该题型未上报）') +
         '</p>';
@@ -285,11 +298,9 @@
       students = res[1].students || [];
       render();
     }).catch(function (e) {
-      if (String(e.message).indexOf("登录") >= 0 || String(e.message).indexOf("教师") >= 0) {
-        T.logout();
-        return;
-      }
-      listEl.innerHTML = '<div class="state state--brand"><h3>加载失败</h3><p>' + Y.esc(e.message) + '</p></div>';
+      // ponytail: stay put — auto-logout hid the page during local design preview
+      listEl.innerHTML = '<div class="state state--brand"><h3>加载失败</h3><p>' + Y.esc(e.message) +
+        '</p><p><a class="btn btn--ghost btn--sm" href="teacher-login.html">重新登录</a></p></div>';
     });
   }
 

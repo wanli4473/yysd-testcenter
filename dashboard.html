@@ -7,11 +7,12 @@
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
   <link rel="stylesheet" href="assets/css/style.css?v=20260716side">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260717restore">
   <link rel="stylesheet" href="assets/css/mascot.css?v=20260709a">
 </head>
-<body class="home-minimal">
+<body class="home-minimal page-premium">
 
   <header class="minimal-topbar">
     <div class="minimal-shell minimal-topbar__inner">
@@ -33,20 +34,19 @@
     </div>
   </header>
 
-  <section class="minimal-shell minimal-page-head">
+  <section class="minimal-shell minimal-page-head dash-premium-head">
+    <p class="dash-premium-eyebrow">Learning Calendar</p>
     <h1 id="dash-hello">待办事项</h1>
     <p class="minimal-page-desc" id="cal-desc">老师布置的任务与日历，从这里开始。</p>
   </section>
 
-  <main class="minimal-shell minimal-main dash-main">
-    <div id="dash-root">
-      <div class="state state--brand"><div class="spinner spinner--brand"></div></div>
-    </div>
+  <div class="minimal-shell" id="dash-focus" hidden></div>
 
-    <section class="dash-section" aria-label="任务日历" id="dash-calendar">
+  <main class="minimal-shell minimal-main dash-main">
+    <section class="dash-section dash-cal-hero" aria-label="任务日历" id="dash-calendar">
       <div class="dash-section__head">
         <h2>任务日历</h2>
-        <p>月历、周视图与全部任务</p>
+        <p>月历、周视图与待办列表</p>
       </div>
       <div class="teacher-toolbar cal-toolbar">
         <div class="teacher-filters" role="tablist" aria-label="视图切换">
@@ -63,6 +63,10 @@
         <div class="state state--brand"><div class="spinner spinner--brand"></div></div>
       </div>
     </section>
+
+    <div id="dash-root" class="dash-aside">
+      <div class="state state--brand"><div class="spinner spinner--brand"></div></div>
+    </div>
   </main>
 
   <div class="cal-modal" id="stu-detail-modal" hidden>
@@ -85,12 +89,12 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260716nav"></script>
-  <script src="assets/js/auth.js?v=20260716side"></script>
+  <script src="assets/js/config.js?v=20260716parts"></script>
+  <script src="assets/js/auth.js?v=20260722p0"></script>
   <script src="assets/js/nav.js?v=20260716side"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/dashboard.js?v=20260716nav"></script>
-  <script src="assets/js/student-calendar.js?v=20260716nav"></script>
+  <script src="assets/js/dashboard.js?v=20260717focus"></script>
+  <script src="assets/js/student-calendar.js?v=20260717focus"></script>
   <script src="assets/js/mascot.js?v=20260709a"></script>
 </body>
 </html>

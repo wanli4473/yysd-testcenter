@@ -9,6 +9,7 @@
   var view = "month";
   var events = [];
   var catalogById = {};
+  var catalogItems = [];
   var cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
   var activeEvent = null;
@@ -43,6 +44,12 @@
   };
 
   function esc(s) { return Y.esc(s); }
+
+  function catalogTitle(xid, uploadName) {
+    if (String(xid).indexOf("upload-") === 0) return uploadName || "老师上传的练习";
+    var it = catalogById[xid] || (Y.resolveItem ? Y.resolveItem(catalogItems, xid) : null);
+    return it ? Y.displayTitle(it) : xid;
+  }
 
   function examHref(itemId, eventId) {
     return "exam.html?id=" + encodeURIComponent(itemId) +
@@ -126,6 +133,7 @@
   function renderMonth() {
     var y = cursor.getFullYear();
     var m = cursor.getMonth();
+    var todayKey = dayKeyOf(new Date().toISOString());
     var firstDow = new Date(y, m, 1).getDay();
     var daysInMonth = new Date(y, m + 1, 0).getDate();
     var cells = [];
@@ -138,8 +146,11 @@
       if (dayEvents.length > 3) {
         chips += '<span class="cal-month__more">+' + (dayEvents.length - 3) + "</span>";
       }
+      var cellCls = "cal-month__cell";
+      if (dayKey === todayKey) cellCls += " is-today";
+      if (dayEvents.length) cellCls += " has-events";
       cells.push(
-        '<div class="cal-month__cell">' +
+        '<div class="' + cellCls + '" style="--cell-i:' + (i % 7) + '">' +
           '<div class="cal-month__day">' + i + "</div>" +
           '<div class="cal-month__chips">' + chips + "</div></div>"
       );
@@ -159,6 +170,7 @@
 
   function renderWeek() {
     var start = startOfWeek(cursor);
+    var todayKey = dayKeyOf(new Date().toISOString());
     var days = [];
     var i;
     for (i = 0; i < 7; i++) {
@@ -166,8 +178,9 @@
       d.setDate(start.getDate() + i);
       var dayKey = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
       var dayEvents = eventsOnDay(dayKey);
+      var dayCls = "cal-week__day" + (dayKey === todayKey ? " is-today" : "");
       days.push(
-        '<div class="cal-week__day">' +
+        '<div class="' + dayCls + '">' +
           '<div class="cal-week__head">' +
             "<b>" + (d.getMonth() + 1) + "/" + d.getDate() + "</b>" +
             "<span>" + "日一二三四五六".charAt(d.getDay()) + "</span>" +
@@ -248,20 +261,31 @@
     return true;
   }
 
+  function markCalSeen(id) {
+    // ponytail: shared with dashboard.js 今日焦点「新」标记
+    var key = "yysd:cal-seen-ids";
+    var n = Number(id);
+    if (!n) return;
+    try {
+      var s = JSON.parse(localStorage.getItem(key) || "[]");
+      if (s.indexOf(n) >= 0) return;
+      s.push(n);
+      if (s.length > 200) s = s.slice(-200);
+      localStorage.setItem(key, JSON.stringify(s));
+    } catch (e) {}
+  }
+
   function openDetail(id) {
     var ev = null;
     events.forEach(function (e) { if (e.id === id) ev = e; });
     if (!ev) return;
+    markCalSeen(ev.id);
     activeEvent = ev;
     document.getElementById("stu-detail-title").textContent = ev.title;
     var doneSet = {};
     (ev.doneExerciseIds || []).forEach(function (xid) { doneSet[xid] = 1; });
     var exList = (ev.linkedExerciseIds || []).map(function (xid) {
-      var isUpload = String(xid).indexOf("upload-") === 0;
-      var it = catalogById[xid];
-      var title = isUpload
-        ? (ev.attachmentName || "老师上传的练习")
-        : (it ? Y.displayTitle(it) : xid);
+      var title = catalogTitle(xid, ev.attachmentName);
       var done = !!doneSet[xid];
       var href = examHref(xid, ev.id);
       return '<li class="cal-ex-row' + (done ? " is-done" : "") + '">' +
@@ -321,7 +345,8 @@
     ]).then(function (res) {
       events = res[0].events || [];
       catalogById = {};
-      (res[1] || []).forEach(function (it) { catalogById[it.id] = it; });
+      catalogItems = res[1] || [];
+      catalogItems.forEach(function (it) { catalogById[it.id] = it; });
       render();
       openFromHash();
     }).catch(function (e) {
