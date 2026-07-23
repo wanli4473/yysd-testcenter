@@ -5,10 +5,9 @@
 | 用途 | 地址 |
 |------|------|
 | 首页 | https://ease.youyisida.com |
-| 学生登录 | https://ease.youyisida.com/login.html |
+| 登录（学生 / 教师 / 管理员） | https://ease.youyisida.com/login.html |
 | 学生注册 | https://ease.youyisida.com/register.html |
-| 教师登录 | https://ease.youyisida.com/teacher-login.html |
-| 教师/管理员注册 | https://ease.youyisida.com/teacher-register.html |
+| 工作人员注册（教师 / 管理员） | https://ease.youyisida.com/teacher-register.html |
 | 教师工作台 | https://ease.youyisida.com/teacher.html |
 | 学生分配（管理员） | https://ease.youyisida.com/admin-assign.html |
 
@@ -27,7 +26,7 @@
 | 角色 | 密钥 | 剩余次数 |
 |------|------|----------|
 | 公司管理员 | `EaseAdm7760` | 1 / 1 |
-| 教师 | `EaseTch5508` | 4 / 5（已用 1） |
+| 教师 | `EaseTch5508` | 4 / 5（已用 1 次） |
 | 学生 | `EaseStu2273` | 10 / 10 |
 
 分网站注册须填写对应密钥；总部 `youyisida.com` 仍用短信验证码注册。
@@ -59,7 +58,8 @@
 
 > 壹则教育在线学习平台已开通。  
 > 网址：https://ease.youyisida.com  
-> 管理员请打开「教师注册」，使用我们提供的**管理员注册密钥**完成首次注册（密钥单独发您，勿外传）。  
+> 登录入口：https://ease.youyisida.com/login.html（学生、教师、管理员统一登录）。  
+> 管理员首次注册请打开「工作人员注册」，使用我们提供的**管理员注册密钥**（密钥单独发您，勿外传）。  
 > 学生注册需**学生注册密钥**；每位学生一个手机号，不能与优益思达总部站重复。  
 > 注册后登录即可使用剑桥模考与练习功能。Logo 与页面已显示「壹则教育」。
 
@@ -69,7 +69,7 @@
 |------|------|
 | 手机号已注册 | 全站手机号唯一；请用新号，或联系优益思达处理 |
 | 密钥次数用尽 | 总部主控台 → 该机构 →「注册密钥」加次或换新密钥 |
-| 页面仍显示优益思达 | 强制刷新 `Cmd+Shift+R` 或使用无痕窗口 |
+| 页面仍显示优益思达 | 首次访问某页可能短暂空白（防闪现）；若仍看到优益思达字样，强制刷新 `Cmd+Shift+R` 或无痕窗口 |
 | 忘记密码（分网站） | 联系本校管理员或优益思达超管，分网站不支持短信重置 |
 
 ## 运维备注

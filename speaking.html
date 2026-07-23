@@ -3,12 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="assets/js/tenant-boot.js?v=20260722brand"></script>
   <title>雅思口语 · 优益思达</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260716side">
-  <link rel="stylesheet" href="assets/css/speaking.css?v=20260709d">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260723mock">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260722home">
+  <link rel="stylesheet" href="assets/css/speaking.css?v=20260722bento4">
 </head>
-<body class="home-minimal spk-page">
+<body class="home-minimal spk-page page-premium">
 
   <header class="minimal-topbar">
     <div class="minimal-shell minimal-topbar__inner">
@@ -30,22 +35,45 @@
   <main class="minimal-shell">
     <div class="minimal-crumb"><a href="index.html">首页</a> <span class="crumb-sep">★</span> <a href="zone.html?zone=practice">练习区</a> <span class="crumb-sep">★</span> <span>雅思口语</span></div>
 
-    <div class="spk-hero">
+    <div class="spk-hero bento-panel">
       <span class="spk-badge">雅思专项练习</span>
       <h1>雅思口语</h1>
       <p>选择话题进入实战演练，AI 将根据雅思官方四维评分标准给出反馈，助你高效提升口语能力。</p>
       <div id="ai-banner" class="spk-ai-banner spk-ai-banner--wait">正在连接 AI 服务…</div>
     </div>
 
-    <div class="spk-stats" id="stats"></div>
-
-    <div class="spk-actions">
-      <a class="btn btn--primary pressable" href="speaking-select.html">开始新练习</a>
-      <a class="btn btn--ghost pressable" href="zone.html?zone=practice">返回练习区</a>
+    <div class="spk-cta-grid bento-grid bento-grid--3" aria-label="口语入口">
+      <a class="bento-cta" href="speaking-select.html">
+        <span class="bento-cta__badge">Part 1</span>
+        <div>
+          <p class="bento-cta__title">口语模考</p>
+          <p class="bento-cta__desc">选题 · 录音作答 · AI 四维评分</p>
+        </div>
+        <span class="spk-cta-go">开始 ›</span>
+      </a>
+      <a class="bento-cta bento-cta--teal" href="speaking-select.html">
+        <span class="bento-cta__badge">专项</span>
+        <div>
+          <p class="bento-cta__title">专项选题</p>
+          <p class="bento-cta__desc">按话题勾选，组一套自己的 Part 1</p>
+        </div>
+        <span class="spk-cta-go">选题 ›</span>
+      </a>
+      <a class="bento-cta bento-cta--orange" href="ai-tutor.html">
+        <span class="bento-cta__badge">AI</span>
+        <div>
+          <p class="bento-cta__title">AI 雅思老师</p>
+          <p class="bento-cta__desc">口语机经 / 写作批改，随时开练</p>
+        </div>
+        <span class="spk-cta-go">进入 ›</span>
+      </a>
     </div>
 
-    <section class="spk-section">
-      <h2>专项练习记录</h2>
+    <div class="spk-stats" id="stats"></div>
+
+    <section class="spk-section bento-panel bento-panel--md">
+      <h2 class="bento-panel__title">专项练习记录</h2>
+      <p class="bento-panel__desc">点击记录查看 AI 评分报告</p>
       <div class="spk-records" id="records"></div>
     </section>
   </main>
@@ -56,23 +84,27 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260716nav"></script>
-  <script src="assets/js/auth.js?v=20260722p0"></script>
-  <script src="assets/js/nav.js?v=20260716side"></script>
+  <script src="assets/js/config.js?v=20260722bento4"></script>
+  <script src="assets/js/auth.js?v=20260723brand"></script>
+  <script src="assets/js/nav.js?v=20260723hub"></script>
   <script src="assets/js/speaking-common.js?v=20260715stable"></script>
   <script>
   (function () {
     var S = window.YYSD_SPEAKING;
     var st = S.stats();
-    document.getElementById("stats").innerHTML =
-      '<div class="spk-stat"><b>' + (st.averageScore || "—") + '</b><span>平均分</span></div>' +
-      '<div class="spk-stat"><b>' + (st.highestScore || "—") + '</b><span>最高分</span></div>' +
-      '<div class="spk-stat"><b>' + st.practiceCount + '</b><span>练习次数</span></div>';
-
     var list = S.loadRecords();
+    var lastTopics = (list[0] && list[0].topics) ? list[0].topics.slice(0, 2).join(" · ") : "—";
+    document.getElementById("stats").innerHTML =
+      '<div class="bento-stat spk-stat"><span class="bento-stat__label">平均分</span><span class="bento-stat__value">' + (st.averageScore || "—") + '</span></div>' +
+      '<div class="bento-stat spk-stat"><span class="bento-stat__label">最高分</span><span class="bento-stat__value">' + (st.highestScore || "—") + '</span></div>' +
+      '<div class="bento-stat spk-stat"><span class="bento-stat__label">练习次数</span><span class="bento-stat__value">' + st.practiceCount + '</span></div>' +
+      '<div class="bento-stat spk-stat"><span class="bento-stat__label">最近话题</span><span class="bento-stat__value spk-stat__topic">' +
+        S.esc(lastTopics) +
+      '</span></div>';
+
     var el = document.getElementById("records");
     if (!list.length) {
-      el.innerHTML = '<div class="spk-empty">还没有练习记录，点击「开始新练习」试试吧。</div>';
+      el.innerHTML = '<div class="spk-empty">还没有练习记录，点击上方「口语模考」试试吧。</div>';
     } else {
       el.innerHTML = list.map(function (r) {
         var date = r.createdAt ? new Date(r.createdAt).toLocaleString("zh-CN") : "";

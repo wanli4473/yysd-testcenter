@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="assets/js/tenant-boot.js?v=20260722brand"></script>
   <title>管理员注册 · 学习平台</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260714dash">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260722polish">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260722polish">
 </head>
 <body class="home-minimal teacher-auth-page">
 
@@ -23,7 +25,7 @@
       </a>
       <nav class="minimal-nav" aria-label="教师导航">
         <a href="index.html">返回学生端</a>
-        <a href="teacher-login.html">教师登录</a>
+        <a href="teacher-login.html" id="nav-login-link">教师登录</a>
       </nav>
     </div>
   </header>
@@ -45,7 +47,7 @@
       </aside>
       <section class="auth-card reveal">
         <div class="auth-tabs">
-          <a class="auth-tabs__item" href="teacher-login.html">登录</a>
+          <a class="auth-tabs__item" href="teacher-login.html" id="tab-login-link">登录</a>
           <span class="auth-tabs__item is-active">注册</span>
         </div>
         <h1 class="auth-card__title" id="card-title">教师注册</h1>
@@ -84,7 +86,7 @@
         </form>
 
         <p class="auth-legal">
-          已有教师账号？<a href="teacher-login.html">去登录</a>
+          已有账号？<a href="teacher-login.html" id="foot-login-link">去登录</a>
         </p>
       </section>
     </div>
@@ -96,8 +98,8 @@
     </div>
   </footer>
 
-  <script src="assets/js/auth.js?v=20260722p0"></script>
-  <script src="assets/js/teacher-auth.js?v=20260722p0"></script>
+  <script src="assets/js/auth.js?v=20260723brand"></script>
+  <script src="assets/js/teacher-auth.js?v=20260722brand"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
@@ -140,20 +142,27 @@
       if (A && A.applyOrgBrand) A.applyOrgBrand(org);
     }
 
+    var tenantLoginUrl = "login.html?next=" + encodeURIComponent("teacher.html");
+
     if (tenantMode) {
       inviteToken = "";
+      ["nav-login-link", "tab-login-link", "foot-login-link"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.href = tenantLoginUrl;
+      });
       document.getElementById("role-field").hidden = false;
       document.getElementById("teacher-key").required = true;
-      document.getElementById("card-title").textContent = "教师 / 管理员注册";
+      document.getElementById("card-title").textContent = "工作人员注册";
       document.getElementById("card-desc").textContent =
-        "请向超级管理员索取老师或管理员注册密钥（密钥有次数限制）。";
-      document.getElementById("aside-title").innerHTML = "密钥注册<br>老师或管理员";
+        "向学校索取注册密钥，选择身份后完成注册。";
+      document.getElementById("aside-eyebrow").textContent = "工作人员";
+      document.getElementById("aside-title").innerHTML = "密钥注册";
       document.getElementById("aside-desc").textContent =
-        "选择身份并填写对应密钥。管理员可管理本校师生；登录使用手机号 + 密码。";
+        "老师或管理员使用对应密钥注册；登录统一使用 login 页。";
       document.getElementById("aside-points").innerHTML =
-        "<li>老师 / 管理员密钥</li><li>次数由超管控制</li><li>手机号密码登录</li>";
+        "<li>注册密钥</li><li>手机号 + 密码登录</li><li>成绩与任务管理</li>";
       document.getElementById("key-label").textContent = "注册密钥";
-      document.getElementById("teacher-key").placeholder = "老师或管理员密钥";
+      document.getElementById("teacher-key").placeholder = "注册密钥";
     } else if (inviteToken && A && A.api) {
       A.api("/api/tenant/invite/" + encodeURIComponent(inviteToken))
         .then(setupInvite)
@@ -184,7 +193,9 @@
         .then(function (d) {
           if (d.alreadyRegistered) {
             showMsg(d.message || "请直接登录", true);
-            setTimeout(function () { location.href = "teacher-login.html"; }, 1200);
+            setTimeout(function () {
+              location.href = tenantMode ? tenantLoginUrl : "teacher-login.html";
+            }, 1200);
             return;
           }
           T.setToken(d.token);

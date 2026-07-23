@@ -5,7 +5,9 @@
   "use strict";
   var Y = window.YYSD;
 
-  var vol = (new URLSearchParams(location.search).get("vol") || "").trim();
+  var params = new URLSearchParams(location.search);
+  var vol = (params.get("vol") || "").trim();
+  var skillQ = (params.get("skill") || "").trim().toLowerCase();
   var contentEl = document.getElementById("content");
 
   document.title = "剑桥雅思 " + vol + " · 优益思达国际课程中心";
@@ -14,10 +16,16 @@
   document.getElementById("year").textContent = new Date().getFullYear();
 
   var SKILLS = [
-    { subject: "cambridge-listening", cls: "listening", ico: "🎧", name: "听力", meta: "4 个部分 · 共 40 题" },
-    { subject: "cambridge-reading",   cls: "reading",   ico: "📖", name: "阅读", meta: "3 篇文章 · 共 40 题" },
-    { subject: "cambridge-writing",   cls: "writing",   ico: "✍️", name: "写作", meta: "Task 1 + Task 2 · 限时 60 分钟" }
+    { subject: "cambridge-listening", cls: "listening", ico: "🎧", name: "听力", meta: "4 个部分 · 共 40 题", key: "listening" },
+    { subject: "cambridge-reading",   cls: "reading",   ico: "📖", name: "阅读", meta: "3 篇文章 · 共 40 题", key: "reading" },
+    { subject: "cambridge-writing",   cls: "writing",   ico: "✍️", name: "写作", meta: "Task 1 + Task 2 · 限时 60 分钟", key: "writing" }
   ];
+
+  var skillFilter = SKILLS.filter(function (s) { return s.key === skillQ; })[0] || null;
+  var backHref = skillFilter
+    ? "zone.html?zone=mock&s=" + encodeURIComponent(skillFilter.key)
+    : "zone.html?zone=mock&s=mock";
+  var backLabel = skillFilter ? skillFilter.name + "顺序练习" : "套题模考";
 
   function skillPanel(skill, item) {
     var done = Y.results()[item.id];
@@ -26,13 +34,18 @@
       '<div class="skill-panel__name">' + skill.name + "</div>" +
       '<div class="skill-panel__meta">' + skill.meta + "</div>" +
       '<button class="skill-panel__btn" onclick="location.href=\'' + Y.fileHref(item, "") + '\'">' +
-      (done ? "再做一次" : "开始测试") + "</button></div>";
+      (done ? "再做一次" : (skillFilter ? "开始练习" : "开始测试")) + "</button></div>";
+  }
+
+  function visibleSkills() {
+    return skillFilter ? [skillFilter] : SKILLS;
   }
 
   function testProgress(papers) {
     var res = Y.results();
-    var done = SKILLS.filter(function (s) { return papers[s.subject] && res[papers[s.subject].id]; }).length;
-    var total = SKILLS.filter(function (s) { return papers[s.subject]; }).length;
+    var list = visibleSkills();
+    var done = list.filter(function (s) { return papers[s.subject] && res[papers[s.subject].id]; }).length;
+    var total = list.filter(function (s) { return papers[s.subject]; }).length;
     return { done: done, total: total };
   }
 
@@ -40,10 +53,13 @@
     var cam = items.filter(function (it) {
       return Y.isCambridge(it.subject) && Y.camVolume(it) === vol;
     });
+    if (skillFilter) {
+      cam = cam.filter(function (it) { return it.subject === skillFilter.subject; });
+    }
 
     if (!cam.length) {
       contentEl.innerHTML = '<div class="state state--brand"><h3>未找到该册内容</h3>' +
-        '<p>请从<a href="zone.html?zone=mock&s=ielts">真题区</a>重新进入。</p></div>';
+        '<p>请从<a href="' + backHref + '">' + Y.esc(backLabel) + "</a>重新进入。</p></div>";
       return;
     }
 
@@ -58,14 +74,18 @@
 
     var crumb = '<div class="minimal-crumb cam-crumb">' +
       '<a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
-      '<a href="zone.html?zone=mock&s=ielts">真题区</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
-      "剑桥雅思 " + Y.esc(vol) + "</div>";
+      '<a href="zone.html?zone=mock">雅思</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
+      '<a href="' + backHref + '">' + Y.esc(backLabel) + '</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
+      '剑桥雅思 ' + Y.esc(vol) + '</div>';
 
+    var metaLine = skillFilter
+      ? "单项顺序练习 · 仅" + skillFilter.name
+      : "官方真题套卷 · 选择 Test 开始套题模考";
     var hero = '<div class="cam-hero">' +
       '<div class="cam-hero__badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">' + Y.esc(vol) + "</div></div>" +
       "<div><h1>剑桥雅思 " + Y.esc(vol) + "</h1>" +
-      '<div class="meta">官方真题套卷 · 选择 Test 与科目开始模考' +
-      (volProg.total ? " · 已完成 " + volProg.done + "/" + volProg.total + " 份" : "") +
+      '<div class="meta">' + metaLine +
+      (!skillFilter && volProg.total ? " · 已完成 " + volProg.done + "/" + volProg.total + " 份" : "") +
       "</div></div></div>";
 
     var tabs = tests.map(function (t, i) {
@@ -81,10 +101,10 @@
 
     var panels = tests.map(function (t, i) {
       var papers = byTest[t];
-      var panels = SKILLS.filter(function (s) { return papers[s.subject]; })
+      var skillHtml = visibleSkills().filter(function (s) { return papers[s.subject]; })
         .map(function (s) { return skillPanel(s, papers[s.subject]); }).join("");
       return '<div class="test-panel' + (i === 0 ? " is-active" : "") + '" data-test="' + Y.esc(t) + '">' +
-        '<div class="skill-grid">' + panels + "</div></div>";
+        '<div class="skill-grid">' + skillHtml + "</div></div>";
     }).join("");
 
     contentEl.innerHTML = crumb + hero +

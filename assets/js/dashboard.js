@@ -20,7 +20,7 @@
 
   var user = A.getUser ? A.getUser() : {};
   var name = (user.displayName || "").trim();
-  if (hello) hello.textContent = name ? (name + "，你好") : "待办事项";
+  if (hello) hello.textContent = name ? (name + "，你好") : "任务中心";
 
   var TYPE_LABEL = {
     ASSIGNMENT: "练习作业",
@@ -204,7 +204,7 @@
         '<a class="dash-more" href="#dash-calendar">全部任务 →</a>';
     }
 
-    return '<div class="dash-section__head"><h2>近期待办</h2><p>本周作业与截止</p></div>' + body;
+    return '<div class="dash-section__head"><h2 class="bento-panel__title">近期待办</h2><p class="bento-panel__desc">本周作业与截止</p></div>' + body;
   }
 
   function fail(msg) {

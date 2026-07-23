@@ -9,8 +9,6 @@
   var board = (new URLSearchParams(location.search).get("board") || "caie").trim();
 
   document.title = "A-Level 真题库 · 优益思达国际课程中心";
-  var navLink = document.querySelector('#nav a[data-zone="mock"]');
-  if (navLink) navLink.classList.add("is-active");
   document.getElementById("year").textContent = new Date().getFullYear();
 
   function render(catalog) {
@@ -23,7 +21,7 @@
 
     var crumb = '<div class="minimal-crumb cam-crumb">' +
       '<a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
-      '<a href="zone.html?zone=mock&s=alevel">真题区</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
+      '<span>国际课程</span> <span class="crumb-sep" aria-hidden="true">★</span> ' +
       "A-Level 真题库</div>";
 
     var hero = '<div class="cam-hero alevel-hero">' +

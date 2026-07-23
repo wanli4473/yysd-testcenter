@@ -29,7 +29,7 @@
   function render() {
     var words = filtered();
     var n = Y.savedWordCount();
-    var html = '<div class="cam-hero vocab-hero wrong-words-hero">' +
+    var html = '<div class="cam-hero vocab-hero wrong-words-hero bento-panel">' +
       '<div class="cam-hero__badge"><div class="lbl">生词</div><div class="num">' + n + "</div></div>" +
       "<div><h1>AI 生词本</h1>" +
       '<div class="meta">' + (n ? n + " 个收藏生词" : "暂无生词 · 在单词区用 AI 查词后可加入") + "</div>" +
@@ -45,7 +45,7 @@
         "</label></div>";
 
     if (!words.length) {
-      html += '<div class="soon-box">' + (n ? "没有匹配的生词。" : "还没有生词。回到单词区用 AI 查词，再点「加入生词本」。") + "</div>";
+      html += '<div class="soon-box premium-empty">' + (n ? "没有匹配的生词。" : "还没有生词。回到单词区用 AI 查词，再点「加入生词本」。") + "</div>";
     } else {
       html += '<div class="wrong-words-list">' + words.map(function (w) {
         var key = String(w.word).toLowerCase();

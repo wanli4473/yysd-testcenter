@@ -124,10 +124,16 @@ window.YYSD_AUTH = (function () {
     document.querySelectorAll(".minimal-brand").forEach(function (a) {
       a.setAttribute("aria-label", name + "首页");
     });
-    document.querySelectorAll(".minimal-brand__text b, .minimal-brand b").forEach(function (el) {
+    document.querySelectorAll(".minimal-brand__text b, .minimal-brand b, .minimal-footer__brand b").forEach(function (el) {
       el.textContent = name;
     });
-    document.querySelectorAll(".minimal-brand__logo, .auth-aside__logo img, .viewer-bar__logo").forEach(function (img) {
+    document.querySelectorAll(".minimal-footer__brand span").forEach(function (el) {
+      if (tenant) {
+        el.textContent = "";
+        el.hidden = true;
+      }
+    });
+    document.querySelectorAll(".minimal-brand__logo, .minimal-footer__logo, .auth-aside__logo img, .viewer-bar__logo").forEach(function (img) {
       if (tenant && org.logoUrl) {
         img.src = logoSrc(org.logoUrl);
       } else if (org.logoUrl) {
@@ -161,6 +167,10 @@ window.YYSD_AUTH = (function () {
   }
 
   function bootstrapTenant() {
+    if (!isHqSite()) {
+      var cached = getOrg();
+      if (cached && cached.slug === tenantSlug()) applyOrgBrand(cached);
+    }
     return fetch(API_BASE + "/api/tenant/bootstrap", {
       headers: { "X-Tenant-Slug": tenantSlug() }
     }).then(function (r) {
@@ -176,7 +186,14 @@ window.YYSD_AUTH = (function () {
       }
       return org;
     }).catch(function () {
-      return getOrg();
+      var fallback = getOrg();
+      if (fallback) applyOrgBrand(fallback);
+      return fallback;
+    }).finally(function () {
+      if (!isHqSite()) {
+        document.documentElement.classList.remove("tenant-brand-pending");
+        document.documentElement.classList.add("tenant-brand-ready");
+      }
     });
   }
 
@@ -474,6 +491,7 @@ window.YYSD_AUTH = (function () {
   }
 
   function applyCompactShell() {
+    if (document.querySelector(".reme-topbar")) return;
     if (!getToken()) return;
     var name = pageName();
     if (PUBLIC_PAGES[name] || name === "exam.html") return;
@@ -548,17 +566,17 @@ window.YYSD_AUTH = (function () {
   }
 
   function studentHome() {
-    return "dashboard.html";
+    return "index.html";
   }
 
   function postLoginPath(next) {
     var n = String(next || "").trim() || studentHome();
-    // 主控台仅总部站可进；客户站即使带 next=platform 也回工作台
+    // 主控台仅总部站可进；客户站即使带 next=platform 也回首页
     if (n.indexOf("platform") >= 0) {
       return isHqSite() ? "platform.html" : studentHome();
     }
     if (isTeacher()) return "teacher.html";
-    if (!n || n === "/" || n === "index.html" || n.indexOf("login") >= 0 || n.indexOf("register") >= 0) {
+    if (!n || n === "/" || n.indexOf("login") >= 0 || n.indexOf("register") >= 0) {
       return studentHome();
     }
     return n;
@@ -567,8 +585,12 @@ window.YYSD_AUTH = (function () {
   function redirectLoggedInAwayFromMarketing() {
     if (!getToken()) return false;
     if (pageName() !== "index.html") return false;
-    location.replace(isTeacher() ? "teacher.html" : studentHome());
-    return true;
+    // 学生登录后留在主页自行点板块；仅教师跳工作台
+    if (isTeacher()) {
+      location.replace("teacher.html");
+      return true;
+    }
+    return false;
   }
 
   function mountStudentShell() {
@@ -584,7 +606,7 @@ window.YYSD_AUTH = (function () {
     document.body.classList.add("student-layout", "shell-compact-nav");
 
     var brand = header.querySelector(".minimal-brand");
-    if (brand) brand.setAttribute("href", "dashboard.html");
+    if (brand) brand.setAttribute("href", "index.html");
     var nav = header.querySelector(".minimal-nav");
     if (nav) ensureLogoutBtn(nav);
 
@@ -701,12 +723,20 @@ window.YYSD_AUTH = (function () {
       return refreshSessionFlags().then(function () {
         bindNav();
         bindIcp();
-        mountStudentShell();
-        applyOrgBrand(getOrg());
         if (getToken() && !isPublicPage() && !isTeacher()) syncScoresFromCloud();
       });
     });
   });
+
+  /* Sync brand from cache before paint (auth.js is at body end; body was hidden by tenant-boot.js) */
+  if (!isHqSite()) {
+    var bootOrg = getOrg();
+    if (bootOrg && bootOrg.slug === tenantSlug()) {
+      applyOrgBrand(bootOrg);
+      document.documentElement.classList.remove("tenant-brand-pending");
+      document.documentElement.classList.add("tenant-brand-ready");
+    }
+  }
 
   return {
     API_BASE: API_BASE,

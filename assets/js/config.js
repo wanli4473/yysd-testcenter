@@ -18,8 +18,8 @@ window.YYSD = (function () {
                 desc: "词书、错题本与 AI 查词，边学边测，打牢基础。" },
     practice: { label: "练习区", en: "Practice", icon: "✏️",
                 desc: "长难句、数字听写、听力精听等专项训练，针对性提分。" },
-    mock:     { label: "真题区", en: "Past Papers", icon: "🎯",
-                desc: "剑桥雅思 / A-Level 历年真题，在线预览与下载。" }
+    mock:     { label: "雅思真题", en: "IELTS Past Papers", icon: "🎯",
+                desc: "剑桥雅思听力 / 阅读 / 写作历年真题，在线练习。" }
   };
 
   // ordered subjects per zone (leaf keys used by the manifest / folder classification)
@@ -27,8 +27,8 @@ window.YYSD = (function () {
     study:    ["grammar", "vocab", "vocab-cet4",
                "vocab-special-listening", "vocab-special-reading", "vocab-special-writing"],
     practice: ["changnanju", "shuzi-tingxie", "jingting", "ielts-speaking", "ielts"],
-    mock:     ["cambridge-listening", "cambridge-reading", "ielts",
-               "ielts-speaking", "ielts-writing", "alevel", "ap", "toefl", "sat"]
+    mock:     ["cambridge-listening", "cambridge-reading", "cambridge-writing", "ielts",
+               "ielts-speaking", "ielts-writing"]
   };
 
   var SUBJECT = {
@@ -75,16 +75,15 @@ window.YYSD = (function () {
       { key: "ielts-speaking", label: "雅思口语", subject: "ielts-speaking" }
     ],
     mock: [
-      { key: "ielts", label: "雅思真题", subject: "ielts", children: [
-        { label: "听力", subject: "cambridge-listening" },
-        { label: "阅读", subject: "cambridge-reading" },
-        { label: "口语", subject: "ielts-speaking" },
-        { label: "写作", subject: "cambridge-writing" }
-      ] },
-      { key: "alevel", label: "A-Level 真题", subject: "alevel" },
-      { key: "ap", label: "AP 真题", subject: "ap" },
-      { key: "toefl", label: "托福真题", subject: "toefl" },
-      { key: "sat", label: "SAT 真题", subject: "sat" }
+      { key: "listening", label: "听力", subject: "cambridge-listening", desc: "听力真题顺序练习", skill: "listening" },
+      { key: "reading", label: "阅读", subject: "cambridge-reading", desc: "阅读真题顺序练习", skill: "reading" },
+      { key: "speaking", label: "口语", subject: "ielts-speaking", desc: "AI口语练习/模考", href: "speaking.html" },
+      { key: "writing", label: "写作", subject: "cambridge-writing", desc: "写作真题顺序练习", skill: "writing",
+        links: [
+          { label: "写作真题顺序练习", href: "zone.html?zone=mock&s=writing" },
+          { label: "AI写作批改", href: "ai-tutor.html?track=writing" }
+        ] },
+      { key: "mock", label: "模考", subject: "ielts", desc: "剑桥套题模考" }
     ]
   };
   function navOf(zone) { return NAV[zone] || []; }
@@ -621,7 +620,9 @@ window.YYSD = (function () {
     return { done: done, total: cam.length };
   }
 
-  function camVolumeCardHTML(v, prefix, items) {
+  function camVolumeCardHTML(v, prefix, items, opts) {
+    opts = opts || {};
+    var skill = opts.skill || "";
     var tag = camVolTag(v.vol);
     var prog = items ? camVolumeProgress(items, v.vol) : null;
     var cntText = prog && prog.done
@@ -634,8 +635,11 @@ window.YYSD = (function () {
       '<path class="vol-card__book-r" d="M19.5 5.5c-2.6 0-4.8.5-6.5 1.6v11.4c1.7-1.1 3.9-1.6 6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
       '<path d="M12 7.1v11.4" stroke="currentColor" stroke-width="2"/></svg>';
     var skills = '<span class="vc-skill vc-skill--a">A</span><span class="vc-skill vc-skill--b">B</span><span class="vc-skill vc-skill--u">◯</span>';
+    var href = (prefix || "") + "cambridge.html?vol=" + encodeURIComponent(v.vol) +
+      (skill ? "&skill=" + encodeURIComponent(skill) : "");
+    var goLabel = skill ? "开始练习 ›" : "开始模考 ›";
     return '' +
-      '<a class="vol-card vol-card--tier-' + tag.c + doneClass + '" href="' + (prefix || "") + 'cambridge.html?vol=' + encodeURIComponent(v.vol) + '">' +
+      '<a class="vol-card vol-card--tier-' + tag.c + doneClass + '" href="' + href + '">' +
         '<div class="vol-card__main">' +
         '<div class="vol-card__top">' +
           '<span class="vol-card__vol">' + shieldIcon + ' VOL.' + esc(v.vol) + '</span>' +
@@ -648,7 +652,7 @@ window.YYSD = (function () {
         '</div>' +
         '<div class="vol-card__foot">' +
           '<span class="vol-card__skills">' + skills + '</span>' +
-          '<span class="vol-card__go">开始真题 ›</span>' +
+          '<span class="vol-card__go">' + goLabel + '</span>' +
         '</div>' +
         '</div>' +
       '</a>';
@@ -679,7 +683,9 @@ window.YYSD = (function () {
     }
 
     function cards(vols) {
-      return vols.map(function (v) { return camVolumeCardHTML(v, prefix, items); }).join("");
+      return vols.map(function (v) {
+        return camVolumeCardHTML(v, prefix, items, { skill: opts.skill || "" });
+      }).join("");
     }
 
     if (tier !== "all" || q || !collapseLegacy) {

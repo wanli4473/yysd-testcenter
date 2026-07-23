@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="assets/js/tenant-boot.js?v=20260722brand"></script>
   <title>我的成绩 · 优益思达国际课程中心</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260716side">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260723mock">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260722home">
   <link rel="stylesheet" href="assets/css/mascot.css?v=20260709a">
 </head>
-<body class="home-minimal">
+<body class="home-minimal page-premium">
 
   <header class="minimal-topbar">
     <div class="minimal-shell minimal-topbar__inner">
@@ -35,7 +37,7 @@
 
   <section class="minimal-shell minimal-page-head">
     <div class="minimal-crumb"><a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> 我的成绩</div>
-    <div class="minimal-eyebrow">RESULTS</div>
+    <p class="dash-premium-eyebrow">Results</p>
     <h1>我的成绩</h1>
     <p class="minimal-page-desc">记录保存在本浏览器中。完成模考或练习并交卷后，成绩会自动出现在这里。</p>
   </section>
@@ -71,8 +73,8 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260716nav"></script>
-  <script src="assets/js/auth.js?v=20260722p0"></script>
-  <script src="assets/js/nav.js?v=20260716side"></script>
+  <script src="assets/js/auth.js?v=20260723brand"></script>
+  <script src="assets/js/nav.js?v=20260723hub"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
@@ -103,37 +105,38 @@
       if (!rows.length) {
         if (timelineEl) timelineEl.innerHTML = "";
         if (summaryEl) summaryEl.innerHTML = "";
-        area.innerHTML = '<div class="state state--brand results-empty">' +
+        area.innerHTML = '<div class="state state--brand results-empty premium-empty premium-enter">' +
           '<h3>还没有成绩记录</h3>' +
           '<p>完成一份剑桥真题并交卷后，得分和 Band 预估会自动出现在这里。</p>' +
-          '<div class="results-empty__actions">' +
+          '<div class="results-empty__actions premium-empty__actions">' +
           '<a class="btn btn--primary pressable" href="zone.html?zone=mock&s=ielts">去做第一套真题 →</a>' +
           '<a class="btn btn--ghost" href="zone.html?zone=study">先去单词区</a>' +
           '</div></div>';
         return;
       }
 
-      var html = '<div class="table-wrap"><table class="data"><thead><tr>' +
-        '<th>内容</th><th>板块</th><th>科目</th><th>得分</th><th>等级</th><th>完成时间</th><th>操作</th>' +
-        '</tr></thead><tbody>';
+      var html = '<div class="results-list premium-enter">';
       rows.forEach(function (r) {
         var score = (r.score != null) ? (r.score + (r.total != null ? " / " + r.total : "")) : "—";
         var date = r.date ? new Date(r.date).toLocaleString("zh-CN") : "—";
         var zone = (Y.ZONE[r.zone] || {}).label || "—";
         var subj = (Y.SUBJECT[r.subject] || {}).label || "—";
-        html += '<tr>' +
-          '<td><b>' + Y.esc(r.title) + '</b></td>' +
-          '<td>' + Y.esc(zone) + '</td>' +
-          '<td>' + Y.esc(subj) + '</td>' +
-          '<td><span class="score-pill">' + Y.esc(score) + '</span></td>' +
-          '<td>' + (r.band != null ? Y.esc(r.band) : "—") + '</td>' +
-          '<td>' + Y.esc(date) + '</td>' +
-          '<td class="results-actions">' +
-          '<a class="btn btn--ghost btn--sm" href="exam.html?id=' + encodeURIComponent(r.id) + '">再练一次</a>' +
-          '<span class="btn btn--ghost btn--sm is-disabled" title="AI 错题讲解即将上线">查看错题</span>' +
-          '</td></tr>';
+        var band = r.band != null ? String(r.band) : "—";
+        html += '<article class="results-row">' +
+          '<div class="results-row__main">' +
+            '<h3 class="results-row__title">' + Y.esc(r.title) + '</h3>' +
+            '<p class="results-row__meta">' + Y.esc(zone) + ' · ' + Y.esc(subj) + ' · ' + Y.esc(date) + '</p>' +
+          '</div>' +
+          '<div class="results-row__score">' +
+            '<span class="results-row__band">' + Y.esc(band) + '</span>' +
+            '<span class="results-row__pts">' + Y.esc(score) + '</span>' +
+          '</div>' +
+          '<div class="results-row__acts">' +
+            '<a class="btn btn--ghost btn--sm" href="exam.html?id=' + encodeURIComponent(r.id) + '">再练一次</a>' +
+            '<span class="btn btn--ghost btn--sm is-disabled" title="AI 错题讲解即将上线">查看错题</span>' +
+          '</div></article>';
       });
-      html += '</tbody></table></div>';
+      html += '</div>';
       area.innerHTML = html;
     }
 

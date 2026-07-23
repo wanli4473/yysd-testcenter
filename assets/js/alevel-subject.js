@@ -209,7 +209,7 @@
 
     var crumb = '<div class="minimal-crumb cam-crumb">' +
       '<a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
-      '<a href="zone.html?zone=mock&s=alevel">真题区</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
+      '<a href="alevel.html">国际课程</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
       '<a href="alevel.html?board=' + encodeURIComponent(board) + '">A-Level</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
       Y.esc(subject.nameZh) + "</div>";
 

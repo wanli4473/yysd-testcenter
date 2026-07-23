@@ -7,8 +7,33 @@
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260714shell">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260722polish">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260722polish">
+  <script>
+  /* ponytail: 分网站统一登录，避免 teacher-login 闪出优益思达品牌 */
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search).get("tenant");
+      if (q && /^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$/.test(q)) {
+        location.replace("login.html?next=" + encodeURIComponent(
+          new URLSearchParams(location.search).get("next") || "teacher.html"
+        ));
+        return;
+      }
+    } catch (e) {}
+    var h = (location.hostname || "").toLowerCase();
+    if (h && h !== "localhost" && h !== "127.0.0.1" &&
+        h !== "youyisida.com" && h !== "www.youyisida.com") {
+      var m = h.match(/^([a-z0-9-]+)\.youyisida\.com$/);
+      if (m && !/^(www|api|admin|platform|mail|static|cdn|test|dev|staging)$/.test(m[1])) {
+        location.replace("login.html?next=" + encodeURIComponent(
+          new URLSearchParams(location.search).get("next") || "teacher.html"
+        ));
+      }
+    }
+  })();
+  </script>
 </head>
 <body class="home-minimal teacher-auth-page">
 

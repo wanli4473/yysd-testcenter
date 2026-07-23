@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="assets/js/tenant-boot.js?v=20260722brand"></script>
   <title>登录 · 优益思达国际课程中心</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260716side">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260723mock">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260722polish">
 </head>
 <body class="home-minimal">
 
@@ -71,7 +73,7 @@
 
         <p class="auth-legal">
           还没有账号？<a href="register.html" id="reg-link">立即注册</a>
-          · <a href="teacher-login.html">教师入口</a>
+          <span id="teacher-entry-wrap"> · <a href="teacher-login.html" id="teacher-entry-link">教师入口</a></span>
           · 登录即表示同意
           <a href="agreement.html">《用户服务协议》</a>
           与
@@ -90,8 +92,8 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260716nav"></script>
-  <script src="assets/js/auth.js?v=20260722p0"></script>
-  <script src="assets/js/nav.js?v=20260716side"></script>
+  <script src="assets/js/auth.js?v=20260723brand"></script>
+  <script src="assets/js/nav.js?v=20260723hub"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
@@ -100,11 +102,11 @@
     var phoneEl = document.getElementById("phone");
     var passwordEl = document.getElementById("password");
     var msgEl = document.getElementById("msg");
-    var nextRaw = new URLSearchParams(location.search).get("next") || "dashboard.html";
+    var nextRaw = new URLSearchParams(location.search).get("next") || "index.html";
     var next = A.postLoginPath ? A.postLoginPath(nextRaw) : nextRaw;
 
     if (A.getToken()) {
-      location.replace(A.postLoginPath ? A.postLoginPath(nextRaw) : (A.isTeacher && A.isTeacher() ? "teacher.html" : "dashboard.html"));
+      location.replace(A.postLoginPath ? A.postLoginPath(nextRaw) : (A.isTeacher && A.isTeacher() ? "teacher.html" : "index.html"));
       return;
     }
 
@@ -114,8 +116,10 @@
       document.getElementById("aside-desc").textContent =
         "使用手机号与密码登录。新用户请先用学校发放的注册密钥完成注册。";
       document.getElementById("card-desc").textContent =
-        "登录使用手机号 + 密码；注册需注册密钥（向学校索取）。";
+        "手机号 + 密码登录；学生与工作人员账号均在此登录。";
       document.getElementById("reg-link").textContent = "密钥注册";
+      var tWrap = document.getElementById("teacher-entry-wrap");
+      if (tWrap) tWrap.hidden = true;
     }
 
     function showMsg(text, ok) {

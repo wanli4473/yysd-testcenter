@@ -302,7 +302,7 @@
 
   function forceExitExam() {
     setExamLock(false);
-    location.href = backBtn.href || "zone.html?zone=mock&s=ielts";
+    location.href = (backBtn && backBtn.href) || "zone.html?zone=mock";
   }
 
   function forceRestartExam() {
@@ -425,7 +425,11 @@
       backBtn.href = "zone.html?zone=study";
       backBtn.textContent = "← 返回单词区";
     } else if (item.zone === "mock") {
-      backBtn.href = "zone.html?zone=mock&s=ielts";
+      var mockS = "mock";
+      if (item.subject === "cambridge-listening") mockS = "listening";
+      else if (item.subject === "cambridge-reading") mockS = "reading";
+      else if (item.subject === "cambridge-writing") mockS = "writing";
+      backBtn.href = "zone.html?zone=mock&s=" + encodeURIComponent(mockS);
     }
 
     var src = "library/" + item.file + "?v=" + encodeURIComponent(Y.CONTENT_VER || "1");

@@ -79,7 +79,7 @@
   }
 
   function heroHTML(count) {
-    return '<div class="cam-hero vocab-hero wrong-words-hero">' +
+    return '<div class="cam-hero vocab-hero wrong-words-hero bento-panel">' +
       '<div class="cam-hero__badge"><div class="lbl">错题</div><div class="num">' + count + '</div></div>' +
       '<div><h1>' + Y.esc(book.label) + ' · 错题本</h1>' +
       '<div class="meta">' + (count
@@ -94,7 +94,7 @@
 
   function listHTML(words) {
     if (!words.length) {
-      return '<div class="soon-box">还没有错词。去做一次单词检测，拼写或释义没全对的词会自动出现在这里。</div>';
+      return '<div class="soon-box premium-empty">还没有错词。去做一次单词检测，拼写或释义没全对的词会自动出现在这里。</div>';
     }
     return '<div class="wrong-words-list">' + words.map(function (w) {
       var key = String(w.word).toLowerCase();

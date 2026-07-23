@@ -11,6 +11,7 @@
   var PART2_SPEAK = 120;
 
   var track = "hub"; // hub | speaking-home | practice | tutor | mock | writing
+  var writingOnly = (new URLSearchParams(location.search).get("track") || "").toLowerCase() === "writing";
   var sessionId = null;
   var examPack = null;
   var bank = null;
@@ -135,7 +136,10 @@
     var desc = document.getElementById("page-desc");
     var crumb = document.getElementById("crumb-here");
     if (elPageBack) {
-      if (name === "hub") {
+      if (writingOnly && name === "writing") {
+        elPageBack.hidden = false;
+        elPageBack.setAttribute("data-back", "zone-mock");
+      } else if (name === "hub") {
         elPageBack.hidden = true;
       } else if (name === "speaking-home" || name === "writing") {
         elPageBack.hidden = false;
@@ -164,7 +168,7 @@
     } else if (name === "writing") {
       title.textContent = "写作批改";
       desc.textContent = "先选题干，再粘贴作文提交批改。";
-      crumb.textContent = "写作";
+      crumb.textContent = writingOnly ? "雅思 · AI写作批改" : "写作";
     }
 
     var examOn = !document.getElementById("exam-overlay").hidden;
@@ -1043,6 +1047,10 @@
       var to = back.getAttribute("data-back");
       sessionId = null;
       examPack = null;
+      if (to === "zone-mock") {
+        location.href = "zone.html?zone=mock";
+        return;
+      }
       showView(to === "hub" ? "hub" : "speaking-home");
       return;
     }
@@ -1155,6 +1163,12 @@
     fr.readAsDataURL(file);
   });
 
-  showView("hub");
-  loadQuota();
+  if (writingOnly) {
+    showView("writing");
+    loadWritingBank();
+    loadQuota();
+  } else {
+    showView("hub");
+    loadQuota();
+  }
 })();
