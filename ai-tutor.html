@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="assets/js/tenant-boot.js?v=20260722brand"></script>
+  <script src="assets/js/page-transit.js?v=20260724p1"></script>
   <title>AI 雅思老师 · 优益思达国际课程中心</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260723write">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260723read">
   <link rel="stylesheet" href="assets/css/ai-tutor.css?v=20260717ui2">
-  <link rel="stylesheet" href="assets/css/mascot.css?v=20260709a">
 </head>
 <body class="home-minimal ai-tutor-page" data-ai-view="hub">
 
@@ -86,6 +86,10 @@
         <button type="button" class="ai-mode" data-speak="tutor">
           <strong>辅导聊天</strong>
           <span>可打字讲解 · 麦克风可选</span>
+        </button>
+        <button type="button" class="ai-mode" data-speak="omni">
+          <strong>实时口语（Omni）</strong>
+          <span>麦克风直连千问 Omni · 考官/老师可切换</span>
         </button>
       </div>
       <p class="ai-quota-line" id="quota-box">加载额度…</p>
@@ -170,8 +174,13 @@
         </label>
       </div>
       <pre class="ai-write__prompt" id="w-prompt-text"></pre>
+      <label class="ai-write__chart" id="w-chart-wrap" hidden>
+        <span>Task 1 图表图片（可选，提升数据准确度）</span>
+        <input type="file" id="w-chart" accept="image/*">
+      </label>
       <label class="ai-write__essay-label" for="w-essay">作文</label>
       <textarea id="w-essay" rows="14" maxlength="8000" placeholder="在此粘贴你的作文…"></textarea>
+      <p class="ai-write__disclaimer">评分仅为 AI 模拟训练分，非正式官方成绩。</p>
       <div class="ai-write__meta">
         <span id="w-wordcount">0 词</span>
         <p class="ai-quota-line" id="quota-writing">加载额度…</p>
@@ -224,10 +233,10 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260723write"></script>
-  <script src="assets/js/auth.js?v=20260723brand"></script>
-  <script src="assets/js/nav.js?v=20260723write"></script>
-  <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/ai-tutor.js?v=20260723write"></script>
+  <script src="assets/js/config.js?v=20260724p1"></script>
+  <script src="assets/js/auth.js?v=20260725realm1"></script>
+  <script src="assets/js/nav.js?v=20260725realm1"></script>
+  <script src="assets/js/ui.js?v=20260723motion"></script>
+  <script src="assets/js/ai-tutor.js?v=20260724omni"></script>
 </body>
 </html>

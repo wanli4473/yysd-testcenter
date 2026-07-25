@@ -12,31 +12,44 @@
   var megaTimer = null;
   var canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
+  function canWordRealm() {
+    var A = window.YYSD_AUTH;
+    return !!(A && A.canWordRealm && A.canWordRealm());
+  }
+
   var TOP_LINKS = [
     { href: "index.html", key: "home", label: "首页" },
     { href: "zone.html?zone=study&s=vocab", key: "words", label: "单词", zone: "study" },
+    { href: "word-realm.html", key: "realm", label: "词境", realm: true },
     { href: "zone.html?zone=mock", key: "ielts", label: "雅思", mega: true },
     { href: "alevel.html", key: "intl", label: "国际课程" },
     { href: "dashboard.html", key: "tasks", label: "任务中心" }
-  ];
+  ].filter(function (l) { return !l.realm || canWordRealm(); });
 
   var MEGA_COLS = [
     {
+      key: "listening",
       title: "听力",
       href: "zone.html?zone=mock&s=listening",
-      links: [{ href: "zone.html?zone=mock&s=listening", label: "听力真题顺序练习" }]
+      links: [
+        { href: "zone.html?zone=mock&s=listening", label: "听力真题顺序练习" },
+        { href: "zone.html?zone=mock&s=jingting", label: "听力真题精听" }
+      ]
     },
     {
+      key: "reading",
       title: "阅读",
       href: "zone.html?zone=mock&s=reading",
       links: [{ href: "zone.html?zone=mock&s=reading", label: "阅读真题顺序练习" }]
     },
     {
+      key: "speaking",
       title: "口语",
       href: "speaking.html",
       links: [{ href: "speaking.html", label: "AI口语练习/模考" }]
     },
     {
+      key: "writing",
       title: "写作",
       href: "zone.html?zone=mock&s=writing",
       links: [
@@ -45,6 +58,7 @@
       ]
     },
     {
+      key: "mock",
       title: "模考",
       href: "zone.html?zone=mock&s=mock",
       links: [{ href: "zone.html?zone=mock&s=mock", label: "剑桥套题模考" }]
@@ -88,7 +102,7 @@
   function megaHTML() {
     return '<div class="mega-panel__inner">' +
       MEGA_COLS.map(function (col) {
-        return '<div class="mega-col">' +
+        return '<div class="mega-col mega-col--' + esc(col.key || "") + '">' +
           '<a class="mega-col__head" href="' + esc(col.href) + '">' +
             '<span>' + esc(col.title) + '</span><span class="mega-col__arrow" aria-hidden="true">→</span>' +
           "</a>" +
@@ -334,10 +348,11 @@
   [
     { href: "index.html", label: "首页", key: "home" },
     { href: "zone.html?zone=study&s=vocab", label: "单词", key: "words" },
+    { href: "word-realm.html", label: "词境远征", key: "realm", realm: true },
     { href: "zone.html?zone=mock", label: "雅思", key: "ielts" },
     { href: "dashboard.html", label: "任务", key: "tasks" },
     { href: meHref(), label: "我的", key: "me", dynamic: true }
-  ].forEach(function (t) {
+  ].filter(function (t) { return !t.realm || canWordRealm(); }).forEach(function (t) {
     var a = document.createElement("a");
     a.href = t.dynamic ? meHref() : t.href;
     a.className = "mobile-tabs__item";
@@ -374,8 +389,13 @@
     if (path === "alevel.html" || path.indexOf("alevel") === 0) { activate("intl"); return; }
     if (path === "zone.html" && zone === "study") { activate("words"); return; }
     if (path === "vocab.html" || path === "wrong-words.html" || path === "saved-words.html") { activate("words"); return; }
+    if (path === "word-realm.html") { activate("realm"); return; }
+    if (path === "vocab-lesson.html") {
+      activate((location.search || "").indexOf("from=realm") >= 0 ? "realm" : "words");
+      return;
+    }
     if (path === "speaking.html" || path === "speaking-select.html" || path === "speaking-session.html") { activate("ielts"); return; }
-    if (path === "ai-tutor.html") { activate("ielts"); return; }
+    if (path === "ai-tutor.html" || path === "jingting-player.html") { activate("ielts"); return; }
     if (path === "cambridge.html" || (path === "zone.html" && zone === "mock") || (path === "zone.html" && subject === "ielts")) {
       activate("ielts");
       return;
@@ -392,22 +412,4 @@
     markActive();
   });
 
-  try {
-    if (localStorage.getItem("yysd:mascot-off") === "1") {
-      var foot = document.querySelector(".minimal-footer__copy");
-      if (foot && !foot.querySelector(".mascot-restore-link")) {
-        foot.appendChild(document.createTextNode(" · "));
-        var link = document.createElement("a");
-        link.href = "#";
-        link.className = "mascot-restore-link";
-        link.textContent = "启用思达助手";
-        link.addEventListener("click", function (e) {
-          e.preventDefault();
-          localStorage.removeItem("yysd:mascot-off");
-          location.reload();
-        });
-        foot.appendChild(link);
-      }
-    }
-  } catch (e) { /* ponytail: storage edge */ }
 })();

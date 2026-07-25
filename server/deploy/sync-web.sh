@@ -70,6 +70,9 @@ check "data/speaking/part1-topics.json"
 check "data/speaking/part1-fixed.json"
 check "speaking.html"
 check "library/practice/jingting/cam20-test1-section1.html"
+check "word-realm.html"
+check "assets/js/word-realm.js"
+check "library/practice/word-realm/lexicon.json"
 
 if grep -q "api.youyisida.com" "$WEB_ROOT/library/practice/jingting/cam20-test1-section1.html" 2>/dev/null; then
   echo "  ✓ 精听页已配置生产 API"

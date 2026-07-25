@@ -53,6 +53,11 @@ window.YYSD_AUTH = (function () {
     return tenantSlug() === "yysd";
   }
 
+  /** 词境远征：仅优益思达总部站（youyisida.com / slug=yysd）的师生可见可玩 */
+  function canWordRealm() {
+    return isHqSite();
+  }
+
   function logoSrc(url) {
     if (!url) return "assets/img/logo.svg?v=20260702-logo";
     if (/^https?:\/\//i.test(url) || url.indexOf("data:") === 0) return url;
@@ -212,14 +217,19 @@ window.YYSD_AUTH = (function () {
       "; path=/; max-age=" + (on ? 2592000 : 0) + "; SameSite=Lax" + secure;
   }
 
+  function hasAnySession() {
+    try {
+      return !!(localStorage.getItem(TOKEN_KEY) || localStorage.getItem(TEACHER_TOKEN_KEY));
+    } catch (e) { return false; }
+  }
+
   function clearSession() {
+    // ponytail: student logout keeps teacher session in the same browser
     try {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
-      localStorage.removeItem(TEACHER_TOKEN_KEY);
-      localStorage.removeItem(TEACHER_USER_KEY);
     } catch (e) {}
-    setAuthCookie(false);
+    setAuthCookie(hasAnySession());
   }
 
   function getToken() {
@@ -228,8 +238,19 @@ window.YYSD_AUTH = (function () {
     } catch (e) { return ""; }
   }
 
+  function isTeacherPage() {
+    var n = pageName();
+    return n === "teacher.html" || n === "teacher-calendar.html" ||
+      n === "admin-assign.html" || n === "teacher-login.html" ||
+      n === "teacher-register.html" || n === "platform.html";
+  }
+
   function isTeacher() {
-    try { return !!localStorage.getItem(TEACHER_TOKEN_KEY); } catch (e) { return false; }
+    try {
+      // student session wins on student-facing pages (avoids dashboard bounce)
+      if (localStorage.getItem(TOKEN_KEY)) return false;
+      return !!localStorage.getItem(TEACHER_TOKEN_KEY);
+    } catch (e) { return false; }
   }
 
   function setToken(t) {
@@ -246,8 +267,8 @@ window.YYSD_AUTH = (function () {
     var t = (d && d.token) || "";
     if (!t) { clearSession(); bindNav(); return; }
     try {
-      localStorage.setItem(TOKEN_KEY, t);
       if (d.role === "teacher" || d.teacher) {
+        // teacher session only — do not overwrite student token/profile
         localStorage.setItem(TEACHER_TOKEN_KEY, t);
         var teacher = d.teacher || {};
         localStorage.setItem(TEACHER_USER_KEY, JSON.stringify({
@@ -257,17 +278,9 @@ window.YYSD_AUTH = (function () {
           isAdmin: !!teacher.isAdmin,
           isPlatformAdmin: !!teacher.isPlatformAdmin
         }));
-        setUser({
-          phone: teacher.phone || "",
-          role: "teacher",
-          displayName: teacher.name || "",
-          avatarUrl: teacher.avatarUrl || "",
-          isAdmin: !!teacher.isAdmin,
-          isPlatformAdmin: !!teacher.isPlatformAdmin
-        });
       } else {
-        localStorage.removeItem(TEACHER_TOKEN_KEY);
-        localStorage.removeItem(TEACHER_USER_KEY);
+        // student session only — keep teacher keys so both can coexist
+        localStorage.setItem(TOKEN_KEY, t);
         var stu = d.user || {};
         setUser({
           phone: stu.phone || "",
@@ -285,7 +298,23 @@ window.YYSD_AUTH = (function () {
   }
 
   function getUser() {
-    try { return JSON.parse(localStorage.getItem(USER_KEY) || "{}"); } catch (e) { return {}; }
+    try {
+      var student = JSON.parse(localStorage.getItem(USER_KEY) || "{}");
+      var teacher = JSON.parse(localStorage.getItem(TEACHER_USER_KEY) || "{}");
+      var hasTeacherTok = !!localStorage.getItem(TEACHER_TOKEN_KEY);
+      // teacher portal always shows teacher; elsewhere student profile wins if present
+      if (hasTeacherTok && teacher.phone && (isTeacherPage() || !student.phone)) {
+        return {
+          phone: teacher.phone,
+          role: "teacher",
+          displayName: teacher.name || "",
+          avatarUrl: teacher.avatarUrl || "",
+          isAdmin: !!teacher.isAdmin,
+          isPlatformAdmin: !!teacher.isPlatformAdmin
+        };
+      }
+      return student;
+    } catch (e) { return {}; }
   }
 
   function setUser(u) {
@@ -443,7 +472,18 @@ window.YYSD_AUTH = (function () {
   function newerScore(a, b) {
     if (!b) return a;
     if (!a) return b;
-    return String(a.date || "") >= String(b.date || "") ? a : b;
+    var aNewer = String(a.date || "") >= String(b.date || "");
+    var pick = Object.assign({}, aNewer ? a : b);
+    var other = aNewer ? b : a;
+    // cloud latest score historically omitted wrong — keep local/attempt wrong if pick lacks it
+    if ((!pick.wrong || !pick.wrong.length) && other && other.wrong && other.wrong.length) {
+      pick.wrong = other.wrong;
+    }
+    if (!pick.cdt && other && other.cdt) pick.cdt = true;
+    if (!pick.assignmentEventId && other && other.assignmentEventId) {
+      pick.assignmentEventId = other.assignmentEventId;
+    }
+    return pick;
   }
 
   function mergeScoreStores(local, cloud) {
@@ -475,8 +515,32 @@ window.YYSD_AUTH = (function () {
   }
 
   function pushScoreRecord(record) {
-    if (!getToken() || isTeacher() || !record || !record.id) return Promise.resolve();
-    return api("/api/scores/" + encodeURIComponent(record.id), { method: "PUT", body: record }).catch(function () {});
+    if (!getToken() || isTeacher() || !record || !record.id) return Promise.resolve(false);
+    return api("/api/scores/" + encodeURIComponent(record.id), { method: "PUT", body: record })
+      .then(function () { return true; })
+      .catch(function () { return false; });
+  }
+
+  function fetchScoreAttempts(opts) {
+    opts = opts || {};
+    if (!getToken() || isTeacher()) return Promise.resolve({ ok: true, attempts: [] });
+    var q = [];
+    if (opts.assignmentOnly) q.push("assignmentOnly=1");
+    if (opts.subject) q.push("subject=" + encodeURIComponent(opts.subject));
+    if (opts.itemId) q.push("itemId=" + encodeURIComponent(opts.itemId));
+    if (opts.eventId) q.push("eventId=" + encodeURIComponent(opts.eventId));
+    if (opts.limit) q.push("limit=" + encodeURIComponent(String(opts.limit)));
+    return api("/api/student/score-attempts" + (q.length ? "?" + q.join("&") : ""));
+  }
+
+  function fetchScoreAttempt(attemptId) {
+    if (!getToken() || isTeacher()) return Promise.reject(new Error("请先登录学生账号"));
+    return api("/api/student/score-attempts/" + encodeURIComponent(String(attemptId)));
+  }
+
+  function analyzeWrongItem(body) {
+    if (!getToken() || isTeacher()) return Promise.reject(new Error("请先登录学生账号"));
+    return api("/api/exam/wrong-analyze", { method: "POST", body: body || {} });
   }
 
   function ensureLogoutBtn(nav) {
@@ -554,7 +618,7 @@ window.YYSD_AUTH = (function () {
 
   function requireLogin() {
     if (!getToken()) {
-      location.href = "login.html?next=" + encodeURIComponent(location.pathname + location.search);
+      (window.YYSD_GO || function (h) { location.href = h; })("login.html?next=" + encodeURIComponent(location.pathname + location.search), "scene");
       return false;
     }
     return true;
@@ -562,7 +626,7 @@ window.YYSD_AUTH = (function () {
 
   function logout() {
     clearSession();
-    location.href = "index.html";
+    (window.YYSD_GO || function (h) { location.href = h; })("index.html", "scene");
   }
 
   function studentHome() {
@@ -752,6 +816,7 @@ window.YYSD_AUTH = (function () {
     getOrg: getOrg,
     tenantSlug: tenantSlug,
     isHqSite: isHqSite,
+    canWordRealm: canWordRealm,
     applyOrgBrand: applyOrgBrand,
     brandName: brandName,
     api: api,
@@ -763,6 +828,9 @@ window.YYSD_AUTH = (function () {
     postLoginPath: postLoginPath,
     syncScoresFromCloud: syncScoresFromCloud,
     pushScoreRecord: pushScoreRecord,
+    fetchScoreAttempts: fetchScoreAttempts,
+    fetchScoreAttempt: fetchScoreAttempt,
+    analyzeWrongItem: analyzeWrongItem,
     uploadAvatar: uploadAvatar,
     avatarSrc: avatarSrc,
     logoSrc: logoSrc

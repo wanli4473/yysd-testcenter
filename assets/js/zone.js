@@ -30,6 +30,7 @@
   var subFiltersEl = document.getElementById("sub-filters");
   var searchInput = document.getElementById("catalog-search");
   var contentEl = document.getElementById("content");
+  var toolbarEl = document.querySelector(".catalog-toolbar");
   var allItems = [];
   var alevelCatalog = null;
 
@@ -129,7 +130,14 @@
   }
 
   function visibleNav() {
-    return zone === "mock" ? nav.filter(catHasContent) : nav;
+    var list = zone === "mock" ? nav.filter(catHasContent) : nav;
+    // ponytail: 精听挂在听力 links 下，不占独立 chip / hub 列
+    if (zone === "mock") list = list.filter(function (c) { return c.key !== "jingting"; });
+    return list;
+  }
+
+  function navCat(key) {
+    return nav.filter(function (c) { return c.key === key; })[0];
   }
 
   function buildFilters() {
@@ -138,14 +146,19 @@
       chips.push('<button type="button" class="chip' + (activeCat === c.key ? " is-active" : "") +
         '" data-s="' + c.key + '">' + Y.esc(c.label) + "</button>");
     });
+    // 精听从听力入口进入时，顶栏补一枚当前 chip
+    if (activeCat === "jingting") {
+      chips.push('<button type="button" class="chip is-active" data-s="jingting">听力精听</button>');
+    }
     filtersEl.innerHTML = chips.join("");
     // ponytail: only reset after items load; early empty nav was wiping s=ielts → all
-    if (zone === "mock" && activeCat !== "all" && allItems.length &&
+    if (zone === "mock" && activeCat !== "all" && activeCat !== "jingting" && allItems.length &&
         !visibleNav().some(function (c) { return c.key === activeCat; })) {
       activeCat = "all";
       filtersEl.querySelectorAll(".chip").forEach(function (c) {
         c.classList.toggle("is-active", c.getAttribute("data-s") === "all");
       });
+      syncZoneQuery();
     }
     buildSubFilters();
   }
@@ -156,12 +169,13 @@
     var next = b.getAttribute("data-s");
     var cat = nav.filter(function (c) { return c.key === next; })[0];
     if (cat && cat.href) {
-      location.href = cat.href;
+      (window.YYSD_GO || function (h) { location.href = h; })(cat.href);
       return;
     }
     filtersEl.querySelectorAll(".chip").forEach(function (c) { c.classList.remove("is-active"); });
     b.classList.add("is-active");
     activeCat = next;
+    syncZoneQuery();
     buildSubFilters();
     render();
   });
@@ -198,6 +212,16 @@
       });
   }
 
+  function emptyBox(title, desc, href, cta) {
+    return '<div class="soon-box soon-box--rich">' +
+      "<h3>" + Y.esc(title) + "</h3>" +
+      "<p>" + Y.esc(desc) + "</p>" +
+      (href
+        ? '<a class="btn btn--ghost btn--sm" href="' + Y.esc(href) + '">' + Y.esc(cta || "返回雅思") + "</a>"
+        : "") +
+      "</div>";
+  }
+
   function leafBody(subject, skill) {
     if (subject === "ielts-speaking") {
       return '<div class="spk-cta-grid bento-grid bento-grid--3">' +
@@ -224,6 +248,12 @@
           return Y.camVolumeCardHTML(v, "", allItems, { skill: skill || "" });
         }).join("") + "</div>";
       }
+    } else if (subject === "jingting") {
+      var jt = itemsOf(subject);
+      if (jt.length && Y.jingtingCatalogHTML) return Y.jingtingCatalogHTML(jt, "");
+      if (jt.length) {
+        return '<div class="exam-grid">' + jt.map(function (it) { return Y.cardHTML(it, ""); }).join("") + "</div>";
+      }
     } else {
       var its = itemsOf(subject);
       if (its.length) {
@@ -233,7 +263,7 @@
         return '<div class="exam-grid">' + its.map(function (it) { return Y.cardHTML(it, ""); }).join("") + "</div>";
       }
     }
-    return '<div class="soon-box">该板块即将上线，敬请期待。</div>';
+    return emptyBox("该板块即将上线", "内容准备中，先去其他科目练习，或从雅思总览重新选择。", "zone.html?zone=mock", "返回雅思总览");
   }
 
   function countOf(subject) {
@@ -243,13 +273,13 @@
   }
   function unitOf(subject) { return Y.isCambridge(subject) ? " 册" : " 份"; }
 
-  // Phase 3: Reme-style vocab hub — progress + 4 tiles + side CTA (no fake calendar)
+  // Vocab hub — 作业模式（老师布置 / 系统学习）；游戏见 word-realm.html
   function vocabBentoHTML(vbooks) {
     var total = 0;
     var done = 0;
     var nextItem = null;
     var nextBook = null;
-    var tileTints = ["a", "b", "c", "d"];
+    var entryTint = { gaozhong: "navy", cet4: "gold", special: "teal" };
     var picks = [];
 
     vbooks.forEach(function (s) {
@@ -271,24 +301,27 @@
     }, 0);
     var savedN = Y.savedWordCount ? Y.savedWordCount() : 0;
 
-    var tiles = vbooks.slice(0, 3).map(function (s, i) {
+    var entries = vbooks.slice(0, 3).map(function (s) {
       var prog = Y.vocabProgress(s.lists);
       var hint = prog.done
         ? ("已学 " + prog.done + "/" + s.total)
         : (s.total + " 个单元");
-      return '<a class="bento-tile bento-tile--' + tileTints[i] + '" href="vocab.html?book=' +
+      var tint = entryTint[s.book.key] || "navy";
+      return '<a class="vocab-entry vocab-entry--' + tint + '" href="vocab.html?book=' +
         encodeURIComponent(s.book.key) + '">' +
-        '<div><p class="bento-tile__title">' + Y.esc(s.book.label) + "</p>" +
-        '<p class="bento-tile__desc">' + Y.esc(hint) + "</p></div>" +
-        '<span class="vocab-bento__go">进入 ›</span></a>';
+        '<span class="vocab-entry__kicker">词书 · 作业</span>' +
+        '<p class="vocab-entry__title">' + Y.esc(s.book.label) + "</p>" +
+        '<p class="vocab-entry__desc">' + Y.esc(hint) + "</p>" +
+        '<span class="vocab-entry__go">进入 ›</span></a>';
     }).join("");
 
-    tiles += '<a class="bento-tile bento-tile--d" href="wrong-words.html?book=gaozhong">' +
-      '<div><p class="bento-tile__title">错题本</p>' +
-      '<p class="bento-tile__desc">' +
+    entries += '<a class="vocab-entry vocab-entry--wrong" href="wrong-words.html">' +
+      '<span class="vocab-entry__kicker">复习</span>' +
+      '<p class="vocab-entry__title">错题本</p>' +
+      '<p class="vocab-entry__desc">' +
         (wrongN ? wrongN + " 个错词待复习" : "测试错词自动收录") +
-      "</p></div>" +
-      '<span class="vocab-bento__go">复习 ›</span></a>';
+      "</p>" +
+      '<span class="vocab-entry__go">复习 ›</span></a>';
 
     var picksHTML;
     if (!picks.length) {
@@ -304,17 +337,29 @@
     var ctaHref = nextItem ? Y.fileHref(nextItem, "") : "vocab.html?book=gaozhong";
     var ctaTitle = nextItem ? ("继续 · " + Y.displayTitle(nextItem)) : "开始背单词";
     var ctaDesc = nextBook
-      ? (nextBook.label + (done ? " · 已学 " + done + "/" + total : " · 从下一单元接着练"))
+      ? (nextBook.label + (done ? " · 已学 " + done + "/" + total : " · 适合老师布置作业"))
       : "选择词书，边学边测";
 
     var aiWord = (window.YYSD_AI_WORD && window.YYSD_AI_WORD.shellHTML)
       ? window.YYSD_AI_WORD.shellHTML() : "";
 
-    return '<div class="vocab-bento bento-grid bento-grid--main-side">' +
+    var A = window.YYSD_AUTH;
+    var realmBanner = (A && A.canWordRealm && A.canWordRealm())
+      ? ('<a class="vocab-realm-banner" href="word-realm.html">' +
+        '<span class="vocab-realm-banner__kicker">游戏模式</span>' +
+        '<span class="vocab-realm-banner__title">词境远征</span>' +
+        '<span class="vocab-realm-banner__desc">塞尔达式远征 · 记忆之力 · 与作业区互不干扰 · 雾原试玩</span>' +
+        '<span class="vocab-realm-banner__go">进入世界 ›</span></a>')
+      : "";
+
+    return '<div class="vocab-bento">' +
+      realmBanner +
+      '<div class="vocab-entry-grid" role="navigation" aria-label="词书入口">' + entries + "</div>" +
+      '<div class="vocab-bento__body bento-grid bento-grid--main-side">' +
       '<div class="vocab-bento__main">' +
         '<div class="bento-panel bento-panel--md vocab-bento__progress">' +
-          '<p class="bento-panel__title">当前进度</p>' +
-          '<p class="bento-panel__desc">跨词书累计完成情况</p>' +
+          '<p class="bento-panel__title">作业进度</p>' +
+          '<p class="bento-panel__desc">词书单元完成情况（老师布置走这里）</p>' +
           '<div class="vocab-bento__stat-row">' +
             '<div class="bento-stat">' +
               '<span class="bento-stat__label">已学单元</span>' +
@@ -329,16 +374,15 @@
           '</div>' +
           '<div class="bento-progress" aria-hidden="true"><div class="bento-progress__bar" style="width:' + pct + '%"></div></div>' +
         '</div>' +
-        '<div class="bento-grid bento-grid--2 vocab-bento__tiles">' + tiles + '</div>' +
         '<div class="bento-panel bento-panel--md">' +
           '<p class="bento-panel__title">今日精选</p>' +
-          '<p class="bento-panel__desc">各词书下一站，点开即练</p>' +
+          '<p class="bento-panel__desc">各词书下一站，点开即学</p>' +
           picksHTML +
         '</div>' +
       '</div>' +
       '<aside class="vocab-bento__side">' +
         '<a class="bento-cta bento-cta--orange" href="' + ctaHref + '">' +
-          '<span class="bento-cta__badge">今日任务</span>' +
+          '<span class="bento-cta__badge">作业任务</span>' +
           '<div><p class="bento-cta__title">' + Y.esc(ctaTitle) + '</p>' +
           '<p class="bento-cta__desc">' + Y.esc(ctaDesc) + '</p></div>' +
           '<span class="vocab-bento__cta-go">开始 ›</span></a>' +
@@ -348,7 +392,7 @@
             (savedN ? savedN + ' 个生词待复习' : 'AI 查词后可一键收藏') +
           '</p></a>' +
         '<div class="bento-panel bento-panel--md vocab-bento__ai">' + aiWord + '</div>' +
-      '</aside></div>';
+      '</aside></div></div>';
   }
 
   function leafBlockHTML(label, subject) {
@@ -372,25 +416,52 @@
   }
 
   function ieltsHubHTML() {
-    var cols = visibleNav();
-    return '<div class="ielts-hub" aria-label="雅思入口">' +
-      cols.map(function (cat) {
-        var headHref = cat.href || ("zone.html?zone=mock&s=" + encodeURIComponent(cat.key));
-        var links = cat.links && cat.links.length
-          ? cat.links
+    // hub 只保留听力/阅读/口语/写作/模考五列；精听在听力 links 里
+    var hubKeys = { listening: 1, reading: 1, speaking: 1, writing: 1, mock: 1 };
+    var en = {
+      listening: "Listening",
+      reading: "Reading",
+      speaking: "Speaking",
+      writing: "Writing",
+      mock: "Full Mock"
+    };
+    /* ponytail: shared glyphs from config.js */
+    var cols = visibleNav().filter(function (c) { return hubKeys[c.key]; });
+    var cards = cols.map(function (cat) {
+      var headHref = cat.href || ("zone.html?zone=mock&s=" + encodeURIComponent(cat.key));
+      var links = cat.links && cat.links.length
+        ? cat.links
+        : cat.key === "speaking"
+          ? [
+              { href: "speaking.html", label: "口语模考" },
+              { href: "speaking-select.html", label: "专项选题" },
+              { href: "ai-tutor.html", label: "AI 雅思老师" }
+            ]
           : [{ href: headHref, label: cat.desc || cat.label }];
-        return '<div class="mega-col ielts-hub__card">' +
-          '<a class="mega-col__head" href="' + Y.esc(headHref) + '">' +
-            "<span>" + Y.esc(cat.label) + '</span>' +
-            '<span class="mega-col__arrow" aria-hidden="true">→</span>' +
-          "</a>" +
-          '<ul class="mega-col__list">' +
-            links.map(function (l) {
-              return '<li><a href="' + Y.esc(l.href) + '">' + Y.esc(l.label) + "</a></li>";
-            }).join("") +
-          "</ul></div>";
-      }).join("") +
-      "</div>";
+      return '<article class="ielts-hub__card ielts-hub__card--' + Y.esc(cat.key) + '">' +
+        '<a class="ielts-hub__hit" href="' + Y.esc(headHref) + '">' +
+          '<span class="ielts-hub__ico" aria-hidden="true">' + (Y.skillGlyph ? Y.skillGlyph(cat.key) : "") + "</span>" +
+          '<span class="ielts-hub__eyebrow">' + Y.esc(en[cat.key] || "") + "</span>" +
+          "<h3>" + Y.esc(cat.label) + "</h3>" +
+          '<p class="ielts-hub__desc">' + Y.esc(cat.desc || "") + "</p>" +
+        "</a>" +
+        '<ul class="ielts-hub__links">' +
+          links.map(function (l) {
+            return '<li><a href="' + Y.esc(l.href) + '">' + Y.esc(l.label) + "</a></li>";
+          }).join("") +
+        "</ul>" +
+        '<a class="ielts-hub__go" href="' + Y.esc(headHref) + '">进入' + Y.esc(cat.label) + " <span aria-hidden=\"true\">›</span></a>" +
+      "</article>";
+    }).join("");
+
+    return '<section class="ielts-hub" aria-label="雅思入口">' +
+      '<header class="ielts-hub__intro">' +
+        '<p class="ielts-hub__kicker">Cambridge IELTS</p>' +
+        "<h2>选择你的训练路径</h2>" +
+        "<p>单项精练打基础，套题模考练临场。四科口音分明，点进去就是对应题库。</p>" +
+      "</header>" +
+      '<div class="ielts-hub__grid">' + cards + "</div>" +
+    "</section>";
   }
 
   function categoryHTML(cat) {
@@ -410,7 +481,7 @@
       var vols = Y.camVolumes(allItems);
       body = vols.length
         ? Y.cambridgeCatalogHTML(vols, allItems, "", { tier: camTier, query: searchQuery, collapseLegacy: true })
-        : '<div class="soon-box">暂无剑桥真题，老师上传后会显示在这里。</div>';
+        : emptyBox("暂无剑桥真题", "老师上传套题后会出现在这里。也可以先做单项听力或阅读练习。", "zone.html?zone=mock&s=listening", "去练听力");
     } else if (cat.key === "listening" || cat.key === "reading" || cat.key === "writing") {
       var skillVols = Y.camVolumes(allItems.filter(function (it) { return it.subject === cat.subject; }));
       body = skillVols.length
@@ -420,7 +491,7 @@
             collapseLegacy: true,
             skill: cat.skill || ""
           })
-        : '<div class="soon-box">该板块即将上线，敬请期待。</div>';
+        : emptyBox("该科目暂无内容", "先试试其他科目，或稍后再来。", "zone.html?zone=mock", "返回雅思总览");
     } else if (cat.href) {
       body = '<a class="bento-cta" href="' + Y.esc(cat.href) + '">' +
         '<div><p class="bento-cta__title">' + Y.esc(cat.label) + "</p>" +
@@ -444,10 +515,44 @@
     } else {
       body = leafBody(cat.subject, cat.skill);
     }
-    return '<div class="subject-group">' + head + body + "</div>";
+    var accent = cat.skill || (cat.key === "mock" || cat.key === "ielts" ? "mock" : cat.key);
+    return '<div class="subject-group subject-group--' + Y.esc(accent) + '">' + head + body + "</div>";
   }
 
+  function syncZoneQuery() {
+    if (zone !== "mock") return;
+    try {
+      var u = new URL(location.href);
+      var cur = u.searchParams.get("s") || "";
+      var want = activeCat === "all" ? "" : activeCat;
+      if (!want) {
+        if (!cur) return;
+        u.searchParams.delete("s");
+      } else if (cur === want) {
+        return;
+      } else {
+        u.searchParams.set("s", want);
+      }
+      history.replaceState(null, "", u.pathname + u.search + u.hash);
+    } catch (e) { /* ignore */ }
+  }
+
+  function syncToolbar() {
+    if (!toolbarEl) return;
+    /* ponytail: IELTS hub / vocab hub are portals — hide search until needed elsewhere */
+    var hub = (zone === "mock" && activeCat === "all" && !searchQuery)
+      || (zone === "study" && activeCat === "vocab" && !searchQuery);
+    document.body.classList.toggle("is-ielts-hub", zone === "mock" && activeCat === "all" && !searchQuery);
+    document.body.classList.toggle("is-vocab-hub", zone === "study" && activeCat === "vocab" && !searchQuery);
+    toolbarEl.hidden = hub;
+    toolbarEl.setAttribute("aria-hidden", hub ? "true" : "false");
+    if (hub) syncZoneQuery();
+  }
+
+  syncToolbar();
+
   function render() {
+    syncToolbar();
     var html;
     if (searchQuery) {
       var matched = Y.searchItems(allItems, searchQuery);
@@ -467,11 +572,60 @@
             '<span class="ai-tutor-entry__cta">立即开始 <span aria-hidden="true">→</span></span>' +
           "</a>"
         : "";
-      var cats = activeCat === "all" ? visibleNav() : visibleNav().filter(function (c) { return c.key === activeCat; });
+      var cats = activeCat === "all" ? visibleNav()
+        : activeCat === "jingting" && navCat("jingting") ? [navCat("jingting")]
+        : visibleNav().filter(function (c) { return c.key === activeCat; });
       html = aiTutorHTML + cats.map(categoryHTML).join("");
+      if (activeCat === "jingting" && !cats.length) {
+        html = emptyBox("暂无精听内容", "精听材料上传后会出现在这里。", "zone.html?zone=mock&s=listening", "返回听力");
+      }
     }
+    function bindJtFolds(root) {
+      if (!root) return;
+      root.querySelectorAll("details.catalog-collapse--jt").forEach(function (d) {
+        if (d.dataset.jtBound) return;
+        d.dataset.jtBound = "1";
+        var body = d.querySelector(":scope > .catalog-collapse__body");
+        var summary = d.querySelector(":scope > summary");
+        if (!body || !summary) return;
+        // init height
+        if (d.open) {
+          body.style.height = "auto";
+        } else {
+          body.style.height = "0px";
+        }
+        summary.addEventListener("click", function (e) {
+          e.preventDefault();
+          if (d.classList.contains("is-animating")) return;
+          d.classList.add("is-animating");
+          if (d.open) {
+            // close
+            d.classList.add("is-closing");
+            body.style.height = body.scrollHeight + "px";
+            body.offsetHeight;
+            body.style.height = "0px";
+            window.setTimeout(function () {
+              d.open = false;
+              d.classList.remove("is-closing", "is-animating");
+            }, 340);
+          } else {
+            d.open = true;
+            d.classList.add("is-opening");
+            body.style.height = "0px";
+            body.offsetHeight;
+            body.style.height = body.scrollHeight + "px";
+            window.setTimeout(function () {
+              body.style.height = "auto";
+              d.classList.remove("is-opening", "is-animating");
+            }, 340);
+          }
+        });
+      });
+    }
+
     function afterRender() {
       if (window.YYSD_AI_WORD && window.YYSD_AI_WORD.bind) window.YYSD_AI_WORD.bind(contentEl);
+      bindJtFolds(contentEl);
     }
     if (window.YYSD_UI_SWAP && contentEl.innerHTML && !contentEl.querySelector(".spinner--brand")) {
       window.YYSD_UI_SWAP(contentEl, html);
