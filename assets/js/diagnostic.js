@@ -1,5 +1,5 @@
 /* =========================================================================
-   diagnostic.js — adaptive vocab placement test (student session)
+   diagnostic.js — Assessment Console (vocab placement session)
    ========================================================================= */
 (function () {
   "use strict";
@@ -7,11 +7,10 @@
   var A = window.YYSD_AUTH;
   var Y = window.YYSD;
   var contentEl = document.getElementById("content");
-  var yearEl = document.getElementById("year");
-  if (yearEl) yearEl.textContent = new Date().getFullYear();
-
-  var navLink = document.querySelector('#nav a[data-zone="study"]');
-  if (navLink) navLink.classList.add("is-active");
+  var examCenter = document.getElementById("diag-exam-center");
+  var examSub = document.getElementById("diag-exam-sub");
+  var exitLink = document.getElementById("diag-exit-link");
+  var OPT_KEYS = ["A", "B", "C", "D", "E", "F"];
 
   var TYPE_LABEL = {
     listening_choice: "听音选词",
@@ -20,9 +19,9 @@
     spelling: "拼写填空"
   };
   var RATING_STAR = {
-    excellent: "优秀 ★★★",
-    good: "良好 ★★☆",
-    weak: "需加强 ★☆☆"
+    excellent: "优秀",
+    good: "良好",
+    weak: "需加强"
   };
   var LEVEL_NAME = {
     high_school: "高中词汇",
@@ -77,6 +76,8 @@
     state.timerId = setInterval(function () {
       var el = document.getElementById("diag-timer");
       if (el) el.textContent = formatTime(elapsedNow());
+      var chip = document.getElementById("diag-hud-timer");
+      if (chip) chip.textContent = formatTime(elapsedNow());
     }, 1000);
   }
 
@@ -85,6 +86,31 @@
     state.timerId = null;
     state.elapsedBase = elapsedNow();
     state.timerStart = null;
+  }
+
+  function setSessionMode(on) {
+    document.body.classList.toggle("is-diag-session", !!on);
+    if (examCenter) examCenter.hidden = !on;
+    if (examSub) {
+      examSub.textContent = on
+        ? "IN SESSION"
+        : (state.gate ? "First-time Placement" : "Vocabulary Placement Assessment");
+    }
+  }
+
+  function updateExamHud(sess) {
+    if (!examCenter || !sess) return;
+    var prog = sess.stage_progress || { answered: 0, total: 0, correct: 0 };
+    var qNo = Math.min((prog.answered || 0) + 1, prog.total || 0);
+    if (sess.stage_done) qNo = prog.total || 0;
+    var answered = prog.answered || 0;
+    var wrong = Math.max(0, answered - (prog.correct || 0));
+    var errPct = answered ? Math.round((wrong / answered) * 100) : 0;
+    examCenter.innerHTML =
+      '<span class="diag-hud-chip"><em>阶段</em><b>' + esc(sess.stage_name || "—") + "</b></span>" +
+      '<span class="diag-hud-chip"><em>题号</em><b>' + qNo + " / " + (prog.total || 0) + "</b></span>" +
+      '<span class="diag-hud-chip"><em>用时</em><b id="diag-hud-timer">' + esc(formatTime(elapsedNow())) + "</b></span>" +
+      '<span class="diag-hud-chip"><em>错误率</em><b>' + (answered ? errPct + "%" : "—") + "</b></span>";
   }
 
   function speakWord(text) {
@@ -98,11 +124,14 @@
   }
 
   function requireLogin() {
+    setSessionMode(false);
     if (!A || !A.getToken || !A.getToken()) {
       var next = state.gate ? "diagnostic.html?gate=1" : "diagnostic.html";
       contentEl.innerHTML =
-        '<div class="diag-card"><h1>单词能力诊断</h1>' +
-        '<p class="diag-lead">请先登录学生账号后再开始测试。</p>' +
+        '<div class="diag-brief">' +
+        '<p class="diag-kicker">Access</p>' +
+        "<h1>请先登录</h1>" +
+        '<p class="diag-lead">使用学生账号登录后开始词汇能力诊断。</p>' +
         '<div class="diag-actions"><a class="btn btn--primary" href="login.html?next=' +
         encodeURIComponent(next) +
         '">去登录</a></div></div>';
@@ -110,8 +139,10 @@
     }
     if (A.isTeacher && A.isTeacher()) {
       contentEl.innerHTML =
-        '<div class="diag-card"><h1>单词能力诊断</h1>' +
-        '<p class="diag-lead">请使用学生账号参加诊断。教师可在学情看板查看班级总览。</p>' +
+        '<div class="diag-brief">' +
+        '<p class="diag-kicker">Teacher</p>' +
+        "<h1>请使用学生账号</h1>" +
+        '<p class="diag-lead">教师可在学情看板查看班级诊断总览。</p>' +
         '<div class="diag-actions"><a class="btn btn--ghost" href="teacher.html">打开教师端</a></div></div>';
       return false;
     }
@@ -121,56 +152,60 @@
   function applyGateChrome() {
     if (!state.gate) return;
     document.title = "首次词汇能力测试 · 优益思达国际课程中心";
-    var back = document.querySelector(".minimal-back");
-    if (back) {
-      back.innerHTML =
-        '<span class="minimal-back__link" style="opacity:.7;cursor:default">完成测试后即可进入单词区</span>';
+    if (exitLink) {
+      exitLink.textContent = "完成后进入单词区";
+      exitLink.removeAttribute("href");
+      exitLink.style.opacity = "0.65";
+      exitLink.style.pointerEvents = "none";
     }
   }
 
   function renderIntro(resumeSession) {
+    setSessionMode(false);
     applyGateChrome();
+    var title = state.gate ? "首次词汇能力测试" : "词汇能力诊断";
     var resumeHtml = "";
     if (resumeSession) {
       resumeHtml =
-        '<p class="diag-lead">检测到未完成的测试（' +
+        '<p class="diag-lead">检测到未完成场次（' +
         esc(resumeSession.stage_name || "") + " · 已答 " +
         ((resumeSession.stage_progress && resumeSession.stage_progress.answered) || 0) +
-        " 题）。是否继续？</p>" +
+        " 题）。</p>" +
         '<div class="diag-actions">' +
-        '<button type="button" class="btn btn--primary" id="diag-resume">继续上次</button>' +
+        '<button type="button" class="btn btn--primary" id="diag-resume">继续测试</button>' +
         '<button type="button" class="btn btn--ghost" id="diag-restart">重新开始</button>' +
         "</div>";
     } else {
       resumeHtml =
         '<div class="diag-actions">' +
         '<button type="button" class="btn btn--primary" id="diag-start">' +
-        (state.gate ? "开始首次能力测试" : "开始诊断") +
+        (state.gate ? "开始测试" : "开始诊断") +
         "</button>" +
         (state.gate
           ? ""
           : '<a class="btn btn--ghost" href="diagnostic-mistakes.html">诊断错题本</a>') +
         "</div>";
     }
-    var gateLead = state.gate
-      ? '<p class="diag-lead diag-lead--gate"><strong>首次进入单词区前，需完成一次词汇能力测试。</strong>结束后将生成详细报告与学习建议，并推荐适合你的起始词库。</p>'
-      : '<p class="diag-lead">双线自适应：实用推荐线决定能否进入下一阶段；优秀线（87%）评定是否精通。</p>';
+
     contentEl.innerHTML =
-      '<div class="diag-card">' +
-      "<h1>" +
-      (state.gate ? "首次词汇能力测试" : "单词能力诊断") +
-      "</h1>" +
-      gateLead +
+      '<div class="diag-brief">' +
+      '<p class="diag-kicker">' + (state.gate ? "Mandatory Placement" : "Assessment Briefing") + "</p>" +
+      "<h1>" + esc(title) + "</h1>" +
       (state.gate
-        ? '<p class="diag-lead">双线自适应：实用推荐线决定能否进入下一阶段；优秀线（87%）评定是否精通。</p>'
-        : "") +
+        ? '<p class="diag-lead diag-lead--gate"><strong>首次进入单词区前须完成一次能力测试。</strong>结束后生成详细报告、学习建议与推荐起始词库。</p>'
+        : '<p class="diag-lead">双线自适应测评：实用推荐线决定能否进入下一阶段；优秀线（87%）评定是否精通。</p>') +
+      '<div class="diag-meta-row">' +
+      '<span class="diag-meta-pill">预计 20–40 分钟</span>' +
+      '<span class="diag-meta-pill">最多 85 题</span>' +
+      '<span class="diag-meta-pill">即时反馈</span>' +
+      '<span class="diag-meta-pill">错误率 &gt; 50% 提前结束</span>' +
+      "</div>" +
       '<ul class="diag-rules">' +
-      "<li><strong>阶段一 · 高中</strong> 30 题，通过线 77%（灰区结合拼写）</li>" +
-      "<li><strong>阶段二 · 四级</strong> 30 题，通过线 73%</li>" +
-      "<li><strong>阶段三 · 雅思</strong> 25 题，通过线 68%；完成后无论是否通过均结束</li>" +
-      "<li>题型：听音选词 / 看英选中 / 看中选英 / 拼写填空（严格匹配，忽略大小写）</li>" +
-      "<li>即时反馈对错；产出推荐起始词库、能力报告与错题本</li>" +
-      "<li>已答不少于 10 题且错误率超过 50% 时，提前结束并生成报告</li>" +
+      "<li><span>阶段一</span><div><strong>高中词汇</strong> · 30 题 · 通过线 77%（灰区结合拼写）</div></li>" +
+      "<li><span>阶段二</span><div><strong>四级词汇</strong> · 30 题 · 通过线 73%</div></li>" +
+      "<li><span>阶段三</span><div><strong>雅思词汇</strong> · 25 题 · 通过线 68%；完成后无论是否通过均结束</div></li>" +
+      "<li><span>题型</span><div>听音选词 / 看英选中 / 看中选英 / 拼写填空（严格匹配，忽略大小写）</div></li>" +
+      "<li><span>产出</span><div>推荐起始词库、能力报告、诊断错题本</div></li>" +
       "</ul>" +
       resumeHtml +
       '<p class="diag-msg" id="diag-err" hidden></p></div>';
@@ -226,12 +261,16 @@
     state.selected = null;
     state.feedback = null;
     state.report = null;
+    state.earlyAborted = false;
     startTimer(session.elapsed_seconds || 0);
     if (session.status === "completed") {
       stopTimer();
+      setSessionMode(false);
       renderComplete(session);
       return;
     }
+    setSessionMode(true);
+    updateExamHud(session);
     if (session.stage_done) {
       renderStageGate();
       return;
@@ -243,32 +282,31 @@
     var sess = state.session;
     if (!sess || !sess.current_question) {
       if (sess && sess.stage_done) return renderStageGate();
-      contentEl.innerHTML = '<div class="diag-card"><p>题目加载失败</p></div>';
+      contentEl.innerHTML = '<div class="diag-brief"><p>题目加载失败</p></div>';
       return;
     }
     state.qStart = Date.now();
     state.selected = null;
     state.feedback = null;
+    setSessionMode(true);
+    updateExamHud(sess);
 
     var q = sess.current_question;
     var prog = sess.stage_progress || { answered: 0, total: 1 };
     var pct = prog.total ? Math.round((prog.answered / prog.total) * 100) : 0;
 
     contentEl.innerHTML =
-      '<div class="diag-card">' +
-      '<div class="diag-top">' +
-      "<span>" + esc(sess.stage_name || "") + "</span>" +
-      '<div class="diag-progress-wrap"><div class="diag-progress-fill" style="width:' + pct + '%"></div></div>' +
-      "<span>" + (prog.answered + 1) + " / " + prog.total + "</span>" +
-      '<span id="diag-timer">' + esc(formatTime(elapsedNow())) + "</span>" +
-      "</div>" +
+      '<div class="diag-session">' +
+      '<div class="diag-session__progress" aria-hidden="true"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="diag-session__paper">' +
       questionBodyHTML(q) +
       '<div class="diag-feedback" id="diag-fb"></div>' +
-      '<div class="diag-actions">' +
-      '<button type="button" class="btn btn--primary" id="diag-submit">提交</button>' +
-      '<button type="button" class="btn btn--ghost" id="diag-next" hidden>下一题</button>' +
+      '<p class="diag-msg" id="diag-err" hidden></p>' +
       "</div>" +
-      '<p class="diag-msg" id="diag-err" hidden></p></div>';
+      '<div class="diag-session__dock"><div class="diag-session__dock-inner">' +
+      '<button type="button" class="btn btn--primary" id="diag-submit">提交答案</button>' +
+      '<button type="button" class="btn btn--ghost" id="diag-next" hidden>下一题</button>' +
+      "</div></div></div>";
 
     bindQuestionControls(q);
   }
@@ -278,14 +316,17 @@
     var html = '<span class="diag-qtype">' + esc(TYPE_LABEL[type] || type) + "</span>";
     if (type === "listening_choice") {
       html +=
-        '<div><button type="button" class="diag-play" id="diag-play" aria-label="播放读音">▶</button>' +
-        '<p class="diag-hint">点击播放，选择听到的单词</p></div>';
+        '<div class="diag-listen">' +
+        '<button type="button" class="diag-play" id="diag-play" aria-label="播放读音">▶</button>' +
+        '<p class="diag-hint">播放音频后，选择你听到的单词</p></div>';
       html += optionsHTML(q.options || []);
     } else if (type === "english_to_chinese") {
       html += '<p class="diag-prompt">' + esc(q.question_content) + "</p>";
+      html += '<p class="diag-hint">选择最准确的中文释义</p>';
       html += optionsHTML(q.options || []);
     } else if (type === "chinese_to_english") {
       html += '<p class="diag-prompt diag-prompt--cn">' + esc(q.question_content) + "</p>";
+      html += '<p class="diag-hint">选择对应的英文单词</p>';
       html += optionsHTML(q.options || []);
     } else {
       html +=
@@ -297,25 +338,27 @@
         esc((q.question_content && q.question_content.example) || q.example_sentence || "______") +
         "</div>";
       html +=
-        '<p class="diag-hint">请填写英文拼写（忽略大小写；单复数/时态不同视为不同答案）</p>';
+        '<p class="diag-hint">根据音标与语境填写英文拼写（忽略大小写；词形不同视为不同答案）</p>';
       html +=
-        '<input class="diag-input" id="diag-spell" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入单词拼写">';
+        '<input class="diag-input" id="diag-spell" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="在此输入拼写">';
     }
     return html;
   }
 
   function optionsHTML(opts) {
     return (
-      '<div class="diag-options" id="diag-opts">' +
+      '<div class="diag-options" id="diag-opts" role="listbox">' +
       opts.map(function (o, i) {
         return (
-          '<button type="button" class="diag-opt" data-opt="' +
+          '<button type="button" class="diag-opt" role="option" data-opt="' +
           esc(o) +
           '" data-i="' +
           i +
-          '">' +
+          '"><span class="diag-opt__key">' +
+          (OPT_KEYS[i] || String(i + 1)) +
+          "</span><span>" +
           esc(o) +
-          "</button>"
+          "</span></button>"
         );
       }).join("") +
       "</div>"
@@ -349,6 +392,7 @@
         state.feedback = null;
         if (state.earlyAborted || (state.session && state.session.status === "completed")) {
           stopTimer();
+          setSessionMode(false);
           renderComplete(state.session);
           return;
         }
@@ -402,6 +446,7 @@
           state.earlyAborted = true;
           state.report = d.report || null;
         }
+        updateExamHud(state.session);
         showFeedback(d.is_correct, d.correct_answer, ua, d.early_aborted);
       })
       .catch(function (e) {
@@ -420,11 +465,11 @@
     if (fb) {
       fb.className = "diag-feedback is-visible " + (ok ? "is-ok" : "is-bad");
       fb.innerHTML = ok
-        ? "✓ 正确"
-        : ("✗ 错误。正确答案：<strong>" + esc(correct) + "</strong>");
+        ? "正确"
+        : ("错误 · 正确答案：<strong>" + esc(correct) + "</strong>");
       if (earlyAborted) {
         fb.innerHTML +=
-          '<div class="diag-early-abort">错误率已超过 50%，测试提前结束。点「下一题」查看报告。</div>';
+          '<div class="diag-early-abort">错误率已超过 50%，本场测试提前结束。请点击「查看报告」。</div>';
       }
     }
     var submit = document.getElementById("diag-submit");
@@ -432,6 +477,7 @@
     if (submit) submit.hidden = true;
     if (next) {
       next.hidden = false;
+      next.textContent = earlyAborted ? "查看报告" : "下一题";
       next.focus();
     }
 
@@ -444,14 +490,18 @@
     var spell = document.getElementById("diag-spell");
     if (spell) {
       spell.disabled = true;
-      spell.style.borderColor = ok ? "#3a7d5a" : "#c0392b";
-      spell.style.background = ok ? "#eaf5ee" : "#fdf0ee";
+      spell.style.borderColor = ok ? "var(--diag-ok)" : "var(--diag-bad)";
+      spell.style.background = ok ? "var(--diag-ok-bg)" : "var(--diag-bad-bg)";
     }
   }
 
   function renderStageGate() {
+    setSessionMode(true);
+    updateExamHud(state.session);
     contentEl.innerHTML =
-      '<div class="diag-card"><div class="state state--brand"><div class="spinner spinner--brand"></div>正在结算本阶段…</div></div>';
+      '<div class="diag-brief diag-section-break">' +
+      '<p class="diag-kicker">Section Review</p>' +
+      '<div class="state state--brand"><div class="spinner spinner--brand"></div>正在结算本阶段…</div></div>';
     api("/api/diagnostic/session/" + state.session.session_id + "/next-stage", {
       method: "POST",
       body: { elapsed_seconds: elapsedNow() }
@@ -467,7 +517,7 @@
       })
       .catch(function (e) {
         contentEl.innerHTML =
-          '<div class="diag-card"><p class="diag-msg">' +
+          '<div class="diag-brief"><p class="diag-msg">' +
           esc(e.message || "结算失败") +
           '</p><button type="button" class="btn btn--primary" id="diag-retry-stage">重试</button></div>';
         document.getElementById("diag-retry-stage").addEventListener("click", renderStageGate);
@@ -475,42 +525,42 @@
   }
 
   function renderStageTransition(result, canContinue) {
+    setSessionMode(!canContinue ? false : true);
+    if (canContinue) updateExamHud(state.session);
+    else if (examCenter) examCenter.hidden = true;
+
     var rating = result.rating || "weak";
     contentEl.innerHTML =
-      '<div class="diag-card">' +
-      "<h1>" +
-      esc(result.name || "") +
-      " · 阶段结果</h1>" +
+      '<div class="diag-brief diag-section-break">' +
+      '<p class="diag-kicker">Stage Complete</p>' +
+      "<h1>" + esc(result.name || "") + "</h1>" +
       '<div class="diag-stat-grid">' +
       '<div class="diag-stat"><div class="diag-stat__val">' +
-      Math.round(result.accuracy * 100) +
+      Math.round((result.accuracy || 0) * 100) +
       '%</div><div class="diag-stat__lbl">正确率</div></div>' +
       '<div class="diag-stat"><div class="diag-stat__val">' +
-      Math.round(result.spelling_accuracy * 100) +
-      '%</div><div class="diag-stat__lbl">拼写正确率</div></div>' +
+      Math.round((result.spelling_accuracy || 0) * 100) +
+      '%</div><div class="diag-stat__lbl">拼写</div></div>' +
       '<div class="diag-stat"><div class="diag-stat__val">' +
-      result.correct +
-      "/" +
-      result.total +
-      '</div><div class="diag-stat__lbl">答对题数</div></div>' +
+      result.correct + "/" + result.total +
+      '</div><div class="diag-stat__lbl">答对</div></div>' +
       "</div>" +
-      '<p class="diag-rating diag-rating--' +
-      esc(rating) +
-      '">' +
+      '<p class="diag-rating diag-rating--' + esc(rating) + '">' +
       esc(RATING_STAR[rating] || rating) +
       (result.is_passed ? " · 达标" : " · 未达实用推荐线") +
+      (result.early_aborted ? " · 提前结束" : "") +
       "</p>" +
-      '<p class="diag-lead" style="margin-top:16px">' +
+      '<p class="diag-lead" style="margin-top:18px">' +
       (canContinue
-        ? "已解锁下一阶段，继续挑战！"
-        : "测试结束。可查看能力报告与诊断错题本。") +
+        ? "本阶段已通过实用推荐线，进入下一阶段。"
+        : "本场测试已结束，可查看完整能力报告。") +
       "</p>" +
       '<div class="diag-actions" id="diag-stage-actions"></div></div>';
 
     var actions = document.getElementById("diag-stage-actions");
     if (canContinue) {
       actions.innerHTML =
-        '<button type="button" class="btn btn--primary" id="diag-continue">继续挑战</button>';
+        '<button type="button" class="btn btn--primary" id="diag-continue">进入下一阶段</button>';
       document.getElementById("diag-continue").addEventListener("click", function () {
         renderQuestion();
       });
@@ -524,6 +574,7 @@
   }
 
   function renderComplete(session) {
+    setSessionMode(false);
     var sid = session.session_id;
     var loadReport = state.report
       ? Promise.resolve(state.report)
@@ -532,7 +583,7 @@
         });
 
     contentEl.innerHTML =
-      '<div class="diag-card"><div class="state state--brand"><div class="spinner spinner--brand"></div>生成结果…</div></div>';
+      '<div class="diag-brief"><div class="state state--brand"><div class="spinner spinner--brand"></div>生成成绩单…</div></div>';
 
     loadReport
       .then(function (report) {
@@ -547,14 +598,16 @@
         });
         var acc = totalQ ? Math.round((totalC / totalQ) * 100) : 0;
         contentEl.innerHTML =
-          '<div class="diag-card">' +
-          "<h1>诊断完成</h1>" +
+          '<div class="diag-brief">' +
+          '<p class="diag-kicker">Result Summary</p>' +
+          "<h1>测试完成</h1>" +
+          (report && report.early_aborted
+            ? '<p class="diag-lead">因错误率超过 50%，本场测试已提前结束。</p>'
+            : '<p class="diag-lead">已完成本场词汇能力诊断。</p>') +
           '<div class="diag-stat-grid">' +
-          '<div class="diag-stat"><div class="diag-stat__val">' +
-          totalQ +
+          '<div class="diag-stat"><div class="diag-stat__val">' + totalQ +
           '</div><div class="diag-stat__lbl">总题数</div></div>' +
-          '<div class="diag-stat"><div class="diag-stat__val">' +
-          acc +
+          '<div class="diag-stat"><div class="diag-stat__val">' + acc +
           '%</div><div class="diag-stat__lbl">总正确率</div></div>' +
           '<div class="diag-stat"><div class="diag-stat__val">' +
           formatTime((report && report.total_time_seconds) || state.elapsedBase) +
@@ -575,7 +628,6 @@
               '<a class="btn btn--ghost" href="zone.html?zone=study&s=vocab">返回单词区</a>') +
           "</div></div>";
         if (state.gate) {
-          // Force landing on full report after first placement
           setTimeout(function () {
             location.replace(
               "diagnostic-report.html?session=" + sid + "&placement=1"
@@ -585,7 +637,7 @@
       })
       .catch(function (e) {
         contentEl.innerHTML =
-          '<div class="diag-card"><p class="diag-msg">' + esc(e.message) + "</p></div>";
+          '<div class="diag-brief"><p class="diag-msg">' + esc(e.message) + "</p></div>";
       });
   }
 
