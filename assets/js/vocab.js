@@ -7,6 +7,7 @@
   "use strict";
   var Y = window.YYSD;
 
+  function bootVocab() {
   var params = new URLSearchParams(location.search);
   var bookKey = (params.get("book") || "").trim();
   var rangeParam = (params.get("range") || "").trim();
@@ -73,19 +74,30 @@
     var done = Y.results()[item.id];
     var topic = Y.vocabTopic(item);
     var lessonHref = Y.vocabLessonHref ? Y.vocabLessonHref(item, "") : Y.fileHref(item, "");
-    return '<a class="vocab-list-row' + (done ? " is-done" : "") + '" href="' + lessonHref +
+    var guideHref = Y.fileHref(item, "") + "&vocabMode=learn";
+    var testHref = Y.fileHref(item, "") + "&vocabMode=test";
+    // ponytail: fileHref already has ?id= — &vocabMode is fine
+    return '<div class="vocab-list-row' + (done ? " is-done" : "") +
       '" data-title="' + Y.esc(Y.displayTitle(item).toLowerCase()) +
       '" data-raw="' + Y.esc(String(item.title || "").toLowerCase()) + '">' +
       '<span class="vocab-list-row__no">' + Y.esc(listBadge(item)) + '</span>' +
       '<span class="vocab-list-row__main">' +
         '<span class="vocab-list-row__title">' + Y.esc(Y.displayTitle(item)) + '</span>' +
         '<span class="vocab-list-row__topic">' +
-          Y.esc(topic ? topic + " · " : "") + "单词小课</span>" +
+          Y.esc(topic ? topic + " · " : "") + "单词单元</span>" +
       '</span>' +
-      (done
-        ? '<span class="vocab-list-row__badge">已学</span>'
-        : '<span class="vocab-list-row__go">开始 ›</span>') +
-      '</a>';
+      '<span class="vocab-list-row__trail">' +
+        (done ? '<span class="vocab-list-row__badge">已学</span>' : "") +
+        '<span class="vocab-list-row__enter">' +
+          '<button type="button" class="vocab-list-row__go" aria-haspopup="true" aria-expanded="false">开始 ›</button>' +
+          '<span class="vocab-list-flyout" role="menu">' +
+            '<a class="vocab-list-flyout__item" role="menuitem" href="' + Y.esc(guideHref) + '">词汇总览</a>' +
+            '<a class="vocab-list-flyout__item" role="menuitem" href="' + Y.esc(lessonHref) + '">练习</a>' +
+            '<a class="vocab-list-flyout__item" role="menuitem" href="' + Y.esc(testHref) + '">检测</a>' +
+          "</span>" +
+        "</span>" +
+      "</span>" +
+    "</div>";
   }
 
   function specialTabs(lists) {
@@ -168,6 +180,8 @@
       switchRange(btn.getAttribute("data-range"));
     });
 
+    bindListFlyouts(contentEl);
+
     var qEl = document.getElementById("vocab-q");
     if (qEl) {
       qEl.addEventListener("input", function () {
@@ -180,6 +194,36 @@
     }
 
     animateListRows(contentEl.querySelector(".vocab-range-panel.is-active"));
+  }
+
+  function bindListFlyouts(root) {
+    if (!root || root.__vocabFlyoutBound) return;
+    root.__vocabFlyoutBound = true;
+    root.addEventListener("click", function (e) {
+      var go = e.target.closest(".vocab-list-row__go");
+      if (go) {
+        e.preventDefault();
+        var enter = go.closest(".vocab-list-row__enter");
+        var open = enter && enter.classList.contains("is-open");
+        root.querySelectorAll(".vocab-list-row__enter.is-open").forEach(function (el) {
+          el.classList.remove("is-open");
+          var b = el.querySelector(".vocab-list-row__go");
+          if (b) b.setAttribute("aria-expanded", "false");
+        });
+        if (enter && !open) {
+          enter.classList.add("is-open");
+          go.setAttribute("aria-expanded", "true");
+        }
+        return;
+      }
+      if (!e.target.closest(".vocab-list-row__enter")) {
+        root.querySelectorAll(".vocab-list-row__enter.is-open").forEach(function (el) {
+          el.classList.remove("is-open");
+          var b = el.querySelector(".vocab-list-row__go");
+          if (b) b.setAttribute("aria-expanded", "false");
+        });
+      }
+    });
   }
 
   function switchRange(id) {
@@ -227,4 +271,13 @@
       : err.message;
     fail(msg);
   });
+  } // end bootVocab
+
+  if (window.YYSD_DIAG_GATE) {
+    window.YYSD_DIAG_GATE.ensure({ requireLogin: true }).then(function (ok) {
+      if (ok) bootVocab();
+    });
+  } else {
+    bootVocab();
+  }
 })();

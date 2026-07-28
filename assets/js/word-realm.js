@@ -905,8 +905,18 @@
   // fix hrefView pin append when already has query — used above with string concat
   // pin links use hrefView("map", regionId) + "&pin=" which is correct
 
-  if (!seenPrologue()) renderPrologue();
-  else {
-    maybePlayMist3Vn(function () { boot(); });
+  function startWordRealm() {
+    if (!seenPrologue()) renderPrologue();
+    else {
+      maybePlayMist3Vn(function () { boot(); });
+    }
+  }
+
+  if (window.YYSD_DIAG_GATE) {
+    window.YYSD_DIAG_GATE.ensure({ requireLogin: true }).then(function (ok) {
+      if (ok) startWordRealm();
+    });
+  } else {
+    startWordRealm();
   }
 })();

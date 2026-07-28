@@ -1,0 +1,363 @@
+/* diagnostic — vocab placement test */
+.diag-card {
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--surface, #fff);
+  border: 1px solid rgba(44, 62, 107, 0.08);
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 2px 16px rgba(30, 40, 70, 0.05);
+}
+.diag-card h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.75rem;
+  color: #2c3e6b;
+  margin: 0 0 8px;
+}
+.diag-card .diag-lead {
+  color: #5a5a5a;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+.diag-rules {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+}
+.diag-rules li {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee9e0;
+  font-size: 0.9rem;
+  color: #3a3a3a;
+  line-height: 1.5;
+}
+.diag-rules li:last-child { border-bottom: none; }
+.diag-rules strong { color: #2c3e6b; }
+.diag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+.diag-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+.diag-progress-wrap {
+  flex: 1;
+  height: 6px;
+  background: #e8e4dc;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0 10px;
+}
+.diag-progress-fill {
+  height: 100%;
+  background: #2c3e6b;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.diag-qtype {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c8963e;
+  background: #fdf8f0;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.diag-prompt {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.6rem;
+  color: #2c3e6b;
+  margin: 8px 0 6px;
+  word-break: break-word;
+}
+.diag-prompt--cn { font-family: Inter, "PingFang SC", sans-serif; font-size: 1.25rem; }
+.diag-ipa { color: #888; font-size: 0.95rem; margin-bottom: 8px; }
+.diag-example {
+  background: #fafaf7;
+  border-left: 3px solid #e8c97a;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #555;
+  margin: 12px 0;
+  line-height: 1.55;
+}
+.diag-hint {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 8px 0 16px;
+}
+.diag-options {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+.diag-opt {
+  text-align: left;
+  padding: 12px 14px;
+  border: 2px solid #e0dcd5;
+  border-radius: 10px;
+  background: #fafaf8;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #2d2d2d;
+  transition: border-color 0.15s, background 0.15s;
+}
+.diag-opt:hover:not(:disabled) { border-color: #3d5a99; }
+.diag-opt.is-selected { border-color: #2c3e6b; background: #eef2fa; }
+.diag-opt.is-correct { border-color: #3a7d5a; background: #eaf5ee; }
+.diag-opt.is-wrong { border-color: #c0392b; background: #fdf0ee; }
+.diag-opt:disabled { cursor: default; opacity: 0.95; }
+.diag-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e0dcd5;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  background: #fafaf8;
+  margin: 8px 0 16px;
+}
+.diag-input:focus {
+  outline: none;
+  border-color: #3d5a99;
+  box-shadow: 0 0 0 3px rgba(61, 90, 153, 0.08);
+}
+.diag-play {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: #2c3e6b;
+  color: #fff;
+  font-size: 1.4rem;
+  margin: 8px 0 4px;
+  box-shadow: 0 4px 16px rgba(44, 62, 107, 0.25);
+}
+.diag-play:hover { background: #3d5a99; }
+.diag-feedback {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  display: none;
+}
+.diag-feedback.is-visible { display: block; }
+.diag-feedback.is-ok { background: #eaf5ee; color: #2d5a3d; border: 1px solid #c3e0cd; }
+.diag-feedback.is-bad { background: #fdf0ee; color: #6b2020; border: 1px solid #f5c6cb; }
+.diag-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.diag-stat {
+  background: #f9f8f5;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+.diag-stat__val {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.6rem;
+  color: #2c3e6b;
+  font-weight: 700;
+}
+.diag-stat__lbl { font-size: 0.8rem; color: #888; margin-top: 4px; }
+.diag-rating {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.diag-rating--excellent { color: #b8860b; }
+.diag-rating--good { color: #3a7d5a; }
+.diag-rating--weak { color: #c0392b; }
+.diag-thermo {
+  margin: 16px 0 8px;
+}
+.diag-thermo__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: #444;
+}
+.diag-thermo__track {
+  position: relative;
+  height: 12px;
+  background: #e8e4dc;
+  border-radius: 6px;
+  overflow: visible;
+}
+.diag-thermo__fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+.diag-thermo__fill--excellent { background: linear-gradient(90deg, #d4a017, #f0c14b); }
+.diag-thermo__fill--good { background: #3a7d5a; }
+.diag-thermo__fill--weak { background: #e07a3a; }
+.diag-thermo__ci {
+  position: absolute;
+  top: -3px;
+  height: 18px;
+  border: 2px solid rgba(44, 62, 107, 0.45);
+  border-radius: 4px;
+  background: transparent;
+  pointer-events: none;
+}
+.diag-advice {
+  background: #f9f8f5;
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #333;
+  margin: 16px 0;
+}
+.diag-mistakes-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.diag-mistakes-toolbar select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0dcd5;
+  background: #fff;
+}
+.diag-mist-list { list-style: none; padding: 0; margin: 0; }
+.diag-mist-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 14px;
+  align-items: start;
+  padding: 14px 0;
+  border-bottom: 1px solid #eee9e0;
+}
+.diag-mist-list .diag-ua { color: #c0392b; }
+.diag-mist-list .diag-ca { color: #3a7d5a; }
+.diag-mist-meta { font-size: 0.8rem; color: #888; }
+.diag-table-wrap { overflow-x: auto; }
+.diag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.diag-table th, .diag-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #eee9e0;
+  text-align: left;
+  white-space: nowrap;
+}
+.diag-table th { background: #fafaf7; color: #2c3e6b; font-weight: 600; }
+.diag-table tr.is-alert { background: #fdf0ee; }
+.diag-msg { color: #c0392b; font-size: 0.9rem; margin-top: 10px; }
+.diag-card--wide { max-width: 920px; }
+.diag-h2 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.25rem;
+  color: #2c3e6b;
+  margin: 0 0 6px;
+}
+.diag-h3 {
+  font-size: 0.95rem;
+  color: #2c3e6b;
+  margin: 16px 0 8px;
+}
+.diag-chart { margin: 12px 0 4px; }
+.diag-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  color: #555;
+}
+.diag-chart-legend__i { display: inline-flex; align-items: center; gap: 6px; }
+.diag-chart-legend__i i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.diag-radar {
+  max-width: 280px;
+  margin: 8px auto 16px;
+}
+.diag-report-radar { margin: 8px 0 20px; text-align: center; }
+.diag-timeline__item {
+  border: 1px solid #eee9e0;
+  border-radius: 10px;
+  padding: 0;
+  margin: 0 0 10px;
+  background: #fff;
+}
+.diag-timeline__item summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  font-weight: 600;
+  color: #2c3e6b;
+  list-style: none;
+}
+.diag-timeline__item summary::-webkit-details-marker { display: none; }
+.diag-timeline__body { padding: 0 14px 14px; }
+.diag-hot-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.diag-hot-list li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee9e0;
+}
+.diag-hot-list__rank {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  color: #c8963e;
+}
+.diag-hot-list__main strong { color: #2c3e6b; }
+.diag-hot-list__bar {
+  height: 6px;
+  background: #eee9e0;
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.diag-hot-list__bar i {
+  display: block;
+  height: 100%;
+  background: #2c3e6b;
+  border-radius: 3px;
+}
+.diag-hot-list__cnt {
+  font-weight: 700;
+  color: #2c3e6b;
+  min-width: 2ch;
+  text-align: right;
+}
+.diag-table a { color: #2c3e6b; font-weight: 600; text-decoration: none; }
+.diag-table a:hover { text-decoration: underline; }
+@media (max-width: 640px) {
+  .diag-card { padding: 20px 16px; }
+  .diag-prompt { font-size: 1.35rem; }
+}

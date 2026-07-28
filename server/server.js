@@ -12,6 +12,7 @@ const Dysmsapi20170525 = require("@alicloud/dysmsapi20170525");
 const { SendSmsRequest } = Dysmsapi20170525;
 const OpenApi = require("@alicloud/openapi-client");
 const tenant = require("./tenant");
+const diagnostic = require("./diagnostic");
 
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -127,14 +128,21 @@ db.exec(
 
 try { db.exec("ALTER TABLE calendar_events ADD COLUMN attachment_name TEXT"); } catch (e) { /* already exists */ }
 
-// ponytail: one-shot backfill so legacy latest-only rows appear as first attempt
-db.prepare(
-  "INSERT INTO user_score_attempts (user_id, item_id, payload, created_at) " +
-  "SELECT s.user_id, s.item_id, s.payload, s.updated_at FROM user_scores s " +
-  "WHERE NOT EXISTS (" +
-  "  SELECT 1 FROM user_score_attempts a WHERE a.user_id = s.user_id AND a.item_id = s.item_id" +
-  ")"
-).run();
+// ponytail: truly one-shot — re-running backfill after shared-PC sync pollution mints fake attempts
+db.exec("CREATE TABLE IF NOT EXISTS _yysd_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+var backfillRow = db.prepare("SELECT value FROM _yysd_meta WHERE key = 'attempts_backfill_v1'").get();
+if (!backfillRow) {
+  db.prepare(
+    "INSERT INTO user_score_attempts (user_id, item_id, payload, created_at) " +
+    "SELECT s.user_id, s.item_id, s.payload, s.updated_at FROM user_scores s " +
+    "WHERE NOT EXISTS (" +
+    "  SELECT 1 FROM user_score_attempts a WHERE a.user_id = s.user_id AND a.item_id = s.item_id" +
+    ")"
+  ).run();
+  db.prepare(
+    "INSERT INTO _yysd_meta (key, value) VALUES ('attempts_backfill_v1', ?)"
+  ).run(new Date().toISOString());
+}
 
 const stmts = {
   upsertCode: db.prepare(
@@ -1731,14 +1739,7 @@ function parseScorePayload(row) {
   if (!rec || typeof rec !== "object") rec = {};
   var wrong = [];
   if (Array.isArray(rec.wrong)) {
-    wrong = rec.wrong.slice(0, 80).map(function (w) {
-      if (!w || typeof w !== "object") return null;
-      return {
-        no: clipText(w.no != null ? String(w.no) : "", 20),
-        ua: clipText(w.ua, 200),
-        ans: clipText(w.ans, 200)
-      };
-    }).filter(Boolean);
+    wrong = sanitizeWrong(rec.wrong);
   }
   var durationSec = rec.durationSec != null ? Number(rec.durationSec) : null;
   if (!isFinite(durationSec) || durationSec < 0) durationSec = null;
@@ -1765,6 +1766,7 @@ function parseScorePayload(row) {
     startedAt: startedAt,
     durationSec: durationSec,
     assignmentEventId: clipText(rec.assignmentEventId != null ? String(rec.assignmentEventId) : "", 40) || null,
+    cdt: !!rec.cdt,
     updatedAt: row.created_at || row.updated_at,
     wrong: wrong
   };
@@ -2202,11 +2204,16 @@ function sanitizeWrong(arr) {
   if (!Array.isArray(arr)) return [];
   return arr.slice(0, 80).map(function (w) {
     if (!w || typeof w !== "object") return null;
-    return {
+    var out = {
       no: clipText(w.no != null ? String(w.no) : "", 20),
       ua: clipText(w.ua, 200),
       ans: clipText(w.ans, 200)
     };
+    var explain = clipText(w.explain, 800);
+    var stem = clipText(w.stem, 400);
+    if (explain) out.explain = explain;
+    if (stem) out.stem = stem;
+    return out;
   }).filter(Boolean);
 }
 
@@ -2261,19 +2268,116 @@ app.put("/api/scores/:itemId", authMiddleware, function (req, res) {
   if (req.user.role === "teacher") return res.json({ ok: true, skipped: true });
   var itemId = clipText(req.params.itemId, 120);
   var body = req.body || {};
-  var rec = sanitizeScore(Object.assign({}, body, { id: itemId }));
+  // ponytail: require attemptAt — old login-sync PUTs re-uploaded shared-PC leftovers
+  var attemptAt = clipText(body.attemptAt, 40);
+  if (!attemptAt || !isFinite(Date.parse(attemptAt))) {
+    return res.json({ ok: true, skipped: true, reason: "attempt-required" });
+  }
+  var rec = sanitizeScore(Object.assign({}, body, { id: itemId, date: body.date || attemptAt }));
   if (!rec) return res.status(400).json({ error: "成绩数据无效" });
   stmts.upsertScore.run(req.user.sub, itemId, JSON.stringify(rec), rec.date);
-  // ponytail: only real exam submits send attemptAt; login sync upserts latest only
-  var attemptAt = clipText(body.attemptAt, 40);
-  if (attemptAt) {
-    var attempt = Object.assign({}, rec, { wrong: sanitizeWrong(body.wrong) });
-    stmts.insertAttempt.run(req.user.sub, itemId, JSON.stringify(attempt), attemptAt);
-  }
+  var attempt = Object.assign({}, rec, { wrong: sanitizeWrong(body.wrong) });
+  stmts.insertAttempt.run(req.user.sub, itemId, JSON.stringify(attempt), attemptAt);
   try { autoCompleteAssignments(req.user.sub, itemId); } catch (e) {
     console.error("[yysd-api] calendar auto-complete", e && e.message);
   }
   res.json({ ok: true, score: rec });
+});
+
+app.get("/api/student/score-attempts", authMiddleware, function (req, res) {
+  if (req.user.role === "teacher") return res.status(403).json({ error: "请使用学生账号登录" });
+  var subject = clipText(req.query.subject, 60);
+  var itemId = clipText(req.query.itemId, 120);
+  var assignmentOnly = req.query.assignmentOnly === "1" || req.query.assignmentOnly === "true";
+  var eventId = clipText(req.query.eventId, 40);
+  var limit = Math.max(1, Math.min(200, parseInt(req.query.limit, 10) || 100));
+  var rows = stmts.listStudentAttempts.all(req.user.sub);
+  var attempts = [];
+  for (var i = 0; i < rows.length && attempts.length < limit; i++) {
+    var a = parseScorePayload(rows[i]);
+    if (subject && a.subject !== subject) continue;
+    if (itemId && a.id !== itemId) continue;
+    if (assignmentOnly && !a.assignmentEventId) continue;
+    if (eventId && String(a.assignmentEventId || "") !== eventId) continue;
+    attempts.push(a);
+  }
+  res.json({ ok: true, attempts: attempts });
+});
+
+app.get("/api/student/score-attempts/:attemptId", authMiddleware, function (req, res) {
+  if (req.user.role === "teacher") return res.status(403).json({ error: "请使用学生账号登录" });
+  var attemptId = parseInt(req.params.attemptId, 10);
+  if (!isFinite(attemptId) || attemptId <= 0) return res.status(400).json({ error: "无效的记录 ID" });
+  var row = db.prepare(
+    "SELECT id, item_id, payload, created_at FROM user_score_attempts WHERE id = ? AND user_id = ?"
+  ).get(attemptId, req.user.sub);
+  if (!row) return res.status(404).json({ error: "找不到该错题记录" });
+  res.json({ ok: true, attempt: parseScorePayload(row) });
+});
+
+var WRONG_ANALYZE_SYSTEM =
+  "你是雅思老师。根据学生错题（题号、作答、正解、卷面讲解）用简洁中文分析。" +
+  "只输出 JSON 对象，字段：whyWrong（错因）、evidence（考点或原文依据）、strategy（下次怎么做）、keyVocab（可选，相关词组，可空字符串）。" +
+  "若有学生追问，在上述结构里用 whyWrong 直接回答追问，其余字段可简短补充。不要输出 Markdown。";
+
+app.post("/api/exam/wrong-analyze", authMiddleware, async function (req, res) {
+  if (req.user.role === "teacher") {
+    return res.status(403).json({ error: "请使用学生账号登录" });
+  }
+  var u = getUsage(req.user.sub);
+  if (!isAdminPhone(req.user.phone) && u.textCount >= AI_QUOTA.text) {
+    return res.status(429).json({
+      error: "今日文字消息已达上限（" + AI_QUOTA.text + " 条），明日再来",
+      quota: aiTutorQuota(req)
+    });
+  }
+  var body = req.body || {};
+  var no = clipText(body.no, 20);
+  var ua = clipText(body.ua, 200);
+  var ans = clipText(body.ans, 200);
+  var explain = clipText(body.explain, 800);
+  var stem = clipText(body.stem, 400);
+  var subject = clipText(body.subject, 60);
+  var itemId = clipText(body.itemId, 120);
+  var title = clipText(body.title, 200);
+  var followUp = clipText(body.followUp, 500);
+  if (!ans && !explain && !followUp) {
+    return res.status(400).json({ error: "缺少题目信息" });
+  }
+  var hist = Array.isArray(body.history) ? body.history.slice(-6) : [];
+  var histLines = hist.map(function (h) {
+    if (!h || typeof h !== "object") return "";
+    var role = h.role === "assistant" ? "老师" : "学生";
+    return role + "：" + clipText(h.content, 600);
+  }).filter(Boolean).join("\n");
+  var userPrompt =
+    "科目：" + (subject || "—") +
+    "\n试卷：" + (title || itemId || "—") +
+    "\n题号：" + (no || "—") +
+    "\n题干：" + (stem || "—") +
+    "\n学生作答：" + (ua || "未作答") +
+    "\n正确答案：" + (ans || "—") +
+    "\n卷面讲解：" + (explain || "无") +
+    (histLines ? "\n\n对话历史：\n" + histLines : "") +
+    (followUp ? "\n\n学生追问：" + followUp : "\n\n请分析这道错题。");
+  try {
+    var d = parseJsonFromLLM(await qwenChat(WRONG_ANALYZE_SYSTEM, userPrompt));
+    if (!isAdminPhone(req.user.phone)) bumpUsage(req.user.sub, { text: 1 });
+    res.json({
+      ok: true,
+      analysis: {
+        whyWrong: clipText(d.whyWrong, 800) || "",
+        evidence: clipText(d.evidence, 800) || "",
+        strategy: clipText(d.strategy, 800) || "",
+        keyVocab: clipText(d.keyVocab, 400) || ""
+      },
+      quota: aiTutorQuota(req)
+    });
+  } catch (e) {
+    console.error("[yysd-api] exam/wrong-analyze", e && e.message);
+    res.status(e.message && e.message.indexOf("未配置") >= 0 ? 503 : 502)
+      .json({ error: "AI 分析失败，请稍后再试" });
+  }
 });
 
 async function qwenChatMessages(messages, temperature, maxTokens) {
@@ -3452,6 +3556,21 @@ process.on("unhandledRejection", function (err) {
 process.on("SIGTERM", function () {
   try { db.close(); } catch (e) {}
   process.exit(0);
+});
+
+// Vocab diagnostic (adaptive placement + mistake book)
+diagnostic.mountRoutes(app, {
+  db: db,
+  authMiddleware: authMiddleware,
+  teacherAuthMiddleware: teacherAuthMiddleware,
+  allowedStudentIdsForTeacher: allowedStudentIdsForTeacher,
+  isOrgAdminReq: isOrgAdminReq,
+  teacherCanManageStudent: teacherCanManageStudent,
+  findUserById: function (id) { return stmts.findUserById.get(id); },
+  listStudentsByOrg: function (orgId) {
+    return orgStmts.listStudentsByOrg.all(orgId);
+  },
+  repoRoot: path.join(__dirname, "..")
 });
 
 // ponytail: runnable self-check

@@ -19,6 +19,8 @@
 
   var ACTIVE_BOOKS = { gaozhong: true, cet4: true, special: true };
 
+  function bootWrongWords() {
+
   function fail(msg) {
     contentEl.innerHTML = '<div class="state"><h3>无法打开</h3><p>' + Y.esc(msg) +
       '</p><p><a href="zone.html?zone=study&s=vocab">返回单词区</a></p></div>';
@@ -333,4 +335,13 @@
   }
 
   render();
+  } // end bootWrongWords
+
+  if (window.YYSD_DIAG_GATE) {
+    window.YYSD_DIAG_GATE.ensure({ requireLogin: true }).then(function (ok) {
+      if (ok) bootWrongWords();
+    });
+  } else {
+    bootWrongWords();
+  }
 })();

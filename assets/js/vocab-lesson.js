@@ -11,7 +11,7 @@
    2. Lesson   → 每课 8 词 / ~12–16 题 / 一题一屏 / 顶栏进度
    3. Mix      → meaning_to_word | collocation | listen_meaning | example_cloze | scramble | type_spell
    4. Feedback → 口语化夸奖 / 温柔纠错 +「继续」；连对 N 题
-   5. Hearts   → 5 心；扣光可免费补一次
+   5. Learn    → 作业小课不扣心；错题收录 + 当堂可重练
    6. Retry    → 错词换题型当堂重练（标签「错题重练」）
    7. Celebrate→ 轻结算：经验 + 正确率 + 轻连胜 + 雅思一句提示
    8. Habit    → localStorage 轻连胜（不恐吓归零）
@@ -369,7 +369,8 @@
       : ('<header class="vl-top">' +
           '<a class="vl-x" id="vl-exit" href="#" aria-label="退出">×</a>' +
           '<div class="vl-progress" aria-hidden="true"><div class="vl-progress__bar" id="vl-bar"></div></div>' +
-          '<div class="vl-hearts" id="vl-hearts" aria-label="红心"></div>' +
+          // ponytail: homework is learn+record, not hearts — realm keeps HP via battleMode
+          '<div class="vl-top__meta" id="vl-top-meta" aria-live="polite"></div>' +
         "</header>");
     root.innerHTML =
       '<div class="vl' + (battle ? " vl--battle" : "") + '">' + hud +
@@ -624,10 +625,11 @@
       paintBattleHud(false);
       return;
     }
-    var el = document.getElementById("vl-hearts");
+    // 作业小课：顶栏显示错词收录数，不扣心
+    var el = document.getElementById("vl-top-meta");
     if (!el) return;
-    var n = state.hearts;
-    el.innerHTML = '<span class="vl-hearts__ico" aria-hidden="true">♥</span><span>' + n + "</span>";
+    var n = state.everWrong.length;
+    el.textContent = n ? ("待记 " + n) : "学习中";
   }
 
   function paintProgress() {
@@ -856,9 +858,8 @@
       state.combo = 0;
       if (battleMode()) {
         applyEnemyAttack();
-      } else {
-        state.hearts = Math.max(0, state.hearts - 1);
       }
+      // ponytail: homework — no hearts; wrong → wrongBank for retry/notebook
       if (!ex.retry) {
         var exists = state.wrongBank.some(function (w) {
           return normWord(w.word) === normWord(ex.word.word);
@@ -916,37 +917,30 @@
         showDefeat();
         return;
       }
-      // 远征：无免费补心——血尽即败
-      if (!battleMode() && !ok && state.hearts <= 0 && !state.refilled && !state.freeRefillShown) {
-        offerRefill();
-        return;
-      }
-      if (!battleMode() && !ok && state.hearts <= 0 && state.refilled) {
-        // 作业小课：温柔续打，不硬锁
-      }
       advance();
     };
   }
 
   function offerRefill() {
+    // 仅远征战斗皮仍可能走到补心；作业小课不再触发
+    if (!battleMode()) {
+      advance();
+      return;
+    }
     state.freeRefillShown = true;
-    var battle = battleMode();
     showModal(
       '<div class="vl-refill">' +
         '<div class="vl-mascot" aria-hidden="true">✦</div>' +
-        "<h2>" + (battle ? "记忆之力将散" : "红心用光了") + "</h2>" +
-        "<p>" + (battle ? "神明借你一次重新凝聚——再倒下便要撤退。" : "我们帮你免费补一次心，继续加油啊！") + "</p>" +
-        '<button type="button" class="vl-btn vl-btn--primary vl-btn--wide" id="vl-refill">' +
-          (battle ? "免费重新凝聚" : "免费重新注入") + "</button>" +
+        "<h2>记忆之力将散</h2>" +
+        "<p>神明借你一次重新凝聚——再倒下便要撤退。</p>" +
+        '<button type="button" class="vl-btn vl-btn--primary vl-btn--wide" id="vl-refill">免费重新凝聚</button>' +
       "</div>"
     );
     document.getElementById("vl-refill").onclick = function () {
       state.hearts = HEARTS_MAX;
       state.refilled = true;
-      if (battleMode()) {
-        state.battle.heroHp = HEARTS_MAX;
-        state.battle.lost = false;
-      }
+      state.battle.heroHp = HEARTS_MAX;
+      state.battle.lost = false;
       paintHearts();
       hideModal();
       advance();
@@ -1066,7 +1060,8 @@
     var score = state.correct;
     var store = {};
     try { store = JSON.parse(localStorage.getItem("yysd:results") || "{}"); } catch (e) {}
-    store[item.id] = {
+    var attemptAt = new Date().toISOString();
+    var record = {
       id: item.id,
       title: item.title,
       zone: item.zone,
@@ -1074,7 +1069,7 @@
       score: score,
       total: total,
       band: null,
-      date: new Date().toISOString(),
+      date: attemptAt,
       startedAt: state.startedAt,
       durationSec: state.startedAt
         ? Math.round((Date.now() - Date.parse(state.startedAt)) / 1000)
@@ -1082,7 +1077,11 @@
       wrong: state.everWrong.map(function (w) { return w.word; }),
       lesson: true
     };
+    store[item.id] = record;
     try { localStorage.setItem("yysd:results", JSON.stringify(store)); } catch (e) {}
+    if (window.YYSD_AUTH && YYSD_AUTH.pushScoreRecord) {
+      YYSD_AUTH.pushScoreRecord(Object.assign({}, record, { attemptAt: attemptAt, wrong: [] }));
+    }
 
     if (state.everWrong.length && state.book) {
       Y.mergeWrongWords(state.book, state.everWrong.map(function (w) {
@@ -1453,14 +1452,24 @@
     });
   }
 
-  var boot;
-  if (campMode || shrineParam) boot = bootRealm();
-  else if (fromRealm) {
-    fail("请从远征地图进入祠庙，或打开星屑修炼场。");
-    boot = Promise.resolve();
-  } else boot = bootHomework();
+  function startLessonBoot() {
+    var boot;
+    if (campMode || shrineParam) boot = bootRealm();
+    else if (fromRealm) {
+      fail("请从远征地图进入祠庙，或打开星屑修炼场。");
+      boot = Promise.resolve();
+    } else boot = bootHomework();
 
-  boot.catch(function (err) {
-    fail(err.message || String(err));
-  });
+    boot.catch(function (err) {
+      fail(err.message || String(err));
+    });
+  }
+
+  if (window.YYSD_DIAG_GATE) {
+    window.YYSD_DIAG_GATE.ensure({ requireLogin: true }).then(function (ok) {
+      if (ok) startLessonBoot();
+    });
+  } else {
+    startLessonBoot();
+  }
 })();

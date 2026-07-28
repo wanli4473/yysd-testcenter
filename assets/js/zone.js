@@ -177,6 +177,12 @@
     activeCat = next;
     syncZoneQuery();
     buildSubFilters();
+    if (zone === "study" && next === "vocab" && window.YYSD_DIAG_GATE) {
+      window.YYSD_DIAG_GATE.ensure({ requireLogin: true }).then(function (ok) {
+        if (ok) render();
+      });
+      return;
+    }
     render();
   });
 
@@ -322,6 +328,12 @@
         (wrongN ? wrongN + " 个错词待复习" : "测试错词自动收录") +
       "</p>" +
       '<span class="vocab-entry__go">复习 ›</span></a>';
+
+    entries += '<a class="vocab-entry vocab-entry--navy" href="diagnostic.html">' +
+      '<span class="vocab-entry__kicker">测评</span>' +
+      '<p class="vocab-entry__title">能力诊断</p>' +
+      '<p class="vocab-entry__desc">双线自适应 · 推荐起始词库</p>' +
+      '<span class="vocab-entry__go">开始 ›</span></a>';
 
     var lessonOf = function (item) {
       return (Y.vocabLessonHref ? Y.vocabLessonHref(item, "") : Y.fileHref(item, ""));
@@ -663,7 +675,15 @@
   var catalogP = Promise.resolve(null);
 
   Promise.all([manifestP, catalogP]).then(function (res) {
-    finishZoneLoad(res[0]);
+    var go = function () { finishZoneLoad(res[0]); };
+    // First-time student must finish vocab placement before using 单词区
+    if (zone === "study" && activeCat === "vocab" && window.YYSD_DIAG_GATE) {
+      window.YYSD_DIAG_GATE.ensure({ requireLogin: true }).then(function (ok) {
+        if (ok) go();
+      });
+      return;
+    }
+    go();
   }).catch(function (err) {
     var msg = location.protocol === "file:"
       ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"
