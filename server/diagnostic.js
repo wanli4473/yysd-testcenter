@@ -31,7 +31,7 @@ var STAGES = {
     level: "ielts",
     name: "雅思词汇",
     total: 25,
-    passThreshold: 0.75,
+    passThreshold: 0.8,
     excellentThreshold: 0.9,
     greyLow: null,
     greyHigh: null

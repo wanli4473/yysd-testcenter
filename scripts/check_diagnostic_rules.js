@@ -42,10 +42,10 @@ assert(c2.is_passed && c2.rating === "good", "CET4 80% → pass");
 var c3 = diagnostic.evaluateStage(0.9, 0, "cet4");
 assert(c3.is_excellent, "CET4 90% → excellent");
 
-var i1 = diagnostic.evaluateStage(0.74, 1, "ielts");
-assert(!i1.is_passed, "IELTS below 75% → fail rating");
-var i2 = diagnostic.evaluateStage(0.75, 0, "ielts");
-assert(i2.is_passed, "IELTS at 75% → pass rating");
+var i1 = diagnostic.evaluateStage(0.79, 1, "ielts");
+assert(!i1.is_passed, "IELTS below 80% → fail rating");
+var i2 = diagnostic.evaluateStage(0.8, 0, "ielts");
+assert(i2.is_passed, "IELTS at 80% → pass rating");
 
 // wilson CI
 var ci = diagnostic.wilsonCI(26, 30);
