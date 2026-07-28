@@ -193,7 +193,7 @@
       "<h1>" + esc(title) + "</h1>" +
       (state.gate
         ? '<p class="diag-lead diag-lead--gate"><strong>首次进入单词区前须完成一次能力测试。</strong>结束后生成详细报告、学习建议与推荐起始词库。</p>'
-        : '<p class="diag-lead">双线自适应测评：实用推荐线决定能否进入下一阶段；优秀线（87%）评定是否精通。</p>') +
+        : '<p class="diag-lead">硬门槛进阶：高中 ≥90%、四级 ≥80% 方可进入下一阶段；优秀线用于报告评级。</p>') +
       '<div class="diag-meta-row">' +
       '<span class="diag-meta-pill">预计 20–40 分钟</span>' +
       '<span class="diag-meta-pill">最多 85 题</span>' +
@@ -201,9 +201,9 @@
       '<span class="diag-meta-pill">错误率 &gt; 50% 提前结束</span>' +
       "</div>" +
       '<ul class="diag-rules">' +
-      "<li><span>阶段一</span><div><strong>高中词汇</strong> · 30 题 · 通过线 77%（灰区结合拼写）</div></li>" +
-      "<li><span>阶段二</span><div><strong>四级词汇</strong> · 30 题 · 通过线 73%</div></li>" +
-      "<li><span>阶段三</span><div><strong>雅思词汇</strong> · 25 题 · 通过线 68%；完成后无论是否通过均结束</div></li>" +
+      "<li><span>阶段一</span><div><strong>高中词汇</strong> · 30 题 · 通过线 <strong>90%</strong>（至少 27/30）· 优秀 95%</div></li>" +
+      "<li><span>阶段二</span><div><strong>四级词汇</strong> · 30 题 · 通过线 <strong>80%</strong>（至少 24/30）· 优秀 90%</div></li>" +
+      "<li><span>阶段三</span><div><strong>雅思词汇</strong> · 25 题 · 评级线 75% / 优秀 90%；完成后无论是否通过均结束</div></li>" +
       "<li><span>题型</span><div>听音选词 / 看英选中 / 看中选英 / 拼写填空（严格匹配，忽略大小写）</div></li>" +
       "<li><span>产出</span><div>推荐起始词库、能力报告、诊断错题本</div></li>" +
       "</ul>" +

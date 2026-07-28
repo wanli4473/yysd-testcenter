@@ -13,26 +13,26 @@ var STAGES = {
     level: "high_school",
     name: "高中词汇",
     total: 30,
-    passThreshold: 0.77,
-    excellentThreshold: 0.87,
-    greyLow: 0.73,
-    greyHigh: 0.77
+    passThreshold: 0.9,
+    excellentThreshold: 0.95,
+    greyLow: null,
+    greyHigh: null
   },
   cet4: {
     level: "cet4",
     name: "四级词汇",
     total: 30,
-    passThreshold: 0.73,
-    excellentThreshold: 0.87,
-    greyLow: 0.68,
-    greyHigh: 0.73
+    passThreshold: 0.8,
+    excellentThreshold: 0.9,
+    greyLow: null,
+    greyHigh: null
   },
   ielts: {
     level: "ielts",
     name: "雅思词汇",
     total: 25,
-    passThreshold: 0.68,
-    excellentThreshold: 0.87,
+    passThreshold: 0.75,
+    excellentThreshold: 0.9,
     greyLow: null,
     greyHigh: null
   }

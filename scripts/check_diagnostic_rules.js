@@ -25,27 +25,27 @@ function assert(cond, msg) {
   assert(q.listening_choice >= 0 && q.spelling >= 0, "allocateTypes non-neg " + n);
 });
 
-// high school grey zone
-var g1 = diagnostic.evaluateStage(0.75, 0.4, "high_school");
-assert(!g1.is_passed && g1.rating === "weak", "HS grey + weak spelling → fail");
-var g2 = diagnostic.evaluateStage(0.75, 0.5, "high_school");
-assert(g2.is_passed && g2.rating === "good", "HS grey + spell>=50% → pass good");
-var g3 = diagnostic.evaluateStage(0.88, 0.2, "high_school");
-assert(g3.is_passed && g3.is_excellent && g3.rating === "excellent", "HS excellent");
+// hard gates: HS 90%, CET4 80%, no grey rescue
+var g1 = diagnostic.evaluateStage(0.89, 1, "high_school");
+assert(!g1.is_passed && g1.rating === "weak", "HS 89% → fail even with perfect spelling");
+var g2 = diagnostic.evaluateStage(0.9, 0, "high_school");
+assert(g2.is_passed && g2.rating === "good", "HS 90% → pass good");
+var g3 = diagnostic.evaluateStage(0.95, 0, "high_school");
+assert(g3.is_passed && g3.is_excellent && g3.rating === "excellent", "HS 95% → excellent");
 var g4 = diagnostic.evaluateStage(0.7, 1, "high_school");
-assert(!g4.is_passed, "HS below grey → fail even with perfect spelling");
+assert(!g4.is_passed, "HS 70% → fail");
 
-// cet4 grey
-var c1 = diagnostic.evaluateStage(0.7, 0.4, "cet4");
-assert(!c1.is_passed, "CET4 grey + weak spelling → fail");
-var c2 = diagnostic.evaluateStage(0.7, 0.6, "cet4");
-assert(c2.is_passed, "CET4 grey + spell ok → pass");
+var c1 = diagnostic.evaluateStage(0.79, 1, "cet4");
+assert(!c1.is_passed, "CET4 79% → fail");
+var c2 = diagnostic.evaluateStage(0.8, 0, "cet4");
+assert(c2.is_passed && c2.rating === "good", "CET4 80% → pass");
+var c3 = diagnostic.evaluateStage(0.9, 0, "cet4");
+assert(c3.is_excellent, "CET4 90% → excellent");
 
-// ielts no grey
-var i1 = diagnostic.evaluateStage(0.65, 1, "ielts");
-assert(!i1.is_passed, "IELTS below pass → fail");
-var i2 = diagnostic.evaluateStage(0.68, 0, "ielts");
-assert(i2.is_passed, "IELTS at pass line → pass");
+var i1 = diagnostic.evaluateStage(0.74, 1, "ielts");
+assert(!i1.is_passed, "IELTS below 75% → fail rating");
+var i2 = diagnostic.evaluateStage(0.75, 0, "ielts");
+assert(i2.is_passed, "IELTS at 75% → pass rating");
 
 // wilson CI
 var ci = diagnostic.wilsonCI(26, 30);
