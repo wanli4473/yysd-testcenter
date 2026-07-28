@@ -129,8 +129,7 @@
 
 .diag-page.is-diag-session .diag-exam-main {
   max-width: 720px;
-  /* dock (~66px) + safe area + breathing room so last option stays visible */
-  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 48px;
 }
 
 /* —— Briefing / shared card —— */
@@ -259,8 +258,8 @@
 }
 
 @keyframes diag-fade {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .diag-session__progress {
@@ -282,7 +281,20 @@
   border: 1px solid var(--diag-line);
   border-radius: 2px;
   padding: 28px 26px 24px;
-  margin-bottom: 8px;
+}
+
+.diag-session__dock {
+  margin-top: 12px;
+  background: var(--diag-paper);
+  border: 1px solid var(--diag-line);
+  border-radius: 2px;
+  padding: 12px 14px;
+}
+
+.diag-session__dock-inner {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .diag-qtype {
@@ -473,26 +485,6 @@
 .diag-early-abort {
   margin-top: 6px;
   font-weight: 650;
-}
-
-.diag-session__dock {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 35;
-  background: rgba(255, 255, 255, 0.96);
-  border-top: 1px solid var(--diag-line);
-  backdrop-filter: blur(8px);
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-}
-
-.diag-session__dock-inner {
-  max-width: 720px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
 }
 
 .diag-msg {
