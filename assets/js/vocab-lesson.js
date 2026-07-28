@@ -9,7 +9,7 @@
    MECHANISM SPEC（8 层 → 可开发）:
    1. Path     → zone/vocab CTA 指向本页「开始 +N 经验」
    2. Lesson   → 每课 8 词 / ~12–16 题 / 一题一屏 / 顶栏进度
-   3. Mix      → meaning_to_word | word_to_meaning | listen_meaning | scramble | type_spell
+   3. Mix      → meaning_to_word | collocation | listen_meaning | example_cloze | scramble | type_spell
    4. Feedback → 口语化夸奖 / 温柔纠错 +「继续」；连对 N 题
    5. Hearts   → 5 心；扣光可免费补一次
    6. Retry    → 错词换题型当堂重练（标签「错题重练」）
@@ -18,7 +18,7 @@
 
    DATA BRIDGE:
    - fetch library/{item.file} → 抽取 wordData 数组字面量 → Function 求值
-   - 字段：word, meaning, ipa?, acceptCN?, example?
+   - 字段：word, meaning, ipa?, acceptCN?, example?, phrases?
 
    URL:
    - 作业: vocab-lesson.html?id=<manifestId> | ?book=gaozhong|cet4|special
@@ -115,6 +115,7 @@
           ipa: String(w.ipa || "").trim(),
           acceptCN: Array.isArray(w.acceptCN) ? w.acceptCN : [],
           example: String(w.example || "").trim(),
+          phrases: String(w.phrases || "").trim(),
           pos: String(w.pos || "").trim()
         };
       }).filter(Boolean);
@@ -139,7 +140,78 @@
     return shuffle(others).slice(0, n);
   }
 
+  function escapeRe(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /** Split "en（zh）, en(zh)" → [{en, zh}, ...] */
+  function parsePhrasePairs(phrases) {
+    var raw = String(phrases || "").trim();
+    if (!raw) return [];
+    return raw.split(/[,，]/).map(function (part) {
+      part = part.trim();
+      if (!part) return null;
+      var m = part.match(/^(.+?)\s*[（(]\s*(.+?)\s*[）)]\s*$/);
+      if (!m) return null;
+      return { en: m[1].trim(), zh: m[2].trim() };
+    }).filter(Boolean);
+  }
+
+  function englishOnly(example) {
+    var s = String(example || "").trim();
+    if (!s) return "";
+    var cut = s.search(/[（(]/);
+    if (cut >= 0) s = s.slice(0, cut);
+    return s.trim();
+  }
+
+  /** Blank first occurrence of word (multi-word ok). null if not found. */
+  function blankWord(text, word) {
+    word = String(word || "").trim();
+    text = String(text || "");
+    if (!word || !text) return null;
+    var parts = word.split(/\s+/).map(escapeRe);
+    var re = new RegExp("\\b" + parts.join("\\s+") + "\\b", "i");
+    if (!re.test(text)) return null;
+    return text.replace(re, "____");
+  }
+
+  function wordChoiceOptions(word, pool) {
+    var opts = shuffle([word].concat(pickDistractors(pool, word, "word", 3))).slice(0, 4);
+    while (opts.length < 4 && pool.length) {
+      var extra = pool[Math.floor(Math.random() * pool.length)];
+      if (!opts.some(function (o) { return o.word === extra.word; })) opts.push(extra);
+    }
+    return opts.map(function (o) { return { key: o.word, label: o.word }; });
+  }
+
+  function attachCloze(ex, blank, hintZh, pool) {
+    ex.blank = blank;
+    ex.hintZh = hintZh || "";
+    ex.options = wordChoiceOptions(ex.word, pool);
+    return ex;
+  }
+
+  function tryCollocation(ex, pool) {
+    var pairs = shuffle(parsePhrasePairs(ex.word.phrases));
+    for (var i = 0; i < pairs.length; i++) {
+      var blank = blankWord(pairs[i].en, ex.word.word);
+      if (blank) return attachCloze(ex, blank, pairs[i].zh, pool);
+    }
+    return null;
+  }
+
+  function tryExampleCloze(ex, pool) {
+    var blank = blankWord(englishOnly(ex.word.example), ex.word.word);
+    if (!blank) return null;
+    return attachCloze(ex, blank, "", pool);
+  }
+
   function speak(word) {
+    if (window.YysdWordAudio) {
+      window.YysdWordAudio.speak(word);
+      return;
+    }
     if (!window.speechSynthesis) return;
     try {
       window.speechSynthesis.cancel();
@@ -159,7 +231,7 @@
   }
 
   function buildExercises(words, allPool, retry) {
-    var types = ["meaning_to_word", "word_to_meaning", "listen_meaning", "scramble"];
+    var types = ["meaning_to_word", "collocation", "listen_meaning", "example_cloze", "scramble"];
     var queue = [];
     words.forEach(function (w, i) {
       var type = retry
@@ -178,14 +250,14 @@
     var queue = [];
     words.forEach(function (w, i) {
       queue.push(makeExercise(i % 2 === 0 ? "type_spell" : "listen_meaning", w, allPool, false));
-      queue.push(makeExercise(i % 2 === 0 ? "meaning_to_word" : "scramble", w, allPool, false));
+      queue.push(makeExercise(i % 2 === 0 ? "collocation" : "scramble", w, allPool, false));
     });
     return shuffle(queue);
   }
 
   /** 远征祠：每词三斩，题量拉高 */
   function buildRealmExercises(words, allPool) {
-    var types = ["meaning_to_word", "word_to_meaning", "listen_meaning", "scramble", "type_spell"];
+    var types = ["meaning_to_word", "collocation", "listen_meaning", "example_cloze", "scramble", "type_spell"];
     var queue = [];
     words.forEach(function (w, i) {
       queue.push(makeExercise(types[i % types.length], w, allPool, false));
@@ -217,14 +289,17 @@
   }
 
   function makeExercise(type, word, pool, retry) {
-    var ex = { type: type, word: word, retry: !!retry, options: null, letters: null };
+    var ex = { type: type, word: word, retry: !!retry, options: null, letters: null, blank: "", hintZh: "" };
+    if (type === "collocation") {
+      if (tryCollocation(ex, pool)) return ex;
+      return makeExercise("meaning_to_word", word, pool, retry);
+    }
+    if (type === "example_cloze") {
+      if (tryExampleCloze(ex, pool)) return ex;
+      return makeExercise("meaning_to_word", word, pool, retry);
+    }
     if (type === "meaning_to_word" || type === "listen_meaning") {
-      var opts = shuffle([word].concat(pickDistractors(pool, word, "word", 3))).slice(0, 4);
-      while (opts.length < 4 && pool.length) {
-        var extra = pool[Math.floor(Math.random() * pool.length)];
-        if (!opts.some(function (o) { return o.word === extra.word; })) opts.push(extra);
-      }
-      ex.options = opts.map(function (o) { return { key: o.word, label: o.word }; });
+      ex.options = wordChoiceOptions(word, pool);
     } else if (type === "word_to_meaning") {
       var mopts = shuffle([word].concat(pickDistractors(pool, word, "meaning", 3))).slice(0, 4);
       ex.options = mopts.map(function (o) { return { key: o.word, label: o.meaning }; });
@@ -247,6 +322,8 @@
     if (ex.type === "meaning_to_word") return "选出对应的英文单词";
     if (ex.type === "word_to_meaning") return "选出正确的中文释义";
     if (ex.type === "listen_meaning") return "听音，选出正确的单词";
+    if (ex.type === "collocation") return "补全常见搭配";
+    if (ex.type === "example_cloze") return "根据例句选出挖空的单词";
     if (ex.type === "scramble") return "把字母排成正确的单词";
     if (ex.type === "type_spell") return "听音，写出英文拼写";
     return "选择正确答案";
@@ -605,9 +682,13 @@
     var foot = document.getElementById("vl-foot");
     var badge = ex.retry
       ? '<span class="vl-badge vl-badge--retry">错题重练</span>'
-      : (ex.type.indexOf("listen") === 0 || ex.type === "type_spell"
-        ? '<span class="vl-badge">听力</span>'
-        : '<span class="vl-badge">新练</span>');
+      : (ex.type === "collocation"
+        ? '<span class="vl-badge">搭配</span>'
+        : (ex.type === "example_cloze"
+          ? '<span class="vl-badge">语境</span>'
+          : (ex.type.indexOf("listen") === 0 || ex.type === "type_spell"
+            ? '<span class="vl-badge">听力</span>'
+            : '<span class="vl-badge">新练</span>')));
 
     var body = "";
     if (ex.type === "meaning_to_word") {
@@ -619,6 +700,10 @@
     } else if (ex.type === "listen_meaning") {
       body = '<button type="button" class="vl-play" id="vl-play" aria-label="播放发音">▶</button>' +
         '<p class="vl-hint">点击播放，再选单词</p>' + optionsHTML(ex);
+    } else if (ex.type === "collocation" || ex.type === "example_cloze") {
+      body = '<p class="vl-cloze">' + esc(ex.blank || "____") + "</p>" +
+        (ex.hintZh ? '<p class="vl-hint">' + esc(ex.hintZh) + "</p>" : "") +
+        optionsHTML(ex);
     } else if (ex.type === "scramble") {
       body = '<p class="vl-prompt-cn">' + esc(ex.word.meaning) + "</p>" +
         '<div class="vl-scramble-out" id="vl-scramble-out"></div>' +

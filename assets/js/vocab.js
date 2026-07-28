@@ -44,11 +44,15 @@
     if (prog.next) {
       var nextLabel = Y.displayTitle(prog.next);
       var first = stats.lists[0];
+      var lessonHref = Y.vocabLessonHref ? Y.vocabLessonHref(prog.next, "") : Y.fileHref(prog.next, "");
       actions = '<div class="vocab-hero__actions">' +
-        '<a class="btn btn--primary btn--sm" href="' + Y.fileHref(prog.next, "") + '">继续学习 · ' +
+        '<a class="btn btn--primary btn--sm" href="' + lessonHref + '">开始小课 · ' +
         Y.esc(nextLabel) + '</a>';
       if (first) {
-        actions += '<a class="btn btn--ghost btn--sm" href="' + Y.fileHref(first, "") + '">从单元 1 开始</a>';
+        actions += '<a class="btn btn--ghost btn--sm" href="' +
+          (Y.vocabLessonHref ? Y.vocabLessonHref(first, "") : Y.fileHref(first, "")) +
+          '">从单元 1 小课</a>';
+        actions += '<a class="btn btn--ghost btn--sm" href="' + Y.fileHref(prog.next, "") + '">词卡指南</a>';
       }
       actions += '</div>';
     }
@@ -68,17 +72,19 @@
   function listRowHTML(item) {
     var done = Y.results()[item.id];
     var topic = Y.vocabTopic(item);
-    return '<a class="vocab-list-row' + (done ? " is-done" : "") + '" href="' + Y.fileHref(item, "") +
+    var lessonHref = Y.vocabLessonHref ? Y.vocabLessonHref(item, "") : Y.fileHref(item, "");
+    return '<a class="vocab-list-row' + (done ? " is-done" : "") + '" href="' + lessonHref +
       '" data-title="' + Y.esc(Y.displayTitle(item).toLowerCase()) +
       '" data-raw="' + Y.esc(String(item.title || "").toLowerCase()) + '">' +
       '<span class="vocab-list-row__no">' + Y.esc(listBadge(item)) + '</span>' +
       '<span class="vocab-list-row__main">' +
         '<span class="vocab-list-row__title">' + Y.esc(Y.displayTitle(item)) + '</span>' +
-        (topic ? '<span class="vocab-list-row__topic">' + Y.esc(topic) + '</span>' : '') +
+        '<span class="vocab-list-row__topic">' +
+          Y.esc(topic ? topic + " · " : "") + "单词小课</span>" +
       '</span>' +
       (done
         ? '<span class="vocab-list-row__badge">已学</span>'
-        : '<span class="vocab-list-row__go">进入 ›</span>') +
+        : '<span class="vocab-list-row__go">开始 ›</span>') +
       '</a>';
   }
 

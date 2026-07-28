@@ -502,6 +502,10 @@
   }
 
   function boot() {
+    // Route LIST speakWord (IIFE → speechSynthesis) through dictionary audio
+    if (window.YysdWordAudio && typeof window.YysdWordAudio.installSpeechPatch === "function") {
+      window.YysdWordAudio.installSpeechPatch();
+    }
     hookStartTest();
     watchResultsPanel();
     hookShowFinalResults();

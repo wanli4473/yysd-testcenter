@@ -323,19 +323,23 @@
       "</p>" +
       '<span class="vocab-entry__go">复习 ›</span></a>';
 
+    var lessonOf = function (item) {
+      return (Y.vocabLessonHref ? Y.vocabLessonHref(item, "") : Y.fileHref(item, ""));
+    };
+
     var picksHTML;
     if (!picks.length) {
       picksHTML = '<p class="bento-panel__desc">词书都学完了，去错题本巩固，或换一本继续。</p>';
     } else {
       picksHTML = '<ul class="vocab-bento__picks">' + picks.slice(0, 4).map(function (p) {
-        return '<li><a href="' + Y.fileHref(p.item, "") + '">' +
+        return '<li><a href="' + lessonOf(p.item) + '">' +
           '<span>' + Y.esc(Y.displayTitle(p.item)) + "</span>" +
           '<em>' + Y.esc(p.book.label) + "</em></a></li>";
       }).join("") + "</ul>";
     }
 
-    var ctaHref = nextItem ? Y.fileHref(nextItem, "") : "vocab.html?book=gaozhong";
-    var ctaTitle = nextItem ? ("继续 · " + Y.displayTitle(nextItem)) : "开始背单词";
+    var ctaHref = nextItem ? lessonOf(nextItem) : "vocab.html?book=gaozhong";
+    var ctaTitle = nextItem ? ("继续小课 · " + Y.displayTitle(nextItem)) : "开始背单词";
     var ctaDesc = nextBook
       ? (nextBook.label + (done ? " · 已学 " + done + "/" + total : " · 适合老师布置作业"))
       : "选择词书，边学边测";

@@ -542,11 +542,27 @@
     var base = new URL("./", location.href).href;
     var book = Y.vocabBookOfSubject(item.subject) || (item.subject === "teacher-upload" ? "assignment" : "gaozhong");
 
-    var script = doc.createElement("script");
-    script.id = "yysd-vocab-bridge-js";
-    script.src = base + "assets/js/vocab-bridge.js?v=" + v;
-    script.dataset.book = book;
-    doc.body.appendChild(script);
+    function appendBridge() {
+      if (!doc.body || doc.getElementById("yysd-vocab-bridge-js")) return;
+      var script = doc.createElement("script");
+      script.id = "yysd-vocab-bridge-js";
+      script.src = base + "assets/js/vocab-bridge.js?v=" + v;
+      script.dataset.book = book;
+      doc.body.appendChild(script);
+    }
+
+    // ponytail: load word-audio first so LIST speakWord hits Youdao via synth patch
+    var audioJs = doc.getElementById("yysd-word-audio-js");
+    if (!audioJs) {
+      audioJs = doc.createElement("script");
+      audioJs.id = "yysd-word-audio-js";
+      audioJs.src = base + "assets/js/word-audio.js?v=" + v;
+      audioJs.onload = appendBridge;
+      audioJs.onerror = appendBridge;
+      doc.body.appendChild(audioJs);
+    } else {
+      appendBridge();
+    }
   }
 
   function injectExamBridge() {
