@@ -129,7 +129,8 @@
 
 .diag-page.is-diag-session .diag-exam-main {
   max-width: 720px;
-  padding-bottom: 96px;
+  /* dock (~66px) + safe area + breathing room so last option stays visible */
+  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
 }
 
 /* —— Briefing / shared card —— */
@@ -280,7 +281,8 @@
   background: var(--diag-paper);
   border: 1px solid var(--diag-line);
   border-radius: 2px;
-  padding: 28px 26px 22px;
+  padding: 28px 26px 24px;
+  margin-bottom: 8px;
 }
 
 .diag-qtype {
@@ -374,6 +376,7 @@
   display: grid;
   gap: 8px;
   margin: 8px 0 4px;
+  padding-bottom: 12px;
 }
 
 .diag-opt {
