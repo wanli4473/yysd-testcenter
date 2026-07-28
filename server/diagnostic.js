@@ -466,9 +466,10 @@ function parseJson(s, fallback) {
   }
 }
 
-function computeStageStats(answers, stageLevel) {
+function computeStageStats(answers, stageLevel, opts) {
+  opts = opts || {};
   var stage = STAGES[stageLevel];
-  var total = stage ? stage.total : answers.length;
+  var total = opts.partial ? answers.length : (stage ? stage.total : answers.length);
   var correct = answers.filter(function (a) { return a.is_correct; }).length;
   var spellAns = answers.filter(function (a) { return a.question_type === "spelling"; });
   var spellOk = spellAns.filter(function (a) { return a.is_correct; }).length;
@@ -489,8 +490,19 @@ function computeStageStats(answers, stageLevel) {
     spelling_correct: spellOk,
     is_passed: ev.is_passed,
     is_excellent: ev.is_excellent,
-    rating: ev.rating
+    rating: ev.rating,
+    early_aborted: !!opts.early_aborted
   };
+}
+
+/** Error rate > 50% with enough sample → abort whole test. */
+var EARLY_ABORT_MIN = 10; // ponytail: ceiling — don't abort on first few answers; raise if too twitchy
+function shouldEarlyAbort(answers) {
+  var n = answers.length;
+  if (n < EARLY_ABORT_MIN) return false;
+  var wrong = 0;
+  for (var i = 0; i < n; i++) if (!answers[i].is_correct) wrong += 1;
+  return wrong / n > 0.5;
 }
 
 function finalizeReport(session, stageMap, elapsed) {
@@ -498,11 +510,15 @@ function finalizeReport(session, stageMap, elapsed) {
   var stages = STAGE_ORDER.map(function (lv) {
     return stageMap[lv] || null;
   });
+  var early = stages.some(function (s) { return s && s.early_aborted; });
+  var advice = buildAdvice(stageMap, recommended);
+  if (early) advice += "因错误率超过50%已提前结束测试。";
   return {
     total_time_seconds: elapsed || 0,
     stages: stages,
     recommended_start_level: recommended,
-    advice_text: buildAdvice(stageMap, recommended)
+    advice_text: advice,
+    early_aborted: early
   };
 }
 
@@ -642,6 +658,44 @@ function mountRoutes(app, opts) {
     return stmts.findSession.get(info.lastInsertRowid);
   }
 
+  function persistMistakes(sessionId, studentId, questions) {
+    var allAns = stmts.listAllAnswers.all(sessionId);
+    allAns.forEach(function (a) {
+      if (a.is_correct) return;
+      var q = (questions[a.stage] || []).find(function (x) {
+        return x.word_id === a.word_id && x.question_type === a.question_type;
+      });
+      stmts.insertMistake.run(
+        studentId, sessionId, a.word_id, a.stage, a.question_type,
+        a.user_answer, a.correct_answer,
+        q ? q.word : a.correct_answer,
+        q ? q.meaning : "",
+        q ? q.phonetic : "",
+        q && q.example_sentence ? q.example_sentence : "",
+        nowIso()
+      );
+    });
+  }
+
+  function completeSession(row, questions, stageResults, elapsed) {
+    var finalReport = finalizeReport(row, stageResults, elapsed);
+    persistMistakes(row.id, row.student_id, questions);
+    stmts.updateSession.run(
+      "finished",
+      elapsed,
+      JSON.stringify(stageResults),
+      JSON.stringify(questions),
+      "completed",
+      nowIso(),
+      JSON.stringify(finalReport),
+      row.id
+    );
+    return {
+      report: finalReport,
+      row: stmts.findSession.get(row.id)
+    };
+  }
+
   app.get("/api/diagnostic/bank-status", authMiddleware, function (req, res) {
     var counts = {};
     STAGE_ORDER.forEach(function (lv) {
@@ -743,6 +797,31 @@ function mountRoutes(app, opts) {
       row.status, row.end_time, row.final_report, row.id
     );
     row = stmts.findSession.get(row.id);
+
+    var allAns = stmts.listAllAnswers.all(row.id);
+    if (shouldEarlyAbort(allAns)) {
+      var stageAnswers = stmts.listAnswers.all(row.id, stage);
+      var stageResults = parseJson(row.stage_results, {});
+      stageResults[stage] = computeStageStats(stageAnswers, stage, {
+        partial: true,
+        early_aborted: true
+      });
+      // Capture feedback while stage is still current, then finalize
+      var payload = sessionPayload(row, { feedbackIndex: idx });
+      var done = completeSession(row, questions, stageResults, elapsed);
+      payload.status = "completed";
+      payload.current_stage = "finished";
+      payload.stage_done = true;
+      return res.json({
+        ok: true,
+        is_correct: ok,
+        correct_answer: q.correct_answer,
+        early_aborted: true,
+        report: done.report,
+        session: payload
+      });
+    }
+
     var payload = sessionPayload(row, { feedbackIndex: idx });
     res.json({
       ok: true,
@@ -793,36 +872,19 @@ function mountRoutes(app, opts) {
     var status = "in_progress";
     var endTime = null;
     if (nextAction === "finish") {
-      status = "completed";
-      endTime = nowIso();
-      nextStage = "finished";
-      finalReport = finalizeReport(row, stageResults, elapsed);
-      // batch mistakes
-      var allAns = stmts.listAllAnswers.all(row.id);
-      var qMap = {};
-      Object.keys(questions).forEach(function (lv) {
-        (questions[lv] || []).forEach(function (q) { qMap[lv + ":" + q.qid] = q; });
-      });
-      allAns.forEach(function (a) {
-        if (a.is_correct) return;
-        var q = (questions[a.stage] || []).find(function (x) {
-          return x.word_id === a.word_id && x.question_type === a.question_type;
-        });
-        stmts.insertMistake.run(
-          row.student_id, row.id, a.word_id, a.stage, a.question_type,
-          a.user_answer, a.correct_answer,
-          q ? q.word : a.correct_answer,
-          q ? q.meaning : "",
-          q ? q.phonetic : "",
-          q && q.example_sentence ? q.example_sentence : "",
-          nowIso()
-        );
+      var done = completeSession(row, questions, stageResults, elapsed);
+      return res.json({
+        ok: true,
+        next_action: nextAction,
+        stage_result: stats,
+        session: sessionPayload(done.row),
+        report: done.report
       });
     }
 
     stmts.updateSession.run(
       nextStage, elapsed, JSON.stringify(stageResults), JSON.stringify(questions),
-      status, endTime, finalReport ? JSON.stringify(finalReport) : null, row.id
+      status, endTime, finalReport, row.id
     );
     row = stmts.findSession.get(row.id);
     res.json({
@@ -1076,5 +1138,7 @@ module.exports = {
   generateStageQuestions: generateStageQuestions,
   gradeAnswer: gradeAnswer,
   computeStageStats: computeStageStats,
+  shouldEarlyAbort: shouldEarlyAbort,
+  EARLY_ABORT_MIN: EARLY_ABORT_MIN,
   mountRoutes: mountRoutes
 };

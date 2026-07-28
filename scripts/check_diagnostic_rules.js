@@ -110,8 +110,35 @@ assert(
   "already-blanked stays blanked"
 );
 
-// radar/line chart helpers exist in browser only — skip
-// hot-words SQL shape: COUNT grouped by word_id
+// early abort: >50% wrong after min sample
+assert(!diagnostic.shouldEarlyAbort([]), "abort: empty");
+assert(
+  !diagnostic.shouldEarlyAbort(
+    Array(diagnostic.EARLY_ABORT_MIN - 1).fill({ is_correct: 0 })
+  ),
+  "abort: below min sample"
+);
+assert(
+  diagnostic.shouldEarlyAbort(
+    Array(6).fill({ is_correct: 0 }).concat(Array(4).fill({ is_correct: 1 }))
+  ),
+  "abort: 6/10 wrong"
+);
+assert(
+  !diagnostic.shouldEarlyAbort(
+    Array(5).fill({ is_correct: 0 }).concat(Array(5).fill({ is_correct: 1 }))
+  ),
+  "no abort: exactly 50% wrong"
+);
+assert(
+  diagnostic.computeStageStats(
+    [{ is_correct: 1, question_type: "spelling" }, { is_correct: 0, question_type: "spelling" }],
+    "high_school",
+    { partial: true, early_aborted: true }
+  ).early_aborted,
+  "partial stage marks early_aborted"
+);
+
 assert(typeof diagnostic.mountRoutes === "function", "mountRoutes exported");
 
 if (failed) {

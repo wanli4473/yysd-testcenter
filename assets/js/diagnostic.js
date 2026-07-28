@@ -40,7 +40,8 @@
     timerId: null,
     qStart: null,
     report: null,
-    gate: false
+    gate: false,
+    earlyAborted: false
   };
 
   state.gate = new URLSearchParams(location.search).get("gate") === "1";
@@ -169,6 +170,7 @@
       "<li><strong>阶段三 · 雅思</strong> 25 题，通过线 68%；完成后无论是否通过均结束</li>" +
       "<li>题型：听音选词 / 看英选中 / 看中选英 / 拼写填空（严格匹配，忽略大小写）</li>" +
       "<li>即时反馈对错；产出推荐起始词库、能力报告与错题本</li>" +
+      "<li>已答不少于 10 题且错误率超过 50% 时，提前结束并生成报告</li>" +
       "</ul>" +
       resumeHtml +
       '<p class="diag-msg" id="diag-err" hidden></p></div>';
@@ -345,6 +347,11 @@
     if (next) {
       next.addEventListener("click", function () {
         state.feedback = null;
+        if (state.earlyAborted || (state.session && state.session.status === "completed")) {
+          stopTimer();
+          renderComplete(state.session);
+          return;
+        }
         if (state.session.stage_done) renderStageGate();
         else renderQuestion();
       });
@@ -391,7 +398,11 @@
         state.submitting = false;
         state.session = d.session;
         state.feedback = d.session.last_feedback;
-        showFeedback(d.is_correct, d.correct_answer, ua);
+        if (d.early_aborted) {
+          state.earlyAborted = true;
+          state.report = d.report || null;
+        }
+        showFeedback(d.is_correct, d.correct_answer, ua, d.early_aborted);
       })
       .catch(function (e) {
         state.submitting = false;
@@ -404,13 +415,17 @@
       });
   }
 
-  function showFeedback(ok, correct, userAnswer) {
+  function showFeedback(ok, correct, userAnswer, earlyAborted) {
     var fb = document.getElementById("diag-fb");
     if (fb) {
       fb.className = "diag-feedback is-visible " + (ok ? "is-ok" : "is-bad");
       fb.innerHTML = ok
         ? "✓ 正确"
         : ("✗ 错误。正确答案：<strong>" + esc(correct) + "</strong>");
+      if (earlyAborted) {
+        fb.innerHTML +=
+          '<div class="diag-early-abort">错误率已超过 50%，测试提前结束。点「下一题」查看报告。</div>';
+      }
     }
     var submit = document.getElementById("diag-submit");
     var next = document.getElementById("diag-next");
