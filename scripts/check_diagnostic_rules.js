@@ -86,6 +86,30 @@ assert(
   "spell no plural forgiveness"
 );
 
+// blankExample must hide lemma + common inflections (not leak answers in context)
+[
+  ["The police searched the house.", "search", "searched"],
+  ["The police arrested the suspect.", "arrest", "arrested"],
+  ["The police finally captured the escaped prisoner.", "capture", "captured"],
+  ["Please study hard.", "study", "study"],
+  ["She is studying now.", "study", "studying"]
+].forEach(function (row) {
+  var blanked = diagnostic.blankExample(row[0], row[1]);
+  assert(blanked.indexOf("______") >= 0, "blank has gap for " + row[1]);
+  assert(
+    !new RegExp("\\b" + row[2] + "\\b", "i").test(blanked),
+    "blank hides " + row[2] + " → " + blanked
+  );
+  assert(
+    !new RegExp("\\b" + row[1] + "\\b", "i").test(blanked),
+    "blank hides lemma " + row[1]
+  );
+});
+assert(
+  diagnostic.blankExample("The police ______ the house.", "search").indexOf("______") >= 0,
+  "already-blanked stays blanked"
+);
+
 // radar/line chart helpers exist in browser only — skip
 // hot-words SQL shape: COUNT grouped by word_id
 assert(typeof diagnostic.mountRoutes === "function", "mountRoutes exported");

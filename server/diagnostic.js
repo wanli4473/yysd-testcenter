@@ -312,14 +312,51 @@ function pickDistractors(pool, excludeId, key, n) {
 }
 
 function blankExample(example, word) {
-  var ex = String(example || "");
-  var w = String(word || "");
+  // Blank lemma + common English inflections (search→searched, capture→captured).
+  var ex = String(example || "").replace(/（[^）]*）|\([^)]*\)/g, "").trim();
+  var w = String(word || "").trim();
   if (!ex || !w) return "______";
-  var re = new RegExp("\\b" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
-  if (re.test(ex)) return ex.replace(re, "______");
-  // strip trailing Chinese gloss in （…）
-  var en = ex.replace(/（[^）]*）|\([^)]*\)/g, "").trim();
-  return en || "______";
+  var esc = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // underscore is \w in JS — don't use \b around ______
+  if (/_{2,}/.test(ex) && !new RegExp("(?:^|[^A-Za-z])" + esc + "(?:[^A-Za-z]|$)", "i").test(ex)) {
+    return ex;
+  }
+
+  var forms = [esc];
+  if (/e$/i.test(w)) {
+    forms.push(esc + "d", esc + "s", esc.slice(0, -1) + "ing", esc + "r", esc + "st");
+  } else if (/[^aeiou]y$/i.test(w) && w.length > 2) {
+    var ybase = esc.slice(0, -1);
+    forms.push(ybase + "ies", ybase + "ied", esc + "ing");
+  } else if (/(?:s|x|z|ch|sh)$/i.test(w)) {
+    forms.push(esc + "es", esc + "ed", esc + "ing");
+  } else {
+    forms.push(esc + "s", esc + "es", esc + "ed", esc + "ing", esc + "er", esc + "est");
+    if (/[aeiou][bcdfghjklmnpqrstvwxyz]$/i.test(w) && w.length >= 3) {
+      var last = esc.charAt(esc.length - 1);
+      forms.push(esc + last + "ed", esc + last + "ing");
+    }
+  }
+  var re = new RegExp("\\b(?:" + forms.join("|") + ")\\b", "gi");
+  var out = ex.replace(re, "______");
+  if (out !== ex) return out;
+
+  // Fallback: same stem family (handles odd forms we didn't list)
+  var stem = w.toLowerCase().replace(/(?:ing|ies|ied|ers|est|ed|es|s)$/i, "");
+  if (stem.length >= 4) {
+    out = ex.replace(/\b[A-Za-z']+\b/g, function (tok) {
+      var t = tok.toLowerCase();
+      if (t === w.toLowerCase()) return "______";
+      var ts = t.replace(/(?:ing|ies|ied|ers|est|ed|es|s)$/i, "");
+      if (ts === stem || t.indexOf(stem) === 0) return "______";
+      return tok;
+    });
+    if (out !== ex) return out;
+  }
+
+  // Still contains lemma letters as a word fragment — hide context entirely
+  if (new RegExp(esc, "i").test(ex)) return "______";
+  return ex || "______";
 }
 
 function generateStageQuestions(db, stageLevel) {
@@ -374,13 +411,23 @@ function generateStageQuestions(db, stageLevel) {
 }
 
 function publicQuestion(q, answered) {
+  // Re-blank at serve time so in-progress sessions pick up inflection fixes
+  var lemma = q.word || q.correct_answer || "";
+  var example = blankExample(
+    (q.question_content && q.question_content.example) || q.example_sentence || "",
+    lemma
+  );
+  var content = q.question_content;
+  if (content && typeof content === "object") {
+    content = Object.assign({}, content, { example: example });
+  }
   var out = {
     qid: q.qid,
     word_id: q.word_id,
     question_type: q.question_type,
-    question_content: q.question_content,
+    question_content: content,
     phonetic: q.phonetic,
-    example_sentence: q.example_sentence,
+    example_sentence: example,
     options: q.options
   };
   if (answered) {
@@ -1022,6 +1069,7 @@ module.exports = {
   recommendStart: recommendStart,
   buildAdvice: buildAdvice,
   parseWordData: parseWordData,
+  blankExample: blankExample,
   ensureSchema: ensureSchema,
   rebuildVocabBank: rebuildVocabBank,
   ensureVocabBank: ensureVocabBank,
