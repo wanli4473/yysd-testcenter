@@ -1,0 +1,56 @@
+// ponytail: SQLite file DB so rankings runs without sharing admission Supabase creds.
+// Upgrade path: point datasource url at same Postgres + migrate models.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model University {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  nameEn    String
+  nameZh    String
+  country   String
+  aliases   String   @default("[]") // JSON string array
+  logoPath  String?
+  createdAt DateTime @default(now())
+  entries   RankingEntry[]
+
+  @@index([country])
+  @@index([nameEn])
+}
+
+model RankingEdition {
+  id           String   @id @default(cuid())
+  system       String // qs | the | arwu | usnews
+  categorySlug String // world | computer-science | ...
+  categoryName String
+  year         Int
+  title        String
+  isSubject    Boolean  @default(false)
+  sourceUrl    String?
+  entries      RankingEntry[]
+
+  @@unique([system, categorySlug, year])
+  @@index([system, year])
+}
+
+model RankingEntry {
+  id           String         @id @default(cuid())
+  editionId    String
+  edition      RankingEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  universityId String
+  university   University     @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  rank         Int
+  rankDisplay  String // "1" | "=50" | "101-150"
+  score        Float?
+  metrics      String? // JSON object
+
+  @@unique([editionId, universityId])
+  @@index([editionId, rank])
+  @@index([universityId])
+}

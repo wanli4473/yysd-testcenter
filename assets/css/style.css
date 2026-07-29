@@ -628,7 +628,7 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
   max-width: 920px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+  overflow: visible;
   background: var(--surface);
 }
 .vocab-list-row {
@@ -643,10 +643,14 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
   background: var(--surface-paper);
   text-decoration: none;
   color: inherit;
-  overflow: hidden;
+  overflow: visible;
   transition: background .15s var(--ease);
+  z-index: 0;
 }
 .vocab-list-row:last-child { border-bottom: 0; }
+.vocab-list-row:first-child { border-radius: 10px 10px 0 0; }
+.vocab-list-row:last-child { border-radius: 0 0 10px 10px; }
+.vocab-list-row:only-child { border-radius: 10px; }
 .vocab-list-row.is-done::before {
   content: "";
   position: absolute;
@@ -656,7 +660,7 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
   width: 3px;
   background: var(--brand-gold);
 }
-.vocab-list-row:hover { border-color: transparent; transform: none; background: #fff; }
+.vocab-list-row:hover { border-color: transparent; transform: none; background: #fff; z-index: 2; }
 .vocab-list-row.is-done { background: #fbf8f1; border-color: transparent; }
 .vocab-list-row__no {
   flex-shrink: 0;
@@ -684,7 +688,70 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
   font-size: 12.5px;
   color: var(--text-muted);
 }
-.vocab-list-row__go { font-size: 13px; font-weight: 700; color: var(--brand-gold); flex-shrink: 0; }
+.vocab-list-row__trail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.vocab-list-row__go {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-gold);
+  flex-shrink: 0;
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.vocab-list-row__enter {
+  position: relative;
+  flex-shrink: 0;
+}
+.vocab-list-flyout {
+  display: none;
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 7.5rem;
+  padding: 6px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 28px rgba(26, 40, 68, 0.14);
+  flex-direction: column;
+  gap: 2px;
+  z-index: 20;
+}
+.vocab-list-row__enter:hover .vocab-list-flyout,
+.vocab-list-row__enter.is-open .vocab-list-flyout {
+  display: flex;
+}
+.vocab-list-flyout__item {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-navy);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.vocab-list-flyout__item:hover {
+  background: #f4f0e6;
+  color: var(--brand-navy);
+}
+@media (max-width: 720px) {
+  .vocab-list-flyout {
+    left: auto;
+    right: 0;
+    top: calc(100% + 6px);
+    transform: none;
+  }
+}
 .vocab-list-row__badge {
   font-size: 11px;
   font-weight: 700;
@@ -5584,6 +5651,60 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
 }
 .reme-nav a.is-active::after {
   content: none;
+}
+/* 全球大学排行榜 — teal accent (between 国际课程 and AI升学顾问) */
+.reme-nav a.nav-rankings,
+.nav-drawer__links a.nav-rankings {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: rgba(13, 148, 136, 0.07);
+}
+.reme-nav a.nav-rankings:hover,
+.nav-drawer__links a.nav-rankings:hover {
+  background: rgba(13, 148, 136, 0.14);
+}
+.reme-nav a.nav-rankings.is-active,
+.nav-drawer__links a.nav-rankings.is-active {
+  background: rgba(13, 148, 136, 0.16);
+  color: inherit;
+  font-weight: 700;
+}
+.nav-rankings__text {
+  font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background-image: linear-gradient(115deg, #2dd4bf 0%, #0d9488 48%, #0f766e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+/* AI 升学顾问 — gradient accent in top nav */
+.reme-nav a.nav-ai-admit,
+.nav-drawer__links a.nav-ai-admit {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(37, 99, 235, 0.06);
+}
+.reme-nav a.nav-ai-admit:hover,
+.nav-drawer__links a.nav-ai-admit:hover {
+  background: rgba(37, 99, 235, 0.12);
+}
+.reme-nav a.nav-ai-admit.is-active,
+.nav-drawer__links a.nav-ai-admit.is-active {
+  background: rgba(37, 99, 235, 0.14);
+  color: inherit;
+  font-weight: 700;
+}
+.nav-ai-admit__text {
+  font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background-image: linear-gradient(115deg, #38bdf8 0%, #3b82f6 42%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 .reme-tools {
   display: flex;

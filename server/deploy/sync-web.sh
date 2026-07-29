@@ -34,10 +34,14 @@ if command -v rsync &>/dev/null; then
   rsync -a --delete \
     --exclude '.git/' \
     --exclude 'server/' \
+    --exclude 'admission/' \
+    --exclude 'rankings/' \
+    --exclude 'node_modules/' \
     --exclude '.staging/' \
     --exclude 'admin/' \
     --exclude '.github/' \
     --exclude '.env' \
+    --exclude '.env.local' \
     "$REPO_DIR/" "$WEB_ROOT/"
 else
   echo "!! rsync 未安装，使用 cp（较慢）"

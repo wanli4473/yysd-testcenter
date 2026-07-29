@@ -17,14 +17,27 @@
     return !!(A && A.canWordRealm && A.canWordRealm());
   }
 
+  function canAiAdmit() {
+    var A = window.YYSD_AUTH;
+    return !!(A && A.canAiAdmit && A.canAiAdmit());
+  }
+
   var TOP_LINKS = [
     { href: "index.html", key: "home", label: "首页" },
     { href: "zone.html?zone=study&s=vocab", key: "words", label: "单词", zone: "study" },
     { href: "word-realm.html", key: "realm", label: "词境", realm: true },
     { href: "zone.html?zone=mock", key: "ielts", label: "雅思", mega: true },
     { href: "alevel.html", key: "intl", label: "国际课程" },
+    { href: "/rankings", key: "rankings", label: "全球大学排行榜", special: "nav-rankings", rankings: true },
+    { href: "/admission", key: "ai-admit", label: "AI升学顾问", special: "nav-ai-admit", aiAdmit: true },
     { href: "dashboard.html", key: "tasks", label: "任务中心" }
-  ].filter(function (l) { return !l.realm || canWordRealm(); });
+  ].filter(function (l) {
+    if (l.realm && !canWordRealm()) return false;
+    if (l.aiAdmit && !canAiAdmit()) return false;
+    // rankings: same HQ gate as AI admit when auth helper exists; else always show
+    if (l.rankings && window.YYSD_AUTH && typeof window.YYSD_AUTH.canAiAdmit === "function" && !canAiAdmit()) return false;
+    return true;
+  });
 
   var MEGA_COLS = [
     {
@@ -159,9 +172,16 @@
     newNav.id = "nav";
     newNav.setAttribute("aria-label", "主导航");
     newNav.innerHTML = TOP_LINKS.map(function (l) {
+      var cls = [];
+      if (l.mega) cls.push("reme-nav__ielts");
+      if (l.special) cls.push(l.special);
       var extra = (l.zone ? ' data-zone="' + l.zone + '"' : "") +
-        (l.mega ? ' aria-haspopup="true" aria-expanded="false" class="reme-nav__ielts"' : "");
-      return '<a href="' + l.href + '" data-key="' + l.key + '"' + extra + ">" + esc(l.label) + "</a>";
+        (l.mega ? ' aria-haspopup="true" aria-expanded="false"' : "") +
+        (cls.length ? ' class="' + cls.join(" ") + '"' : "");
+      var label = l.special
+        ? '<span class="' + l.special + '__text">' + esc(l.label) + "</span>"
+        : esc(l.label);
+      return '<a href="' + l.href + '" data-key="' + l.key + '"' + extra + ">" + label + "</a>";
     }).join("");
 
     var tools = document.createElement("div");
@@ -286,7 +306,12 @@
       var a = document.createElement("a");
       a.href = l.href;
       a.dataset.key = l.key;
-      a.textContent = l.label;
+      if (l.special) {
+        a.className = l.special;
+        a.innerHTML = '<span class="' + l.special + '__text">' + esc(l.label) + "</span>";
+      } else {
+        a.textContent = l.label;
+      }
       drawerNav.appendChild(a);
       if (l.mega) {
         MEGA_COLS.forEach(function (col) {
@@ -385,6 +410,8 @@
     }
 
     if (path === "index.html" || path === "") { activate("home"); return; }
+    if (location.pathname.indexOf("/rankings") === 0) { activate("rankings"); return; }
+    if (location.pathname.indexOf("/admission") === 0) { activate("ai-admit"); return; }
     if (path === "dashboard.html" || path === "calendar.html") { activate("tasks"); return; }
     if (path === "alevel.html" || path.indexOf("alevel") === 0) { activate("intl"); return; }
     if (path === "zone.html" && zone === "study") { activate("words"); return; }

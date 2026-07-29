@@ -1,0 +1,18 @@
+[Unit]
+Description=YYSD Global University Rankings (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/yysd/repo/rankings
+Environment=NODE_ENV=production
+Environment=PORT=3002
+EnvironmentFile=-/opt/yysd/repo/rankings/.env.local
+EnvironmentFile=-/opt/yysd/repo/rankings/.env
+ExecStart=/usr/bin/npm run start --prefix /opt/yysd/repo/rankings
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
