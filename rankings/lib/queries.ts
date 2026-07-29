@@ -46,6 +46,37 @@ export async function getLeaders() {
   return out;
 }
 
+/** Top-N rows for ticker / tape panels on the dashboard home. */
+export async function getTapeTops(limit = 10) {
+  const tapes: {
+    system: SystemKey;
+    year: number;
+    rows: { rank: number; nameZh: string; slug: string; country: string }[];
+  }[] = [];
+  for (const key of Object.keys(SYSTEMS) as SystemKey[]) {
+    const year = await latestYear(key);
+    const edition = await getEdition(key, "world", year);
+    if (!edition) continue;
+    const rows = await prisma.rankingEntry.findMany({
+      where: { editionId: edition.id },
+      orderBy: { rank: "asc" },
+      take: limit,
+      include: { university: true },
+    });
+    tapes.push({
+      system: key,
+      year,
+      rows: rows.map((r) => ({
+        rank: r.rank,
+        nameZh: r.university.nameZh,
+        slug: r.university.slug,
+        country: r.university.country,
+      })),
+    });
+  }
+  return tapes;
+}
+
 export type EntryFilters = {
   q?: string;
   country?: string;

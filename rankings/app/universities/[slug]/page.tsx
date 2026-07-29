@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { universityHistory } from "@/lib/queries";
-import { SYSTEMS, SYSTEM_ORDER, countryLabel, type SystemKey } from "@/lib/systems";
+import { SYSTEMS, SYSTEM_ORDER, SYSTEM_TRACK, countryLabel, type SystemKey } from "@/lib/systems";
 
 export const dynamic = "force-dynamic";
 
@@ -30,52 +30,58 @@ export default async function UniversityPage({ params }: { params: { slug: strin
     });
   }
 
-  // Weak link to admission: match short alias / English name against catalog-style paths
   const admitHint = aliases[0] || u.nameEn;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="sans text-xs text-[var(--muted)]">
-          <Link href="/universities" className="hover:underline">
-            院校库
+    <div className="space-y-5">
+      <div className="panel p-5">
+        <p className="mono text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+          <Link href="/universities" className="hover:text-[var(--ink)]">
+            Universe
           </Link>{" "}
           / {countryLabel(u.country)}
         </p>
-        <h1 className="mt-2 text-4xl">{u.nameZh}</h1>
-        <p className="sans mt-2 text-[var(--muted)]">{u.nameEn}</p>
-        {aliases.length > 0 && (
-          <p className="sans mt-2 text-xs text-[var(--muted)]">别名：{aliases.join(" · ")}</p>
-        )}
-        <div className="sans mt-4 flex flex-wrap gap-3 text-sm">
-          <Link href={`/compare?ids=${u.slug}`} className="rounded-md border border-[var(--line)] px-3 py-1.5 hover:border-[var(--accent)]">
-            加入对比
+        <h1 className="mt-2 text-3xl font-bold tracking-tight">{u.nameZh}</h1>
+        <p className="mt-1 text-sm text-[var(--muted)]">{u.nameEn}</p>
+        {aliases.length > 0 && <p className="mono mt-2 text-[11px] text-[var(--muted)]">AKA {aliases.join(" · ")}</p>}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href={`/compare?ids=${u.slug}`} className="btn-ghost py-2">
+            加入对比盘
           </Link>
-          <a href="/admission" className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-white">
-            去 AI 升学顾问评估
+          <a href="/admission" className="btn-ink py-2">
+            估录取
           </a>
         </div>
-        <p className="sans mt-2 text-xs text-[var(--muted)]">录取评估按项目匹配；可在顾问中搜索「{admitHint}」相关项目。</p>
+        <p className="mt-2 text-[11px] text-[var(--muted)]">顾问侧按项目匹配，可搜「{admitHint}」。</p>
       </div>
 
       <section>
-        <h2 className="text-2xl">综合榜历年表现</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mb-2 flex items-end justify-between">
+          <h2 className="text-sm font-semibold">四轨历年</h2>
+          <span className="mono text-[10px] text-[var(--muted)]">HISTORY</span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
           {SYSTEM_ORDER.map((key) => {
             const rows = bySystem[key] || [];
             return (
-              <div key={key} className="surface rounded-xl p-4">
-                <h3 className="text-lg">{SYSTEMS[key as SystemKey].shortName}</h3>
+              <div key={key} className="panel overflow-hidden">
+                <div className="panel-head">
+                  <span className="inline-flex items-center gap-2 normal-case tracking-normal text-[var(--ink)]">
+                    <span className="track-dot" style={{ background: SYSTEM_TRACK[key as SystemKey] }} />
+                    {SYSTEMS[key as SystemKey].shortName}
+                  </span>
+                </div>
                 {rows.length === 0 ? (
-                  <p className="sans mt-3 text-sm text-[var(--muted)]">暂无数据</p>
+                  <p className="px-4 py-3 text-sm text-[var(--muted)]">暂无数据</p>
                 ) : (
-                  <ul className="sans mt-3 space-y-1 text-sm">
+                  <ul>
                     {rows.map((r) => (
-                      <li key={r.year} className="flex justify-between">
-                        <Link href={r.href} className="text-[var(--muted)] hover:text-[var(--accent)]">
-                          {r.year}
+                      <li key={r.year}>
+                        <Link href={r.href} className="tape-row">
+                          <span className="mono text-[var(--muted)]">{r.year}</span>
+                          <span className="text-[var(--muted)]">名次</span>
+                          <span className="rank-num">#{r.rankDisplay}</span>
                         </Link>
-                        <span className="rank-num">#{r.rankDisplay}</span>
                       </li>
                     ))}
                   </ul>

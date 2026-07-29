@@ -35,47 +35,44 @@ export default async function UniversitiesPage({
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-4xl">大学院校库</h1>
-        <p className="sans mt-2 text-[var(--muted)]">搜索和浏览全球高校 · 共 {total} 所</p>
+        <p className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">Universe</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight">院校库</h1>
+        <p className="mono mt-1 text-[11px] text-[var(--muted)]">{total} instruments</p>
       </div>
 
-      <form method="get" className="sans flex flex-wrap gap-2 text-sm" action="/rankings/universities">
-        <input
-          name="q"
-          defaultValue={searchParams.q || ""}
-          placeholder="搜索大学…"
-          className="rounded-md border border-[var(--line)] bg-white px-3 py-2"
-        />
-        <select name="country" defaultValue={searchParams.country || ""} className="rounded-md border border-[var(--line)] bg-white px-3 py-2">
-          <option value="">全部国家/地区</option>
+      <form method="get" action="/rankings/universities" className="panel flex flex-wrap gap-2 p-3 text-sm">
+        <input name="q" defaultValue={searchParams.q || ""} placeholder="搜校名…" className="input-desk max-w-xs py-2" />
+        <select name="country" defaultValue={searchParams.country || ""} className="input-desk w-auto py-2">
+          <option value="">全部市场</option>
           {["US", "UK", "CA", "AU", "CN", "HK", "SG", "JP", "KR", "DE", "FR", "CH", "NL", "SE"].map((c) => (
             <option key={c} value={c}>
               {countryLabel(c)}
             </option>
           ))}
         </select>
-        <button type="submit" className="rounded-md bg-[var(--accent)] px-4 py-2 text-white">
+        <button type="submit" className="btn-ink py-2">
           筛选
         </button>
       </form>
 
-      <ul className="grid gap-2 sm:grid-cols-2">
+      <ul className="panel divide-y divide-[var(--line)]">
         {rows.map((u) => (
           <li key={u.id}>
-            <Link href={`/universities/${u.slug}`} className="surface block rounded-xl px-4 py-3 hover:border-[var(--accent)]">
-              <p className="text-lg">{u.nameZh}</p>
-              <p className="sans text-xs text-[var(--muted)]">
-                {u.nameEn} · {countryLabel(u.country)}
-              </p>
+            <Link href={`/universities/${u.slug}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-white">
+              <div>
+                <p className="font-semibold">{u.nameZh}</p>
+                <p className="text-[11px] text-[var(--muted)]">{u.nameEn}</p>
+              </div>
+              <span className="mono text-[10px] text-[var(--muted)]">{countryLabel(u.country)}</span>
             </Link>
           </li>
         ))}
       </ul>
 
       {pages > 1 && (
-        <nav className="sans flex gap-2 text-sm">
+        <nav className="flex gap-2 text-sm">
           {page > 1 && (
             <Link
               href={`/universities?${new URLSearchParams({
@@ -83,12 +80,12 @@ export default async function UniversitiesPage({
                 ...(searchParams.country ? { country: searchParams.country } : {}),
                 page: String(page - 1),
               }).toString()}`}
-              className="rounded border border-[var(--line)] px-3 py-1"
+              className="btn-ghost py-1.5"
             >
               上一页
             </Link>
           )}
-          <span className="text-[var(--muted)]">
+          <span className="mono text-[var(--muted)]">
             {page}/{pages}
           </span>
           {page < pages && (
@@ -98,7 +95,7 @@ export default async function UniversitiesPage({
                 ...(searchParams.country ? { country: searchParams.country } : {}),
                 page: String(page + 1),
               }).toString()}`}
-              className="rounded border border-[var(--line)] px-3 py-1"
+              className="btn-ghost py-1.5"
             >
               下一页
             </Link>

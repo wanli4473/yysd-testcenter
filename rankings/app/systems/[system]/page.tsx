@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { SYSTEMS, type SystemKey } from "@/lib/systems";
+import { SYSTEMS, SYSTEM_TRACK, type SystemKey } from "@/lib/systems";
 import { listYears, latestYear } from "@/lib/queries";
 import { prisma } from "@/lib/db";
 
@@ -26,49 +26,60 @@ export default async function SystemDetailPage({ params }: { params: { system: s
   });
 
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="sans text-xs text-[var(--muted)]">
-          <Link href="/systems" className="hover:underline">
-            排名体系
-          </Link>{" "}
-          / {s.shortName}
-        </p>
-        <h1 className="mt-2 text-4xl">{s.name}</h1>
-        <p className="sans mt-3 max-w-3xl text-[var(--muted)]">{s.blurb}</p>
-        <p className="sans mt-2 max-w-3xl text-sm text-[var(--muted)]">{s.method}</p>
-        <p className="sans mt-3 text-xs">
-          官方来源：{" "}
-          <a href={s.sourceUrl} className="text-[var(--accent)] hover:underline" target="_blank" rel="noreferrer">
-            {s.sourceHost}
-          </a>
-        </p>
+    <div className="space-y-6">
+      <div className="panel overflow-hidden">
+        <div className="flex items-stretch">
+          <div className="w-1.5 shrink-0" style={{ background: SYSTEM_TRACK[key] }} />
+          <div className="flex-1 p-5">
+            <p className="mono text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">
+              <Link href="/systems" className="hover:text-[var(--ink)]">
+                Tracks
+              </Link>{" "}
+              / {s.shortName}
+            </p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight">{s.name}</h1>
+            <p className="mt-3 max-w-3xl text-sm text-[var(--muted)]">{s.blurb}</p>
+            <p className="mt-2 max-w-3xl text-sm text-[var(--muted)]">{s.method}</p>
+            <p className="mono mt-3 text-[11px]">
+              SRC{" "}
+              <a href={s.sourceUrl} className="text-[var(--gold)] hover:underline" target="_blank" rel="noreferrer">
+                {s.sourceHost}
+              </a>
+            </p>
+          </div>
+        </div>
       </div>
 
-      <section>
-        <h2 className="text-2xl">综合榜 · 历年版本</h2>
-        <div className="mt-3 flex flex-wrap gap-2 sans text-sm">
+      <section className="panel">
+        <div className="panel-head">
+          <span>综合榜 · 历年</span>
+        </div>
+        <div className="flex flex-wrap gap-2 p-4">
           {years.map((year) => (
             <Link
               key={year}
               href={`/${key}/world/${year}`}
-              className={`rounded-md border px-3 py-1.5 ${year === y ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)]"}`}
+              className={`mono border px-3 py-1.5 text-sm ${
+                year === y ? "border-[var(--ink)] bg-[var(--ink)] text-white" : "border-[var(--line)] hover:border-[var(--ink)]"
+              }`}
             >
               {year}
-              {year === y ? " 最新" : ""}
             </Link>
           ))}
         </div>
       </section>
 
       {subjects.length > 0 && (
-        <section>
-          <h2 className="text-2xl">学科榜（示例）</h2>
-          <ul className="sans mt-3 space-y-2 text-sm">
+        <section className="panel">
+          <div className="panel-head">
+            <span>学科轨（示例）</span>
+          </div>
+          <ul className="divide-y divide-[var(--line)]">
             {subjects.map((sub) => (
               <li key={sub.id}>
-                <Link href={`/${key}/${sub.categorySlug}/${sub.year}`} className="text-[var(--accent)] hover:underline">
-                  {sub.categoryName} {sub.year}
+                <Link href={`/${key}/${sub.categorySlug}/${sub.year}`} className="flex justify-between px-4 py-3 text-sm hover:bg-white">
+                  <span>{sub.categoryName}</span>
+                  <span className="mono text-[var(--muted)]">{sub.year}</span>
                 </Link>
               </li>
             ))}

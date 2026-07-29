@@ -87,6 +87,14 @@ export const COUNTRY_LABELS: Record<string, string> = {
   OTHER: "其他",
 };
 
+/** Tape colors for the four ranking tracks (dashboard UI). */
+export const SYSTEM_TRACK: Record<SystemKey, string> = {
+  qs: "#e11d48",
+  the: "#2563eb",
+  arwu: "#ca8a04",
+  usnews: "#0d9488",
+};
+
 export function countryLabel(code: string): string {
   return COUNTRY_LABELS[code] || code;
 }
