@@ -30,7 +30,7 @@ var STAGES = {
   ielts: {
     level: "ielts",
     name: "雅思词汇",
-    total: 25,
+    total: 35,
     passThreshold: 0.8,
     excellentThreshold: 0.9,
     greyLow: null,
