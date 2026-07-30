@@ -7,12 +7,13 @@ const assert = (c, m) => { if (!c) { console.error("FAIL:", m); process.exit(1);
 
 const auth = fs.readFileSync(path.join(root, "assets/js/auth.js"), "utf8");
 assert(auth.includes("function canWordRealm") && auth.includes("canWordRealm: canWordRealm"), "auth canWordRealm");
+assert(/function canWordRealm\(\)\s*\{[^}]*return false/.test(auth), "auth realm offline");
 
 const nav = fs.readFileSync(path.join(root, "assets/js/nav.js"), "utf8");
-assert(nav.includes("canWordRealm()") && nav.includes("!l.realm || canWordRealm"), "nav filters realm");
+assert(!nav.includes('label: "词境"') && !nav.includes('label: "词境远征"'), "nav no realm top link");
 
 const zone = fs.readFileSync(path.join(root, "assets/js/zone.js"), "utf8");
-assert(zone.includes("canWordRealm") && zone.includes("vocab-realm-banner"), "zone banner gated");
+assert(!zone.includes("vocab-realm-banner"), "zone banner hidden offline");
 
 const realm = fs.readFileSync(path.join(root, "assets/js/word-realm.js"), "utf8");
 assert(realm.includes("canWordRealm") && realm.includes('location.replace("zone.html?zone=study&s=vocab")'), "realm hard gate");

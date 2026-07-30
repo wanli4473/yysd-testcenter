@@ -52,7 +52,7 @@ const html = fs.readFileSync(path.join(root, "vocab-lesson.html"), "utf8");
 assert(html.includes("vocab-lesson.js") && html.includes("vl-root"), "lesson shell");
 
 const zone = fs.readFileSync(path.join(root, "assets/js/zone.js"), "utf8");
-assert(zone.includes("vocab-realm-banner") && zone.includes("word-realm.html"), "zone dual-entry promo");
+assert(!zone.includes("vocab-realm-banner"), "zone realm promo hidden");
 assert(zone.includes("开始背单词") || zone.includes("开始 ›"), "zone homework CTA");
 
 const vocab = fs.readFileSync(path.join(root, "assets/js/vocab.js"), "utf8");

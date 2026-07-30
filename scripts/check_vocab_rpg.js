@@ -58,7 +58,7 @@ assert(claim && claim.gained === 5, "claim chest");
 assert(!RPG.claimChest("gaozhong", openChest.chestId, 5), "no double claim");
 
 const zone = fs.readFileSync(path.join(root, "assets/js/zone.js"), "utf8");
-assert(zone.includes("vocab-realm-banner") && zone.includes("word-realm.html"), "zone promo to realm");
+assert(!zone.includes("vocab-realm-banner"), "zone realm promo hidden");
 assert(zone.includes("作业模式") && zone.includes("vocabBentoHTML"), "homework bento restored");
 assert(!zone.includes("bindVocabRpgPath") && !zone.includes("vocab-bento--rpg"), "rpg path removed from zone");
 
@@ -83,6 +83,7 @@ assert(lesson.includes("YYSD_VOCAB_RPG") && (lesson.includes("升级了") || les
 assert(lesson.includes("word-realm.html") && lesson.includes("shrineParam"), "celebrate → realm / shrine");
 
 const nav = fs.readFileSync(path.join(root, "assets/js/nav.js"), "utf8");
-assert(nav.includes('key: "realm"') && nav.includes("word-realm.html"), "nav entry");
+assert(!nav.includes('label: "词境"') && !nav.includes('label: "词境远征"'), "no topbar/mobile realm link");
+assert(nav.includes('key: "words"'), "words nav kept");
 
 console.log("vocab-rpg dual-entry smoke ok · Lv." + RPG.snapshot().level, RPG.snapshot().title);

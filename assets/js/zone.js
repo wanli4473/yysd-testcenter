@@ -366,14 +366,8 @@
     var aiWord = (window.YYSD_AI_WORD && window.YYSD_AI_WORD.shellHTML)
       ? window.YYSD_AI_WORD.shellHTML() : "";
 
-    var A = window.YYSD_AUTH;
-    var realmBanner = (A && A.canWordRealm && A.canWordRealm())
-      ? ('<a class="vocab-realm-banner" href="word-realm.html">' +
-        '<span class="vocab-realm-banner__kicker">游戏模式</span>' +
-        '<span class="vocab-realm-banner__title">词境远征</span>' +
-        '<span class="vocab-realm-banner__desc">塞尔达式远征 · 记忆之力 · 与作业区互不干扰 · 雾原试玩</span>' +
-        '<span class="vocab-realm-banner__go">进入世界 ›</span></a>')
-      : "";
+    // ponytail: 词境远征入口先下线，恢复时改回 canWordRealm() 判断
+    var realmBanner = "";
 
     return '<div class="vocab-bento">' +
       realmBanner +
@@ -562,13 +556,16 @@
 
   function syncToolbar() {
     if (!toolbarEl) return;
-    /* ponytail: IELTS hub / vocab hub are portals — hide search until needed elsewhere */
-    var hub = (zone === "mock" && activeCat === "all" && !searchQuery)
-      || (zone === "study" && activeCat === "vocab" && !searchQuery);
-    document.body.classList.toggle("is-ielts-hub", zone === "mock" && activeCat === "all" && !searchQuery);
-    document.body.classList.toggle("is-vocab-hub", zone === "study" && activeCat === "vocab" && !searchQuery);
+    /* ponytail: IELTS hub / vocab hub are portals — hide search (vocab always) */
+    var isIeltsHub = zone === "mock" && activeCat === "all" && !searchQuery;
+    var isVocabHub = zone === "study" && activeCat === "vocab";
+    var hub = isIeltsHub || isVocabHub;
+    document.body.classList.toggle("is-ielts-hub", isIeltsHub);
+    document.body.classList.toggle("is-vocab-hub", isVocabHub);
     toolbarEl.hidden = hub;
     toolbarEl.setAttribute("aria-hidden", hub ? "true" : "false");
+    // ponytail: .catalog-toolbar { display:flex } overrides [hidden]
+    toolbarEl.style.display = hub ? "none" : "";
     if (hub) syncZoneQuery();
   }
 

@@ -53,9 +53,10 @@ window.YYSD_AUTH = (function () {
     return tenantSlug() === "yysd";
   }
 
-  /** 词境远征：仅优益思达总部站（youyisida.com / slug=yysd）的师生可见可玩 */
+  /** 词境远征：暂时全站下线（入口与深链一并关掉） */
   function canWordRealm() {
-    return isHqSite();
+    // ponytail: was HQ-only; flip back to isHqSite() when reopening
+    return false;
   }
 
   function logoSrc(url) {
