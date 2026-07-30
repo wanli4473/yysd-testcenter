@@ -13,6 +13,12 @@
   var rangeParam = (params.get("range") || "").trim();
   var contentEl = document.getElementById("content");
 
+  // ponytail: thematic book uses browse hub, not unit tabs
+  if (bookKey === "themes") {
+    location.replace("vocab-themes.html");
+    return;
+  }
+
   var navLink = document.querySelector('#nav a[data-zone="study"]');
   if (navLink) navLink.classList.add("is-active");
   document.getElementById("year").textContent = new Date().getFullYear();

@@ -25,7 +25,8 @@ window.YYSD = (function () {
   // ordered subjects per zone (leaf keys used by the manifest / folder classification)
   var ZONE_SUBJECTS = {
     study:    ["grammar", "vocab", "vocab-cet4",
-               "vocab-special-listening", "vocab-special-reading", "vocab-special-writing"],
+               "vocab-special-listening", "vocab-special-reading", "vocab-special-writing",
+               "vocab-themes"],
     practice: ["changnanju", "shuzi-tingxie", "ielts-speaking", "ielts"],
     mock:     ["cambridge-listening", "cambridge-reading", "cambridge-writing", "ielts",
                "ielts-speaking", "ielts-writing", "jingting"]
@@ -49,6 +50,7 @@ window.YYSD = (function () {
     "vocab-special-listening": { label: "听力专项词汇", en: "Listening Words", color: "var(--c-cambridge-listening)" },
     "vocab-special-reading":   { label: "阅读专项词汇", en: "Reading Words", color: "var(--c-cambridge-reading)" },
     "vocab-special-writing":   { label: "写作专项词汇", en: "Writing Vocabulary", color: "var(--c-writing)" },
+    "vocab-themes": { label: "分类词库", en: "Thematic Vocab", color: "var(--c-vocab)" },
     changnanju: { label: "长难句", en: "Complex Sentences", color: "var(--c-zone-practice)" },
     "shuzi-tingxie": { label: "数字听写", en: "Number Dictation", color: "var(--c-zone-practice)" },
     jingting:   { label: "听力精听", en: "Intensive Listening", color: "var(--c-listening)" }
@@ -65,7 +67,8 @@ window.YYSD = (function () {
           { label: "听力专项词汇", subject: "vocab-special-listening" },
           { label: "阅读专项词汇", subject: "vocab-special-reading" },
           { label: "写作专项词汇", subject: "vocab-special-writing" }
-        ] }
+        ] },
+        { label: "分类词库", subject: "vocab-themes", href: "vocab-themes.html" }
       ] }
     ],
     practice: [
@@ -351,6 +354,7 @@ window.YYSD = (function () {
       key: "special", label: "雅思专项词汇", tag: "专题",
       subjects: ["vocab-special-listening", "vocab-special-reading", "vocab-special-writing"]
     }
+    // ponytail: themes = browse hub only (vocab-themes.html), not a lesson book yet
   };
 
   function isVocabListSubject(subject) {
@@ -374,6 +378,10 @@ window.YYSD = (function () {
     m = t.match(/第\s*0*(\d+)\s*篇/);
     if (m) return Number(m[1]);
     m = String((item && item.id) || "").match(/(?:writing|listening|reading)-vocab-0*(\d+)/i);
+    if (m) return Number(m[1]);
+    m = String((item && item.file) || "").match(/theme-0*(\d+)/i);
+    if (m) return Number(m[1]);
+    m = String((item && item.id) || "").match(/theme-0*(\d+)/i);
     if (m) return Number(m[1]);
     m = String((item && item.file) || "").match(/(?:LIST|list|vocab-)0*(\d+)/i);
     return m ? Number(m[1]) : 0;

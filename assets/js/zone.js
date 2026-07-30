@@ -321,6 +321,13 @@
         '<span class="vocab-entry__go">进入 ›</span></a>';
     }).join("");
 
+    // ponytail: browse-only lexicon hub for now
+    entries += '<a class="vocab-entry vocab-entry--gold" href="vocab-themes.html">' +
+      '<span class="vocab-entry__kicker">词书 · 分类</span>' +
+      '<p class="vocab-entry__title">分类词库</p>' +
+      '<p class="vocab-entry__desc">按话题浏览 · 暂不测试</p>' +
+      '<span class="vocab-entry__go">浏览 ›</span></a>';
+
     entries += '<a class="vocab-entry vocab-entry--wrong" href="wrong-words.html">' +
       '<span class="vocab-entry__kicker">复习</span>' +
       '<p class="vocab-entry__title">错题本</p>' +
@@ -332,7 +339,7 @@
     entries += '<a class="vocab-entry vocab-entry--navy" href="diagnostic.html">' +
       '<span class="vocab-entry__kicker">测评</span>' +
       '<p class="vocab-entry__title">能力诊断</p>' +
-      '<p class="vocab-entry__desc">双线自适应 · 推荐起始词库</p>' +
+      '<p class="vocab-entry__desc">硬门槛进阶 · 推荐起始词库</p>' +
       '<span class="vocab-entry__go">开始 ›</span></a>';
 
     var lessonOf = function (item) {

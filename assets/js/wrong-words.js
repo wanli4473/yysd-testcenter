@@ -1,6 +1,6 @@
 /* =========================================================================
    wrong-words.js — vocabulary wrong-word notebook (per book)
-   wrong-words.html?book=gaozhong | cet4 | special
+   wrong-words.html?book=gaozhong | cet4 | special | themes
    ========================================================================= */
 (function () {
   "use strict";
