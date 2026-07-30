@@ -38,7 +38,6 @@ if command -v rsync &>/dev/null; then
     --exclude 'rankings/' \
     --exclude 'node_modules/' \
     --exclude '.staging/' \
-    --exclude 'admin/' \
     --exclude '.github/' \
     --exclude '.env' \
     --exclude '.env.local' \
@@ -66,6 +65,7 @@ check "dashboard.html"
 check "assets/js/dashboard.js"
 check "admin-assign.html"
 check "assets/js/admin-assign.js"
+check "admin/index.html"
 check "ai-tutor.html"
 check "data/speaking/jiijing-banks/2026-q2.json"
 check "data/speaking/jiijing-active.json"
@@ -73,7 +73,10 @@ check "data/speaking/writing-prompts.json"
 check "data/speaking/part1-topics.json"
 check "data/speaking/part1-fixed.json"
 check "speaking.html"
+check "jingting-player.html"
 check "library/practice/jingting/cam20-test1-section1.html"
+check "library/practice/jingting/data/cam20-t1-p1.json"
+check "library/practice/jingting/data/cam21-t1-p1.json"
 check "word-realm.html"
 check "assets/js/word-realm.js"
 check "library/practice/word-realm/lexicon.json"

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="assets/js/tenant-boot.js?v=20260728ease1"></script>
+  <script src="assets/js/page-transit.js?v=20260724p1"></script>
+  <title>听力精听 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260723read">
+  <link rel="stylesheet" href="assets/css/jingting-player.css?v=20260723jt">
+</head>
+<body class="jt-page">
+  <header class="jt-top">
+    <a class="jt-brand" href="zone.html?zone=mock&s=jingting">
+      <img src="assets/img/logo.svg?v=20260702-logo" alt="" width="28" height="28">
+      <span>优益思达 · 听力精听</span>
+    </a>
+    <h1 class="jt-title" id="jtTitle">加载中…</h1>
+    <div class="jt-top-actions">
+      <a class="jt-btn jt-btn--ghost" id="jtExam" href="#">进入答题</a>
+      <a class="jt-btn jt-btn--solid" href="zone.html?zone=mock&s=jingting">退出练习</a>
+    </div>
+  </header>
+
+  <div class="jt-body">
+    <aside class="jt-list" id="jtListPane" aria-label="句子列表">
+      <div class="jt-list-head">句子列表</div>
+      <ol class="jt-sents" id="jtSentList"></ol>
+    </aside>
+
+    <main class="jt-main">
+      <div class="jt-toolbar">
+        <div class="jt-modes" role="tablist">
+          <button type="button" class="jt-mode is-on" data-mode="full" role="tab">全文精听</button>
+          <button type="button" class="jt-mode" data-mode="line" role="tab">逐句精听</button>
+          <button type="button" class="jt-mode" data-mode="shadow" role="tab">AI 跟读</button>
+        </div>
+        <div class="jt-toggles">
+          <button type="button" class="jt-chip" id="jtShowEn" title="快捷键 ↑">原文</button>
+          <button type="button" class="jt-chip" id="jtShowZh" title="快捷键 ↓">译文</button>
+          <button type="button" class="jt-chip jt-chip--ghost" id="jtHotkeys" title="快捷键说明">快捷键</button>
+        </div>
+      </div>
+
+      <div class="jt-stage" id="jtStageFull">
+        <div class="jt-full" id="jtFullBody"></div>
+      </div>
+
+      <div class="jt-stage is-hidden" id="jtStageLine">
+        <div class="jt-card">
+          <button type="button" class="jt-nav-arrow" id="jtPrev" aria-label="上一句">‹</button>
+          <div class="jt-card-inner">
+            <div class="jt-card-meta"><span id="jtIdx">1</span>/<span id="jtTotal">0</span></div>
+            <button type="button" class="jt-reveal" id="jtReveal">
+              <span class="jt-eye" aria-hidden="true">◉</span>
+              <span>点击显示原文</span>
+            </button>
+            <div class="jt-line-en is-hidden" id="jtLineEn"></div>
+            <div class="jt-line-zh is-hidden" id="jtLineZh"></div>
+          </div>
+          <button type="button" class="jt-nav-arrow" id="jtNext" aria-label="下一句">›</button>
+        </div>
+      </div>
+
+      <div class="jt-stage is-hidden" id="jtStageShadow">
+        <div class="jt-shadow">
+          <div class="jt-shadow-meta">跟读 · <span id="jtShadowIdx">1</span>/<span id="jtShadowTotal">0</span>
+            · 过关 <span id="jtPassCount">0</span></div>
+          <div class="jt-blind" id="jtBlind">🔒 测试期间不显示原文 · 先听再复述</div>
+          <div class="jt-shadow-row">
+            <button type="button" class="jt-btn jt-btn--solid" id="jtPlayClip">▶ 播放本句</button>
+            <button type="button" class="jt-btn jt-btn--rec" id="jtRec">🎙 开始复述</button>
+            <button type="button" class="jt-btn jt-btn--ghost" id="jtStopRec" disabled>■ 说完停止</button>
+            <button type="button" class="jt-btn jt-btn--ghost is-hidden" id="jtShadowNext">下一句 →</button>
+          </div>
+          <div class="jt-heard" id="jtHeard"><span class="ph">你复述的内容会显示在这里…</span></div>
+          <div class="jt-verdict" id="jtVerdict"></div>
+          <p class="jt-note" id="jtSrNote"></p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="jt-player">
+    <div class="jt-player-left">
+      <button type="button" class="jt-icon" id="jtBarPrev" title="上一句" aria-label="上一句">⏮</button>
+      <button type="button" class="jt-icon jt-icon--play" id="jtPlay" title="空格 播放/暂停" aria-label="播放">▶</button>
+      <button type="button" class="jt-icon" id="jtBarNext" title="下一句" aria-label="下一句">⏭</button>
+      <button type="button" class="jt-icon" id="jtLoop" title="Shift 单句循环" aria-label="单句循环" aria-pressed="false">①</button>
+      <div class="jt-rate-wrap">
+        <button type="button" class="jt-rate-btn" id="jtRateBtn">倍速 1.0x</button>
+        <ul class="jt-rate-menu is-hidden" id="jtRateMenu">
+          <li data-r="0.75">0.75x</li>
+          <li data-r="1">1.0x</li>
+          <li data-r="1.25">1.25x</li>
+          <li data-r="1.5">1.5x</li>
+          <li data-r="2">2.0x</li>
+        </ul>
+      </div>
+    </div>
+    <div class="jt-player-mid">
+      <span class="jt-time" id="jtCur">00:00</span>
+      <div class="jt-prog" id="jtProg" role="slider" tabindex="0" aria-label="进度">
+        <div class="jt-prog-fill" id="jtFill"></div>
+      </div>
+      <span class="jt-time" id="jtDur">00:00</span>
+    </div>
+    <div class="jt-player-right">
+      <label class="jt-vol" title="音量">
+        <span>🔊</span>
+        <input type="range" id="jtVol" min="0" max="1" step="0.05" value="1">
+      </label>
+    </div>
+  </footer>
+
+  <audio id="jtAudio" preload="auto"></audio>
+
+  <div class="jt-modal is-hidden" id="jtHotkeyModal" role="dialog" aria-labelledby="jtHkTitle">
+    <div class="jt-modal-card">
+      <h2 id="jtHkTitle">快捷键</h2>
+      <ul>
+        <li><kbd>空格</kbd> 播放 / 暂停</li>
+        <li><kbd>←</kbd> <kbd>→</kbd> 上一句 / 下一句</li>
+        <li><kbd>↑</kbd> 显示 / 隐藏原文</li>
+        <li><kbd>↓</kbd> 显示 / 隐藏译文</li>
+        <li><kbd>Shift</kbd> 单句循环</li>
+      </ul>
+      <button type="button" class="jt-btn jt-btn--solid" id="jtHkClose">知道了</button>
+    </div>
+  </div>
+
+  <script src="assets/js/auth.js?v=20260729hq1"></script>
+  <script src="assets/js/jingting-player.js?v=20260723jt"></script>
+</body>
+</html>

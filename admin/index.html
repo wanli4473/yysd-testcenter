@@ -8,7 +8,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="../assets/css/style.css?v=20260722mega">
+  <link rel="stylesheet" href="../assets/css/style.css?v=20260729rank1">
+  <style>body:not(.is-staff) > *:not(script) { visibility: hidden; }</style>
+  <script src="../assets/js/config.js?v=20260702f"></script>
+  <script src="../assets/js/auth.js?v=20260729a1"></script>
+  <script>
+  (function () {
+    var A = window.YYSD_AUTH;
+    var next = encodeURIComponent(location.pathname + location.search);
+    if (!A || !A.getToken || !A.getToken()) {
+      location.replace("../login.html?next=" + next);
+      return;
+    }
+    // ponytail: content-upload console is staff-only; nginx already blocks anon
+    if (!(A.isAdmin && A.isAdmin()) && !(A.isTeacher && A.isTeacher())) {
+      location.replace("../index.html");
+      return;
+    }
+    document.body.classList.add("is-staff");
+  })();
+  </script>
 </head>
 <body>
 
@@ -103,9 +122,9 @@
     </div>
   </footer>
 
-  <script src="../assets/js/config.js?v=20260702f"></script>
   <script>
   (function () {
+    if (!document.body.classList.contains("is-staff")) return;
     var Y = window.YYSD;
     var REPO = "wanli4473/yysd-testcenter";   // GitHub 仓库
     var BRANCH = "main";
@@ -133,7 +152,7 @@
               '<span class="badge badge--' + s + '">' + Y.esc(sub.label) + '</span>' +
               '<span class="cnt">' + n + ' 份</span>' +
             '</div>' +
-            '<h4>' + Y.esc(sub.label) + Y.esc(z.label.replace("区", "")) + '</h4>' +
+            '<h4>' + Y.esc(sub.label) + '</h4>' +
             '<div class="path">library/' + zone + '/' + s + '</div>' +
             '<div class="acts">' +
               '<a class="btn btn--primary btn--sm" target="_blank" rel="noopener" href="' + uploadUrl(zone, s) + '">📤 上传到这里</a>' +
