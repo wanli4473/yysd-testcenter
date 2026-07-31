@@ -705,10 +705,25 @@ body.viewer.viewer--cdt .cdt-footer {
 .cdt-help-panel[hidden] { display: none !important; }
 
 @media (max-width: 720px) {
-  .cdt-header { height: auto; flex-wrap: wrap; padding: 8px 10px; gap: 8px; }
-  .cdt-header__timer { margin: 0; order: 3; width: 100%; justify-content: center; }
-  .cdt-header__right { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
-  .cdt-vol input[type="range"] { width: 64px; }
-  .cdt-btn { padding: 7px 10px; font-size: 12px; }
+  /* ponytail: keep 52px chrome height so iframe top:52px still clears header */
+  .cdt-header {
+    height: 52px;
+    flex-wrap: nowrap;
+    padding: 0 8px;
+    gap: 6px;
+    overflow: hidden;
+  }
+  .cdt-header__title {
+    max-width: 22vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .cdt-header__timer { margin: 0; font-size: 13px; }
+  .cdt-header__right { flex-wrap: nowrap; gap: 4px; }
+  .cdt-vol input[type="range"] { width: 56px; }
+  .cdt-btn { padding: 6px 8px; font-size: 11px; }
+  .cdt-btn--finish { padding: 6px 10px; }
   .cdt-q { width: 24px; height: 24px; font-size: 11px; line-height: 24px; }
 }

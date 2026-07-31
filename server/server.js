@@ -2264,6 +2264,12 @@ function sanitizeScore(body) {
   var task2 = clipText(body.writingTask2, 8000);
   if (task1) out.writingTask1 = task1;
   if (task2) out.writingTask2 = task2;
+  var prompt1 = clipText(body.writingPrompt1, 4000);
+  var prompt2 = clipText(body.writingPrompt2, 4000);
+  var chartNote = clipText(body.writingChartNote, 2000);
+  if (prompt1) out.writingPrompt1 = prompt1;
+  if (prompt2) out.writingPrompt2 = prompt2;
+  if (chartNote) out.writingChartNote = chartNote;
   if (startedAt) out.startedAt = startedAt;
   if (durationSec != null) out.durationSec = durationSec;
   if (assignmentEventId) out.assignmentEventId = assignmentEventId;

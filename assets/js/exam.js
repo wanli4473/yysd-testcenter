@@ -457,8 +457,11 @@
     var left = 0;
     if (!isStudy && item.duration > 0) {
       left = item.duration * 60;
-      var elapsed = practiceDraftElapsed();
-      if (elapsed) left = Math.max(0, left - elapsed);
+      // ponytail: suite CDT must not inherit practice-draft elapsed time
+      if (!cdtWanted) {
+        var elapsed = practiceDraftElapsed();
+        if (elapsed) left = Math.max(0, left - elapsed);
+      }
     }
 
     // ponytail: CDT shell only when suite mock passes ?cdt=1 (skill practice keeps brand bar)
@@ -606,7 +609,7 @@
 
     var script = doc.createElement("script");
     script.id = "yysd-exam-bridge-js";
-    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt14" : "");
+    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt15" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
     if (cdtWanted) script.dataset.cdt = "1";

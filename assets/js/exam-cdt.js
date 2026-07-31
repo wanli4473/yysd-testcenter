@@ -798,6 +798,11 @@
     if (seconds <= 0) {
       el.textContent = "0 minutes left";
       el.classList.add("is-danger");
+      // ponytail: parent clock owns suite hop — don't leave student stuck on timed-out section
+      if (state.started && !state.timeUpHop) {
+        state.timeUpHop = true;
+        setTimeout(function () { hopAfterSubmit(); }, 600);
+      }
       return;
     }
     var mins = Math.max(1, Math.ceil(seconds / 60));
@@ -838,6 +843,19 @@
     }
   }
 
+  function alreadyScoredThisPaper() {
+    try {
+      var id = state.item && state.item.id;
+      if (!id) return false;
+      var store = JSON.parse(localStorage.getItem("yysd:results") || "{}");
+      var rec = store[id];
+      if (!rec) return false;
+      if (rec.score != null || rec.completed) return true;
+      if (rec.writingTask1 || rec.writingTask2 || rec.writingWords != null) return true;
+      return false;
+    } catch (e) { return false; }
+  }
+
   function submitPaperThen(done) {
     var finished = false;
     function finish() {
@@ -845,6 +863,11 @@
       finished = true;
       window.removeEventListener("message", onScore);
       done();
+    }
+    // ponytail: time-up / double Finish — paper won't re-post yysd:score
+    if (alreadyScoredThisPaper()) {
+      finish();
+      return;
     }
     function afterScoreSynced() {
       // ponytail: exam.js registers first — its push already started when we see yysd:score
@@ -882,24 +905,29 @@
     return "";
   }
 
-  function confirmFinish() {
+  function hopAfterSubmit() {
+    if (state.hopping) return;
+    state.hopping = true;
     showMask("cdt-finish-mask", false);
     var nextId = suiteNextId(state.item);
     var evQs = eventQuery();
-    if (nextId) {
-      // L→R / R→W — submit so scores land in yysd:results, then hop
-      submitPaperThen(function () {
-        releaseLock();
-        (window.YYSD_GO || function (h) { location.href = h; })("exam.html?id=" + encodeURIComponent(nextId) + "&cdt=1" + evQs);
-      });
-      return;
-    }
-    // Writing end → independent 3-skill CDT report
     submitPaperThen(function () {
       releaseLock();
+      if (nextId) {
+        (window.YYSD_GO || function (h) { location.href = h; })(
+          "exam.html?id=" + encodeURIComponent(nextId) + "&cdt=1" + evQs
+        );
+        return;
+      }
       var base = suiteBaseId(state.item);
-      (window.YYSD_GO || function (h) { location.href = h; })("cdt-report.html?suite=" + encodeURIComponent(base || state.item.id) + evQs);
+      (window.YYSD_GO || function (h) { location.href = h; })(
+        "cdt-report.html?suite=" + encodeURIComponent(base || state.item.id) + evQs
+      );
     });
+  }
+
+  function confirmFinish() {
+    hopAfterSubmit();
   }
 
   function bindOnce() {
@@ -1016,6 +1044,8 @@
     state.started = false;
     state.frameReady = false;
     state.parentTimerStarted = false;
+    state.hopping = false;
+    state.timeUpHop = false;
     state.item = opts.item;
     state.frame = opts.frame;
     state.seconds = opts.seconds || 0;

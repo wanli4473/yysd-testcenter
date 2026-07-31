@@ -51,17 +51,26 @@
     return it ? Y.displayTitle(it) : xid;
   }
 
-  function isSuiteListeningLink(itemId, linkedIds) {
-    // ponytail: full mock assign = L+R+W; open Listening in CDT chrome
-    if (!itemId || !/^cambridge-\d+-test-\d+$/.test(itemId)) return false;
+  function isSuiteCdtLink(itemId, linkedIds) {
+    // ponytail: full mock assign = L+R+W; any skill opens in CDT chrome
+    if (!itemId) return false;
     var ids = linkedIds || [];
-    return ids.indexOf(itemId + "-reading") >= 0 && ids.indexOf(itemId + "-writing") >= 0;
+    var base = "";
+    if (/^cambridge-\d+-test-\d+$/.test(itemId)) base = itemId;
+    else {
+      var m = String(itemId).match(/^(cambridge-\d+-test-\d+)-(reading|writing)$/);
+      if (m) base = m[1];
+    }
+    if (!base) return false;
+    return ids.indexOf(base) >= 0 &&
+      ids.indexOf(base + "-reading") >= 0 &&
+      ids.indexOf(base + "-writing") >= 0;
   }
 
   function examHref(itemId, eventId, linkedIds) {
     var href = "exam.html?id=" + encodeURIComponent(itemId) +
       "&event=" + encodeURIComponent(eventId);
-    if (isSuiteListeningLink(itemId, linkedIds)) href += "&cdt=1";
+    if (isSuiteCdtLink(itemId, linkedIds)) href += "&cdt=1";
     return href;
   }
 

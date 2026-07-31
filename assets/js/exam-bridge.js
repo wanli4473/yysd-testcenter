@@ -327,10 +327,31 @@
     var gradePending = {};
     var gradeTimers = {};
 
+    function clearCdtWritingDraft() {
+      // ponytail: paper restores practice SKEY on load; wipe before suite writing starts
+      var id = resolveExamId();
+      if (id) {
+        try { localStorage.removeItem(id + "-draft"); } catch (e) {}
+        try { localStorage.removeItem("yysd:draft:" + id); } catch (e) {}
+      }
+      ["t1", "t2"].forEach(function (tid) {
+        var ta = document.getElementById(tid);
+        if (ta) {
+          ta.value = "";
+          try { ta.dispatchEvent(new Event("input", { bubbles: true })); } catch (e2) {}
+        }
+      });
+      ["wc1", "wc2"].forEach(function (tid) {
+        var el = document.getElementById(tid);
+        if (el) el.textContent = "0";
+      });
+    }
+
     function hookWritingStart() {
       var fn = window.startTest;
       if (typeof fn !== "function" || fn._yysdHooked) return;
       window.startTest = function () {
+        if (cdtShell) clearCdtWritingDraft();
         examLock.enable();
         return fn.apply(this, arguments);
       };
@@ -632,11 +653,14 @@
         n1 = (readWritingTask(1).trim().match(/\S+/g) || []).length;
         n2 = (readWritingTask(2).trim().match(/\S+/g) || []).length;
       }
-      // ponytail: store essays for teacher grading; 8k/task covers IELTS length
+      // ponytail: store essays + prompts for cdt-report AI grade; 8k/task covers IELTS length
       postScore({
         score: null, total: null, writingWords: n1 + n2, completed: true,
         writingTask1: readWritingTask(1),
-        writingTask2: readWritingTask(2)
+        writingTask2: readWritingTask(2),
+        writingPrompt1: promptForTask("task1"),
+        writingPrompt2: promptForTask("task2"),
+        writingChartNote: chartNoteFromTest()
       });
     }
 
