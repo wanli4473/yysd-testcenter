@@ -26,6 +26,8 @@ window.YYSD_TEACHER = (function () {
   function isTeacherPage() {
     var n = pageName();
     return n === "teacher.html" || n === "teacher-calendar.html" ||
+      n === "teacher-diagnostic.html" ||
+      n === "teacher-student-diagnostic.html" ||
       n === "admin-assign.html" || isPublicPage();
   }
 

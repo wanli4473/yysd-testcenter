@@ -13,6 +13,9 @@ window.YYSD_AUTH = (function () {
   var TEACHER_TOKEN_KEY = "yysd:teacher:token";
   var TEACHER_USER_KEY = "yysd:teacher:user";
   var RESULTS_KEY = "yysd:results";
+  var WRONG_WORDS_KEY = "yysd:wrong-words";
+  // ponytail: shared-PC students were cross-uploading each other's yysd:results on login sync
+  var LOCAL_OWNER_KEY = "yysd:local-owner";
   var AUTH_COOKIE = "yysd_auth";
   var ICP_TEXT = "皖ICP备2026021555号-1";
   var ICP_URL = "https://beian.miit.gov.cn/";
@@ -57,6 +60,11 @@ window.YYSD_AUTH = (function () {
   function canWordRealm() {
     // ponytail: was HQ-only; flip back to isHqSite() when reopening
     return false;
+  }
+
+  /** AI升学顾问：暂时仅优益思达总部站开放，其他租户子域隐藏且不可进 */
+  function canAiAdmit() {
+    return isHqSite();
   }
 
   function logoSrc(url) {
@@ -224,12 +232,32 @@ window.YYSD_AUTH = (function () {
     } catch (e) { return false; }
   }
 
+  function clearLocalLearningStores() {
+    try {
+      localStorage.removeItem(RESULTS_KEY);
+      localStorage.removeItem(WRONG_WORDS_KEY);
+      localStorage.removeItem(LOCAL_OWNER_KEY);
+    } catch (e) {}
+  }
+
+  /** Drop prior student's local scores/错词 before another account syncs them up. */
+  function adoptLocalStores(phone) {
+    phone = String(phone || "").trim();
+    if (!phone) return;
+    var prev = "";
+    try { prev = localStorage.getItem(LOCAL_OWNER_KEY) || ""; } catch (e) {}
+    // legacy unscoped store has no owner — treat as foreign on shared PCs
+    if (!prev || prev !== phone) clearLocalLearningStores();
+    try { localStorage.setItem(LOCAL_OWNER_KEY, phone); } catch (e) {}
+  }
+
   function clearSession() {
     // ponytail: student logout keeps teacher session in the same browser
     try {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
     } catch (e) {}
+    clearLocalLearningStores();
     setAuthCookie(hasAnySession());
   }
 
@@ -283,6 +311,7 @@ window.YYSD_AUTH = (function () {
         // student session only — keep teacher keys so both can coexist
         localStorage.setItem(TOKEN_KEY, t);
         var stu = d.user || {};
+        adoptLocalStores(stu.phone || "");
         setUser({
           phone: stu.phone || "",
           role: "student",
@@ -499,19 +528,12 @@ window.YYSD_AUTH = (function () {
 
   function syncScoresFromCloud() {
     if (!getToken() || isTeacher()) return Promise.resolve();
+    var phone = (getUser().phone || "").trim();
+    if (phone) adoptLocalStores(phone);
     return api("/api/scores").then(function (d) {
-      var cloud = d.scores || {};
-      var local = readLocalResults();
-      var merged = mergeScoreStores(local, cloud);
-      writeLocalResults(merged);
-      var pushes = [];
-      Object.keys(local).forEach(function (id) {
-        var l = local[id], c = cloud[id];
-        if (l && (!c || String(l.date || "") > String(c.date || ""))) pushes.push(l);
-      });
-      return Promise.all(pushes.map(function (r) {
-        return api("/api/scores/" + encodeURIComponent(r.id), { method: "PUT", body: r }).catch(function () {});
-      }));
+      // ponytail: pull-only — login push re-uploaded shared-PC leftovers (刘雨茜←谢超然)
+      // real submits already call pushScoreRecord
+      writeLocalResults(d.scores || {});
     }).catch(function () {});
   }
 
@@ -818,6 +840,7 @@ window.YYSD_AUTH = (function () {
     tenantSlug: tenantSlug,
     isHqSite: isHqSite,
     canWordRealm: canWordRealm,
+    canAiAdmit: canAiAdmit,
     applyOrgBrand: applyOrgBrand,
     brandName: brandName,
     api: api,
