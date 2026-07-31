@@ -44,7 +44,10 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="mt-14 border-t border-[var(--line)] py-8 text-center text-[11px] leading-relaxed text-[var(--muted)]">
-      <p>数据聚合自公开排名信息，仅供选校参考 · 与 QS / THE / 软科 / U.S. News 无关联</p>
+      <p>
+        QS 综合榜与优先学科榜取自 TopUniversities 公开列表（各榜前 500，仅供选校参考）· 非 QS / THE / 软科 / U.S. News
+        官方产品或合作方
+      </p>
       <p className="mono mt-2 text-[10px] tracking-wider">YYSD RANK DESK · {new Date().getFullYear()}</p>
     </footer>
   );

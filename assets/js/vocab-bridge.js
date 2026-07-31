@@ -501,11 +501,29 @@
     }
   }
 
+  function applyVocabModeFromUrl() {
+    var mode = "";
+    try {
+      mode = new URLSearchParams(location.search).get("vocabMode") || "";
+    } catch (e) {}
+    if (!mode) {
+      try {
+        if (window.parent && window.parent !== window) {
+          mode = new URLSearchParams(window.parent.location.search).get("vocabMode") || "";
+        }
+      } catch (e2) { /* cross-origin */ }
+    }
+    if (mode !== "learn" && mode !== "test") return;
+    var tab = document.querySelector('.nav-tab[data-mode="' + mode + '"]');
+    if (tab && !tab.classList.contains("active")) tab.click();
+  }
+
   function boot() {
     // Route LIST speakWord (IIFE → speechSynthesis) through dictionary audio
     if (window.YysdWordAudio && typeof window.YysdWordAudio.installSpeechPatch === "function") {
       window.YysdWordAudio.installSpeechPatch();
     }
+    applyVocabModeFromUrl();
     hookStartTest();
     watchResultsPanel();
     hookShowFinalResults();

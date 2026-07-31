@@ -25,7 +25,7 @@ export default async function SubjectsPage() {
       <div>
         <p className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">Subject tapes</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">学科排名</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">一期仅挂示例学科轨；更多科目后续上线。</p>
+        <p className="mt-2 text-sm text-[var(--muted)]">QS 优先学科榜（各榜前 500，来源 TopUniversities 公开表）。</p>
       </div>
 
       {latest.length === 0 ? (
@@ -52,8 +52,8 @@ export default async function SubjectsPage() {
       )}
 
       <div className="panel p-4 text-sm text-[var(--muted)]">
-        <p className="font-semibold text-[var(--ink)]">即将上线</p>
-        <p className="mt-1">更多 QS / THE / 软科学科与地区榜。</p>
+        <p className="font-semibold text-[var(--ink)]">说明</p>
+        <p className="mt-1">当前覆盖 QS 12 个优先窄专业；THE / 软科学科榜后续按需扩展。</p>
       </div>
     </div>
   );

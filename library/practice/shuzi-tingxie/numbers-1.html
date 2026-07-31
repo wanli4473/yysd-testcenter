@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数字听写 1（号码听写）</title>
+<meta name="exam:title"       content="数字听写 1（号码听写）">
+<meta name="exam:zone"        content="practice">
+<meta name="exam:subject"     content="shuzi-tingxie">
+<meta name="exam:duration"    content="0">
+<meta name="exam:description" content="听 AI 按块播报号码并听写，共 56 题；忽略空格与连字符，即时对错反馈。">
+<style>
+  :root{ --navy:#14213d; --ink:#1f2a3a; --muted:#667085; --line:#e4e8ef;
+         --green:#1e9e6a; --red:#c8102e; --bg:#f3f5f8; --accent:#4c6a9e; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink);
+        background:var(--bg); line-height:1.6; }
+  .wrap{ max-width:720px; margin:0 auto; padding:22px 18px 60px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; margin-bottom:16px; }
+  h1{ font-size:21px; color:var(--navy); margin:0 0 4px; }
+  .lead{ color:var(--muted); margin:0; font-size:14px; }
+  .progress-bar{ height:8px; background:#e8ecf3; border-radius:6px; overflow:hidden; margin-top:14px; }
+  .progress-bar .fill{ height:100%; background:var(--accent); width:0; transition:width .3s; }
+  .progress-text{ font-size:13px; color:var(--muted); margin-top:6px; }
+  .meta{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .tag{ font-size:13px; font-weight:700; color:var(--accent); background:#eef2fa; padding:4px 12px; border-radius:999px; }
+  .accent-tog{ display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .accent-tog button{ border:0; background:#fff; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; color:var(--muted); }
+  .accent-tog button.is-on{ background:var(--navy); color:#fff; }
+  .prompt{ font-size:15px; color:var(--muted); margin:0 0 16px; }
+  .row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px; }
+  .btn{ background:var(--accent); color:#fff; border:0; border-radius:10px; padding:11px 18px; font-size:15px;
+        font-weight:700; cursor:pointer; }
+  .btn:hover{ filter:brightness(1.05); }
+  .btn.ghost{ background:#fff; color:var(--ink); border:1px solid var(--line); font-weight:600; }
+  .btn.next{ background:var(--navy); }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  input[type=text]{ width:100%; font-size:22px; letter-spacing:.04em; padding:14px 16px; border:1px solid var(--line);
+                     border-radius:12px; font-family:ui-monospace,Menlo,monospace; }
+  input[type=text]:focus{ outline:2px solid #c5d2e8; border-color:var(--accent); }
+  input.ok{ border-color:var(--green); background:#f0faf5; }
+  input.bad{ border-color:var(--red); background:#fff5f5; }
+  .verdict{ min-height:28px; font-size:15px; font-weight:700; margin-top:10px; }
+  .verdict.ok{ color:var(--green); }
+  .verdict.bad{ color:var(--red); }
+  .finish{ text-align:center; padding:28px 12px; }
+  .finish h2{ margin:0 0 8px; color:var(--navy); }
+  .finish p{ color:var(--muted); margin:0 0 18px; }
+  .hint{ font-size:12px; color:var(--muted); margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>数字听写 1（号码听写）</h1>
+    <p class="lead">按块听写号码 · 空格/连字符不计入对错 · 可切换英音/美音并重播</p>
+    <div class="progress-bar"><div class="fill" id="progFill"></div></div>
+    <div class="progress-text" id="progText">进度 0 / 56</div>
+  </div>
+
+  <div class="card" id="stagePlay">
+    <div class="meta">
+      <span class="tag" id="itemTag">第 1 组 · 第 1 题</span>
+      <div class="accent-tog" role="group" aria-label="口音">
+        <button type="button" id="btnGB" class="is-on">英音</button>
+        <button type="button" id="btnUS">美音</button>
+      </div>
+    </div>
+    <p class="prompt">先点「播放」，听完后在下方输入听到的数字，再点「核对」。</p>
+    <div class="row">
+      <button type="button" class="btn" id="playBtn">▶ 播放</button>
+      <button type="button" class="btn ghost" id="replayBtn">↻ 重播</button>
+    </div>
+    <label for="answer" class="hint">听写（可含空格）</label>
+    <input type="text" id="answer" autocomplete="off" spellcheck="false" inputmode="text" placeholder="例如 041 965 7156">
+    <div class="verdict" id="verdict"></div>
+    <div class="row" style="margin-top:14px;margin-bottom:0;">
+      <button type="button" class="btn" id="checkBtn">核对</button>
+      <button type="button" class="btn next" id="nextBtn" disabled>下一题 →</button>
+    </div>
+  </div>
+
+  <div class="card finish" id="stageFinish" style="display:none;">
+    <h2>听写完成</h2>
+    <p id="finishSummary">你完成了全部题目。</p>
+    <button type="button" class="btn" id="restartBtn">再练一遍</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // 第一组 28 + 第二组 28（空格分块 = TTS 停顿）
+  var G1 = [
+    "041 965 7156","02 777 89472","378 4775","9463 5550","021 8561 325",
+    "968 55 22 71","077 896 2451","033 835 0717","992 81444","020 768 6121",
+    "0136 645 772","093 036 602","212 981 341","307 283 1006","077 3654 5608",
+    "015 900 6741","047 981 2873","090 377 5115","984 712 558","027 222 3986",
+    "040 723 1422","489 724","019 247 7285","044 298 611","654 7890",
+    "635 728 312","945 215 733","073 0229 5552"
+  ];
+  var G2 = [
+    "029 872 3295","633 4887","0495 8477 222","0129 5477 039","022 8903 9013",
+    "444 8913","823 7320","8134 8911","020 8913 6618","936 3782 8246",
+    "044 1231 8603","563 4583","1196 5927","022 718 9436","017 473 1287",
+    "019 835 7291","297 7813 8419","330 163 9067","066 195 9275","018 723 9814",
+    "041 782 8564","081 7195 7831","981 716 8356","027 997 7391","056 001 8136",
+    "489 724 9134","019 183 9833","044 198 8134"
+  ];
+
+  var ITEMS = [];
+  G1.forEach(function (a, i) { ITEMS.push({ group: 1, no: i + 1, answer: a }); });
+  G2.forEach(function (a, i) { ITEMS.push({ group: 2, no: i + 1, answer: a }); });
+
+  var DIGIT = {
+    "0": "oh", "1": "one", "2": "two", "3": "three", "4": "four",
+    "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine"
+  };
+
+  function normalize(s) {
+    return String(s || "").replace(/[\s\-–—]/g, "");
+  }
+
+  function speakText(answer) {
+    // ponytail: period between blocks = TTS pause; digit words beat raw "041"
+    return answer.trim().split(/\s+/).map(function (block) {
+      return block.split("").map(function (ch) { return DIGIT[ch] || ch; }).join(" ");
+    }).join(". ");
+  }
+
+  // one runnable check for normalize / speakText
+  (function selfcheck() {
+    if (normalize("041-965 7156") !== "0419657156") throw new Error("normalize fail");
+    if (speakText("041 965").indexOf(". ") < 0) throw new Error("speakText blocks fail");
+    if (ITEMS.length !== 56) throw new Error("expected 56 items");
+  })();
+
+  var cur = 0;
+  var correct = [];
+  var checked = false;
+  var lang = "en-GB";
+  var voicesReady = false;
+
+  var progFill = document.getElementById("progFill");
+  var progText = document.getElementById("progText");
+  var itemTag = document.getElementById("itemTag");
+  var answerEl = document.getElementById("answer");
+  var verdict = document.getElementById("verdict");
+  var nextBtn = document.getElementById("nextBtn");
+  var stagePlay = document.getElementById("stagePlay");
+  var stageFinish = document.getElementById("stageFinish");
+
+  function pickVoice() {
+    var voices = window.speechSynthesis.getVoices() || [];
+    var want = lang === "en-US" ? /^en(-|_)US/i : /^en(-|_)GB/i;
+    var hit = null;
+    for (var i = 0; i < voices.length; i++) {
+      if (want.test(voices[i].lang)) { hit = voices[i]; break; }
+    }
+    if (!hit) {
+      for (var j = 0; j < voices.length; j++) {
+        if (/^en/i.test(voices[j].lang)) { hit = voices[j]; break; }
+      }
+    }
+    return hit;
+  }
+
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function () { voicesReady = true; };
+  }
+
+  function speak() {
+    if (!window.speechSynthesis) {
+      alert("当前浏览器不支持语音播报，请使用 Chrome。");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(speakText(ITEMS[cur].answer));
+    u.lang = lang;
+    u.rate = 0.88;
+    var v = pickVoice();
+    if (v) u.voice = v;
+    window.speechSynthesis.speak(u);
+  }
+
+  function countCorrect() {
+    var n = 0;
+    for (var i = 0; i < correct.length; i++) if (correct[i]) n++;
+    return n;
+  }
+
+  function updateProgress() {
+    var done = 0;
+    for (var i = 0; i < ITEMS.length; i++) if (correct[i] != null) done++;
+    progFill.style.width = (done / ITEMS.length * 100) + "%";
+    progText.textContent = "进度 " + done + " / " + ITEMS.length + " · 答对 " + countCorrect();
+  }
+
+  function paint() {
+    var it = ITEMS[cur];
+    itemTag.textContent = "第 " + it.group + " 组 · 第 " + it.no + " 题";
+    answerEl.value = "";
+    answerEl.className = "";
+    verdict.textContent = "";
+    verdict.className = "verdict";
+    checked = false;
+    nextBtn.disabled = true;
+    updateProgress();
+    answerEl.focus();
+  }
+
+  function setAccent(next) {
+    lang = next;
+    document.getElementById("btnGB").classList.toggle("is-on", lang === "en-GB");
+    document.getElementById("btnUS").classList.toggle("is-on", lang === "en-US");
+  }
+
+  document.getElementById("btnGB").onclick = function () { setAccent("en-GB"); };
+  document.getElementById("btnUS").onclick = function () { setAccent("en-US"); };
+  document.getElementById("playBtn").onclick = speak;
+  document.getElementById("replayBtn").onclick = speak;
+
+  document.getElementById("checkBtn").onclick = function () {
+    var ok = normalize(answerEl.value) === normalize(ITEMS[cur].answer);
+    correct[cur] = ok;
+    checked = true;
+    nextBtn.disabled = false;
+    answerEl.className = ok ? "ok" : "bad";
+    verdict.className = "verdict " + (ok ? "ok" : "bad");
+    verdict.textContent = ok
+      ? "正确"
+      : ("不正确 · 答案：" + ITEMS[cur].answer);
+    updateProgress();
+  };
+
+  answerEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!checked) document.getElementById("checkBtn").click();
+      else nextBtn.click();
+    }
+  });
+
+  function finish() {
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    stagePlay.style.display = "none";
+    stageFinish.style.display = "";
+    var n = countCorrect();
+    document.getElementById("finishSummary").textContent =
+      "答对 " + n + " / " + ITEMS.length + " 题。";
+    try {
+      window.parent.postMessage({ type: "yysd:score", score: n, total: ITEMS.length }, "*");
+    } catch (err) {}
+  }
+
+  nextBtn.onclick = function () {
+    if (!checked) return;
+    if (cur >= ITEMS.length - 1) { finish(); return; }
+    cur += 1;
+    paint();
+  };
+
+  document.getElementById("restartBtn").onclick = function () {
+    cur = 0;
+    correct = [];
+    stageFinish.style.display = "none";
+    stagePlay.style.display = "";
+    paint();
+  };
+
+  paint();
+})();
+</script>
+</body>
+</html>

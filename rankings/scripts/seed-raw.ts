@@ -1,6 +1,6 @@
 /**
- * Generates curated ranking JSON under data/raw/.
- * ponytail: public-knowledge top ranks + stable order for the rest; replace JSON when you have full official tables.
+ * Generates curated ranking JSON under data/raw/ for THE / ARWU / US News only.
+ * ponytail: QS comes from data/raw/qs-official via build-qs-from-official.ts (top ≤500).
  */
 import fs from "fs";
 import path from "path";
@@ -393,16 +393,8 @@ type SystemSpec = {
   sourceUrl: string;
 };
 
+// ponytail: QS world/subject come from qs-official via build-qs-from-official.ts (top 500).
 const SPECS: SystemSpec[] = [
-  {
-    system: "qs",
-    years: [2023, 2024, 2025, 2026, 2027],
-    top: QS_TOP,
-    title: "QS 世界大学排名",
-    categorySlug: "world",
-    categoryName: "世界大学排名",
-    sourceUrl: "https://www.topuniversities.com",
-  },
   {
     system: "the",
     years: [2022, 2023, 2024, 2025, 2026],
@@ -429,16 +421,6 @@ const SPECS: SystemSpec[] = [
     categorySlug: "world",
     categoryName: "全球最佳大学",
     sourceUrl: "https://www.usnews.com",
-  },
-  {
-    system: "qs",
-    years: [2025, 2026],
-    top: QS_CS_TOP,
-    title: "QS 学科排名 · 计算机科学与信息系统",
-    categorySlug: "computer-science",
-    categoryName: "计算机科学与信息系统",
-    isSubject: true,
-    sourceUrl: "https://www.topuniversities.com",
   },
 ];
 

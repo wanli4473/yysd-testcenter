@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+        <title>C10 T1 P1 长难句分析</title>
+    <meta name="exam:title"       content="C10 T1 P1 长难句分析">
+    <meta name="exam:zone"        content="practice">
+    <meta name="exam:subject"     content="changnanju">
+    <meta name="exam:duration"    content="0">
+    <meta name="exam:description" content="剑桥雅思10 Test 1 Passage 1（Stepwells）共6个长难句，拆解主干与附属成分并对照参考译文。">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px; color: #1e2a3a; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #2c3e66; color: white; padding: 20px 24px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .header h1 { margin: 0 0 8px 0; font-size: 1.8rem; }
+        .header p { margin: 0; opacity: 0.85; }
+        .section-card { background: white; border-radius: 24px; padding: 24px; margin-bottom: 30px; box-shadow: 0 4px 14px rgba(0,0,0,0.04); }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-top: 0; margin-bottom: 20px; color: #1f3a5f; border-left: 6px solid #ffb347; padding-left: 20px; }
+        .sentence-card { background: #f8f9ff; border-radius: 20px; padding: 20px; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+        .sentence-text { background: #f1f3f8; padding: 14px; border-radius: 16px; font-style: italic; font-weight: 500; margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6; }
+        .analysis-row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+        .analysis-box { flex: 1; min-width: 220px; }
+        .analysis-box label { font-weight: 700; display: block; margin-bottom: 6px; color: #2c3e66; }
+        textarea { width: 100%; border-radius: 14px; border: 1px solid #cbd5e1; padding: 10px; font-family: 'Segoe UI', monospace; font-size: 0.85rem; resize: vertical; min-height: 70px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+        .check-btn { color: white; border: none; border-radius: 30px; padding: 8px 20px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .check-btn.struct-btn { background: #4c6a9e; }
+        .check-btn.struct-btn:hover { background: #3a5880; }
+        .check-btn.trans-btn { background: #9b7b5c; }
+        .check-btn.trans-btn:hover { background: #7d6248; }
+        .ref-answer { background: #eaeef5; padding: 14px 16px; border-radius: 14px; margin-top: 12px; font-size: 0.9rem; display: none; border-left: 4px solid #4c6a9e; }
+        .ref-answer .label { font-weight: 700; color: #2c3e66; }
+        .ref-answer .main-part { color: #1a6b3c; }
+        .ref-answer .sub-part { color: #a0522d; }
+        .ref-answer .trans-part { color: #2c3e66; }
+        .trans-area { margin-top: 12px; }
+        footer { text-align: center; margin-top: 30px; color: #6c86a3; font-size: 0.9rem; }
+        .back-link { display: inline-block; margin-bottom: 16px; color: #4c6a9e; text-decoration: none; font-weight: 600; }
+        .back-link:hover { text-decoration: underline; }
+        .sentence-count { background: #eef2fa; padding: 4px 14px; border-radius: 30px; font-size: 0.8rem; color: #4c6a9e; display: inline-block; margin-bottom: 12px; }
+        @media (max-width: 700px) { .analysis-row { flex-direction: column; } }
+        .highlight { background-color: #ffeb3b; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📐 Stepwells · 长难句分析</h1>
+        <p>剑桥雅思真题10 Test 1 Passage 1 | 先自己拆解句子结构，再对照参考答案</p>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">📌 句子拆解练习 <span class="sentence-count">共 6 个长难句</span></div>
+        <div id="sentencesArea"></div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">📖 长难句学习要点</div>
+        <ul style="line-height:1.8; color:#3a4a5a;">
+            <li><strong>主干部分</strong>：句子的核心成分，通常包括主语、谓语动词和主要宾语，去掉修饰成分后句子仍然成立。</li>
+            <li><strong>附属成分</strong>：包括定语从句、状语从句、分词短语、介词短语、同位语等修饰性成分。</li>
+            <li><strong>翻译要点</strong>：注意从句的语序调整，将长句按意群拆分为短句理解。</li>
+        </ul>
+    </div>
+
+    <footer>基于剑桥雅思真题10 Test 1 Passage 1 制作 | 禁止复制粘贴，请手动输入分析</footer>
+</div>
+
+<script>
+    // ======================= 长难句数据（6个指定句子） =======================
+    const longSentences = [
+        {
+            text: 'During the sixth and seventh centuries, the inhabitants of the modern-day states of Gujarat and Rajasthan in north-western India developed a method of gaining access to clean, fresh groundwater during the dry season for drinking, bathing, watering animals and irrigation.',
+            mainPart: 'the inhabitants developed a method of gaining access to groundwater',
+            subordinate: 'During the sixth and seventh centuries (时间状语); of the modern-day states of Gujarat and Rajasthan in north-western India (介词短语作定语); during the dry season (时间状语); for drinking, bathing, watering animals and irrigation (目的状语)',
+            translation: '在六世纪和七世纪期间，印度西北部古吉拉特邦和拉贾斯坦邦的居民开发了一种方法，在旱季获取清洁的淡水，用于饮用、洗澡、饮牲畜和灌溉。'
+        },
+        {
+            text: 'During their heyday, they were places of gathering, of leisure and relaxation and of worship for villagers of all but the lowest classes.',
+            mainPart: 'they were places of gathering, of leisure and relaxation and of worship',
+            subordinate: 'During their heyday (时间状语); for villagers of all but the lowest classes (介词短语作定语)',
+            translation: '在其鼎盛时期，它们是所有村民（除了最低种姓）聚集、休闲放松和礼拜的场所。'
+        },
+        {
+            text: 'As their name suggests, stepwells comprise a series of stone steps descending from ground level to the water source (normally an underground aquifer) as it recedes following the rains.',
+            mainPart: 'stepwells comprise a series of stone steps',
+            subordinate: 'As their name suggests (方式状语从句); descending from ground level to the water source (现在分词短语作定语); (normally an underground aquifer) (插入语); as it recedes following the rains (时间状语从句)',
+            translation: '正如其名称所示，阶梯井由一系列石阶组成，从地面一直延伸到水源（通常是地下含水层），随着雨后水位的下降而延伸。'
+        },
+        {
+            text: 'But perhaps the most impressive features are the intricate decorative sculptures that embellish many stepwells, showing activities from fighting and dancing to everyday acts such as women combing their hair or churning butter.',
+            mainPart: 'the most impressive features are the intricate decorative sculptures',
+            subordinate: 'that embellish many stepwells (定语从句); showing activities from fighting and dancing to everyday acts such as women combing their hair or churning butter (现在分词短语作定语)',
+            translation: '但也许最令人印象深刻的特征是装饰许多阶梯井的精美装饰性雕塑，展示了从战斗、舞蹈到日常活动（如女子梳头或搅黄油）的各种场景。'
+        },
+        {
+            text: 'It actually resembles a tank (kund means reservoir or pond) rather than a well, but displays the hallmarks of stepwell architecture, including four sides of steps that descend to the bottom in a stunning geometrical formation.',
+            mainPart: 'It resembles a tank rather than a well, but displays the hallmarks',
+            subordinate: '(kund means reservoir or pond) (插入语); including four sides of steps that descend to the bottom in a stunning geometrical formation (介词短语+定语从句)',
+            translation: '它实际上更像一个蓄水池（kund意为水库或池塘）而不是一口井，但展现了阶梯井建筑的典型特征，包括四面台阶以惊人的几何造型向下延伸到底部。'
+        },
+        {
+            text: 'Tourists flock to wells in far-flung corners of northwestern India to gaze in wonder at these architectural marvels from hundreds of years ago, which serve as a reminder of both the ingenuity and artistry of ancient civilisations and of the value of water to human existence.',
+            mainPart: 'Tourists flock to wells',
+            subordinate: 'in far-flung corners of northwestern India (介词短语作定语); to gaze in wonder at these architectural marvels from hundreds of years ago (不定式作目的状语); which serve as a reminder of both... and of... (非限制性定语从句)',
+            translation: '游客们涌向印度西北部偏远角落的阶梯井，惊叹于这些数百年前的建筑奇迹，它们既提醒人们古代文明的智慧和艺术，也提醒人们水对人类生存的价值。'
+        }
+    ];
+
+    // ======================= 渲染长难句 =======================
+    function renderLongSentences() {
+        let html = '';
+        longSentences.forEach((s, idx) => {
+            html += `
+                <div class="sentence-card">
+                    <div class="sentence-text">📌 ${idx+1}. ${s.text}</div>
+                    <div class="analysis-row">
+                        <div class="analysis-box">
+                            <label>🌿 主干部分（你标记）</label>
+                            <textarea id="main_${idx}" placeholder="写出句子主干（去掉所有修饰成分）..."></textarea>
+                        </div>
+                        <div class="analysis-box">
+                            <label>🍃 附属部分（你标记）</label>
+                            <textarea id="sub_${idx}" placeholder="写出从句、状语、定语等修饰成分..."></textarea>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="check-btn struct-btn" data-idx="${idx}">🔎 提交结构并对照</button>
+                        <button class="check-btn trans-btn" data-idx="${idx}">🌏 提交翻译并对照</button>
+                    </div>
+                    <div id="structResult_${idx}" class="ref-answer"></div>
+                    <div class="trans-area">
+                        <textarea id="trans_${idx}" placeholder="请输入本句的中文翻译..." rows="2"></textarea>
+                    </div>
+                    <div id="transResult_${idx}" class="ref-answer"></div>
+                </div>
+            `;
+        });
+        document.getElementById("sentencesArea").innerHTML = html;
+
+        // 绑定结构检查按钮
+        document.querySelectorAll('.struct-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = this.getAttribute('data-idx');
+                const userMain = document.getElementById(`main_${idx}`).value.trim();
+                const userSub = document.getElementById(`sub_${idx}`).value.trim();
+                if (!userMain && !userSub) {
+                    alert('请先填写你的主干或附属分析！');
+                    return;
+                }
+                const ref = longSentences[idx];
+                const resultDiv = document.getElementById(`structResult_${idx}`);
+                resultDiv.innerHTML = `
+                    <div><span class="label">📖 参考答案主干：</span><span class="main-part">${ref.mainPart}</span></div>
+                    <div><span class="label">📖 参考答案附属：</span><span class="sub-part">${ref.subordinate}</span></div>
+                    <div style="margin-top:8px; border-top:1px solid #d4dde8; padding-top:8px;">
+                        <span class="label">✨ 你的分析：</span>
+                        主干「${userMain || '未填'}」 | 附属「${userSub || '未填'}」
+                    </div>
+                    <div style="margin-top:6px; color:#6b7c8e; font-size:0.85rem;">💡 请对照参考答案完善句子结构拆解。</div>
+                `;
+                resultDiv.style.display = 'block';
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+
+        // 绑定翻译检查按钮
+        document.querySelectorAll('.trans-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = this.getAttribute('data-idx');
+                const userTrans = document.getElementById(`trans_${idx}`).value.trim();
+                if (!userTrans) {
+                    alert('请先填写你的中文翻译！');
+                    return;
+                }
+                const ref = longSentences[idx];
+                const resultDiv = document.getElementById(`transResult_${idx}`);
+                resultDiv.innerHTML = `
+                    <div><span class="label">📖 参考译文：</span><span class="trans-part">${ref.translation}</span></div>
+                    <div style="margin-top:8px; border-top:1px solid #d4dde8; padding-top:8px;">
+                        <span class="label">🔍 你的译文：</span>${userTrans}
+                    </div>
+                    <div style="margin-top:6px; color:#6b7c8e; font-size:0.85rem;">💡 注意语序和从句的准确转换。</div>
+                `;
+                resultDiv.style.display = 'block';
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+
+        // 禁止复制粘贴（所有textarea）
+        document.querySelectorAll('.sentence-card textarea').forEach(ta => {
+            ta.addEventListener('paste', e => { e.preventDefault(); alert('禁止复制粘贴，请手动输入。'); });
+            ta.addEventListener('copy', e => e.preventDefault());
+            ta.addEventListener('cut', e => e.preventDefault());
+            ta.addEventListener('contextmenu', e => e.preventDefault());
+        });
+    }
+
+    // ======================= 页面加载 =======================
+    window.onload = () => {
+        renderLongSentences();
+    };
+</script>
+</body>
+</html>

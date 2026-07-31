@@ -16,8 +16,10 @@ npm run dev
 
 ## 数据
 
-- `npm run seed`：生成 `data/raw/*.json` 并导入 SQLite
-- 一期为可替换的策展数据（公开知识榜首 + 稳定扩展序）；换成完整官方表后重跑 seed/import 即可
+- `npm run seed`：策展 THE/ARWU/US News + 合并 `data/raw/qs-official` 的 QS 真表 → 导入 SQLite
+- `npm run fetch:qs`：用 Chrome 从 TopUniversities 抓 QS World + 优先学科（各榜最多前 500）
+- `npm run build:qs`：仅重跑官方 JSON → editions 合并
+- 一期 QS 已换官网公开表；THE / 软科 / US News 仍为可替换策展数据
 
 ## 检查
 

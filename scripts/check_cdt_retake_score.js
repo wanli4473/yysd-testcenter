@@ -10,7 +10,7 @@ function must(ok, label) {
   if (!ok) { fail++; console.error("FAIL", label); }
   else console.log("ok", label);
 }
-var fn = cdt.match(/function alreadyScoredThisPaper\(\)\{[\s\S]*?\n  \}/);
+var fn = cdt.match(/function alreadyScoredThisPaper\(\)[\s\S]*?function submitPaperThen/);
 must(fn && !/yysd:results/.test(fn[0]), "alreadyScored ignores localStorage results");
 must(fn && /scoredThisSession/.test(fn[0]), "alreadyScored uses session flag");
 must(/stopTimer:\s*function/.test(exam), "YYSD_EXAM.stopTimer");

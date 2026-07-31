@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+        <title>C10 T1 P3 长难句分析</title>
+    <meta name="exam:title"       content="C10 T1 P3 长难句分析">
+    <meta name="exam:zone"        content="practice">
+    <meta name="exam:subject"     content="changnanju">
+    <meta name="exam:duration"    content="0">
+    <meta name="exam:description" content="剑桥雅思10 Test 1 Passage 3（The psychology of innovation）共6个长难句，拆解主干与附属成分并对照参考译文。">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px; color: #1e2a3a; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #1a4a6e; color: white; padding: 20px 24px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .header h1 { margin: 0 0 8px 0; font-size: 1.8rem; }
+        .header p { margin: 0; opacity: 0.85; }
+        .section-card { background: white; border-radius: 24px; padding: 24px; margin-bottom: 30px; box-shadow: 0 4px 14px rgba(0,0,0,0.04); }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-top: 0; margin-bottom: 20px; color: #1f3a5f; border-left: 6px solid #ffb347; padding-left: 20px; }
+        .sentence-card { background: #f8f9ff; border-radius: 20px; padding: 20px; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+        .sentence-text { background: #f1f3f8; padding: 14px; border-radius: 16px; font-style: italic; font-weight: 500; margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6; }
+        .analysis-row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+        .analysis-box { flex: 1; min-width: 220px; }
+        .analysis-box label { font-weight: 700; display: block; margin-bottom: 6px; color: #2c3e66; }
+        textarea { width: 100%; border-radius: 14px; border: 1px solid #cbd5e1; padding: 10px; font-family: 'Segoe UI', monospace; font-size: 0.85rem; resize: vertical; min-height: 70px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+        .check-btn { color: white; border: none; border-radius: 30px; padding: 8px 20px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .check-btn.struct-btn { background: #4c6a9e; }
+        .check-btn.struct-btn:hover { background: #3a5880; }
+        .check-btn.trans-btn { background: #9b7b5c; }
+        .check-btn.trans-btn:hover { background: #7d6248; }
+        .ref-answer { background: #eaeef5; padding: 14px 16px; border-radius: 14px; margin-top: 12px; font-size: 0.9rem; display: none; border-left: 4px solid #4c6a9e; }
+        .ref-answer .label { font-weight: 700; color: #2c3e66; }
+        .ref-answer .main-part { color: #1a6b3c; }
+        .ref-answer .sub-part { color: #a0522d; }
+        .ref-answer .trans-part { color: #2c3e66; }
+        .trans-area { margin-top: 12px; }
+        footer { text-align: center; margin-top: 30px; color: #6c86a3; font-size: 0.9rem; }
+        .sentence-count { background: #eef2fa; padding: 4px 14px; border-radius: 30px; font-size: 0.8rem; color: #4c6a9e; display: inline-block; margin-bottom: 12px; }
+        @media (max-width: 700px) { .analysis-row { flex-direction: column; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>💡 The psychology of innovation · 长难句分析</h1>
+        <p>剑桥雅思真题10 Test 1 Passage 3 | 先自己拆解句子结构，再对照参考答案</p>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">📌 句子拆解练习 <span class="sentence-count">共 6 个长难句</span></div>
+        <div id="sentencesArea"></div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">📖 长难句学习要点</div>
+        <ul style="line-height:1.8; color:#3a4a5a;">
+            <li><strong>主干部分</strong>：句子的核心成分，通常包括主语、谓语动词和主要宾语，去掉修饰成分后句子仍然成立。</li>
+            <li><strong>附属成分</strong>：包括定语从句、状语从句、分词短语、介词短语、同位语等修饰性成分。</li>
+            <li><strong>翻译要点</strong>：注意从句的语序调整，将长句按意群拆分为短句理解。</li>
+        </ul>
+    </div>
+
+    <footer>基于剑桥雅思真题10 Test 1 Reading Passage 3 制作 | 禁止复制粘贴，请手动输入分析</footer>
+</div>
+
+<script>
+    // ======================= 长难句数据（6个指定句子） =======================
+    const longSentences = [
+        {
+            text: 'There are, nevertheless, people working in luxurious, state-of-the-art centres designed to stimulate innovation who find that their environment doesn\'t make them feel at all creative.',
+            mainPart: 'There are people who find that their environment doesn\'t make them feel creative',
+            subordinate: 'nevertheless (插入语); working in luxurious, state-of-the-art centres (现在分词短语作定语); designed to stimulate innovation (过去分词短语作定语); who find that... (定语从句)',
+            translation: '然而，有些人在豪华的、最先进的、旨在激发创新的中心工作，却发现自己所处的环境并没有让他们感到丝毫的创造力。'
+        },
+        {
+            text: 'Research shows that the fit between an employee\'s values and a company\'s values makes a difference to what contribution they make and whether, two years after they join, they\'re still at the company.',
+            mainPart: 'Research shows that the fit makes a difference to what contribution they make and whether they\'re still at the company',
+            subordinate: 'between an employee\'s values and a company\'s values (介词短语作定语); two years after they join (插入语/时间状语)',
+            translation: '研究表明，员工的价值观与公司价值观之间的契合度会影响他们做出的贡献，以及他们在入职两年后是否仍留在公司。'
+        },
+        {
+            text: 'Managers should therefore adopt an approach that appears counterintuitive - they should explain what stands to be lost if the company fails to seize a particular opportunity.',
+            mainPart: 'Managers should adopt an approach - they should explain what stands to be lost',
+            subordinate: 'therefore (副词); that appears counterintuitive (定语从句); if the company fails to seize a particular opportunity (条件状语从句)',
+            translation: '因此，管理者应该采取一种看似违反直觉的方法——他们应该解释如果公司未能抓住某个特定机会，将会失去什么。'
+        },
+        {
+            text: 'When asked how they had cracked the code ahead of an array of highly accomplished rival investigators, he said something that stunned me.',
+            mainPart: 'he said something that stunned me',
+            subordinate: 'When asked how they had cracked the code ahead of an array of highly accomplished rival investigators (时间状语从句，省略主语)',
+            translation: '当被问及他们是如何在一群成就卓著的竞争研究者之前破解密码时，他说了一些让我震惊的话。'
+        },
+        {
+            text: 'This environment encouraged a free interchange of ideas, which led to more creativity with form, function, colour and materials that revolutionised attitudes to furniture design.',
+            mainPart: 'This environment encouraged a free interchange of ideas',
+            subordinate: 'which led to more creativity with form, function, colour and materials (非限制性定语从句); that revolutionised attitudes to furniture design (定语从句修饰creativity)',
+            translation: '这种环境鼓励了思想的自由交流，这导致了在形式、功能、色彩和材料方面更多的创造力，从而彻底改变了人们对家具设计的态度。'
+        },
+        {
+            text: 'Crew members of multipilot aircraft exhibit a sometimes deadly passivity when the flight captain makes a clearly wrong-headed decision.',
+            mainPart: 'Crew members exhibit a sometimes deadly passivity',
+            subordinate: 'of multipilot aircraft (介词短语作定语); when the flight captain makes a clearly wrong-headed decision (时间状语从句)',
+            translation: '当机长做出明显错误的决定时，多飞行员飞机的机组人员会表现出一种有时是致命性的被动。'
+        }
+    ];
+
+    // ======================= 渲染长难句 =======================
+    function renderLongSentences() {
+        let html = '';
+        longSentences.forEach((s, idx) => {
+            html += `
+                <div class="sentence-card">
+                    <div class="sentence-text">📌 ${idx+1}. ${s.text}</div>
+                    <div class="analysis-row">
+                        <div class="analysis-box">
+                            <label>🌿 主干部分（你标记）</label>
+                            <textarea id="main_${idx}" placeholder="写出句子主干（去掉所有修饰成分）..."></textarea>
+                        </div>
+                        <div class="analysis-box">
+                            <label>🍃 附属部分（你标记）</label>
+                            <textarea id="sub_${idx}" placeholder="写出从句、状语、定语等修饰成分..."></textarea>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="check-btn struct-btn" data-idx="${idx}">🔎 提交结构并对照</button>
+                        <button class="check-btn trans-btn" data-idx="${idx}">🌏 提交翻译并对照</button>
+                    </div>
+                    <div id="structResult_${idx}" class="ref-answer"></div>
+                    <div class="trans-area">
+                        <textarea id="trans_${idx}" placeholder="请输入本句的中文翻译..." rows="2"></textarea>
+                    </div>
+                    <div id="transResult_${idx}" class="ref-answer"></div>
+                </div>
+            `;
+        });
+        document.getElementById("sentencesArea").innerHTML = html;
+
+        // 绑定结构检查按钮
+        document.querySelectorAll('.struct-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = this.getAttribute('data-idx');
+                const userMain = document.getElementById(`main_${idx}`).value.trim();
+                const userSub = document.getElementById(`sub_${idx}`).value.trim();
+                if (!userMain && !userSub) {
+                    alert('请先填写你的主干或附属分析！');
+                    return;
+                }
+                const ref = longSentences[idx];
+                const resultDiv = document.getElementById(`structResult_${idx}`);
+                resultDiv.innerHTML = `
+                    <div><span class="label">📖 参考答案主干：</span><span class="main-part">${ref.mainPart}</span></div>
+                    <div><span class="label">📖 参考答案附属：</span><span class="sub-part">${ref.subordinate}</span></div>
+                    <div style="margin-top:8px; border-top:1px solid #d4dde8; padding-top:8px;">
+                        <span class="label">✨ 你的分析：</span>
+                        主干「${userMain || '未填'}」 | 附属「${userSub || '未填'}」
+                    </div>
+                    <div style="margin-top:6px; color:#6b7c8e; font-size:0.85rem;">💡 请对照参考答案完善句子结构拆解。</div>
+                `;
+                resultDiv.style.display = 'block';
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+
+        // 绑定翻译检查按钮
+        document.querySelectorAll('.trans-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = this.getAttribute('data-idx');
+                const userTrans = document.getElementById(`trans_${idx}`).value.trim();
+                if (!userTrans) {
+                    alert('请先填写你的中文翻译！');
+                    return;
+                }
+                const ref = longSentences[idx];
+                const resultDiv = document.getElementById(`transResult_${idx}`);
+                resultDiv.innerHTML = `
+                    <div><span class="label">📖 参考译文：</span><span class="trans-part">${ref.translation}</span></div>
+                    <div style="margin-top:8px; border-top:1px solid #d4dde8; padding-top:8px;">
+                        <span class="label">🔍 你的译文：</span>${userTrans}
+                    </div>
+                    <div style="margin-top:6px; color:#6b7c8e; font-size:0.85rem;">💡 注意语序和从句的准确转换。</div>
+                `;
+                resultDiv.style.display = 'block';
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+
+        // 禁止复制粘贴（所有textarea）
+        document.querySelectorAll('.sentence-card textarea').forEach(ta => {
+            ta.addEventListener('paste', e => { e.preventDefault(); alert('禁止复制粘贴，请手动输入。'); });
+            ta.addEventListener('copy', e => e.preventDefault());
+            ta.addEventListener('cut', e => e.preventDefault());
+            ta.addEventListener('contextmenu', e => e.preventDefault());
+        });
+    }
+
+    // ======================= 页面加载 =======================
+    window.onload = () => {
+        renderLongSentences();
+    };
+</script>
+</body>
+</html>
