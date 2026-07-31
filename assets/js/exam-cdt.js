@@ -1,5 +1,6 @@
 /* =========================================================================
-   exam-cdt.js — IELTS CDT chrome for suite mock (exam.html?cdt=1)
+   exam-cdt.js — IELTS CDT chrome (exam.html?cdt=1)
+   B1: one shell, pack=drill|exam; suite=1 hops L→R→W
    ponytail: footer nav is visual + best-effort iframe focus; deep paper sync later
    ========================================================================= */
 (function () {
@@ -17,12 +18,39 @@
     review: {},
     answered: {},
     textSize: "standard",
+    bgColor: "white",
     seconds: 0,
     onStart: null,
-    gateStep: "confirm",
+    gateStep: "pack",
+    pack: "", // drill | exam
+    suite: false,
+    resumeDraft: false,
+    drillSections: null, // number[] | null = all (exam / writing / resume)
     audioCtx: null,
     paperBound: false,
-    parentTimerStarted: false
+    parentTimerStarted: false,
+    hopping: false,
+    timeUpHop: false,
+    listeningPhase: "" // "" | "audio" | "review"
+  };
+
+  var LISTEN_REVIEW_SECS = 120;
+
+  /** Pure hop matrix — also used by ?cdtCheck=1 self-check */
+  function resolveAfterSubmit(pack, suite, item) {
+    if (pack === "drill") return { action: "review" };
+    if (suite) {
+      var next = suiteNextId(item);
+      if (next) return { action: "hop", id: next };
+      return { action: "report", suite: suiteBaseId(item) };
+    }
+    return { action: "review" };
+  }
+
+  var BG_MAP = {
+    white: "#ffffff",
+    cream: "#f7f1e3",
+    blue: "#e7eef8"
   };
 
   var SIZE_MAP = {
@@ -50,7 +78,8 @@
     var Y = window.YYSD;
     var vol = Y && Y.camVolume ? Y.camVolume(item) : "";
     var test = Y && Y.camTestNo ? Y.camTestNo(item) : "";
-    if (vol && test) return "剑桥雅思真题" + vol + " - Test " + test;
+    // B5/C18: in-exam chrome English only
+    if (vol && test) return "Cambridge IELTS " + vol + " · Test " + test;
     return (item && item.title) || "IELTS Mock Test";
   }
 
@@ -113,6 +142,7 @@
         "<li>Each question carries one mark.</li>" +
         "<li>There are four parts to the test.</li>" +
         "<li>You will hear each part once only.</li>" +
+        "<li>At the end of the test you will have two minutes to check your answers.</li>" +
         "<li>The test clock will show you when there are 10 minutes and 5 minutes remaining.</li>" +
         "</ul>";
     }
@@ -148,16 +178,200 @@
 
   function showGatePanel(step) {
     state.gateStep = step;
-    var confirm = $("cdt-gate-confirm");
-    var sound = $("cdt-gate-sound");
-    var info = $("cdt-gate-info");
-    if (confirm) confirm.hidden = step !== "confirm";
-    if (sound) sound.hidden = step !== "sound";
-    if (info) info.hidden = step !== "info";
+    var map = {
+      pack: "cdt-gate-pack",
+      resume: "cdt-gate-resume",
+      sections: "cdt-gate-sections",
+      confirm: "cdt-gate-confirm",
+      sound: "cdt-gate-sound",
+      info: "cdt-gate-info"
+    };
+    var onId = map[step] || "";
+    Object.keys(map).forEach(function (k) {
+      var el = $(map[k]);
+      if (!el) return;
+      if (map[k] === onId) el.removeAttribute("hidden");
+      else el.setAttribute("hidden", "");
+    });
+  }
+
+  /** Listening sections / reading passages from iframe TEST, else Part count */
+  function discoverDrillParts() {
+    var reading = isReading(state.item);
+    var fallbackN = reading ? 3 : 4;
+    var label = reading ? "Passage" : "Section";
+    try {
+      var win = state.frame && state.frame.contentWindow;
+      var test = win && win.TEST;
+      var list = test && (reading ? test.passages : test.sections);
+      if (list && list.length) {
+        return list.map(function (s) {
+          return { id: +s.id, label: label + " " + s.id };
+        });
+      }
+    } catch (e) { /* ignore */ }
+    var out = [];
+    for (var i = 1; i <= fallbackN; i++) out.push({ id: i, label: label + " " + i });
+    return out;
+  }
+
+  function urlAssignPart() {
+    try {
+      return Number(new URLSearchParams(location.search).get("assignPart") || 0) || 0;
+    } catch (e) { return 0; }
+  }
+
+  function populateSectionsPanel() {
+    var host = $("cdt-gate-sec-list");
+    if (!host) return;
+    var parts = discoverDrillParts();
+    var prefer = urlAssignPart();
+    var lead = $("cdt-gate-sections-lead");
+    var lab = $("cdt-gate-sec-label");
+    if (isReading(state.item)) {
+      if (lead) lead.textContent = "适合分项突破，可只练某几篇文章；正向计时不施加额外压力。";
+      if (lab) lab.textContent = "选择练习文章：";
+    } else {
+      if (lead) lead.textContent = "适合分项突破，可只练某几个部分；正向计时不施加额外压力。";
+      if (lab) lab.textContent = "选择练习部分：";
+    }
+    host.innerHTML = parts.map(function (p) {
+      var on = !prefer || prefer === p.id;
+      return '<label><input type="checkbox" class="cdt-gate-secbox" value="' + p.id + '"' +
+        (on ? " checked" : "") + "> " + p.label + "</label>";
+    }).join("");
+    syncSecToggleLabel();
+    var err = $("cdt-gate-sec-err");
+    if (err) err.setAttribute("hidden", "");
+  }
+
+  function syncSecToggleLabel() {
+    var boxes = document.querySelectorAll(".cdt-gate-secbox");
+    var btn = $("cdt-gate-sec-toggle");
+    if (!btn || !boxes.length) return;
+    var allOn = true;
+    for (var i = 0; i < boxes.length; i++) {
+      if (!boxes[i].checked) { allOn = false; break; }
+    }
+    btn.textContent = allOn ? "取消全选" : "全选";
+  }
+
+  function selectedGateSections() {
+    var ids = [];
+    document.querySelectorAll(".cdt-gate-secbox:checked").forEach(function (cb) {
+      ids.push(+cb.value);
+    });
+    return ids;
+  }
+
+  function showSectionsGate() {
+    if (isWriting(state.item)) {
+      state.drillSections = null;
+      enterDrillGates();
+      return;
+    }
+    populateSectionsPanel();
+    showGatePanel("sections");
+  }
+
+  function confirmSectionsGate() {
+    var ids = selectedGateSections();
+    var err = $("cdt-gate-sec-err");
+    if (!ids.length) {
+      if (err) err.removeAttribute("hidden");
+      return;
+    }
+    if (err) err.setAttribute("hidden", "");
+    state.drillSections = ids;
+    enterDrillGates();
+  }
+
+  /** Footer Parts follow selected sections (Q numbers stay absolute) */
+  function applyDrillPartsFilter() {
+    if (state.pack !== "drill" || !state.drillSections || !state.drillSections.length) return;
+    if (isWriting(state.item)) return;
+    var ids = state.drillSections;
+    state.parts = buildParts(state.item).filter(function (p, idx) {
+      return ids.indexOf(idx + 1) !== -1;
+    });
+    if (!state.parts.length) state.parts = buildParts(state.item);
+    state.total = flattenNums(state.parts).length;
+    state.current = 0;
+  }
+
+  function draftAnswerCount(item) {
+    if (!item || !item.id) return 0;
+    try {
+      var d = JSON.parse(localStorage.getItem("yysd:draft:" + item.id) || "null");
+      if (!d || d.mode === "exam") return 0;
+      var a = d.answers || {};
+      var n = 0;
+      Object.keys(a).forEach(function (k) {
+        if (a[k] != null && String(a[k]).trim() !== "") n++;
+      });
+      if (!n && (d.writingTask1 || d.writingTask2)) n = 1;
+      return n;
+    } catch (e) { return 0; }
+  }
+
+  function writingDraftExists(item) {
+    if (!item || !item.id) return false;
+    try {
+      if (localStorage.getItem(item.id + "-draft")) return true;
+    } catch (e) { /* ignore */ }
+    return draftAnswerCount(item) > 0;
+  }
+
+  function syncPackToUrl() {
+    try {
+      var u = new URL(location.href);
+      if (state.pack) u.searchParams.set("pack", state.pack);
+      if (state.suite) u.searchParams.set("suite", "1");
+      else u.searchParams.delete("suite");
+      u.searchParams.set("cdt", "1");
+      u.searchParams.delete("pick");
+      history.replaceState(null, "", u.pathname + u.search + u.hash);
+    } catch (e) { /* ignore */ }
+  }
+
+  function proceedAfterPack() {
+    syncPackToUrl();
+    if (state.pack === "drill") {
+      var has = isWriting(state.item) ? writingDraftExists(state.item) : draftAnswerCount(state.item) > 0;
+      if (has) {
+        var t = $("cdt-gate-resume-text");
+        var n = draftAnswerCount(state.item);
+        if (t) {
+          t.textContent = n
+            ? ("Saved progress found (" + n + " answered). Continue or start over?")
+            : "A saved draft was found for this paper. Continue or start over?";
+        }
+        showGatePanel("resume");
+        return;
+      }
+      showSectionsGate();
+      return;
+    }
+    state.drillSections = null;
+    showGatePanel("confirm");
+  }
+
+  function enterDrillGates() {
+    if (isListening(state.item)) showGatePanel("sound");
+    else showGatePanel("info");
+  }
+
+  function clearDrillDraft() {
+    var id = state.item && state.item.id;
+    if (!id) return;
+    try { localStorage.removeItem("yysd:draft:" + id); } catch (e) { /* ignore */ }
+    try { localStorage.removeItem(id + "-draft"); } catch (e2) { /* ignore */ }
+    state.resumeDraft = false;
   }
 
   function openGates() {
     document.body.classList.add("viewer--cdt-gating");
+    document.body.classList.remove("viewer--after-cdt");
     var gate = $("cdt-gate");
     if (gate) gate.removeAttribute("hidden");
     var footer = $("cdt-footer");
@@ -169,7 +383,8 @@
     var infoBody = $("cdt-gate-info-body");
     if (infoBody) infoBody.innerHTML = infoHtml(state.item);
 
-    showGatePanel("confirm");
+    if (!state.pack) showGatePanel("pack");
+    else proceedAfterPack();
     syncStartEnabled();
   }
 
@@ -209,6 +424,9 @@
   function listeningPaperCss() {
     return [
       "body.yysd-cdt-listening{background:#d9e1ec!important}",
+      "body.yysd-cdt-listening #coverArea,body.yysd-cdt-listening #modeModal,",
+      "body.yysd-cdt-listening #resultArea{display:none!important}",
+      "body.yysd-cdt-listening #testArea{display:block!important}",
       "body.yysd-cdt-listening .test-topbar{display:none!important}",
       "body.yysd-cdt-listening .submit-btn{display:none!important}",
       "body.yysd-cdt-listening .listen-here{display:none!important}",
@@ -218,6 +436,10 @@
       "body.yysd-cdt-listening .audio-bar{",
       "position:sticky;top:0;z-index:40;margin:0 0 14px;padding:8px 14px;",
       "background:#e8eef6;border:1px solid #b7c4d6;border-radius:0;box-shadow:none}",
+      "body.yysd-cdt-listening.yysd-cdt-listen-locked #aProg{",
+      "pointer-events:none!important;cursor:default;opacity:.85}",
+      "body.yysd-cdt-listening.yysd-cdt-listen-locked .audio-play{",
+      "pointer-events:none!important;opacity:.5;cursor:default}",
       "body.yysd-cdt-listening .audio-play{",
       "width:34px;height:34px;font-size:14px;border-radius:50%;background:#4a90c2}",
       "body.yysd-cdt-listening #questionsHolder{",
@@ -241,7 +463,8 @@
       "outline:none;border-bottom-color:#1a6fb5!important;background:#f3f8fd!important}",
       "body.yysd-cdt-listening .note-table th{background:#eef2f7;font-weight:700}",
       "body.yysd-cdt-listening .note-table td,body.yysd-cdt-listening .note-table th{",
-      "border-color:#b0bccb;padding:8px 10px}"
+      "border-color:#b0bccb;padding:8px 10px}",
+      "body.yysd-cdt-listening .map-missing{display:none!important}"
     ].join("");
   }
 
@@ -261,8 +484,12 @@
       "body.yysd-cdt-reading .passage-pane,body.yysd-cdt-reading .qcol{",
       "flex:1 1 50%;min-width:0;max-height:none;height:100%;overflow:auto;",
       "position:static;border-radius:0;box-shadow:none;background:#fff;",
-      "padding:20px 24px;border:0;border-right:1px solid #9aabbf}",
-      "body.yysd-cdt-reading .qcol{border-right:0;background:#f7f9fc}",
+      "padding:20px 24px;border:0;border-right:0}",
+      "body.yysd-cdt-reading .qcol{background:#f7f9fc}",
+      "body.yysd-cdt-reading .yysd-cdt-split{",
+      "flex:0 0 5px;cursor:col-resize;background:#c5d0de;align-self:stretch}",
+      "body.yysd-cdt-reading .yysd-cdt-split:hover,body.yysd-cdt-reading .yysd-cdt-split.is-drag{",
+      "background:#7a90a8}",
       "body.yysd-cdt-reading .passage-pane .pp-kicker{",
       "font-size:12px;letter-spacing:1px;color:#555;font-weight:700}",
       "body.yysd-cdt-reading .passage-pane .ptitle{",
@@ -372,6 +599,12 @@
           (nEl && /low/.test(nEl.className) ? " low" : "") + '"' +
           (id ? ' id="' + id + '"' : "") + ">" + n + "</span>";
       }
+      // B5/C18: English placeholder (papers ship Chinese)
+      if (i === 0) {
+        ta.placeholder = "Write your answer for Task 1 here (at least 150 words).";
+      } else {
+        ta.placeholder = "Write your answer for Task 2 here (at least 250 words).";
+      }
     }
   }
 
@@ -416,8 +649,56 @@
       if (isWriting(state.item)) {
         ensureWritingSplit(doc);
         syncWritingPartView(state.current + 1);
+        // B4: real CDT writing has no spellcheck
+        doc.querySelectorAll("textarea").forEach(function (ta) {
+          ta.setAttribute("spellcheck", "false");
+          ta.spellcheck = false;
+          ta.setAttribute("autocapitalize", "off");
+          ta.setAttribute("autocorrect", "off");
+        });
       }
+      if (isReading(state.item)) installReadingSplitter(doc);
+      applyBgColor(state.bgColor);
     } catch (e) { /* ignore */ }
+  }
+
+  function installReadingSplitter(doc) {
+    if (!doc) return;
+    var colsList = doc.querySelectorAll(".reading-cols");
+    for (var i = 0; i < colsList.length; i++) {
+      var col = colsList[i];
+      if (col.querySelector(".yysd-cdt-split")) continue;
+      var left = col.querySelector(".passage-pane, .pcol");
+      var right = col.querySelector(".qcol");
+      if (!left || !right) continue;
+      var split = doc.createElement("div");
+      split.className = "yysd-cdt-split";
+      split.setAttribute("role", "separator");
+      split.setAttribute("aria-orientation", "vertical");
+      split.title = "Drag to resize";
+      col.insertBefore(split, right);
+      (function (colEl, leftEl, rightEl, handle) {
+        var dragging = false;
+        handle.addEventListener("mousedown", function (e) {
+          dragging = true;
+          handle.classList.add("is-drag");
+          e.preventDefault();
+        });
+        doc.addEventListener("mousemove", function (e) {
+          if (!dragging) return;
+          var rect = colEl.getBoundingClientRect();
+          if (!rect.width) return;
+          var pct = Math.min(72, Math.max(28, ((e.clientX - rect.left) / rect.width) * 100));
+          leftEl.style.flex = "0 0 " + pct + "%";
+          rightEl.style.flex = "1 1 0";
+        });
+        doc.addEventListener("mouseup", function () {
+          if (!dragging) return;
+          dragging = false;
+          handle.classList.remove("is-drag");
+        });
+      })(col, left, right, split);
+    }
   }
 
   function syncReadingPartView(qNo) {
@@ -608,24 +889,68 @@
     try {
       var win = state.frame && state.frame.contentWindow;
       if (!win || typeof win.startTest !== "function") return false;
+      // pack may be chosen after bridge inject — sync before startTest
+      try {
+        var bridge = state.frame.contentDocument &&
+          state.frame.contentDocument.getElementById("yysd-exam-bridge-js");
+        if (bridge) {
+          bridge.dataset.pack = state.pack || "exam";
+          // resume uses draft.sections; fresh drill uses gate selection
+          if (state.pack === "drill" && state.drillSections && state.drillSections.length && !state.resumeDraft) {
+            bridge.dataset.sections = state.drillSections.join(",");
+          } else {
+            delete bridge.dataset.sections;
+          }
+        }
+      } catch (e0) { /* ignore */ }
+      // drill → paper "practice" (draft/no void); exam → paper "exam" (lock)
+      // UI chrome is identical either way
       if (isWriting(state.item)) win.startTest();
-      else win.startTest("exam");
+      else win.startTest(state.pack === "drill" ? "practice" : "exam");
+      applyDrillPartsFilter();
       applyCdtPaperSkin();
       bindPaperNav();
       syncReadingPartView(state.current + 1);
       syncWritingPartView(state.current + 1);
       autoplayListening();
+      // B3: after bridge draft restore (same tick queue, scheduled first inside startTest)
+      setTimeout(function () {
+        try {
+          if (win.YYSD_CDT_QUX && typeof win.YYSD_CDT_QUX.enhance === "function") {
+            win.YYSD_CDT_QUX.enhance();
+          }
+        } catch (e1) { /* ignore */ }
+      }, 0);
       return true;
     } catch (e) {
       return false;
     }
   }
 
-  function startParentTimer() {
-    if (state.parentTimerStarted) return;
+  function startParentTimer(overrideSecs) {
+    if (overrideSecs != null) state.seconds = overrideSecs;
+    if (state.parentTimerStarted && overrideSecs == null) return;
     if (typeof state.onStart !== "function") return;
     state.parentTimerStarted = true;
     state.onStart(state.seconds);
+  }
+
+  function enterListeningReview() {
+    if (!state.active || !state.started || !isListening(state.item)) return;
+    if (state.listeningPhase === "review" || state.hopping) return;
+    state.listeningPhase = "review";
+    state.timeUpHop = false;
+    state.parentTimerStarted = false;
+    document.body.classList.add("viewer--cdt-listen-review");
+    var banner = $("cdt-listen-review");
+    if (banner) banner.removeAttribute("hidden");
+    var title = $("cdt-title");
+    if (title) {
+      title.setAttribute("data-prev", title.textContent || "");
+      title.textContent = "Listening review";
+    }
+    startParentTimer(LISTEN_REVIEW_SECS);
+    updateTimer(LISTEN_REVIEW_SECS);
   }
 
   function enterParentFullscreen() {
@@ -652,6 +977,8 @@
     // ponytail: listening waits for iframe yysd:audio-ready / timer-sync (MP3 may still buffer)
     if (!isListening(state.item)) startParentTimer();
     applyTextSize(state.textSize);
+    applyBgColor(state.bgColor);
+    loadNotepad();
     var vol = $("cdt-vol-range");
     if (vol && isListening(state.item)) setVolume(Number(vol.value));
   }
@@ -764,6 +1091,68 @@
     } catch (e) { /* ignore */ }
   }
 
+  function applyBgColor(color) {
+    state.bgColor = BG_MAP[color] ? color : "white";
+    var hex = BG_MAP[state.bgColor];
+    document.documentElement.style.setProperty("--cdt-paper-bg", hex);
+    document.body.setAttribute("data-cdt-bg", state.bgColor);
+    try {
+      var doc = state.frame && state.frame.contentDocument;
+      if (!doc || !doc.body) return;
+      doc.documentElement.style.setProperty("--cdt-paper-bg", hex);
+      doc.body.style.setProperty("--cdt-paper-bg", hex);
+      // paper panels that are white by default
+      var style = doc.getElementById("yysd-cdt-bg-css");
+      if (!style) {
+        style = doc.createElement("style");
+        style.id = "yysd-cdt-bg-css";
+        doc.head.appendChild(style);
+      }
+      style.textContent =
+        "body.yysd-embedded #testArea," +
+        "body.yysd-cdt-listening .note-box," +
+        "body.yysd-cdt-listening .match-box," +
+        "body.yysd-cdt-listening .mcq," +
+        "body.yysd-cdt-reading .pcol," +
+        "body.yysd-cdt-reading .qcol," +
+        "body.yysd-cdt-writing .yysd-cdt-wprompt," +
+        "body.yysd-cdt-writing .yysd-cdt-wanswer," +
+        "body.yysd-cdt-writing .yysd-cdt-wanswer textarea{" +
+        "background:" + hex + "!important}";
+    } catch (e) { /* ignore */ }
+  }
+
+  function notepadKey() {
+    return "yysd:cdt-notepad:" + ((state.item && state.item.id) || "local");
+  }
+
+  function loadNotepad() {
+    var ta = $("cdt-notepad-ta");
+    if (!ta) return;
+    try { ta.value = sessionStorage.getItem(notepadKey()) || ""; } catch (e) { ta.value = ""; }
+  }
+
+  function saveNotepad() {
+    var ta = $("cdt-notepad-ta");
+    if (!ta) return;
+    try { sessionStorage.setItem(notepadKey(), ta.value); } catch (e) { /* ignore */ }
+  }
+
+  function toggleNotepad(force) {
+    var panel = $("cdt-notepad-panel");
+    if (!panel) return;
+    var on = force != null ? !!force : panel.hasAttribute("hidden");
+    if (on) {
+      loadNotepad();
+      panel.removeAttribute("hidden");
+      var ta = $("cdt-notepad-ta");
+      if (ta) ta.focus();
+    } else {
+      saveNotepad();
+      panel.setAttribute("hidden", "");
+    }
+  }
+
   function setVolume(v) {
     try {
       var doc = state.frame && state.frame.contentDocument;
@@ -798,7 +1187,8 @@
     if (seconds <= 0) {
       el.textContent = "0 minutes left";
       el.classList.add("is-danger");
-      // ponytail: parent clock owns suite hop — don't leave student stuck on timed-out section
+      el.classList.remove("is-flash", "is-low");
+      // ponytail: parent clock owns after-submit — don't leave student stuck on timed-out section
       if (state.started && !state.timeUpHop) {
         state.timeUpHop = true;
         setTimeout(function () { hopAfterSubmit(); }, 600);
@@ -806,7 +1196,15 @@
       return;
     }
     var mins = Math.max(1, Math.ceil(seconds / 60));
-    el.textContent = mins + (mins === 1 ? " minute left" : " minutes left");
+    if (state.listeningPhase === "review") {
+      // review shows clearer seconds in the last minute
+      if (seconds < 60) el.textContent = seconds + (seconds === 1 ? " second left" : " seconds left");
+      else el.textContent = mins + (mins === 1 ? " minute left" : " minutes left");
+    } else {
+      el.textContent = mins + (mins === 1 ? " minute left" : " minutes left");
+    }
+    // official CDT: clock flashes at 10 and 5 minutes remaining
+    el.classList.toggle("is-flash", seconds <= 600);
     el.classList.toggle("is-low", seconds <= 300 && seconds > 60);
     el.classList.toggle("is-danger", seconds <= 60);
   }
@@ -814,9 +1212,14 @@
   function finishSection() {
     var txt = $("cdt-finish-text");
     if (txt) {
-      txt.textContent = suiteNextId(state.item)
-        ? "You have selected to end this section of the test, click OK to progress to the next section or Cancel to return to the test. This function is not available in the real computer-delivered IELTS test."
-        : "You have selected to end this test. Click OK to submit your Writing and view the three-skill report, or Cancel to return to the test.";
+      var plan = resolveAfterSubmit(state.pack, state.suite, state.item);
+      if (plan.action === "hop") {
+        txt.textContent = "You have selected to end this section of the test, click OK to progress to the next section or Cancel to return to the test. This function is not available in the real computer-delivered IELTS test.";
+      } else if (plan.action === "report") {
+        txt.textContent = "You have selected to end this test. Click OK to submit your Writing and view the three-skill report, or Cancel to return to the test.";
+      } else {
+        txt.textContent = "You have selected to end this test. Click OK to submit and view your answers, or Cancel to return to the test.";
+      }
     }
     showMask("cdt-finish-mask", true);
   }
@@ -905,24 +1308,78 @@
     return "";
   }
 
+  function enterReviewMode() {
+    showMask("cdt-finish-mask", false);
+    document.body.classList.remove("viewer--cdt", "viewer--cdt-gating", "viewer--cdt-listen-review");
+    document.body.classList.add("viewer--after-cdt");
+    var header = $("cdt-header");
+    var footer = $("cdt-footer");
+    var gate = $("cdt-gate");
+    var banner = $("cdt-listen-review");
+    if (header) header.setAttribute("hidden", "");
+    if (footer) footer.setAttribute("hidden", "");
+    if (gate) gate.setAttribute("hidden", "");
+    if (banner) banner.setAttribute("hidden", "");
+    state.active = false;
+    try {
+      var doc = state.frame && state.frame.contentDocument;
+      if (!doc) return;
+      var style = doc.getElementById("yysd-cdt-review-css");
+      if (!style) {
+        style = doc.createElement("style");
+        style.id = "yysd-cdt-review-css";
+        doc.head.appendChild(style);
+      }
+      var unlockAudio = state.pack === "drill" && isListening(state.item);
+      style.textContent =
+        "#resultArea,.result-area,#results{display:block!important;visibility:visible!important}" +
+        (unlockAudio
+          ? "#testArea{display:block!important}#questionsHolder,.submit-btn{display:none!important}" +
+            "body.yysd-cdt-listening .audio-bar{display:block!important}" +
+            "body.yysd-cdt-listening .audio-play,body.yysd-cdt-listening #aProg{pointer-events:auto!important;opacity:1!important}"
+          : "#testArea,.test-area,#questionsHolder{display:none!important}" +
+            "body.yysd-cdt-listening .audio-bar{display:none!important}") +
+        "body.yysd-cdt-reading .yysd-cdt-split,body.yysd-cdt-writing .yysd-cdt-w-split{display:none!important}" +
+        "body{overflow:auto!important;height:auto!important;background:#fff!important}";
+      if (unlockAudio && state.frame.contentWindow) {
+        state.frame.contentWindow.postMessage({ type: "yysd:unlock-listening" }, "*");
+      }
+      var ra = doc.getElementById("resultArea") || doc.querySelector(".result-area");
+      if (ra) ra.scrollIntoView({ block: "start" });
+    } catch (e) { /* ignore */ }
+    var hint = document.getElementById("v-hint");
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = state.pack === "drill"
+        ? (isListening(state.item)
+          ? "练习已交卷 · 下方为答案解析；可用播放器回放听力（学习回放）。"
+          : "练习已交卷 · 下方为答案解析（可中文）。")
+        : "模考已交卷 · 下方为本次作答与解析。";
+    }
+  }
+
   function hopAfterSubmit() {
     if (state.hopping) return;
     state.hopping = true;
     showMask("cdt-finish-mask", false);
-    var nextId = suiteNextId(state.item);
+    var plan = resolveAfterSubmit(state.pack, state.suite, state.item);
     var evQs = eventQuery();
     submitPaperThen(function () {
       releaseLock();
-      if (nextId) {
+      if (plan.action === "hop") {
         (window.YYSD_GO || function (h) { location.href = h; })(
-          "exam.html?id=" + encodeURIComponent(nextId) + "&cdt=1" + evQs
+          "exam.html?id=" + encodeURIComponent(plan.id) +
+            "&cdt=1&pack=exam&suite=1" + evQs
         );
         return;
       }
-      var base = suiteBaseId(state.item);
-      (window.YYSD_GO || function (h) { location.href = h; })(
-        "cdt-report.html?suite=" + encodeURIComponent(base || state.item.id) + evQs
-      );
+      if (plan.action === "report") {
+        (window.YYSD_GO || function (h) { location.href = h; })(
+          "cdt-report.html?suite=" + encodeURIComponent(plan.suite || state.item.id) + evQs
+        );
+        return;
+      }
+      enterReviewMode();
     });
   }
 
@@ -933,6 +1390,56 @@
   function bindOnce() {
     if (bindOnce.done) return;
     bindOnce.done = true;
+
+    var packDrill = $("cdt-pack-drill");
+    if (packDrill) packDrill.addEventListener("click", function () {
+      state.pack = "drill";
+      state.suite = false;
+      proceedAfterPack();
+    });
+    var packExam = $("cdt-pack-exam");
+    if (packExam) packExam.addEventListener("click", function () {
+      state.pack = "exam";
+      // single-skill mock stays single unless URL already said suite=1
+      proceedAfterPack();
+    });
+
+    var resumeOk = $("cdt-gate-resume-ok");
+    if (resumeOk) resumeOk.addEventListener("click", function () {
+      state.resumeDraft = true;
+      // footer filter; paper restore still uses draft.sections via bridge
+      try {
+        var d = JSON.parse(localStorage.getItem("yysd:draft:" + state.item.id) || "null");
+        state.drillSections = d && Array.isArray(d.sections) && d.sections.length ? d.sections : null;
+      } catch (e) { state.drillSections = null; }
+      enterDrillGates();
+    });
+    var resumeNew = $("cdt-gate-resume-new");
+    if (resumeNew) resumeNew.addEventListener("click", function () {
+      clearDrillDraft();
+      showSectionsGate();
+    });
+
+    var secToggle = $("cdt-gate-sec-toggle");
+    if (secToggle) secToggle.addEventListener("click", function () {
+      var boxes = document.querySelectorAll(".cdt-gate-secbox");
+      var off = false;
+      for (var i = 0; i < boxes.length; i++) {
+        if (!boxes[i].checked) { off = true; break; }
+      }
+      boxes.forEach(function (cb) { cb.checked = off; });
+      syncSecToggleLabel();
+      var err = $("cdt-gate-sec-err");
+      if (err) err.setAttribute("hidden", "");
+    });
+    var secList = $("cdt-gate-sec-list");
+    if (secList) secList.addEventListener("change", function () {
+      syncSecToggleLabel();
+      var err = $("cdt-gate-sec-err");
+      if (err) err.setAttribute("hidden", "");
+    });
+    var secOk = $("cdt-gate-sec-ok");
+    if (secOk) secOk.addEventListener("click", confirmSectionsGate);
 
     var detailsOk = $("cdt-gate-details-ok");
     if (detailsOk) detailsOk.addEventListener("click", afterDetails);
@@ -971,18 +1478,38 @@
       for (var i = 0; i < radios.length; i++) {
         radios[i].checked = radios[i].value === state.textSize;
       }
+      var bgs = document.querySelectorAll('input[name="cdt-bg-color"]');
+      for (var j = 0; j < bgs.length; j++) {
+        bgs[j].checked = bgs[j].value === state.bgColor;
+      }
       showMask("cdt-setting-mask", true);
     });
     var settingOk = $("cdt-setting-ok");
     if (settingOk) settingOk.addEventListener("click", function () {
       var picked = document.querySelector('input[name="cdt-text-size"]:checked');
       applyTextSize(picked ? picked.value : "standard");
+      var bg = document.querySelector('input[name="cdt-bg-color"]:checked');
+      applyBgColor(bg ? bg.value : "white");
       showMask("cdt-setting-mask", false);
     });
     var settingX = $("cdt-setting-x");
     if (settingX) settingX.addEventListener("click", function () {
       showMask("cdt-setting-mask", false);
     });
+
+    var notepadBtn = $("cdt-notepad");
+    if (notepadBtn) notepadBtn.addEventListener("click", function () {
+      toggleNotepad();
+    });
+    var notepadX = $("cdt-notepad-x");
+    if (notepadX) notepadX.addEventListener("click", function () {
+      toggleNotepad(false);
+    });
+    var notepadTa = $("cdt-notepad-ta");
+    if (notepadTa) {
+      notepadTa.addEventListener("input", saveNotepad);
+      notepadTa.addEventListener("blur", saveNotepad);
+    }
 
     var help = $("cdt-help");
     if (help) help.addEventListener("click", function () {
@@ -1034,7 +1561,13 @@
       if (!state.active || !state.frame || e.source !== state.frame.contentWindow) return;
       var d = e.data;
       if (!d || !state.started || !isListening(state.item)) return;
-      if (d.type === "yysd:audio-ready" || d.type === "yysd:timer-sync") startParentTimer();
+      if (d.type === "yysd:audio-ready" || d.type === "yysd:timer-sync") {
+        if (state.listeningPhase !== "review") {
+          state.listeningPhase = "audio";
+          startParentTimer();
+        }
+      }
+      if (d.type === "yysd:listening-ended") enterListeningReview();
     });
   }
 
@@ -1046,10 +1579,19 @@
     state.parentTimerStarted = false;
     state.hopping = false;
     state.timeUpHop = false;
+    state.listeningPhase = "";
     state.item = opts.item;
     state.frame = opts.frame;
     state.seconds = opts.seconds || 0;
     state.onStart = opts.onStart || null;
+    state.pack = opts.pack === "drill" || opts.pack === "exam" ? opts.pack : "";
+    state.suite = !!opts.suite && state.pack !== "drill";
+    if (state.suite && !state.pack) state.pack = "exam";
+    state.resumeDraft = false;
+    state.drillSections = null;
+    var listenBanner = $("cdt-listen-review");
+    if (listenBanner) listenBanner.setAttribute("hidden", "");
+    document.body.classList.remove("viewer--cdt-listen-review");
     state.parts = buildParts(opts.item);
     state.total = flattenNums(state.parts).length;
     state.current = 0;
@@ -1058,6 +1600,7 @@
     state.paperBound = false;
 
     document.body.classList.add("viewer--cdt");
+    document.body.classList.remove("viewer--after-cdt");
     bindOnce();
     // ponytail: only drop leftover iframe :fullscreen (covers CDT chrome); keep parent FS
     try {
@@ -1080,6 +1623,7 @@
     }
 
     updateTimer(state.seconds || 0);
+    loadNotepad();
     openGates();
   }
 
@@ -1088,6 +1632,9 @@
     state.frameReady = true;
     syncStartEnabled();
     applyTextSize(state.textSize);
+    applyBgColor(state.bgColor);
+    // refresh section list once TEST is available in iframe
+    if (state.gateStep === "sections" && !state.started) populateSectionsPanel();
     if (state.started) {
       applyCdtPaperSkin();
       bindPaperNav();
@@ -1100,7 +1647,54 @@
     activate: activate,
     updateTimer: updateTimer,
     onFrameReady: onFrameReady,
+    enterListeningReview: enterListeningReview,
     isActive: function () { return state.active; },
-    hasStarted: function () { return state.started; }
+    hasStarted: function () { return state.started; },
+    getPack: function () { return state.pack; },
+    isSuite: function () { return !!state.suite; },
+    listeningPhase: function () { return state.listeningPhase; },
+    resolveAfterSubmit: resolveAfterSubmit,
+    LISTEN_REVIEW_SECS: LISTEN_REVIEW_SECS
   };
+
+  // ponytail: B1/B5 — open exam.html?cdtCheck=1 to verify hop matrix + chrome presence
+  if (/(?:^|[?&])cdtCheck=1(?:&|$)/.test(location.search)) {
+    var fake = { id: "cambridge-20-test-1", subject: "cambridge-listening" };
+    var cases = [
+      [resolveAfterSubmit("drill", false, fake), { action: "review" }],
+      [resolveAfterSubmit("exam", false, fake), { action: "review" }],
+      [resolveAfterSubmit("exam", true, fake), { action: "hop", id: "cambridge-20-test-1-reading" }],
+      [resolveAfterSubmit("exam", true, { id: "cambridge-20-test-1-writing", subject: "cambridge-writing" }),
+        { action: "report", suite: "cambridge-20-test-1" }]
+    ];
+    var fail = 0;
+    cases.forEach(function (pair, i) {
+      if (JSON.stringify(pair[0]) !== JSON.stringify(pair[1])) {
+        fail++;
+        console.error("[CDT hop #" + i + "]", pair[0], "!=", pair[1]);
+      } else {
+        console.log("[CDT hop #" + i + "] ok");
+      }
+    });
+    // B5 chrome inventory (DOM present)
+    var need = [
+      "cdt-header", "cdt-timer", "cdt-finish", "cdt-notepad", "cdt-setting",
+      "cdt-help", "cdt-hide", "cdt-footer", "cdt-listen-review",
+      "cdt-setting-mask", "cdt-help-mask", "cdt-notepad-panel",
+      "cdt-gate-sections", "cdt-gate-sec-list", "cdt-gate-sec-ok"
+    ];
+    need.forEach(function (id) {
+      if (!document.getElementById(id)) {
+        fail++;
+        console.error("[CDT chrome] missing #" + id);
+      } else {
+        console.log("[CDT chrome] #" + id + " ok");
+      }
+    });
+    if (!document.querySelector('input[name="cdt-bg-color"]')) {
+      fail++;
+      console.error("[CDT chrome] missing bg colour radios");
+    }
+    console.log(fail ? ("[CDT B5] FAIL " + fail) : "[CDT B5] PASS hops+chrome");
+  }
 })();

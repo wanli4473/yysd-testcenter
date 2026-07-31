@@ -49,6 +49,10 @@
   var examId = (script && script.dataset.examId) || "";
   // ponytail: parent CDT chrome is outside this iframe — fullscreen here hides timer/Finish/footer
   var cdtShell = !!(script && script.dataset && script.dataset.cdt === "1");
+  function cdtPack() {
+    var p = (script && script.dataset && script.dataset.pack) || "";
+    return p === "drill" ? "drill" : "exam";
+  }
   var posted = false;
 
   function resolveExamId() {
@@ -292,6 +296,7 @@
     if (e.data.type === "yysd:exam-void") examLock.voidExam();
     if (e.data.type === "yysd:exam-restart") examLock.restart();
     if (e.data.type === "yysd:exam-dialog") examLock.pauseVoid(e.data.ms || 12000);
+    if (e.data.type === "yysd:unlock-listening") unlockCdtListening();
   });
 
   function scoreStartedAt() {
@@ -313,6 +318,11 @@
   }
 
   function autoSubmit() {
+    // B5/C18: CDT never shows Chinese confirmFinish dialogs on time-up
+    if (cdtShell) {
+      if (typeof finishTest === "function") { finishTest(); return; }
+      if (typeof submitTest === "function") { submitTest(); return; }
+    }
     if (typeof finishTest === "function") { finishTest(); return; }
     if (typeof confirmFinish === "function") { confirmFinish(); return; }
     if (typeof submitTest === "function") { submitTest(); return; }
@@ -351,8 +361,15 @@
       var fn = window.startTest;
       if (typeof fn !== "function" || fn._yysdHooked) return;
       window.startTest = function () {
-        if (cdtShell) clearCdtWritingDraft();
-        examLock.enable();
+        // B1: suite/exam CDT wipes draft; drill keeps draft for continue
+        if (cdtShell && cdtPack() === "exam") {
+          clearCdtWritingDraft();
+          examLock.enable();
+        } else if (cdtShell && cdtPack() === "drill") {
+          examLock.disable();
+        } else {
+          examLock.enable();
+        }
         return fn.apply(this, arguments);
       };
       startTest._yysdHooked = true;
@@ -378,7 +395,9 @@
       origBackToCover = fn;
       window.backToCover = function () {
         if (examLock.isOn() && !isTestDone() && isTesting()) {
-          alert("模考进行中不可返回封面。如需结束，请点「完成并查看报告」。");
+          alert(cdtShell
+            ? "You cannot leave during a mock test. Use Finish section to end this part."
+            : "模考进行中不可返回封面。如需结束，请点「完成并查看报告」。");
           return;
         }
         examLock.disable();
@@ -849,6 +868,100 @@
     } catch (e) { /* ponytail: iframe edge */ }
   }
 
+  /* ---- B2: CDT listening iron rules (no seek / pause / section pick) ---- */
+  var cdtListenOrig = null;
+  var cdtListenEndedBound = false;
+
+  function paperMode() {
+    try {
+      if (typeof mode !== "undefined" && mode) return mode;
+    } catch (e) { /* ignore */ }
+    return pageGet("mode") || "";
+  }
+
+  function installCdtListeningIron() {
+    if (!cdtShell || !isListeningPaper()) return;
+    if (!cdtListenOrig) {
+      cdtListenOrig = {
+        seekAudio: window.seekAudio,
+        togglePlay: window.togglePlay,
+        playSection: window.playSection
+      };
+    }
+    window.seekAudio = function () { /* B2 locked */ };
+    window.togglePlay = function () { /* B2 locked — autoplay only */ };
+    window.playSection = function () { /* B2 locked */ };
+
+    var prog = document.getElementById("aProg");
+    if (prog) {
+      prog.onclick = null;
+      prog.removeAttribute("onclick");
+      prog.style.pointerEvents = "none";
+    }
+    var playBtn = document.getElementById("aPlay");
+    if (playBtn) {
+      playBtn.onclick = null;
+      playBtn.removeAttribute("onclick");
+      playBtn.disabled = true;
+      playBtn.style.pointerEvents = "none";
+      playBtn.setAttribute("aria-disabled", "true");
+    }
+    document.body.classList.remove("yysd-cdt-listen-unlocked");
+    document.body.classList.add("yysd-cdt-listen-locked");
+
+    var player = document.getElementById("player");
+    if (!player || cdtListenEndedBound) return;
+    cdtListenEndedBound = true;
+    player.addEventListener("ended", function () {
+      try {
+        var paper = typeof currentPaper !== "undefined" ? currentPaper : null;
+        var cur = typeof curAudioSec !== "undefined" ? curAudioSec : null;
+        if (!paper || !paper.length) {
+          window.parent.postMessage({ type: "yysd:listening-ended" }, "*");
+          return;
+        }
+        var idx = -1;
+        for (var i = 0; i < paper.length; i++) {
+          if (paper[i].id === cur) { idx = i; break; }
+        }
+        var isLast = idx < 0 || idx >= paper.length - 1;
+        // exam mode: paper already auto-chains; practice under CDT must chain here
+        if (!isLast && paperMode() !== "exam" && typeof loadSection === "function") {
+          loadSection(paper[idx + 1].id, true);
+          var ap = document.getElementById("aPlay");
+          if (ap) ap.textContent = "⏸";
+          return;
+        }
+        if (isLast) {
+          setTimeout(function () {
+            try { window.parent.postMessage({ type: "yysd:listening-ended" }, "*"); } catch (e2) { /* ignore */ }
+          }, 80);
+        }
+      } catch (err) { /* ignore */ }
+    });
+  }
+
+  function unlockCdtListening() {
+    if (!cdtListenOrig) return;
+    if (typeof cdtListenOrig.seekAudio === "function") window.seekAudio = cdtListenOrig.seekAudio;
+    if (typeof cdtListenOrig.togglePlay === "function") window.togglePlay = cdtListenOrig.togglePlay;
+    if (typeof cdtListenOrig.playSection === "function") window.playSection = cdtListenOrig.playSection;
+    var prog = document.getElementById("aProg");
+    if (prog) {
+      prog.style.pointerEvents = "";
+      prog.onclick = function (e) { if (typeof window.seekAudio === "function") window.seekAudio(e); };
+    }
+    var playBtn = document.getElementById("aPlay");
+    if (playBtn) {
+      playBtn.disabled = false;
+      playBtn.style.pointerEvents = "";
+      playBtn.removeAttribute("aria-disabled");
+      playBtn.onclick = function () { if (typeof window.togglePlay === "function") window.togglePlay(); };
+    }
+    document.body.classList.remove("yysd-cdt-listen-locked");
+    document.body.classList.add("yysd-cdt-listen-unlocked");
+  }
+
   function forceListeningExamMins() {
     // ponytail: listening mock = 32 min (audio + transfer); mutate even if TEST is const
     try {
@@ -909,9 +1022,9 @@
       overlay.style.cssText = "position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;padding:20px;";
       overlay.innerHTML =
         '<div style="background:#fff;border-radius:12px;padding:22px 24px;max-width:320px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.18);">' +
-        '<p id="yysd-audio-wait-msg" style="margin:0 0 6px;font-weight:700;color:#0f172a;">正在加载听力素材…</p>' +
-        '<p style="margin:0;font-size:13px;color:#64748b;line-height:1.45;">倒计时将在音频开始播放后启动</p>' +
-        '<button type="button" id="yysd-audio-retry" style="display:none;margin-top:14px;background:#1d4ed8;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;">重试播放</button>' +
+        '<p id="yysd-audio-wait-msg" style="margin:0 0 6px;font-weight:700;color:#0f172a;">Loading listening audio…</p>' +
+        '<p style="margin:0;font-size:13px;color:#64748b;line-height:1.45;">The timer will start when the recording begins.</p>' +
+        '<button type="button" id="yysd-audio-retry" style="display:none;margin-top:14px;background:#1d4ed8;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button>' +
         "</div>";
       document.body.appendChild(overlay);
       var btn = overlay.querySelector("#yysd-audio-retry");
@@ -923,7 +1036,7 @@
       ensureOverlay();
       if (!overlay) return;
       var msgEl = overlay.querySelector("#yysd-audio-wait-msg");
-      if (msgEl) msgEl.textContent = msg || "听力素材加载失败";
+      if (msgEl) msgEl.textContent = msg || "Audio failed to load";
       var btn = overlay.querySelector("#yysd-audio-retry");
       if (btn) btn.style.display = "inline-block";
     }
@@ -931,7 +1044,7 @@
     function retryPlay() {
       if (done || gen !== audioWaitGen) return;
       var msgEl = overlay && overlay.querySelector("#yysd-audio-wait-msg");
-      if (msgEl) msgEl.textContent = "正在加载听力素材…";
+      if (msgEl) msgEl.textContent = "Loading listening audio…";
       var btn = overlay && overlay.querySelector("#yysd-audio-retry");
       if (btn) btn.style.display = "none";
       try {
@@ -955,9 +1068,33 @@
       ensureOverlay();
       // ponytail: 45s ceiling — after that student can retry; no infinite spinner
       timeoutId = setTimeout(function () {
-        if (!done && gen === audioWaitGen) showRetry("网络较慢，听力尚未开始");
+        if (!done && gen === audioWaitGen) showRetry("Network is slow. Audio has not started.");
       }, 45000);
     }
+  }
+
+  // CDT drill → startTest("practice") but papers only build .secbox inside openMode()
+  function parseSectionsAttr() {
+    var raw = (script && script.dataset && script.dataset.sections) || "";
+    if (!raw) return null;
+    var ids = raw.split(",").map(function (s) { return +s; }).filter(function (n) { return n > 0; });
+    return ids.length ? ids : null;
+  }
+
+  function ensureCdtPracticeSections(draftSections) {
+    if (!cdtShell) return;
+    if (typeof openMode === "function") openMode();
+    var boxes = document.querySelectorAll(".secbox");
+    if (!boxes.length) return;
+    var pick = (draftSections && draftSections.length) ? draftSections : parseSectionsAttr();
+    if (pick && pick.length) {
+      boxes.forEach(function (cb) {
+        cb.checked = pick.indexOf(+cb.value) !== -1;
+      });
+    } else {
+      boxes.forEach(function (cb) { cb.checked = true; });
+    }
+    if (typeof closeMode === "function") closeMode();
   }
 
   function hookStartTest() {
@@ -968,27 +1105,36 @@
       if (m === "exam") examLock.enable();
       else examLock.disable();
       // ponytail: auto-restore practice draft — exit copy promises autosave/continue
+      var draftSections = null;
       if (m === "practice" && !restorePending) {
         var d = loadDraft();
         if (d && d.mode === "practice" && countAnswered(d.answers)) {
           restorePending = d;
-          if (d.sections && d.sections.length) {
-            document.querySelectorAll(".secbox").forEach(function (cb) {
-              cb.checked = d.sections.indexOf(+cb.value) !== -1;
-            });
-          }
+          draftSections = d.sections || null;
         }
+      } else if (restorePending && restorePending.sections) {
+        draftSections = restorePending.sections;
       }
+      if (m === "practice") ensureCdtPracticeSections(draftSections);
       var resuming = !!restorePending;
       var ret;
       try {
         ret = fn.apply(this, arguments);
       } finally {
         setTimeout(function () {
-          // exam listening: wait for real audio; practice: keep count-up from startTest
-          if (!resuming && m === "exam" && isListeningPaper()) {
+          // B2: CDT listening (drill or exam) waits for real audio + iron lock
+          if (!resuming && isListeningPaper() && (m === "exam" || cdtShell)) {
             forceListeningExamMins();
             armListeningTimerOnPlay();
+            if (cdtShell) installCdtListeningIron();
+          }
+          // B5/C18: parent CDT owns the clock — kill paper alert('时间到…')
+          if (cdtShell) {
+            try {
+              var iv = pageGet("timerInterval");
+              if (iv) clearInterval(iv);
+              pageSet("timerInterval", null);
+            } catch (eT) { /* ignore */ }
           }
           afterStartRestore();
         }, 0);
@@ -1012,7 +1158,11 @@
         // ponytail: papers set submitted=true before scoring — unlock so student can retry
         pageSet("submitted", false);
         console.error("[yysd] submitTest failed", err);
-        try { alert("交卷失败，请再试一次。若仍不行请联系老师。"); } catch (e) {}
+        try {
+          alert(cdtShell
+            ? "Submit failed. Please try again or tell your invigilator."
+            : "交卷失败，请再试一次。若仍不行请联系老师。");
+        } catch (e) {}
         return;
       }
     };
@@ -1025,7 +1175,9 @@
     origBackToCover = fn;
     window.backToCover = function () {
       if (examLock.isOn() && !isTestDone() && isTestingLR()) {
-        alert("模考进行中不可返回封面。如需结束，请滚动至底部点击「提交并批改」。");
+        alert(cdtShell
+          ? "You cannot leave during a mock test. Use Finish section to end this part."
+          : "模考进行中不可返回封面。如需结束，请滚动至底部点击「提交并批改」。");
         return;
       }
       examLock.disable();
@@ -1079,6 +1231,8 @@
   var assignedBooted = false;
   function bootAssignedPart() {
     if (assignedBooted) return;
+    // ponytail: CDT parent gate owns start + section pick; don't auto-start under shell
+    if (cdtShell) return;
     var part = Number((script && script.dataset.assignPart) || 0);
     if (!part) {
       try {

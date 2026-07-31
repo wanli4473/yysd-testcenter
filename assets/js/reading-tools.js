@@ -5,17 +5,26 @@
 (function () {
   "use strict";
 
-  var PANE_SEL = ".passage-pane, .col.passage, .reading-text, .qcol, #questionsHolder";
+  var PANE_SEL = ".passage-pane, .col.passage, .reading-text, .qcol, #questionsHolder, .yysd-cdt-wprompt";
   var HL = "yysd-hl";
+  var COLORS = ["yellow", "green", "pink", "blue"];
   var script = document.currentScript;
   var examId = (script && script.dataset.examId) || "local";
   var store = (script && script.dataset.persist) === "local" ? localStorage : sessionStorage;
+  var cdtMode = !!(script && script.dataset && script.dataset.cdt === "1");
 
   var ctxMenu = null;
   var notePanel = null;
   var activePane = null;
   var pendingRange = null;
   var bound = new WeakSet();
+  var lastColor = "yellow";
+
+  function isCdt() {
+    if (cdtMode) return true;
+    var b = document.body;
+    return !!(b && /yysd-cdt-/.test(b.className));
+  }
 
   function storageKey(paneId) {
     return "yysd:rh:" + examId + ":" + paneId;
@@ -40,7 +49,20 @@
     pre.selectNodeContents(pane);
     pre.setEndBefore(mark);
     var start = pre.toString().length;
-    return { start: start, end: start + mark.textContent.length, note: mark.dataset.note || "" };
+    return {
+      start: start,
+      end: start + mark.textContent.length,
+      note: mark.dataset.note || "",
+      color: mark.dataset.color || "yellow"
+    };
+  }
+
+  function applyMarkColor(mark, color) {
+    var c = COLORS.indexOf(color) >= 0 ? color : "yellow";
+    mark.dataset.color = c;
+    COLORS.forEach(function (x) { mark.classList.remove(HL + "--" + x); });
+    mark.classList.add(HL + "--" + c);
+    lastColor = c;
   }
 
   function rangeFromOffsets(root, start, end) {
@@ -87,10 +109,11 @@
     return out;
   }
 
-  function highlightRange(range) {
+  function highlightRange(range, color) {
     if (range.collapsed) return null;
     var mark = document.createElement("mark");
     mark.className = HL;
+    applyMarkColor(mark, color || lastColor);
     try {
       range.surroundContents(mark);
       return mark;
@@ -102,6 +125,7 @@
         r.setEnd(seg.node, seg.end);
         var m = document.createElement("mark");
         m.className = HL;
+        applyMarkColor(m, color || lastColor);
         try {
           r.surroundContents(m);
           if (!first) first = m;
@@ -121,7 +145,7 @@
     items.forEach(function (it) {
       var r = rangeFromOffsets(pane, it.start, it.end);
       if (!r) return;
-      var m = highlightRange(r);
+      var m = highlightRange(r, it.color || "yellow");
       if (m && it.note) {
         m.dataset.note = it.note;
         m.classList.add(HL + "--note");
@@ -162,11 +186,26 @@
     ctxMenu.className = "yysd-ctx";
     ctxMenu.hidden = true;
     ctxMenu.setAttribute("role", "menu");
-    ctxMenu.innerHTML =
-      '<button type="button" data-act="highlight"><span class="ico ico--hl">🖍</span>高亮 Highlight</button>' +
-      '<button type="button" data-act="notes"><span class="ico ico--note">📝</span>笔记 Notes</button>' +
-      '<button type="button" data-act="clear"><span class="ico ico--clear">⌫</span>清除 Clear</button>' +
-      '<button type="button" data-act="clear-all"><span class="ico ico--clear-all">⊖</span>全部清除 Clear all</button>';
+    if (isCdt()) {
+      // B4: English-only + colour swatches (Plan B multi-colour)
+      ctxMenu.innerHTML =
+        '<div class="yysd-ctx__label">Highlight</div>' +
+        '<div class="yysd-ctx__swatches" role="group" aria-label="Highlight colour">' +
+          COLORS.map(function (c) {
+            return '<button type="button" class="yysd-ctx__swatch yysd-ctx__swatch--' + c +
+              '" data-act="highlight" data-color="' + c + '" title="' + c + '" aria-label="' + c + '"></button>';
+          }).join("") +
+        "</div>" +
+        '<button type="button" data-act="notes"><span class="ico ico--note">📝</span>Notes</button>' +
+        '<button type="button" data-act="clear"><span class="ico ico--clear">⌫</span>Clear</button>' +
+        '<button type="button" data-act="clear-all"><span class="ico ico--clear-all">⊖</span>Clear all</button>';
+    } else {
+      ctxMenu.innerHTML =
+        '<button type="button" data-act="highlight" data-color="yellow"><span class="ico ico--hl">🖍</span>高亮 Highlight</button>' +
+        '<button type="button" data-act="notes"><span class="ico ico--note">📝</span>笔记 Notes</button>' +
+        '<button type="button" data-act="clear"><span class="ico ico--clear">⌫</span>清除 Clear</button>' +
+        '<button type="button" data-act="clear-all"><span class="ico ico--clear-all">⊖</span>全部清除 Clear all</button>';
+    }
     document.body.appendChild(ctxMenu);
 
     ctxMenu.addEventListener("mousedown", function (e) { e.preventDefault(); });
@@ -177,7 +216,7 @@
       var act = btn.dataset.act;
       var range = pendingRange;
       hideUI();
-      if (act === "highlight" && range) doHighlight(activePane, range, "");
+      if (act === "highlight" && range) doHighlight(activePane, range, "", btn.dataset.color || lastColor);
       else if (act === "notes") doNotes(activePane, range);
       else if (act === "clear" && range) doClear(activePane, range);
       else if (act === "clear-all") doClearAll(activePane);
@@ -202,8 +241,8 @@
     menu.style.top = Math.min(y, window.innerHeight - mh - 8) + "px";
   }
 
-  function doHighlight(pane, range, note) {
-    var m = highlightRange(range);
+  function doHighlight(pane, range, note, color) {
+    var m = highlightRange(range, color || lastColor);
     if (!m) return;
     if (note) {
       m.dataset.note = note;

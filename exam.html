@@ -9,7 +9,7 @@
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/style.css?v=20260722polish">
   <link rel="stylesheet" href="assets/css/exam-viewer.css?v=20260722polish">
-  <link rel="stylesheet" href="assets/css/exam-cdt.css?v=20260731p1">
+  <link rel="stylesheet" href="assets/css/exam-cdt.css?v=20260731b5">
 </head>
 <body class="viewer viewer--polish">
 
@@ -41,16 +41,64 @@
         <input type="range" id="cdt-vol-range" min="0" max="1" step="0.01" value="1" aria-label="Volume">
       </div>
       <button type="button" class="cdt-btn cdt-btn--finish" id="cdt-finish">Finish section</button>
+      <button type="button" class="cdt-btn" id="cdt-notepad">Notepad</button>
       <button type="button" class="cdt-btn" id="cdt-setting">Setting</button>
       <button type="button" class="cdt-btn" id="cdt-help">Help</button>
       <button type="button" class="cdt-btn" id="cdt-hide">Hide</button>
     </div>
   </header>
 
+  <div class="cdt-listen-review" id="cdt-listen-review" hidden>
+    You now have <strong>two minutes</strong> to check your answers. The recording will not play again.
+  </div>
+
+  <aside class="cdt-notepad" id="cdt-notepad-panel" hidden>
+    <div class="cdt-notepad__head">
+      <span>Notepad</span>
+      <button type="button" class="cdt-modal__x" id="cdt-notepad-x" aria-label="Close notepad">×</button>
+    </div>
+    <textarea id="cdt-notepad-ta" class="cdt-notepad__ta" spellcheck="false" placeholder="Type your notes here. These notes are for your use only and are not seen by the examiner."></textarea>
+  </aside>
+
   <iframe class="viewer-frame" id="exam-frame" title="学习内容" allow="microphone"></iframe>
 
   <div class="cdt-gate" id="cdt-gate" hidden>
-    <div class="cdt-gate__panel" id="cdt-gate-confirm">
+    <div class="cdt-gate__panel cdt-gate__panel--pack" id="cdt-gate-pack" hidden>
+      <h2 class="cdt-gate__title">Choose how to take this paper</h2>
+      <p class="cdt-gate__pack-lead">Same computer-delivered IELTS interface. Only the rules differ.</p>
+      <div class="cdt-gate__pack-grid">
+        <button type="button" class="cdt-gate__pack-card" id="cdt-pack-drill">
+          <strong>Practice</strong>
+          <span>Official timer and controls. Progress is saved. You may leave and continue later. After submit, review answers (with explanations).</span>
+        </button>
+        <button type="button" class="cdt-gate__pack-card" id="cdt-pack-exam">
+          <strong>Mock test</strong>
+          <span>Exam conditions. Leaving the page voids this attempt. (Full suite L→R→W starts from the suite mock entry.)</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="cdt-gate__panel" id="cdt-gate-resume" hidden>
+      <h2 class="cdt-gate__title">Continue practice?</h2>
+      <p class="cdt-gate__pack-lead" id="cdt-gate-resume-text">Saved answers were found for this paper.</p>
+      <button type="button" class="cdt-gate__btn" id="cdt-gate-resume-ok">Continue</button>
+      <button type="button" class="cdt-gate__btn cdt-gate__btn--ghost" id="cdt-gate-resume-new">Start over</button>
+    </div>
+
+    <!-- drill only · Chinese OK pre-exam · feeds paper .secbox -->
+    <div class="cdt-gate__panel" id="cdt-gate-sections" hidden>
+      <h2 class="cdt-gate__title">选择练习部分</h2>
+      <p class="cdt-gate__pack-lead" id="cdt-gate-sections-lead">适合分项突破，可只练某几个部分；正向计时不施加额外压力。</p>
+      <div class="cdt-gate__sec-head">
+        <span id="cdt-gate-sec-label">选择练习部分：</span>
+        <button type="button" class="cdt-gate__sec-toggle" id="cdt-gate-sec-toggle">取消全选</button>
+      </div>
+      <div class="cdt-gate__sec-list" id="cdt-gate-sec-list"></div>
+      <p class="cdt-gate__sec-err" id="cdt-gate-sec-err" hidden>请至少选择一个部分。</p>
+      <button type="button" class="cdt-gate__btn" id="cdt-gate-sec-ok">开始练习</button>
+    </div>
+
+    <div class="cdt-gate__panel" id="cdt-gate-confirm" hidden>
       <div class="cdt-gate__icon" aria-hidden="true">👤</div>
       <h2 class="cdt-gate__title">Confirm your details</h2>
       <div class="cdt-gate__example">EXAMPLE</div>
@@ -124,13 +172,19 @@
         <button type="button" class="cdt-modal__x" id="cdt-setting-x" aria-label="Close">×</button>
       </div>
       <div class="cdt-modal__body">
-        <p>If you wish, you can change the text size to make the test easier to read.</p>
+        <p>If you wish, you can change the text size and background colour to make the test easier to read.</p>
         <p><strong>Text size</strong></p>
         <ul class="cdt-size-list">
           <li><label><input type="radio" name="cdt-text-size" value="small"> Small</label></li>
           <li><label><input type="radio" name="cdt-text-size" value="standard" checked> Standard</label></li>
           <li><label><input type="radio" name="cdt-text-size" value="large"> Large</label></li>
           <li><label><input type="radio" name="cdt-text-size" value="extra-large"> Extra large</label></li>
+        </ul>
+        <p><strong>Background colour</strong></p>
+        <ul class="cdt-size-list cdt-bg-list">
+          <li><label><input type="radio" name="cdt-bg-color" value="white" checked> White</label></li>
+          <li><label><input type="radio" name="cdt-bg-color" value="cream"> Cream</label></li>
+          <li><label><input type="radio" name="cdt-bg-color" value="blue"> Pale blue</label></li>
         </ul>
       </div>
       <div class="cdt-modal__foot">
@@ -152,16 +206,21 @@
           <button type="button" class="cdt-help-tab" data-help="task">Task help</button>
         </div>
         <div class="cdt-help-panel" data-help="info">
-          <p>This is a computer-delivered IELTS practice test. Use the timer, navigation bar and Review checkbox as you would in the real test.</p>
-          <p>Your answers are stored as you work. The clock continues if you hide the screen.</p>
+          <p><strong>Information</strong></p>
+          <p>This practice screen follows the computer-delivered IELTS layout. The clock at the top shows how much time you have left for this section.</p>
+          <p>Select <strong>Review</strong> on a question if you want to return to it later. Your answers are saved as you work. Selecting <strong>Hide</strong> does not pause the clock.</p>
         </div>
         <div class="cdt-help-panel" data-help="test" hidden>
-          <p>Use <strong>Finish section</strong> when you have completed this section. In a full mock, you may progress to the next section.</p>
-          <p>Use <strong>Setting</strong> to change text size. Use <strong>Hide</strong> if you need to leave your seat briefly.</p>
+          <p><strong>Test help</strong></p>
+          <p>Use the question numbers at the bottom to move between questions. Use the arrows to go to the previous or next question.</p>
+          <p><strong>Setting</strong> changes text size and background colour. <strong>Notepad</strong> opens a private notepad. <strong>Finish section</strong> ends this section when you are ready (or when time is up).</p>
+          <p>In Listening, you hear each recording once. At the end you have two minutes to check your answers.</p>
         </div>
         <div class="cdt-help-panel" data-help="task" hidden>
-          <p>Follow the instructions for each question carefully. You can change your answers at any time before you finish the section.</p>
-          <p>For Listening, answers are typically one word and/or a number unless stated otherwise.</p>
+          <p><strong>Task help</strong></p>
+          <p>Read the instructions for each question carefully. You can change an answer at any time before you finish the section.</p>
+          <p>To highlight text, select it and right-click (or use the highlight colours). To clear a highlight, right-click it and choose <strong>Clear</strong> or <strong>Clear all</strong>.</p>
+          <p>Listening answers are usually one word and/or a number unless the question says otherwise. Writing has no spellcheck, as in the real test.</p>
         </div>
       </div>
       <div class="cdt-modal__foot">
@@ -172,9 +231,9 @@
 
   <div class="score-toast-host" id="score-toast-host" aria-live="polite"></div>
 
-  <script src="assets/js/auth.js?v=20260729hq1"></script>
+  <script src="assets/js/auth.js?v=20260731ielts1"></script>
   <script src="assets/js/config.js?v=20260731listen32"></script>
-  <script src="assets/js/exam-cdt.js?v=20260731p1"></script>
-  <script src="assets/js/exam.js?v=20260731p1"></script>
+  <script src="assets/js/exam-cdt.js?v=20260731sec1"></script>
+  <script src="assets/js/exam.js?v=20260731b5"></script>
 </body>
 </html>

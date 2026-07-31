@@ -70,7 +70,7 @@
   function examHref(itemId, eventId, linkedIds) {
     var href = "exam.html?id=" + encodeURIComponent(itemId) +
       "&event=" + encodeURIComponent(eventId);
-    if (isSuiteCdtLink(itemId, linkedIds)) href += "&cdt=1";
+    if (isSuiteCdtLink(itemId, linkedIds)) href += "&cdt=1&pack=exam&suite=1";
     return href;
   }
 

@@ -192,7 +192,7 @@
     if (back) back.href = vol ? ("cambridge.html?vol=" + encodeURIComponent(vol)) : "zone.html?zone=mock&s=mock";
     var retry = $("rpt-retry");
     if (retry) {
-      var retryHref = "exam.html?id=" + encodeURIComponent(ids.listening) + "&cdt=1";
+      var retryHref = "exam.html?id=" + encodeURIComponent(ids.listening) + "&cdt=1&pack=exam&suite=1";
       try {
         var ev = new URLSearchParams(location.search).get("event");
         if (ev && /^\d+$/.test(String(ev))) retryHref += "&event=" + encodeURIComponent(ev);

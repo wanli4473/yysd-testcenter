@@ -30,8 +30,13 @@
   var parentVoidPausedUntil = 0;
   var parentSavedConfirm = null;
   var parentSavedAlert = null;
-  var cdtWanted = qs.get("cdt") === "1";
-  var pickMode = qs.get("pick") === "1";
+  // B1: pick=1 legacy → CDT; pack=drill|exam; suite=1 = L→R→W hop
+  var cdtWanted = qs.get("cdt") === "1" || qs.get("pick") === "1";
+  var pickMode = false;
+  var cdtPack = (qs.get("pack") || "").toLowerCase();
+  if (cdtPack !== "drill" && cdtPack !== "exam") cdtPack = "";
+  var cdtSuite = qs.get("suite") === "1";
+  if (cdtSuite && !cdtPack) cdtPack = "exam";
 
   if (!id) { fail("缺少内容编号。"); return; }
 
@@ -287,13 +292,23 @@
       el.id = "yysd-parent-exam-lock";
       document.body.appendChild(el);
     }
-    el.innerHTML =
-      '<div><h2>模考已中止</h2>' +
-      '<p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答。</p>' +
-      '<div class="yysd-exam-lock-actions">' +
-      '<button type="button" class="yysd-exam-lock-exit">强制退出</button>' +
-      '<button type="button" class="yysd-exam-lock-restart">重新开始</button>' +
-      '</div></div>';
+    if (cdtWanted) {
+      el.innerHTML =
+        '<div><h2>Test ended</h2>' +
+        '<p>Leaving this page or switching away has voided this mock attempt. You cannot continue answering.</p>' +
+        '<div class="yysd-exam-lock-actions">' +
+        '<button type="button" class="yysd-exam-lock-exit">Exit</button>' +
+        '<button type="button" class="yysd-exam-lock-restart">Start over</button>' +
+        '</div></div>';
+    } else {
+      el.innerHTML =
+        '<div><h2>模考已中止</h2>' +
+        '<p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答。</p>' +
+        '<div class="yysd-exam-lock-actions">' +
+        '<button type="button" class="yysd-exam-lock-exit">强制退出</button>' +
+        '<button type="button" class="yysd-exam-lock-restart">重新开始</button>' +
+        '</div></div>';
+    }
     el.querySelector(".yysd-exam-lock-exit").onclick = forceExitExam;
     el.querySelector(".yysd-exam-lock-restart").onclick = forceRestartExam;
     el.classList.add("is-visible");
@@ -405,7 +420,20 @@
 
     var shown = Y.displayTitle(item);
     titleEl.textContent = shown;
-    document.title = shown + " · " + ((window.YYSD_AUTH && YYSD_AUTH.brandName && YYSD_AUTH.brandName(YYSD_AUTH.getOrg && YYSD_AUTH.getOrg())) || "学习中心");
+    if (cdtWanted) {
+      // B5/C18: tab title English during CDT
+      var vol = Y.camVolume ? Y.camVolume(item) : "";
+      var test = Y.camTestNo ? Y.camTestNo(item) : "";
+      var skill =
+        item.subject === "cambridge-listening" ? "Listening" :
+        item.subject === "cambridge-reading" ? "Reading" :
+        item.subject === "cambridge-writing" ? "Writing" : "IELTS";
+      document.title = (vol && test)
+        ? ("Cambridge IELTS " + vol + " · Test " + test + " (" + skill + ")")
+        : (shown + " · IELTS");
+    } else {
+      document.title = shown + " · " + ((window.YYSD_AUTH && YYSD_AUTH.brandName && YYSD_AUTH.brandName(YYSD_AUTH.getOrg && YYSD_AUTH.getOrg())) || "学习中心");
+    }
     renderBadges(badges);
 
     if (badges) {
@@ -464,19 +492,22 @@
       }
     }
 
-    // ponytail: CDT shell only when suite mock passes ?cdt=1 (skill practice keeps brand bar)
+    // B1: Cambridge mock L/R/W with ?cdt=1 (or legacy pick=1) → CDT shell
     var useCdt = cdtWanted && !isStudy && item.zone === "mock" && Y.isCambridge(item.subject) && window.YYSD_CDT;
     if (useCdt) {
       // timer starts after gate "Start test" (listening: after audio playing)
+      // drill also uses official countdown (constitution); do not subtract practice elapsed
       YYSD_CDT.activate({
         item: item,
         frame: frame,
-        seconds: left || item.duration * 60 || 0,
+        seconds: item.duration > 0 ? item.duration * 60 : (left || 0),
+        pack: cdtPack,
+        suite: cdtSuite,
         onStart: function (secs) {
           if (secs > 0) startTimer(secs);
         }
       });
-    } else if (left > 0 && !pickMode && item.subject !== "cambridge-listening") {
+    } else if (left > 0 && item.subject !== "cambridge-listening") {
       // ponytail: listening waits for yysd:timer-sync after audio `playing`
       startTimer(left);
     }
@@ -546,7 +577,12 @@
   }
 
   function injectReadingTools() {
-    if (!item || !(Y.isReadingExam(item) || item.subject === "cambridge-listening")) return;
+    if (!item) return;
+    var want =
+      Y.isReadingExam(item) ||
+      item.subject === "cambridge-listening" ||
+      (cdtWanted && item.subject === "cambridge-writing");
+    if (!want) return;
     var doc = frame.contentDocument;
     if (!doc || !doc.body || doc.getElementById("yysd-reading-tools-js")) return;
 
@@ -556,14 +592,15 @@
     var link = doc.createElement("link");
     link.id = "yysd-reading-tools-css";
     link.rel = "stylesheet";
-    link.href = base + "assets/css/reading-tools.css?v=" + v;
+    link.href = base + "assets/css/reading-tools.css?v=" + v + (cdtWanted ? "b4" : "");
     doc.head.appendChild(link);
 
     var script = doc.createElement("script");
     script.id = "yysd-reading-tools-js";
-    script.src = base + "assets/js/reading-tools.js?v=" + v;
+    script.src = base + "assets/js/reading-tools.js?v=" + v + (cdtWanted ? "b4" : "");
     script.dataset.examId = item.id;
     script.dataset.persist = item.zone === "mock" ? "session" : "local";
+    if (cdtWanted) script.dataset.cdt = "1";
     doc.body.appendChild(script);
   }
 
@@ -609,10 +646,14 @@
 
     var script = doc.createElement("script");
     script.id = "yysd-exam-bridge-js";
-    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt15" : "");
+    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt21" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
-    if (cdtWanted) script.dataset.cdt = "1";
+    if (cdtWanted) {
+      script.dataset.cdt = "1";
+      var pack = (window.YYSD_CDT && YYSD_CDT.getPack && YYSD_CDT.getPack()) || cdtPack || "exam";
+      script.dataset.pack = pack;
+    }
     if (item.partNum) {
       script.dataset.assignPart = String(item.partNum);
       script.dataset.assignKind = item.partKind || "s";
@@ -620,20 +661,28 @@
     doc.body.appendChild(script);
   }
 
+  // B3: DnD / multi letter UX — injected before startTest enhances the paper
+  function injectCdtQux() {
+    if (!cdtWanted || !item || item.zone !== "mock") return;
+    if (item.subject === "cambridge-writing") return;
+    var doc = frame.contentDocument;
+    if (!doc || !doc.body || doc.getElementById("yysd-cdt-qux-js")) return;
+    var v = encodeURIComponent(Y.CONTENT_VER || "1");
+    var base = new URL("./", location.href).href;
+    var script = doc.createElement("script");
+    script.id = "yysd-cdt-qux-js";
+    script.src = base + "assets/js/cdt-qux.js?v=" + v + "b3";
+    doc.body.appendChild(script);
+  }
+
   function onFrameLoad() {
     injectExamShell();
     injectReadingTools();
     injectVocabBridge();
+    injectCdtQux();
     injectExamBridge();
     if (window.YYSD_CDT && YYSD_CDT.isActive && YYSD_CDT.isActive()) {
       YYSD_CDT.onFrameReady();
-    }
-    // ponytail: skill path lands on paper mode picker; writing usually has no openMode
-    if (pickMode && !cdtWanted) {
-      try {
-        var win = frame.contentWindow;
-        if (win && typeof win.openMode === "function") win.openMode();
-      } catch (e) { /* cross-origin / missing */ }
     }
   }
 
@@ -765,7 +814,11 @@
       if (!sessionStartedMs && d.elapsedSec != null) {
         sessionStartedMs = Date.now() - Math.max(0, Number(d.elapsedSec) || 0) * 1000;
       }
-      // practice: only show elapsed; exam countdown waits for this sync (listening: after playing)
+      // B1: CDT parent owns minutes-left for both drill and exam — ignore paper count-up
+      if (window.YYSD_CDT && YYSD_CDT.isActive && YYSD_CDT.isActive()) {
+        return;
+      }
+      // practice (non-CDT): only show elapsed; exam countdown waits for this sync
       if (d.mode === "practice") {
         startElapsedTimer(d.elapsedSec || 0);
         return;
@@ -869,7 +922,12 @@
       wrong: wrong,
       _scoreKey: key
     };
-    if (cdtWanted) record.cdt = true;
+    if (cdtWanted) {
+      record.cdt = true;
+      var packNow = (window.YYSD_CDT && YYSD_CDT.getPack && YYSD_CDT.getPack()) || cdtPack;
+      if (packNow) record.cdtPack = packNow;
+      if (window.YYSD_CDT && YYSD_CDT.isSuite && YYSD_CDT.isSuite()) record.cdtSuite = true;
+    }
     store[item.id] = record;
     saveResults(store);
 

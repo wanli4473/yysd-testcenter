@@ -51,11 +51,12 @@
     if (skillFilter) {
       var item = papers[skillFilter.subject];
       if (!item) return "";
-      return Y.fileHref(item, "") + "&pick=1";
+      // B1: skill practice enters CDT; pack chosen at gate (drill vs exam)
+      return Y.fileHref(item, "") + "&cdt=1";
     }
     var listen = papers["cambridge-listening"];
     if (!listen) return "";
-    return Y.fileHref(listen, "") + "&cdt=1";
+    return Y.fileHref(listen, "") + "&cdt=1&pack=exam&suite=1";
   }
 
   Y.load().then(function (items) {
@@ -95,10 +96,8 @@
       ? "单项顺序练习 · 仅" + skillFilter.name
       : "官方真题套卷 · 选择 Test 开始套题模考";
     var hint = skillFilter
-      ? (skillFilter.key === "writing"
-        ? "选择一套 Test，进入后即可开始写作。"
-        : "选择一套 Test，进入后选练习或模考模式。")
-      : "选择一套 Test，按听力 → 阅读 → 写作顺序完成套题模考。";
+      ? "选择一套 Test，进入机考界面后选择「练习」或「模考」（界面相同，仅规则不同）。"
+      : "选择一套 Test，按听力 → 阅读 → 写作顺序完成套题全真模考。";
 
     var hero = '<div class="cam-hero cam-hero--' + accent + '">' +
       '<div class="cam-hero__badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">' + Y.esc(vol) + "</div></div>" +
