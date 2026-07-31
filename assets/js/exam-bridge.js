@@ -1117,7 +1117,16 @@
       } else if (restorePending && restorePending.sections) {
         draftSections = restorePending.sections;
       }
-      if (m === "practice") ensureCdtPracticeSections(draftSections);
+      // CDT + teacher Section/Passage assign: papers ignore .secbox in exam mode
+      var assignPart = Number((script && script.dataset.assignPart) || 0) || 0;
+      if (cdtShell && assignPart > 0 && m === "exam") {
+        m = "practice";
+        arguments[0] = "practice";
+        examLock.disable();
+        ensureCdtPracticeSections([assignPart]);
+      } else if (m === "practice") {
+        ensureCdtPracticeSections(draftSections || (assignPart > 0 ? [assignPart] : null));
+      }
       var resuming = !!restorePending;
       var ret;
       try {

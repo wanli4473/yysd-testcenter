@@ -91,6 +91,12 @@ window.YYSD_AUTH = (function () {
   /** 雅思区域预览白名单（生产站）；本地开发不拦 */
   function canIeltsArea() {
     if (isLocalDevHost()) return true;
+    // teacher-assigned homework must remain completable during IELTS relaunch
+    try {
+      if (/(?:^|[?&])event=\d+(?:&|$)/.test(location.search || "")) return true;
+    } catch (e0) { /* ignore */ }
+    // teacher preview (teacher token only — student token wins on student pages)
+    if (isTeacher()) return true;
     // ponytail: never trust localStorage phone after /me — it is masked
     var phone = jwtPhoneDigits() || String((getUser().phone || "")).replace(/\D/g, "");
     return !!IELTS_PREVIEW_PHONES[phone];
