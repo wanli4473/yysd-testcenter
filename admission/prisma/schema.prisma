@@ -1,0 +1,99 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
+}
+
+model School {
+  id                    String      @id @default(cuid())
+  slug                  String      @unique
+  name                  String
+  program               String
+  /// Chinese program display name
+  programZh             String?     @map("program_zh")
+  degree                String
+  country               String
+  field                 String
+  city                  String?
+  avgGpa                Float       @map("avg_gpa")
+  minGpa                Float       @map("min_gpa")
+  minToefl              Int?        @map("min_toefl")
+  minIelts              Float?      @map("min_ielts")
+  gpaScale              Float       @default(4.0) @map("gpa_scale")
+  website               String?
+  /// Prefer program-specific official URL when known
+  officialUrl           String?     @map("official_url")
+  admissionRequirements String      @map("admission_requirements") @db.Text
+  /// e.g. "1–2 years" / "12 months"
+  duration              String?
+  /// Tuition note (currency as stated; approximate)
+  tuitionNote           String?     @map("tuition_note") @db.Text
+  isStem                Boolean?    @map("is_stem")
+  /// true=required, false=not required, null=optional/unknown
+  greRequired           Boolean?    @map("gre_required")
+  applicationDeadline   String?     @map("application_deadline")
+  /// One-line Chinese blurb
+  blurb                 String?     @db.Text
+  /// Longer official-style summary (may be curated from public pages)
+  summaryOfficial       String?     @map("summary_official") @db.Text
+  /// Set when manually verified against an official program page
+  verifiedAt            DateTime?   @map("verified_at")
+  /// 1 = top, 2 = mid-high, 3 = accessible — peer fallback
+  tier                  Int         @default(2)
+  /// Official/public admit rate 0-1 when available
+  admitRateOfficial     Float?      @map("admit_rate_official")
+  admitRateYear         Int?        @map("admit_rate_year")
+  admitRateSource       String?     @map("admit_rate_source") @db.Text
+  /// GradCafe self-report sample rate for this program (biased)
+  admitRateGradcafe     Float?      @map("admit_rate_gradcafe")
+  gradcafeSampleSize    Int?        @map("gradcafe_sample_size")
+  cases                 Case[]
+  queries               UserQuery[]
+
+  @@index([country, field, tier])
+  @@index([name])
+  @@map("schools")
+}
+
+model Case {
+  id               String                       @id @default(cuid())
+  schoolId         String                       @map("school_id")
+  school           School                       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  gpa              Float
+  toefl            Int?
+  ielts            Float?
+  gre              Int?
+  undergradSchool  String                       @map("undergrad_school")
+  undergradMajor   String                       @map("undergrad_major")
+  backgroundTags   Json                         @map("background_tags")
+  admissionResult  Boolean                      @map("admission_result")
+  year             Int
+  description      String                       @db.Text
+  /// synthetic | gradcafe | manual
+  source           String                       @default("synthetic")
+  externalId       String?                      @unique @map("external_id")
+  /// pgvector; written via raw SQL in sync-embeddings
+  embedding        Unsupported("vector(1024)")?
+
+  @@index([schoolId, year])
+  @@index([source])
+  @@map("cases")
+}
+
+model UserQuery {
+  id                String   @id @default(cuid())
+  userBackground    Json     @map("user_background")
+  targetSchoolId    String   @map("target_school_id")
+  targetSchool      School   @relation(fields: [targetSchoolId], references: [id])
+  resultProbability Int?     @map("result_probability")
+  analysisText      String?  @map("analysis_text") @db.Text
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("user_queries")
+}

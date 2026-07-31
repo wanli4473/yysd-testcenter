@@ -1,0 +1,18 @@
+[Unit]
+Description=YYSD AI Admission Advisor (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/yysd/repo/admission
+Environment=NODE_ENV=production
+Environment=PORT=3001
+EnvironmentFile=-/opt/yysd/repo/admission/.env.local
+EnvironmentFile=-/opt/yysd/repo/admission/.env
+ExecStart=/usr/bin/npm run start --prefix /opt/yysd/repo/admission
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
