@@ -1324,6 +1324,12 @@
     try {
       var doc = state.frame && state.frame.contentDocument;
       if (!doc) return;
+      // ponytail: exam skin uses body.yysd-cdt-* #resultArea{display:none!important}
+      // which beats plain #resultArea{display:block!important} — drop skin classes first
+      if (doc.body) {
+        doc.body.classList.remove("yysd-cdt-reading", "yysd-cdt-listening", "yysd-cdt-writing");
+        doc.body.classList.add("yysd-cdt-review");
+      }
       var style = doc.getElementById("yysd-cdt-review-css");
       if (!style) {
         style = doc.createElement("style");
@@ -1332,20 +1338,29 @@
       }
       var unlockAudio = state.pack === "drill" && isListening(state.item);
       style.textContent =
-        "#resultArea,.result-area,#results{display:block!important;visibility:visible!important}" +
+        "html,body.yysd-cdt-review{overflow:auto!important;height:auto!important;background:#fff!important}" +
+        "body.yysd-cdt-review #resultArea,.result-area,#results{" +
+          "display:block!important;visibility:visible!important}" +
         (unlockAudio
-          ? "#testArea{display:block!important}#questionsHolder,.submit-btn{display:none!important}" +
-            "body.yysd-cdt-listening .audio-bar{display:block!important}" +
-            "body.yysd-cdt-listening .audio-play,body.yysd-cdt-listening #aProg{pointer-events:auto!important;opacity:1!important}"
-          : "#testArea,.test-area,#questionsHolder{display:none!important}" +
-            "body.yysd-cdt-listening .audio-bar{display:none!important}") +
-        "body.yysd-cdt-reading .yysd-cdt-split,body.yysd-cdt-writing .yysd-cdt-w-split{display:none!important}" +
-        "body{overflow:auto!important;height:auto!important;background:#fff!important}";
+          ? "body.yysd-cdt-review #testArea{display:block!important}" +
+            "body.yysd-cdt-review #questionsHolder,.submit-btn,.header,.test-topbar{display:none!important}" +
+            "body.yysd-cdt-review .audio-bar{display:block!important}" +
+            "body.yysd-cdt-review .audio-play,body.yysd-cdt-review #aProg{" +
+              "pointer-events:auto!important;opacity:1!important}"
+          : "body.yysd-cdt-review #testArea,.test-area,#questionsHolder{display:none!important}") +
+        ".yysd-cdt-split,.yysd-cdt-w-split{display:none!important}";
       if (unlockAudio && state.frame.contentWindow) {
         state.frame.contentWindow.postMessage({ type: "yysd:unlock-listening" }, "*");
       }
       var ra = doc.getElementById("resultArea") || doc.querySelector(".result-area");
-      if (ra) ra.scrollIntoView({ block: "start" });
+      if (ra) {
+        try { ra.style.setProperty("display", "block", "important"); } catch (e0) { ra.style.display = "block"; }
+        ra.scrollIntoView({ block: "start" });
+      }
+      var ta = doc.getElementById("testArea");
+      if (ta && !unlockAudio) {
+        try { ta.style.setProperty("display", "none", "important"); } catch (e1) { ta.style.display = "none"; }
+      }
     } catch (e) { /* ignore */ }
     var hint = document.getElementById("v-hint");
     if (hint) {
