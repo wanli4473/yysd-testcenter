@@ -520,7 +520,9 @@
 
     function ensureAiPanel() {
       var ra = document.getElementById("resultArea");
-      if (!ra || getComputedStyle(ra).display === "none") return null;
+      // ponytail: CDT skin keeps resultArea display:none until parent unskins — still inject
+      if (!ra) return null;
+      if (!cdtShell && getComputedStyle(ra).display === "none") return null;
       var panel = document.getElementById("yysd-ai-grade");
       if (panel) return panel;
       panel = document.createElement("div");

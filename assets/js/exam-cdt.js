@@ -464,7 +464,7 @@
       "body.yysd-cdt-listening .note-table th{background:#eef2f7;font-weight:700}",
       "body.yysd-cdt-listening .note-table td,body.yysd-cdt-listening .note-table th{",
       "border-color:#b0bccb;padding:8px 10px}",
-      "body.yysd-cdt-listening .map-missing{display:none!important}"
+      // keep .map-missing visible when PNG missing (CDT still needs the placeholder)
     ].join("");
   }
 
@@ -1246,17 +1246,20 @@
     }
   }
 
-  function alreadyScoredThisPaper() {
+  function stopParentTimer() {
     try {
-      var id = state.item && state.item.id;
-      if (!id) return false;
-      var store = JSON.parse(localStorage.getItem("yysd:results") || "{}");
-      var rec = store[id];
-      if (!rec) return false;
-      if (rec.score != null || rec.completed) return true;
-      if (rec.writingTask1 || rec.writingTask2 || rec.writingWords != null) return true;
-      return false;
-    } catch (e) { return false; }
+      if (window.YYSD_EXAM && typeof YYSD_EXAM.stopTimer === "function") YYSD_EXAM.stopTimer();
+    } catch (e) { /* ignore */ }
+  }
+
+  /** This page-load only — never treat prior localStorage scores as "already submitted" */
+  function alreadyScoredThisPaper() {
+    if (state.scoredThisSession) return true;
+    try {
+      var win = state.frame && state.frame.contentWindow;
+      if (win && win.submitted) return true;
+    } catch (e) { /* ignore */ }
+    return false;
   }
 
   function submitPaperThen(done) {
@@ -1283,6 +1286,7 @@
       // ponytail: only accept score from the exam iframe
       if (state.frame && e.source !== state.frame.contentWindow) return;
       if (!e.data || e.data.type !== "yysd:score") return;
+      state.scoredThisSession = true;
       afterScoreSynced();
     }
     window.addEventListener("message", onScore);
@@ -1310,6 +1314,7 @@
 
   function enterReviewMode() {
     showMask("cdt-finish-mask", false);
+    stopParentTimer();
     document.body.classList.remove("viewer--cdt", "viewer--cdt-gating", "viewer--cdt-listen-review");
     document.body.classList.add("viewer--after-cdt");
     var header = $("cdt-header");
@@ -1380,6 +1385,7 @@
     var plan = resolveAfterSubmit(state.pack, state.suite, state.item);
     var evQs = eventQuery();
     submitPaperThen(function () {
+      stopParentTimer();
       releaseLock();
       if (plan.action === "hop") {
         (window.YYSD_GO || function (h) { location.href = h; })(
@@ -1604,6 +1610,7 @@
     if (state.suite && !state.pack) state.pack = "exam";
     state.resumeDraft = false;
     state.drillSections = null;
+    state.scoredThisSession = false;
     var listenBanner = $("cdt-listen-review");
     if (listenBanner) listenBanner.setAttribute("hidden", "");
     document.body.classList.remove("viewer--cdt-listen-review");

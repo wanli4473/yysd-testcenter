@@ -646,7 +646,7 @@
 
     var script = doc.createElement("script");
     script.id = "yysd-exam-bridge-js";
-    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt21" : "");
+    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt22" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
     if (cdtWanted) {
@@ -983,6 +983,13 @@
   window.YYSD_EXAM = {
     releaseLock: function () { setExamLock(false); },
     pauseVoid: parentPauseVoid,
+    stopTimer: function () {
+      if (timerHandle) {
+        clearInterval(timerHandle);
+        timerHandle = null;
+      }
+      if (timerEl) timerEl.classList.remove("is-warn", "is-low", "is-danger");
+    },
     // wait for cloud PUT before CDT hop — Safari aborts in-flight fetch on navigate
     waitScorePush: function (ms) {
       var budget = Math.max(500, Number(ms) || 8000);
