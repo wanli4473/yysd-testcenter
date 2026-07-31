@@ -384,14 +384,12 @@
       bindParentExamLock();
       hideParentExamLock();
       parentPauseVoid(5000);
-      // ponytail: native :fullscreen breaks CDT fixed header/footer iframe math — skip when ?cdt=1
-      if (!cdtWanted) {
-        try {
+      // ponytail: fullscreen the PARENT shell (CDT chrome lives here). Paper iframe must not FS.
+      try {
+        if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(function () {});
-        } catch (e) { /* ponytail: fullscreen denied */ }
-      } else if (document.fullscreenElement) {
-        document.exitFullscreen().catch(function () {});
-      }
+        }
+      } catch (e) { /* ponytail: fullscreen denied */ }
     } else {
       unbindParentExamLock();
       hideParentExamLock();

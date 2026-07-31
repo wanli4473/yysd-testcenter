@@ -628,10 +628,21 @@
     state.onStart(state.seconds);
   }
 
+  function enterParentFullscreen() {
+    // ponytail: must run in click stack; postMessage→setExamLock is too late for gesture
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) return;
+      var el = document.documentElement;
+      var fn = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (fn) fn.call(el).catch(function () {});
+    } catch (e) { /* denied */ }
+  }
+
   function startExamFromGate() {
     if (state.started) return;
     if (!state.frameReady) return;
     state.started = true;
+    enterParentFullscreen();
     beginIframeExam();
     closeGates();
     var footer = $("cdt-footer");
@@ -646,6 +657,7 @@
   }
 
   function afterDetails() {
+    enterParentFullscreen();
     if (isListening(state.item)) showGatePanel("sound");
     else showGatePanel("info");
   }
@@ -1005,10 +1017,13 @@
 
     document.body.classList.add("viewer--cdt");
     bindOnce();
-    // ponytail: leftover :fullscreen from prior exam-lock breaks iframe top/height
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(function () {});
-    }
+    // ponytail: only drop leftover iframe :fullscreen (covers CDT chrome); keep parent FS
+    try {
+      var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsEl && String(fsEl.tagName || "").toUpperCase() === "IFRAME") {
+        (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+      }
+    } catch (e) { /* ignore */ }
 
     var header = $("cdt-header");
     if (header) header.removeAttribute("hidden");
