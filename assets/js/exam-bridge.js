@@ -798,9 +798,17 @@
     try {
       window.parent.postMessage({
         type: "yysd:timer-sync",
+        mode: pageGet("mode") || "",
         elapsedSec: Math.floor((Date.now() - st) / 1000)
       }, "*");
     } catch (e) { /* ponytail: iframe edge */ }
+  }
+
+  function forceListeningExamMins() {
+    // ponytail: listening mock = 32 min (audio + transfer); mutate even if TEST is const
+    try {
+      window.eval("if(typeof TEST!=='undefined'&&TEST)TEST.durationMin=32");
+    } catch (e) { /* ignore */ }
   }
 
   function isListeningPaper() {
@@ -840,6 +848,7 @@
       player.removeEventListener("error", onFail);
       if (timeoutId) clearTimeout(timeoutId);
       if (overlay) { overlay.remove(); overlay = null; }
+      forceListeningExamMins();
       if (typeof setupTimer === "function") setupTimer();
       syncParentTimer();
       try { window.parent.postMessage({ type: "yysd:audio-ready" }, "*"); } catch (e) { /* ignore */ }
@@ -931,8 +940,11 @@
         ret = fn.apply(this, arguments);
       } finally {
         setTimeout(function () {
-          // arm first so startTime=0 before afterStartRestore syncParentTimer
-          if (!resuming) armListeningTimerOnPlay();
+          // exam listening: wait for real audio; practice: keep count-up from startTest
+          if (!resuming && m === "exam" && isListeningPaper()) {
+            forceListeningExamMins();
+            armListeningTimerOnPlay();
+          }
           afterStartRestore();
         }, 0);
       }

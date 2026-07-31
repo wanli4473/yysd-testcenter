@@ -71,7 +71,7 @@ def mock_duration(item: dict) -> int:
     subj = item.get("subject", "")
     item_id = item.get("id", "")
     if subj == "cambridge-listening":
-        return 30
+        return 32
     if subj == "cambridge-reading":
         return 60
     if subj == "cambridge-writing":

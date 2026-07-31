@@ -645,11 +645,30 @@
     return 0;
   }
 
+  function fmtClock(sec) {
+    var n = Math.max(0, Math.floor(sec || 0));
+    var m = Math.floor(n / 60), s = n % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  // practice: count-up only — no limit, no time-up
+  function startElapsedTimer(elapsedSec) {
+    if (timerHandle) clearInterval(timerHandle);
+    timerEl.hidden = false;
+    timerEl.classList.remove("is-warn", "is-low", "is-danger");
+    var started = Date.now() - Math.max(0, Number(elapsedSec) || 0) * 1000;
+    function tick() {
+      timerEl.textContent = fmtClock((Date.now() - started) / 1000);
+    }
+    tick();
+    timerHandle = setInterval(tick, 1000);
+  }
+
   function startTimer(seconds) {
+    if (timerHandle) clearInterval(timerHandle);
     timerEl.hidden = false;
     function tick() {
-      var m = Math.floor(seconds / 60), s = seconds % 60;
-      timerEl.textContent = (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+      timerEl.textContent = fmtClock(seconds);
       timerEl.classList.remove("is-warn", "is-low", "is-danger");
       if (seconds <= 60) timerEl.classList.add("is-danger");
       else if (seconds <= 300) timerEl.classList.add("is-low");
@@ -745,9 +764,13 @@
       if (!sessionStartedMs && d.elapsedSec != null) {
         sessionStartedMs = Date.now() - Math.max(0, Number(d.elapsedSec) || 0) * 1000;
       }
+      // practice: only show elapsed; exam countdown waits for this sync (listening: after playing)
+      if (d.mode === "practice") {
+        startElapsedTimer(d.elapsedSec || 0);
+        return;
+      }
       if (item && item.duration > 0) {
         var remain = Math.max(0, item.duration * 60 - (d.elapsedSec || 0));
-        if (timerHandle) clearInterval(timerHandle);
         startTimer(remain);
       }
       return;
