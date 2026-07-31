@@ -74,10 +74,25 @@ window.YYSD_AUTH = (function () {
     return !h || h === "localhost" || h === "127.0.0.1";
   }
 
+  /** JWT carries real phone; /api/auth/me only returns maskPhone() */
+  function jwtPhoneDigits() {
+    var tok = getToken();
+    if (!tok) return "";
+    try {
+      var parts = tok.split(".");
+      if (parts.length < 2) return "";
+      var b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      var payload = JSON.parse(atob(b64));
+      return String(payload.phone || "").replace(/\D/g, "");
+    } catch (e) { return ""; }
+  }
+
   /** 雅思区域预览白名单（生产站）；本地开发不拦 */
   function canIeltsArea() {
     if (isLocalDevHost()) return true;
-    var phone = String((getUser().phone || "")).replace(/\D/g, "");
+    // ponytail: never trust localStorage phone after /me — it is masked
+    var phone = jwtPhoneDigits() || String((getUser().phone || "")).replace(/\D/g, "");
     return !!IELTS_PREVIEW_PHONES[phone];
   }
 
