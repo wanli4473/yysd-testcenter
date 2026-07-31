@@ -15,7 +15,76 @@
   monthCursor.setHours(0, 0, 0, 0);
   var selectedStudents = {};
   var selectedExercises = {};
+  var exerciseCat = "vocab";
   var detailEventId = null;
+
+  var CAT_HINT = {
+    vocab: "单词区词书单元，适合布置背单词作业。",
+    listening: "剑桥听力整套 Test（含四个 Section）。",
+    reading: "剑桥阅读整套 Test（含三个 Passage）。",
+    writing: "剑桥写作整套 Test（Task 1 + Task 2）。",
+    part: "只练某一个 Section / Passage，适合单项补弱。",
+    suite: "一键勾选听力+阅读+写作三科，学生端按全套模考流程作答。"
+  };
+
+  function isVocabSubject(subject) {
+    return /^vocab/.test(subject || "");
+  }
+
+  function suiteBaseId(id) {
+    return String(id || "").replace(/-reading$/, "").replace(/-writing$/, "");
+  }
+
+  function suiteIdsOf(base) {
+    return [base, base + "-reading", base + "-writing"];
+  }
+
+  function buildSuites() {
+    var map = {};
+    catalog.forEach(function (it) {
+      if (it.partNum) return;
+      var base = suiteBaseId(it.id);
+      if (!/^cambridge-\d+-test-\d+$/.test(base)) return;
+      if (!map[base]) map[base] = { base: base, listening: null, reading: null, writing: null };
+      if (it.subject === "cambridge-listening") map[base].listening = it;
+      else if (it.subject === "cambridge-reading") map[base].reading = it;
+      else if (it.subject === "cambridge-writing") map[base].writing = it;
+    });
+    return Object.keys(map).sort(function (a, b) {
+      return b.localeCompare(a, undefined, { numeric: true });
+    }).map(function (k) { return map[k]; }).filter(function (s) {
+      return s.listening && s.reading && s.writing;
+    });
+  }
+
+  function itemInCat(it, cat) {
+    if (!cat) return true;
+    if (cat === "vocab") return isVocabSubject(it.subject);
+    if (cat === "listening") {
+      return it.subject === "cambridge-listening" && !it.partNum;
+    }
+    if (cat === "reading") {
+      return it.subject === "cambridge-reading" && !it.partNum;
+    }
+    if (cat === "writing") {
+      return it.subject === "cambridge-writing" && !it.partNum;
+    }
+    if (cat === "part") return !!it.partNum;
+    if (cat === "suite") return false;
+    return true;
+  }
+
+  function itemCatLabel(it) {
+    if (it.partNum) {
+      return it.partKind === "s" ? ("Section " + it.partNum) : ("Passage " + it.partNum);
+    }
+    if (isVocabSubject(it.subject)) return "单词";
+    if (it.subject === "cambridge-listening") return "听力练习";
+    if (it.subject === "cambridge-reading") return "阅读练习";
+    if (it.subject === "cambridge-writing") return "写作练习";
+    if (it.subject === "ielts") return "模考";
+    return (Y.ZONE[it.zone] || {}).label || it.zone || "";
+  }
 
   var viewEl = document.getElementById("cal-view");
   var statsEl = document.getElementById("cal-stats");
@@ -58,6 +127,7 @@
     document.getElementById("create-form").reset();
     selectedStudents = {};
     selectedExercises = {};
+    exerciseCat = "vocab";
     var hint = document.getElementById("html-file-hint");
     if (hint) hint.textContent = "上传后优先生效；学生将在站内打开做题。也可下方勾选网站现有练习。";
     document.getElementById("f-type").value = "ASSIGNMENT";
@@ -100,26 +170,53 @@
       "已选 " + Object.keys(selectedStudents).length + " 人";
   }
 
+  function syncExerciseCatUi() {
+    document.querySelectorAll("#exercise-cats [data-ex-cat]").forEach(function (btn) {
+      btn.classList.toggle("is-active", btn.getAttribute("data-ex-cat") === exerciseCat);
+    });
+    var hint = document.getElementById("exercise-cat-hint");
+    if (hint) hint.textContent = CAT_HINT[exerciseCat] || "先点上方分类，再勾选要布置的内容。";
+  }
+
   function renderExerciseList() {
+    syncExerciseCatUi();
     var q = (document.getElementById("exercise-q").value || "").trim().toLowerCase();
-    var zone = document.getElementById("exercise-zone").value;
-    var items = catalog.filter(function (it) {
-      if (zone && it.zone !== zone) return false;
-      if (!q) return true;
-      var hay = (Y.displayTitle(it) + " " + it.title + " " + it.id + " " +
-        (it.subject || "") + " " + (Y.partSearchText ? Y.partSearchText(it) : "")).toLowerCase();
-      return hay.indexOf(q) >= 0;
-    }).slice(0, 120);
-    var html = items.map(function (it) {
-      var checked = selectedExercises[it.id] ? " checked" : "";
-      var zoneLbl = (Y.ZONE[it.zone] || {}).label || it.zone;
-      var partHint = it.partNum
-        ? (it.partKind === "s" ? " · 单 Section" : " · 单 Passage")
-        : "";
-      return '<label class="cal-check">' +
-        '<input type="checkbox" data-exercise="' + esc(it.id) + '"' + checked + ">" +
-        "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(zoneLbl + partHint) + "</small></span></label>";
-    }).join("");
+    var html = "";
+
+    if (exerciseCat === "suite") {
+      var suites = buildSuites().filter(function (s) {
+        if (!q) return true;
+        var hay = (s.base + " " + Y.displayTitle(s.listening)).toLowerCase();
+        return hay.indexOf(q) >= 0;
+      }).slice(0, 80);
+      html = suites.map(function (s) {
+        var ids = suiteIdsOf(s.base);
+        var allOn = ids.every(function (id) { return selectedExercises[id]; });
+        var vol = Y.camVolume ? Y.camVolume(s.listening) : "";
+        var testNo = Y.camTestNo ? Y.camTestNo(s.listening) : "";
+        var title = (vol && testNo)
+          ? ("剑桥雅思 " + vol + " · Test " + testNo + " 全套模考")
+          : (Y.displayTitle(s.listening) + " · 全套");
+        return '<label class="cal-check cal-suite-li">' +
+          '<input type="checkbox" data-suite="' + esc(s.base) + '"' + (allOn ? " checked" : "") + ">" +
+          "<span><b>" + esc(title) + "</b><small>听力 + 阅读 + 写作 · 机考流程</small></span></label>";
+      }).join("");
+    } else {
+      var items = catalog.filter(function (it) {
+        if (!itemInCat(it, exerciseCat)) return false;
+        if (!q) return true;
+        var hay = (Y.displayTitle(it) + " " + it.title + " " + it.id + " " +
+          (it.subject || "") + " " + (Y.partSearchText ? Y.partSearchText(it) : "")).toLowerCase();
+        return hay.indexOf(q) >= 0;
+      }).slice(0, 120);
+      html = items.map(function (it) {
+        var checked = selectedExercises[it.id] ? " checked" : "";
+        return '<label class="cal-check">' +
+          '<input type="checkbox" data-exercise="' + esc(it.id) + '"' + checked + ">" +
+          "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(itemCatLabel(it)) + "</small></span></label>";
+      }).join("");
+    }
+
     document.getElementById("exercise-list").innerHTML =
       html || '<p class="profile-hint">没有匹配的练习</p>';
     document.getElementById("exercise-picked").textContent =
@@ -349,7 +446,12 @@
 
   document.getElementById("student-q").addEventListener("input", renderStudentList);
   document.getElementById("exercise-q").addEventListener("input", renderExerciseList);
-  document.getElementById("exercise-zone").addEventListener("change", renderExerciseList);
+  document.getElementById("exercise-cats").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-ex-cat]");
+    if (!btn) return;
+    exerciseCat = btn.getAttribute("data-ex-cat") || "vocab";
+    renderExerciseList();
+  });
 
   document.getElementById("select-all-students").addEventListener("click", function () {
     students.forEach(function (s) { selectedStudents[s.id] = true; });
@@ -372,10 +474,20 @@
 
   document.getElementById("exercise-list").addEventListener("change", function (e) {
     var t = e.target;
-    if (!t || !t.getAttribute("data-exercise")) return;
-    var id = t.getAttribute("data-exercise");
-    if (t.checked) selectedExercises[id] = true;
-    else delete selectedExercises[id];
+    if (!t) return;
+    var suite = t.getAttribute("data-suite");
+    if (suite) {
+      suiteIdsOf(suite).forEach(function (id) {
+        if (t.checked) selectedExercises[id] = true;
+        else delete selectedExercises[id];
+      });
+    } else if (t.getAttribute("data-exercise")) {
+      var id = t.getAttribute("data-exercise");
+      if (t.checked) selectedExercises[id] = true;
+      else delete selectedExercises[id];
+    } else {
+      return;
+    }
     document.getElementById("exercise-picked").textContent =
       "已选 " + Object.keys(selectedExercises).length + " 份练习";
   });
