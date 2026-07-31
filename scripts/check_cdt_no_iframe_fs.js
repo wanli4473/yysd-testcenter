@@ -11,7 +11,9 @@ assert(/function tryFullscreen\(\) \{\s*if \(cdtShell\)/.test(bridge), "iframe t
 assert(/dataset\.cdt = "1"/.test(exam), "parent marks bridge as cdt");
 assert(/requestFullscreen/.test(exam), "parent still requests fullscreen");
 assert(!/if \(!cdtWanted\)[\s\S]{0,80}requestFullscreen/.test(exam), "parent must FS even when cdt");
-assert(/bottom:\s*56px/.test(css) && /height:\s*auto/.test(css), "CDT iframe uses top/bottom inset not 100vh");
+assert(/bottom:\s*56px/.test(css), "CDT iframe pins bottom under footer");
+assert(/calc\(100dvh - 108px\)/.test(css) || /calc\(100vh - 108px\)/.test(css), "CDT iframe has explicit height (replaced el)");
+assert(/html:fullscreen[\s\S]*viewer-frame[\s\S]*calc\(100% - 108px\)/.test(css), "fullscreen uses % of FS box");
 assert(/function enterParentFullscreen/.test(cdt), "CDT requests parent FS in click stack");
 assert(/startExamFromGate[\s\S]{0,200}enterParentFullscreen\(\)/.test(cdt), "Start test enters parent FS");
 console.log("ok: cdt parent fullscreen, no iframe fullscreen");

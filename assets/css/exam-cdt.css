@@ -42,7 +42,10 @@ body.viewer.viewer--cdt .cdt-footer {
   z-index: 80;
 }
 
-/* top+bottom inset — no 100vh math, works under :fullscreen */
+/*
+  iframe is replaced: top+bottom + height:auto does NOT stretch (only ~intrinsic strip).
+  Use explicit height; under parent :fullscreen prefer % of the FS box.
+*/
 body.viewer.viewer--cdt:not(.viewer--cdt-gating) .viewer-frame {
   position: fixed !important;
   top: 52px !important;
@@ -50,10 +53,15 @@ body.viewer.viewer--cdt:not(.viewer--cdt-gating) .viewer-frame {
   right: 0 !important;
   bottom: 56px !important;
   width: 100% !important;
-  height: auto !important;
+  height: calc(100vh - 108px) !important;
+  height: calc(100dvh - 108px) !important;
   max-height: none !important;
   background: #d9e1ec;
   z-index: 40;
+}
+html:fullscreen body.viewer.viewer--cdt:not(.viewer--cdt-gating) .viewer-frame,
+html:-webkit-full-screen body.viewer.viewer--cdt:not(.viewer--cdt-gating) .viewer-frame {
+  height: calc(100% - 108px) !important;
 }
 
 body.viewer.viewer--cdt.viewer--cdt-gating .viewer-frame {
