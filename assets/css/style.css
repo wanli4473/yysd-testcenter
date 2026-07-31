@@ -5771,28 +5771,229 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 24px;
 }
+/* IELTS hub — skill path cards (listening / reading / speaking / writing / mock) */
+body.is-ielts-hub .catalog-toolbar,
+body.is-vocab-hub .catalog-toolbar {
+  display: none !important;
+}
 .ielts-hub {
-  --mega-accent: #e8913a;
   --mega-text: #07192f;
   --mega-muted: #5f6673;
+  padding: 4px 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.ielts-hub__intro {
+  max-width: 40rem;
+}
+.ielts-hub__kicker {
+  margin: 0 0 8px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #a98234;
+}
+.ielts-hub__intro h2 {
+  margin: 0 0 8px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1.65rem, 2.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--mega-text);
+  line-height: 1.2;
+}
+.ielts-hub__intro > p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--mega-muted);
+}
+.ielts-hub__grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 24px;
-  padding: 8px 0 24px;
+  gap: 16px;
+  align-items: stretch;
 }
 .ielts-hub__card {
+  --hub-accent: #c7a45d;
+  --hub-tint: rgba(199, 164, 93, .08);
+  --hub-ink: #07192f;
+  position: relative;
   min-width: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px 18px;
+  border-radius: 18px;
+  background: linear-gradient(165deg, #fffcf7 0%, #fff 55%);
+  border: 1px solid rgba(7, 25, 47, .08);
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 14px 36px -22px rgba(7, 25, 47, .18);
+  overflow: hidden;
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1), box-shadow .22s ease, border-color .22s ease;
 }
-@media (max-width: 960px) {
-  .ielts-hub {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
+.ielts-hub__card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--hub-accent);
+}
+.ielts-hub__card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--hub-accent) 42%, transparent);
+  box-shadow: 0 22px 48px -24px rgba(7, 25, 47, .28);
+}
+.ielts-hub__card--listening {
+  --hub-accent: #102a4c;
+  --hub-tint: rgba(16, 42, 76, .07);
+  background: linear-gradient(165deg, #f5f8fb 0%, #fffcf7 58%);
+}
+.ielts-hub__card--reading {
+  --hub-accent: #2f6f78;
+  --hub-tint: rgba(47, 111, 120, .09);
+  background: linear-gradient(165deg, #f2f8f9 0%, #fffcf7 58%);
+}
+.ielts-hub__card--speaking {
+  --hub-accent: #6c7a89;
+  --hub-tint: rgba(108, 122, 137, .1);
+  background: linear-gradient(165deg, #f6f7f9 0%, #fffcf7 58%);
+}
+.ielts-hub__card--writing {
+  --hub-accent: #8a6a2f;
+  --hub-tint: rgba(138, 106, 47, .1);
+  background: linear-gradient(165deg, #faf6f0 0%, #fffcf7 58%);
+}
+.ielts-hub__card--mock {
+  --hub-accent: #07192f;
+  --hub-tint: rgba(7, 25, 47, .07);
+  background: linear-gradient(165deg, #f3f5f8 0%, #fffcf7 52%);
+}
+.ielts-hub__card--mock::before {
+  background: linear-gradient(90deg, #102a4c 0 50%, #c7a45d 50% 100%);
+}
+.ielts-hub__hit {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 14px;
+}
+.ielts-hub__ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+  background: var(--hub-accent);
+  color: #f7f3ea;
+  box-shadow: 0 10px 22px -14px var(--hub-accent);
+}
+.ielts-hub__card--reading .ielts-hub__ico,
+.ielts-hub__card--writing .ielts-hub__ico {
+  color: #fffcf7;
+}
+.ielts-hub__ico svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+.ielts-hub__eyebrow {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--hub-accent);
+}
+.ielts-hub__hit h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--hub-ink);
+  line-height: 1.15;
+}
+.ielts-hub__desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--mega-muted);
+}
+.ielts-hub__links {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 12px 0 0;
+  border-top: 1px solid rgba(7, 25, 47, .07);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.ielts-hub__links a {
+  display: block;
+  color: #4d5664;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border-radius: 8px;
+  transition: color .15s ease, background .15s ease;
+}
+.ielts-hub__links a:hover {
+  color: var(--hub-accent);
+  background: var(--hub-tint);
+}
+.ielts-hub__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 4px;
+  color: var(--hub-accent);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: -.01em;
+  transition: transform .18s ease, color .18s ease;
+}
+.ielts-hub__go span {
+  transition: transform .18s ease;
+}
+.ielts-hub__card:hover .ielts-hub__go span {
+  transform: translateX(3px);
+}
+@media (max-width: 1100px) {
+  .ielts-hub__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ielts-hub__card--mock {
+    grid-column: span 2;
   }
 }
-@media (max-width: 560px) {
-  .ielts-hub {
+@media (max-width: 760px) {
+  .ielts-hub__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .ielts-hub__card--mock {
+    grid-column: span 2;
+  }
+}
+@media (max-width: 520px) {
+  .ielts-hub__grid {
     grid-template-columns: 1fr;
   }
+  .ielts-hub__card--mock {
+    grid-column: auto;
+  }
+  .ielts-hub__hit h3 { font-size: 20px; }
 }
 .mega-col__head {
   display: flex;
