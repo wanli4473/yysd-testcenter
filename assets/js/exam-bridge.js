@@ -803,6 +803,109 @@
     } catch (e) { /* ponytail: iframe edge */ }
   }
 
+  function isListeningPaper() {
+    var p = document.getElementById("player");
+    return !!(p && p.tagName === "AUDIO");
+  }
+
+  // ponytail: wall-clock must not run while MP3 still buffering — start on `playing`
+  var audioWaitGen = 0;
+  function armListeningTimerOnPlay() {
+    if (!isListeningPaper() || !isTesting()) return;
+    var player = document.getElementById("player");
+    if (!player) return;
+    var gen = ++audioWaitGen;
+
+    var iv = pageGet("timerInterval");
+    if (iv != null) clearInterval(iv);
+    pageSet("timerInterval", null);
+    pageSet("startTime", 0);
+    var tEl = document.getElementById("timer");
+    var tt = document.getElementById("timerText");
+    if (tEl) tEl.classList.add("show");
+    if (tt) tt.textContent = "等待播放";
+
+    var oldOverlay = document.getElementById("yysd-audio-wait");
+    if (oldOverlay) oldOverlay.remove();
+
+    var done = false;
+    var timeoutId = null;
+    var overlay = null;
+    var isCdt = document.body.classList.contains("yysd-cdt-listening");
+
+    function finish() {
+      if (done || gen !== audioWaitGen) return;
+      done = true;
+      player.removeEventListener("playing", onPlaying);
+      player.removeEventListener("error", onFail);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (overlay) { overlay.remove(); overlay = null; }
+      if (typeof setupTimer === "function") setupTimer();
+      syncParentTimer();
+      try { window.parent.postMessage({ type: "yysd:audio-ready" }, "*"); } catch (e) { /* ignore */ }
+    }
+
+    function onPlaying() { finish(); }
+
+    function ensureOverlay() {
+      if (overlay || !isCdt || gen !== audioWaitGen) return;
+      overlay = document.createElement("div");
+      overlay.id = "yysd-audio-wait";
+      overlay.setAttribute("role", "status");
+      overlay.style.cssText = "position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;padding:20px;";
+      overlay.innerHTML =
+        '<div style="background:#fff;border-radius:12px;padding:22px 24px;max-width:320px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.18);">' +
+        '<p id="yysd-audio-wait-msg" style="margin:0 0 6px;font-weight:700;color:#0f172a;">正在加载听力素材…</p>' +
+        '<p style="margin:0;font-size:13px;color:#64748b;line-height:1.45;">倒计时将在音频开始播放后启动</p>' +
+        '<button type="button" id="yysd-audio-retry" style="display:none;margin-top:14px;background:#1d4ed8;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;">重试播放</button>' +
+        "</div>";
+      document.body.appendChild(overlay);
+      var btn = overlay.querySelector("#yysd-audio-retry");
+      if (btn) btn.addEventListener("click", retryPlay);
+    }
+
+    function showRetry(msg) {
+      if (gen !== audioWaitGen) return;
+      ensureOverlay();
+      if (!overlay) return;
+      var msgEl = overlay.querySelector("#yysd-audio-wait-msg");
+      if (msgEl) msgEl.textContent = msg || "听力素材加载失败";
+      var btn = overlay.querySelector("#yysd-audio-retry");
+      if (btn) btn.style.display = "inline-block";
+    }
+
+    function retryPlay() {
+      if (done || gen !== audioWaitGen) return;
+      var msgEl = overlay && overlay.querySelector("#yysd-audio-wait-msg");
+      if (msgEl) msgEl.textContent = "正在加载听力素材…";
+      var btn = overlay && overlay.querySelector("#yysd-audio-retry");
+      if (btn) btn.style.display = "none";
+      try {
+        var sec = pageGet("curAudioSec");
+        if (typeof loadSection === "function" && sec) loadSection(sec, true);
+        else if (player.play) player.play().catch(function () { showRetry(); });
+      } catch (e) { showRetry(); }
+    }
+
+    function onFail() { showRetry(); }
+
+    player.addEventListener("playing", onPlaying);
+    player.addEventListener("error", onFail);
+
+    if (!player.paused && player.readyState >= 2) {
+      finish();
+      return;
+    }
+
+    if (isCdt) {
+      ensureOverlay();
+      // ponytail: 45s ceiling — after that student can retry; no infinite spinner
+      timeoutId = setTimeout(function () {
+        if (!done && gen === audioWaitGen) showRetry("网络较慢，听力尚未开始");
+      }, 45000);
+    }
+  }
+
   function hookStartTest() {
     var fn = window.startTest;
     if (typeof fn !== "function" || fn._yysdHooked) return;
@@ -822,11 +925,16 @@
           }
         }
       }
+      var resuming = !!restorePending;
       var ret;
       try {
         ret = fn.apply(this, arguments);
       } finally {
-        setTimeout(afterStartRestore, 0);
+        setTimeout(function () {
+          // arm first so startTime=0 before afterStartRestore syncParentTimer
+          if (!resuming) armListeningTimerOnPlay();
+          afterStartRestore();
+        }, 0);
       }
       return ret;
     };

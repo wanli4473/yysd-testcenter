@@ -21,6 +21,7 @@
   var timerHandle = null;
   var toastTimer = null;
   var lastScorePushKey = null;
+  var pendingScorePush = Promise.resolve(false);
   var sessionStartedMs = null;
   var examLockOn = false;
   var examLockVoided = false;
@@ -29,6 +30,8 @@
   var parentVoidPausedUntil = 0;
   var parentSavedConfirm = null;
   var parentSavedAlert = null;
+  var cdtWanted = qs.get("cdt") === "1";
+  var pickMode = qs.get("pick") === "1";
 
   if (!id) { fail("缺少内容编号。"); return; }
 
@@ -266,7 +269,8 @@
     if (document.hidden) return true;
     // Focus inside the exam iframe still counts as in-exam (parent hasFocus is often false)
     if (frame && document.activeElement === frame) return false;
-    return !document.hasFocus();
+    if (document.hasFocus()) return false;
+    return true;
   }
 
   function scheduleParentVoidCheck() {
@@ -302,7 +306,7 @@
 
   function forceExitExam() {
     setExamLock(false);
-    location.href = (backBtn && backBtn.href) || "zone.html?zone=mock";
+    (window.YYSD_GO || function (h) { location.href = h; })((backBtn && backBtn.href) || "zone.html?zone=mock");
   }
 
   function forceRestartExam() {
@@ -380,9 +384,14 @@
       bindParentExamLock();
       hideParentExamLock();
       parentPauseVoid(5000);
-      try {
-        document.documentElement.requestFullscreen().catch(function () {});
-      } catch (e) { /* ponytail: fullscreen denied */ }
+      // ponytail: native :fullscreen breaks CDT fixed header/footer iframe math — skip when ?cdt=1
+      if (!cdtWanted) {
+        try {
+          document.documentElement.requestFullscreen().catch(function () {});
+        } catch (e) { /* ponytail: fullscreen denied */ }
+      } else if (document.fullscreenElement) {
+        document.exitFullscreen().catch(function () {});
+      }
     } else {
       unbindParentExamLock();
       hideParentExamLock();
@@ -437,14 +446,37 @@
       src += "&assignPart=" + encodeURIComponent(item.partNum) +
         "&assignKind=" + encodeURIComponent(item.partKind || "s");
     }
+    var vocabMode = qs.get("vocabMode");
+    if (vocabMode === "learn" || vocabMode === "test") {
+      src += "&vocabMode=" + encodeURIComponent(vocabMode);
+    }
+    frame.removeAttribute("sandbox");
+    frame.removeAttribute("srcdoc");
     frame.src = src;
 
     frame.addEventListener("load", onFrameLoad);
 
+    var left = 0;
     if (!isStudy && item.duration > 0) {
-      var left = item.duration * 60;
+      left = item.duration * 60;
       var elapsed = practiceDraftElapsed();
       if (elapsed) left = Math.max(0, left - elapsed);
+    }
+
+    // ponytail: CDT shell only when suite mock passes ?cdt=1 (skill practice keeps brand bar)
+    var useCdt = cdtWanted && !isStudy && item.zone === "mock" && Y.isCambridge(item.subject) && window.YYSD_CDT;
+    if (useCdt) {
+      // timer starts after gate "Start test" (listening: after audio playing)
+      YYSD_CDT.activate({
+        item: item,
+        frame: frame,
+        seconds: left || item.duration * 60 || 0,
+        onStart: function (secs) {
+          if (secs > 0) startTimer(secs);
+        }
+      });
+    } else if (left > 0 && !pickMode && item.subject !== "cambridge-listening") {
+      // ponytail: listening waits for yysd:timer-sync after audio `playing`
       startTimer(left);
     }
 
@@ -482,12 +514,13 @@
     backBtn.textContent = "← 返回待办事项";
     backBtn.href = "dashboard.html";
 
-    // srcdoc keeps same-origin with parent (blob: is opaque and breaks some uploads)
+    // ponytail: no allow-same-origin — upload HTML cannot read parent JWT; score via postMessage + server bridge
+    frame.setAttribute("sandbox", "allow-scripts allow-forms allow-modals allow-popups");
     frame.removeAttribute("src");
     frame.srcdoc = html;
     frame.addEventListener("load", function () {
       sessionStartedMs = null;
-      onFrameLoad();
+      // sandboxed: contentDocument inaccessible — skip inject* helpers
     }, { once: true });
 
     backBtn.addEventListener("click", function (e) {
@@ -575,9 +608,10 @@
 
     var script = doc.createElement("script");
     script.id = "yysd-exam-bridge-js";
-    script.src = base + "assets/js/exam-bridge.js?v=" + v;
+    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt12" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
+    if (cdtWanted) script.dataset.cdt = "1";
     if (item.partNum) {
       script.dataset.assignPart = String(item.partNum);
       script.dataset.assignKind = item.partKind || "s";
@@ -590,6 +624,16 @@
     injectReadingTools();
     injectVocabBridge();
     injectExamBridge();
+    if (window.YYSD_CDT && YYSD_CDT.isActive && YYSD_CDT.isActive()) {
+      YYSD_CDT.onFrameReady();
+    }
+    // ponytail: skill path lands on paper mode picker; writing usually has no openMode
+    if (pickMode && !cdtWanted) {
+      try {
+        var win = frame.contentWindow;
+        if (win && typeof win.openMode === "function") win.openMode();
+      } catch (e) { /* cross-origin / missing */ }
+    }
   }
 
   function practiceDraftElapsed() {
@@ -610,6 +654,9 @@
       if (seconds <= 60) timerEl.classList.add("is-danger");
       else if (seconds <= 300) timerEl.classList.add("is-low");
       else if (seconds <= 600) timerEl.classList.add("is-warn");
+      if (window.YYSD_CDT && YYSD_CDT.isActive && YYSD_CDT.isActive()) {
+        YYSD_CDT.updateTimer(seconds);
+      }
       if (seconds <= 0) {
         clearInterval(timerHandle);
         timerEl.textContent = "时间到";
@@ -661,13 +708,17 @@
         var m = rq.match(/第\s*([^\s题]+)\s*题/);
         var yoursEl = el.querySelector(".yours");
         var ansEl = el.querySelector(".correctv");
+        var rexEl = el.querySelector(".rex");
         var ua = yoursEl ? yoursEl.textContent.trim() : "";
         if (ua === "未作答") ua = "";
-        out.push({
+        var explain = rexEl ? rexEl.textContent.replace(/^\s*💡\s*/, "").trim() : "";
+        var row = {
           no: m ? m[1] : rq.replace(/^[✘✔]\s*/, ""),
           ua: ua,
           ans: ansEl ? ansEl.textContent.trim() : ""
-        });
+        };
+        if (explain) row.explain = explain;
+        out.push(row);
       }
       return out;
     } catch (err) {
@@ -784,12 +835,17 @@
       writingWords: d.writingWords || null,
       writingTask1: d.writingTask1 || null,
       writingTask2: d.writingTask2 || null,
+      writingPrompt1: d.writingPrompt1 || null,
+      writingPrompt2: d.writingPrompt2 || null,
+      writingChartNote: d.writingChartNote || null,
       date: attemptAt,
       startedAt: startedAt,
       durationSec: durationSec,
       assignmentEventId: assignmentEventId || null,
+      wrong: wrong,
       _scoreKey: key
     };
+    if (cdtWanted) record.cdt = true;
     store[item.id] = record;
     saveResults(store);
 
@@ -814,16 +870,22 @@
       } catch (err) {}
     }
 
-    showScoreToast(record, d, prevScore);
+    // ponytail: CDT suite hops to next section / report — skip brand toast
+    if (!cdtWanted) showScoreToast(record, d, prevScore);
+    var pushBody = Object.assign({}, record, { attemptAt: attemptAt, wrong: wrong });
     if (window.YYSD_AUTH && YYSD_AUTH.pushScoreRecord) {
-      YYSD_AUTH.pushScoreRecord(Object.assign({}, record, { attemptAt: attemptAt, wrong: wrong }))
+      pendingScorePush = YYSD_AUTH.pushScoreRecord(pushBody)
         .then(function (ok) {
           if (ok) setToastSyncSub("已同步至云端，可在「我的成绩」查看");
           else setToastSyncSub("已保存在本浏览器（未登录则不同步云端）");
+          return !!ok;
         })
         .catch(function () {
           setToastSyncSub("本地已保存，云端同步失败");
+          return false;
         });
+    } else {
+      pendingScorePush = Promise.resolve(false);
     }
 
     if (timerHandle) {
@@ -834,4 +896,17 @@
 
     setExamLock(false);
   });
+
+  // ponytail: CDT Finish → next section needs to clear lock/beforeunload first
+  window.YYSD_EXAM = {
+    releaseLock: function () { setExamLock(false); },
+    // wait for cloud PUT before CDT hop — Safari aborts in-flight fetch on navigate
+    waitScorePush: function (ms) {
+      var budget = Math.max(500, Number(ms) || 8000);
+      return Promise.race([
+        Promise.resolve(pendingScorePush).catch(function () { return false; }),
+        new Promise(function (resolve) { setTimeout(function () { resolve(false); }, budget); })
+      ]);
+    }
+  };
 })();
