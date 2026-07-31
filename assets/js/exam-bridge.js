@@ -47,6 +47,8 @@
   var script = document.currentScript;
   var bridgeMode = (script && script.dataset.mode) || "exam";
   var examId = (script && script.dataset.examId) || "";
+  // ponytail: parent CDT chrome is outside this iframe — fullscreen here hides timer/Finish/footer
+  var cdtShell = !!(script && script.dataset && script.dataset.cdt === "1");
   var posted = false;
 
   function resolveExamId() {
@@ -225,6 +227,13 @@
     }
 
     function tryFullscreen() {
+      if (cdtShell) {
+        var fs = document.fullscreenElement || document.webkitFullscreenElement;
+        if (fs) {
+          (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+        }
+        return;
+      }
       var el = document.documentElement;
       var fn = el.requestFullscreen || el.webkitRequestFullscreen;
       if (fn) fn.call(el).catch(function () {});
