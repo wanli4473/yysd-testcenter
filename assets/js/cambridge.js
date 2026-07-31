@@ -1,5 +1,5 @@
 /* =========================================================================
-   cambridge.js — one volume: Test tabs + skill panels per test
+   cambridge.js — volume page: pick Test → jump into paper (mode picker / CDT)
    ========================================================================= */
 (function () {
   "use strict";
@@ -16,37 +16,46 @@
   document.getElementById("year").textContent = new Date().getFullYear();
 
   var SKILLS = [
-    { subject: "cambridge-listening", cls: "listening", ico: "🎧", name: "听力", meta: "4 个部分 · 共 40 题", key: "listening" },
-    { subject: "cambridge-reading",   cls: "reading",   ico: "📖", name: "阅读", meta: "3 篇文章 · 共 40 题", key: "reading" },
-    { subject: "cambridge-writing",   cls: "writing",   ico: "✍️", name: "写作", meta: "Task 1 + Task 2 · 限时 60 分钟", key: "writing" }
+    { subject: "cambridge-listening", key: "listening", name: "听力" },
+    { subject: "cambridge-reading", key: "reading", name: "阅读" },
+    { subject: "cambridge-writing", key: "writing", name: "写作" }
   ];
 
   var skillFilter = SKILLS.filter(function (s) { return s.key === skillQ; })[0] || null;
+  var accent = skillFilter ? skillFilter.key : "mock";
+  document.body.classList.add("cam-page", "cam-page--" + accent, "cam-page--pick-test");
+
   var backHref = skillFilter
     ? "zone.html?zone=mock&s=" + encodeURIComponent(skillFilter.key)
     : "zone.html?zone=mock&s=mock";
   var backLabel = skillFilter ? skillFilter.name + "顺序练习" : "套题模考";
 
-  function skillPanel(skill, item) {
-    var done = Y.results()[item.id];
-    return '<div class="skill-panel skill-panel--' + skill.cls + (done ? " is-done" : "") + '">' +
-      '<div class="skill-panel__ico">' + skill.ico + "</div>" +
-      '<div class="skill-panel__name">' + skill.name + "</div>" +
-      '<div class="skill-panel__meta">' + skill.meta + "</div>" +
-      '<button class="skill-panel__btn" onclick="location.href=\'' + Y.fileHref(item, "") + '\'">' +
-      (done ? "再做一次" : (skillFilter ? "开始练习" : "开始测试")) + "</button></div>";
+  var backLink = document.querySelector(".minimal-back__link");
+  if (backLink) {
+    backLink.href = backHref;
+    backLink.textContent = "← 返回" + backLabel;
   }
 
-  function visibleSkills() {
-    return skillFilter ? [skillFilter] : SKILLS;
-  }
-
-  function testProgress(papers) {
+  function testDone(papers) {
     var res = Y.results();
-    var list = visibleSkills();
-    var done = list.filter(function (s) { return papers[s.subject] && res[papers[s.subject].id]; }).length;
-    var total = list.filter(function (s) { return papers[s.subject]; }).length;
-    return { done: done, total: total };
+    if (skillFilter) {
+      var it = papers[skillFilter.subject];
+      return !!(it && res[it.id]);
+    }
+    var list = SKILLS.filter(function (s) { return papers[s.subject]; });
+    var done = list.filter(function (s) { return res[papers[s.subject].id]; }).length;
+    return { done: done, total: list.length, complete: list.length && done >= list.length };
+  }
+
+  function hrefForTest(papers) {
+    if (skillFilter) {
+      var item = papers[skillFilter.subject];
+      if (!item) return "";
+      return Y.fileHref(item, "") + "&pick=1";
+    }
+    var listen = papers["cambridge-listening"];
+    if (!listen) return "";
+    return Y.fileHref(listen, "") + "&cdt=1";
   }
 
   Y.load().then(function (items) {
@@ -70,83 +79,62 @@
     });
 
     var tests = Object.keys(byTest).sort(function (a, b) { return Number(a) - Number(b); });
+    if (!skillFilter) {
+      tests = tests.filter(function (t) { return !!byTest[t]["cambridge-listening"]; });
+    }
+
     var volProg = Y.camVolumeProgress(items, vol);
 
     var crumb = '<div class="minimal-crumb cam-crumb">' +
       '<a href="index.html">首页</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
       '<a href="zone.html?zone=mock">雅思</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
       '<a href="' + backHref + '">' + Y.esc(backLabel) + '</a> <span class="crumb-sep" aria-hidden="true">★</span> ' +
-      '剑桥雅思 ' + Y.esc(vol) + '</div>';
+      "剑桥雅思 " + Y.esc(vol) + "</div>";
 
     var metaLine = skillFilter
       ? "单项顺序练习 · 仅" + skillFilter.name
       : "官方真题套卷 · 选择 Test 开始套题模考";
-    var hero = '<div class="cam-hero">' +
+    var hint = skillFilter
+      ? (skillFilter.key === "writing"
+        ? "选择一套 Test，进入后即可开始写作。"
+        : "选择一套 Test，进入后选练习或模考模式。")
+      : "选择一套 Test，按听力 → 阅读 → 写作顺序完成套题模考。";
+
+    var hero = '<div class="cam-hero cam-hero--' + accent + '">' +
       '<div class="cam-hero__badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">' + Y.esc(vol) + "</div></div>" +
       "<div><h1>剑桥雅思 " + Y.esc(vol) + "</h1>" +
       '<div class="meta">' + metaLine +
       (!skillFilter && volProg.total ? " · 已完成 " + volProg.done + "/" + volProg.total + " 份" : "") +
       "</div></div></div>";
 
-    var tabs = tests.map(function (t, i) {
-      var prog = testProgress(byTest[t]);
-      var complete = prog.total && prog.done >= prog.total;
-      var badge = complete
-        ? '<span class="test-tab__done" aria-label="已完成">✓</span>'
-        : (prog.done ? '<span class="test-tab__part">' + prog.done + "/" + prog.total + "</span>" : "");
-      return '<button type="button" class="test-tab' + (i === 0 ? " is-active" : "") +
-        (complete ? " test-tab--complete" : "") + '" data-test="' + Y.esc(t) + '">' +
-        "Test " + Y.esc(t) + badge + "</button>";
-    }).join("");
-
-    var panels = tests.map(function (t, i) {
+    var tabs = tests.map(function (t) {
       var papers = byTest[t];
-      var skillHtml = visibleSkills().filter(function (s) { return papers[s.subject]; })
-        .map(function (s) { return skillPanel(s, papers[s.subject]); }).join("");
-      return '<div class="test-panel' + (i === 0 ? " is-active" : "") + '" data-test="' + Y.esc(t) + '">' +
-        '<div class="skill-grid">' + skillHtml + "</div></div>";
+      var href = hrefForTest(papers);
+      if (!href) return "";
+      var prog = testDone(papers);
+      var complete = skillFilter ? prog === true : prog.complete;
+      var status = complete
+        ? '<span class="test-tab__done" aria-label="已完成">✓</span>'
+        : (!skillFilter && prog.done
+          ? '<span class="test-tab__part">' + prog.done + "/" + prog.total + "</span>"
+          : '<span class="test-tab__go" aria-hidden="true">开始</span>');
+      return '<a class="test-tab' + (complete ? " test-tab--complete" : "") +
+        '" href="' + Y.esc(href) + '" data-test="' + Y.esc(t) + '">' +
+        '<span class="test-tab__kicker">TEST</span>' +
+        '<span class="test-tab__num">' + Y.esc(t) + "</span>" +
+        '<span class="test-tab__status">' + status + "</span></a>";
     }).join("");
 
     contentEl.innerHTML = crumb + hero +
-      '<div class="test-tabs" role="tablist">' + tabs + "</div>" +
-      '<div class="test-panels">' + panels + "</div>";
+      '<p class="cam-pick-hint">' + Y.esc(hint) + "</p>" +
+      '<div class="test-tabs test-tabs--pick" role="navigation" aria-label="选择 Test">' + tabs + "</div>";
 
     contentEl.querySelector(".test-tabs").addEventListener("click", function (e) {
-      var btn = e.target.closest(".test-tab");
-      if (!btn || btn.classList.contains("is-active")) return;
-      var t = btn.getAttribute("data-test");
-      var panelsWrap = contentEl.querySelector(".test-panels");
-      if (panelsWrap) panelsWrap.classList.add("is-swapping");
-
-      setTimeout(function () {
-        contentEl.querySelectorAll(".test-tab").forEach(function (b) {
-          b.classList.toggle("is-active", b.getAttribute("data-test") === t);
-        });
-        contentEl.querySelectorAll(".test-panel").forEach(function (p) {
-          var on = p.getAttribute("data-test") === t;
-          p.classList.toggle("is-active", on);
-          if (on) {
-            p.classList.remove("is-entering");
-            void p.offsetWidth;
-            p.classList.add("is-entering");
-            p.querySelectorAll(".skill-panel").forEach(function (panel, i) {
-              panel.style.setProperty("--panel-i", String(i));
-            });
-          }
-        });
-        if (panelsWrap) panelsWrap.classList.remove("is-swapping");
-      }, 150);
+      var a = e.target.closest("a.test-tab");
+      if (!a || !a.getAttribute("href")) return;
+      e.preventDefault();
+      (window.YYSD_GO || function (h) { location.href = h; })(a.href);
     });
-
-    contentEl.querySelectorAll(".test-tab").forEach(function (b) { b.setAttribute("tabindex", "0"); });
-
-    var activePanel = contentEl.querySelector(".test-panel.is-active");
-    if (activePanel) {
-      activePanel.classList.add("is-entering");
-      activePanel.querySelectorAll(".skill-panel").forEach(function (panel, i) {
-        panel.style.setProperty("--panel-i", String(i));
-      });
-    }
   }).catch(function (err) {
     var msg = location.protocol === "file:"
       ? "请通过网址（http://）访问本站，本地双击打开会被浏览器拦截。"

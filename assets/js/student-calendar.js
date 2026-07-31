@@ -51,9 +51,18 @@
     return it ? Y.displayTitle(it) : xid;
   }
 
-  function examHref(itemId, eventId) {
-    return "exam.html?id=" + encodeURIComponent(itemId) +
+  function isSuiteListeningLink(itemId, linkedIds) {
+    // ponytail: full mock assign = L+R+W; open Listening in CDT chrome
+    if (!itemId || !/^cambridge-\d+-test-\d+$/.test(itemId)) return false;
+    var ids = linkedIds || [];
+    return ids.indexOf(itemId + "-reading") >= 0 && ids.indexOf(itemId + "-writing") >= 0;
+  }
+
+  function examHref(itemId, eventId, linkedIds) {
+    var href = "exam.html?id=" + encodeURIComponent(itemId) +
       "&event=" + encodeURIComponent(eventId);
+    if (isSuiteListeningLink(itemId, linkedIds)) href += "&cdt=1";
+    return href;
   }
 
   function typeClass(t) {
@@ -226,7 +235,7 @@
       var cta = ev.status === "COMPLETED"
         ? '<button type="button" class="btn btn--ghost btn--sm" data-open="' + ev.id + '">查看</button>'
         : (ids.length === 1
-          ? '<a class="btn btn--primary btn--sm" href="' + examHref(ids[0], ev.id) + '">去做</a>'
+          ? '<a class="btn btn--primary btn--sm" href="' + examHref(ids[0], ev.id, ids) + '">去做</a>'
           : '<button type="button" class="btn btn--primary btn--sm" data-open="' + ev.id + '">去做</button>');
       return '<article class="cal-todo-row ' + statusClass(ev.status) + '">' +
         '<div class="cal-todo-row__main">' +
@@ -284,10 +293,11 @@
     document.getElementById("stu-detail-title").textContent = ev.title;
     var doneSet = {};
     (ev.doneExerciseIds || []).forEach(function (xid) { doneSet[xid] = 1; });
-    var exList = (ev.linkedExerciseIds || []).map(function (xid) {
+    var linkedIds = ev.linkedExerciseIds || [];
+    var exList = linkedIds.map(function (xid) {
       var title = catalogTitle(xid, ev.attachmentName);
       var done = !!doneSet[xid];
-      var href = examHref(xid, ev.id);
+      var href = examHref(xid, ev.id, linkedIds);
       return '<li class="cal-ex-row' + (done ? " is-done" : "") + '">' +
         "<span><b>" + esc(title) + "</b>" +
           (done ? '<small class="cal-ex-done">已完成</small>' : "") +
@@ -326,7 +336,7 @@
         (ev.completedAt ? " · " + esc(fmtDate(ev.completedAt)) : "") + "</span>";
     } else if ((ev.linkedExerciseIds || []).length === 1) {
       acts += '<a class="btn btn--primary" href="' +
-        examHref(ev.linkedExerciseIds[0], ev.id) + '">立即去做</a>';
+        examHref(ev.linkedExerciseIds[0], ev.id, ev.linkedExerciseIds) + '">立即去做</a>';
     }
     detailActions.innerHTML = acts;
     modal.hidden = false;

@@ -583,6 +583,30 @@ a.navleaf:hover { border-color: var(--zc, var(--brand-red)); transform: translat
   transition: background .18s var(--ease);
 }
 .skill-panel__btn:hover { background: var(--brand-red); }
+.cam-hero--listening,
+.cam-hero--reading,
+.cam-hero--writing,
+.cam-hero--mock {
+  position: relative;
+  overflow: hidden;
+}
+.cam-hero--listening::before,
+.cam-hero--reading::before,
+.cam-hero--writing::before,
+.cam-hero--mock::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+}
+.cam-hero--listening::before { background: #102a4c; }
+.cam-hero--reading::before { background: #2f6f78; }
+.cam-hero--writing::before { background: #8a6a2f; }
+.cam-hero--mock::before { background: linear-gradient(180deg, #102a4c 50%, #c7a45d 50%); }
+.cam-hero--listening { background: linear-gradient(165deg, #f5f8fb, var(--surface)); }
+.cam-hero--reading { background: linear-gradient(165deg, #f2f8f9, var(--surface)); }
+.cam-hero--writing { background: linear-gradient(165deg, #faf6f0, var(--surface)); }
+.cam-hero--mock { background: linear-gradient(165deg, #f3f5f8, var(--surface)); }
 @media (max-width: 640px) { .cam-hero { flex-direction: column; text-align: center; } }
 
 /* ---------- Vocabulary book hub (vocab.html) — Canvas-like modules ------ */
@@ -1993,6 +2017,130 @@ table.data tr:last-child td { border-bottom: 0; }
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 18px;
+}
+.cam-pick-hint {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.test-tabs--pick {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.test-tabs--pick .test-tab {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 118px;
+  padding: 16px 18px 14px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--brand-navy);
+  background:
+    linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+  border: 1px solid rgba(7, 25, 47, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 8px 22px rgba(7, 25, 47, 0.05);
+  overflow: hidden;
+  transition:
+    transform .2s var(--ease),
+    border-color .2s var(--ease),
+    box-shadow .2s var(--ease),
+    background .2s var(--ease);
+}
+.test-tabs--pick .test-tab::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--brand-gold);
+  opacity: .85;
+}
+.cam-page--listening .test-tabs--pick .test-tab::before { background: #102a4c; }
+.cam-page--reading .test-tabs--pick .test-tab::before { background: #2f6f78; }
+.cam-page--writing .test-tabs--pick .test-tab::before { background: #8a6a2f; }
+.cam-page--mock .test-tabs--pick .test-tab::before {
+  background: linear-gradient(180deg, #102a4c 45%, #c7a45d 45%);
+}
+.test-tabs--pick .test-tab__kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(7, 25, 47, 0.42);
+}
+.test-tabs--pick .test-tab__num {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--brand-navy);
+}
+.test-tabs--pick .test-tab__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  margin-top: auto;
+}
+.test-tabs--pick .test-tab__go {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(7, 25, 47, 0.45);
+  letter-spacing: 0.02em;
+}
+.test-tabs--pick .test-tab__part {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(7, 25, 47, 0.05);
+  color: rgba(7, 25, 47, 0.62);
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 1;
+}
+.test-tabs--pick .test-tab__done {
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(135deg, #f1d38a, #c7a45d);
+  color: var(--brand-navy);
+  box-shadow: 0 2px 8px rgba(199, 164, 93, 0.35);
+}
+.test-tabs--pick .test-tab--complete {
+  background: linear-gradient(165deg, #fffdf7 0%, #f7f1e3 100%);
+  border-color: rgba(199, 164, 93, 0.35);
+}
+.test-tabs--pick .test-tab:hover {
+  transform: translateY(-2px);
+  border-color: rgba(199, 164, 93, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 12px 28px rgba(7, 25, 47, 0.09);
+  background: #fff;
+  color: var(--brand-navy);
+}
+.test-tabs--pick .test-tab:hover .test-tab__go { color: var(--brand-gold); }
+.cam-page--listening .test-tabs--pick .test-tab:hover { border-color: rgba(16, 42, 76, 0.35); }
+.cam-page--reading .test-tabs--pick .test-tab:hover { border-color: rgba(47, 111, 120, 0.4); }
+.cam-page--writing .test-tabs--pick .test-tab:hover { border-color: rgba(138, 106, 47, 0.4); }
+.test-tabs--pick .test-tab:active {
+  transform: translateY(0) scale(0.985);
+}
+@media (max-width: 720px) {
+  .test-tabs--pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .test-tabs--pick { grid-template-columns: 1fr; }
+  .test-tabs--pick .test-tab { min-height: 96px; }
 }
 .test-tab {
   display: inline-flex;

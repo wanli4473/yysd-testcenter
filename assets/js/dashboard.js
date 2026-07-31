@@ -104,9 +104,25 @@
 
   function focusCta(ev) {
     var ids = ev.linkedExerciseIds || [];
-    if (ev.status !== "COMPLETED" && ids.length === 1) {
-      return { href: "exam.html?id=" + encodeURIComponent(ids[0]) +
-        "&event=" + encodeURIComponent(ev.id), label: "开始这项" };
+    if (ev.status !== "COMPLETED" && ids.length) {
+      var listen = null;
+      for (var i = 0; i < ids.length; i++) {
+        if (/^cambridge-\d+-test-\d+$/.test(ids[i])) { listen = ids[i]; break; }
+      }
+      if (listen && ids.indexOf(listen + "-reading") >= 0 && ids.indexOf(listen + "-writing") >= 0) {
+        return {
+          href: "exam.html?id=" + encodeURIComponent(listen) +
+            "&event=" + encodeURIComponent(ev.id) + "&cdt=1",
+          label: "开始全套模考"
+        };
+      }
+      if (ids.length === 1) {
+        return {
+          href: "exam.html?id=" + encodeURIComponent(ids[0]) +
+            "&event=" + encodeURIComponent(ev.id),
+          label: "开始这项"
+        };
+      }
     }
     return { href: "#event-" + ev.id, label: ev.status === "COMPLETED" ? "查看" : "查看详情" };
   }
