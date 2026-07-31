@@ -163,6 +163,7 @@ const stmts = {
   setUserAvatar: db.prepare("UPDATE users SET avatar_url = ? WHERE phone = ?"),
   touchLogin: db.prepare("UPDATE users SET last_login_at = ? WHERE phone = ?"),
   listScores: db.prepare("SELECT item_id, payload, updated_at FROM user_scores WHERE user_id = ?"),
+  getScore: db.prepare("SELECT payload, updated_at FROM user_scores WHERE user_id = ? AND item_id = ?"),
   upsertScore: db.prepare(
     "INSERT INTO user_scores (user_id, item_id, payload, updated_at) VALUES (?, ?, ?, ?) " +
     "ON CONFLICT(user_id, item_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at " +
@@ -2217,6 +2218,21 @@ function sanitizeWrong(arr) {
   }).filter(Boolean);
 }
 
+function isJunkCdtOverwrite(incoming, existing) {
+  // ponytail: mirrors scripts/check_cdt_score_guard.js — tiny abort must not wipe a real CDT run
+  if (!incoming || !existing || !existing.cdt) return false;
+  var inDur = Number(incoming.durationSec);
+  var exDur = Number(existing.durationSec);
+  if (!isFinite(inDur)) inDur = 0;
+  if (!isFinite(exDur)) exDur = 0;
+  var inScore = incoming.score != null && isFinite(Number(incoming.score)) ? Number(incoming.score) : 0;
+  var exScore = existing.score != null && isFinite(Number(existing.score)) ? Number(existing.score) : 0;
+  var exHasEssay = !!(existing.writingTask1 || existing.writingTask2);
+  var inHasEssay = !!(incoming.writingTask1 || incoming.writingTask2);
+  if (exHasEssay && !inHasEssay && inDur < 60) return true;
+  return inDur < 60 && inScore === 0 && exScore > 0 && exDur >= 600;
+}
+
 function sanitizeScore(body) {
   if (!body || typeof body !== "object") return null;
   var id = clipText(body.id, 120);
@@ -2251,6 +2267,8 @@ function sanitizeScore(body) {
   if (startedAt) out.startedAt = startedAt;
   if (durationSec != null) out.durationSec = durationSec;
   if (assignmentEventId) out.assignmentEventId = assignmentEventId;
+  if (body.cdt) out.cdt = true;
+  if (body.completed) out.completed = true;
   return out;
 }
 
@@ -2275,6 +2293,14 @@ app.put("/api/scores/:itemId", authMiddleware, function (req, res) {
   }
   var rec = sanitizeScore(Object.assign({}, body, { id: itemId, date: body.date || attemptAt }));
   if (!rec) return res.status(400).json({ error: "成绩数据无效" });
+  var existing = null;
+  try {
+    var prev = stmts.getScore.get(req.user.sub, itemId);
+    if (prev && prev.payload) existing = JSON.parse(prev.payload);
+  } catch (e) { existing = null; }
+  if (isJunkCdtOverwrite(rec, existing)) {
+    return res.json({ ok: true, skipped: true, reason: "junk-cdt-overwrite", score: existing });
+  }
   stmts.upsertScore.run(req.user.sub, itemId, JSON.stringify(rec), rec.date);
   var attempt = Object.assign({}, rec, { wrong: sanitizeWrong(body.wrong) });
   stmts.insertAttempt.run(req.user.sub, itemId, JSON.stringify(attempt), attemptAt);

@@ -776,8 +776,20 @@
   function showMask(id, on) {
     var el = $(id);
     if (!el) return;
-    if (on) el.removeAttribute("hidden");
-    else el.setAttribute("hidden", "");
+    if (on) {
+      el.removeAttribute("hidden");
+      // ponytail: parent masks steal iframe focus — pause void while dialog open
+      try {
+        if (window.YYSD_EXAM && typeof YYSD_EXAM.pauseVoid === "function") {
+          YYSD_EXAM.pauseVoid(15000);
+        }
+        if (state.frame && state.frame.contentWindow) {
+          state.frame.contentWindow.postMessage({ type: "yysd:exam-dialog", ms: 15000 }, "*");
+        }
+      } catch (e) { /* ignore */ }
+    } else {
+      el.setAttribute("hidden", "");
+    }
   }
 
   function updateTimer(seconds) {

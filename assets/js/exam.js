@@ -606,7 +606,7 @@
 
     var script = doc.createElement("script");
     script.id = "yysd-exam-bridge-js";
-    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt13" : "");
+    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt14" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
     if (cdtWanted) script.dataset.cdt = "1";
@@ -921,6 +921,7 @@
   // ponytail: CDT Finish → next section needs to clear lock/beforeunload first
   window.YYSD_EXAM = {
     releaseLock: function () { setExamLock(false); },
+    pauseVoid: parentPauseVoid,
     // wait for cloud PUT before CDT hop — Safari aborts in-flight fetch on navigate
     waitScorePush: function (ms) {
       var budget = Math.max(500, Number(ms) || 8000);

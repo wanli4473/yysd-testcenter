@@ -152,6 +152,8 @@
 
     function focusLost() {
       if (!on || voided || Date.now() < voidPausedUntil) return false;
+      // ponytail: CDT chrome is on parent — Finish/Help/nav blur this iframe; only void on tab hide
+      if (cdtShell) return !!document.hidden;
       return document.hidden || !document.hasFocus();
     }
 
@@ -183,6 +185,7 @@
 
     function onBlur() {
       if (!on || voided) return;
+      if (cdtShell) return;
       scheduleVoidCheck();
     }
 
@@ -276,6 +279,7 @@
         }
       },
       voidExam: voidExam,
+      pauseVoid: pauseVoid,
       isOn: function () { return on && !voided; },
       isVoided: function () { return voided; },
       restart: doRestart
@@ -287,6 +291,7 @@
     if (e.data.type === "yysd:time-up") autoSubmit();
     if (e.data.type === "yysd:exam-void") examLock.voidExam();
     if (e.data.type === "yysd:exam-restart") examLock.restart();
+    if (e.data.type === "yysd:exam-dialog") examLock.pauseVoid(e.data.ms || 12000);
   });
 
   function scoreStartedAt() {
@@ -338,6 +343,8 @@
       window.finishTest = function () {
         clearAnyDraft();
         var ret = fn.apply(this, arguments);
+        // ponytail: CDT hides #resultArea with !important — MutationObserver never posts
+        if (cdtShell) reportWriting();
         examLock.disable();
         return ret;
       };
@@ -615,11 +622,16 @@
     function reportWriting() {
       if (posted) return;
       var ra = document.getElementById("resultArea");
-      if (!ra || getComputedStyle(ra).display === "none") return;
+      // ponytail: CDT skin forces resultArea display:none !important — still post
+      if (!cdtShell && (!ra || getComputedStyle(ra).display === "none")) return;
       var r1 = document.getElementById("r1");
       var r2 = document.getElementById("r2");
       var n1 = r1 ? parseInt(r1.textContent, 10) || 0 : 0;
       var n2 = r2 ? parseInt(r2.textContent, 10) || 0 : 0;
+      if (!n1 && !n2) {
+        n1 = (readWritingTask(1).trim().match(/\S+/g) || []).length;
+        n2 = (readWritingTask(2).trim().match(/\S+/g) || []).length;
+      }
       // ponytail: store essays for teacher grading; 8k/task covers IELTS length
       postScore({
         score: null, total: null, writingWords: n1 + n2, completed: true,
