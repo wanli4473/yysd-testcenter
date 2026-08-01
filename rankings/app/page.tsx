@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [leaders, tapes, uniCount, editionCount] = await Promise.all([
     getLeaders(),
-    getTapeTops(10),
+    getTapeTops(8),
     prisma.university.count(),
     prisma.rankingEdition.count({ where: { isSubject: false } }),
   ]);
@@ -78,28 +78,48 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="panel track-desk overflow-hidden">
+          {tapes.map((tape, i) => (
+            <input
+              key={`radio-${tape.system}`}
+              type="radio"
+              name="home-track"
+              id={`track-${tape.system}`}
+              className="track-radio"
+              defaultChecked={i === 0}
+            />
+          ))}
+          <div className="track-tabs">
+            {tapes.map((tape) => (
+              <label key={tape.system} htmlFor={`track-${tape.system}`} className="track-tab">
+                <span className="track-dot" style={{ background: SYSTEM_TRACK[tape.system] }} />
+                <span>{SYSTEMS[tape.system].shortName}</span>
+              </label>
+            ))}
+            <span className="mono ml-auto px-2 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">
+              行情轨
+            </span>
+          </div>
           {tapes.map((tape) => (
-            <div key={tape.system} className="panel overflow-hidden">
-              <div className="panel-head">
-                <span className="inline-flex items-center gap-2 normal-case tracking-normal text-[var(--ink)]">
-                  <span className="track-dot" style={{ background: SYSTEM_TRACK[tape.system] }} />
-                  <span className="font-semibold">{SYSTEMS[tape.system].shortName}</span>
-                  <span className="mono text-[var(--muted)]">{tape.year}</span>
+            <div key={tape.system} className={`track-pane track-pane-${tape.system}`}>
+              <div className="track-pane-meta">
+                <span className="mono">
+                  {SYSTEMS[tape.system].shortName} · {tape.year} · TOP 8
                 </span>
-                <Link href={`/${tape.system}/world/${tape.year}`} className="mono text-[10px] text-[var(--muted)] hover:text-[var(--ink)]">
+                <Link
+                  href={`/${tape.system}/world/${tape.year}`}
+                  className="mono text-[10px] hover:text-[var(--ink)]"
+                >
                   FULL →
                 </Link>
               </div>
-              <div>
-                {tape.rows.map((r) => (
-                  <Link key={r.slug} href={`/universities/${r.slug}`} className="tape-row">
-                    <span className="mono text-[var(--gold)]">{String(r.rank).padStart(2, "0")}</span>
-                    <span className="truncate font-medium">{r.nameZh}</span>
-                    <span className="mono text-[10px] text-[var(--muted)]">{countryLabel(r.country)}</span>
-                  </Link>
-                ))}
-              </div>
+              {tape.rows.map((r) => (
+                <Link key={r.slug} href={`/universities/${r.slug}`} className="tape-row">
+                  <span className="mono text-[var(--gold)]">{String(r.rank).padStart(2, "0")}</span>
+                  <span className="truncate font-medium">{r.nameZh}</span>
+                  <span className="mono text-[10px] text-[var(--muted)]">{countryLabel(r.country)}</span>
+                </Link>
+              ))}
             </div>
           ))}
         </div>
