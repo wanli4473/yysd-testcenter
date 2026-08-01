@@ -343,7 +343,7 @@ const TEST = {
                 "B": "twin room.",
                 "C": "triple room."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
@@ -355,7 +355,7 @@ const TEST = {
                 "B": "single person.",
                 "C": "couple."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
@@ -367,7 +367,7 @@ const TEST = {
                 "B": "house.",
                 "C": "studio apartment."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             }
           ]
@@ -438,7 +438,7 @@ const TEST = {
                 "B": "5–17 January",
                 "C": "25–31 January"
               },
-              "answer": "C",
+              "answer": ["C"],
               "explain": "答案：C。"
             },
             {
@@ -450,7 +450,7 @@ const TEST = {
                 "B": "dance",
                 "C": "exhibitions"
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -462,7 +462,7 @@ const TEST = {
                 "B": "two",
                 "C": "several"
               },
-              "answer": "C",
+              "answer": ["C"],
               "explain": "答案：C。"
             },
             {
@@ -474,7 +474,7 @@ const TEST = {
                 "B": "in a tent",
                 "C": "in a stadium"
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             }
           ]
@@ -584,7 +584,7 @@ const TEST = {
                 "B": "postgraduate students.",
                 "C": "business executives."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -596,7 +596,7 @@ const TEST = {
                 "B": "two days.",
                 "C": "three days."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
@@ -608,7 +608,7 @@ const TEST = {
                 "B": "speed.",
                 "C": "clarity."
               },
-              "answer": "C",
+              "answer": ["C"],
               "explain": "答案：C。"
             },
             {
@@ -620,7 +620,7 @@ const TEST = {
                 "B": "as fast as possible.",
                 "C": "thoroughly."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -632,7 +632,7 @@ const TEST = {
                 "B": "encourage interest in learning.",
                 "C": "develop literacy skills."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
@@ -644,7 +644,7 @@ const TEST = {
                 "B": "stay healthy.",
                 "C": "select appropriate materials."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -656,7 +656,7 @@ const TEST = {
                 "B": "contact their Course Convenor.",
                 "C": "reserve a place in advance."
               },
-              "answer": "C",
+              "answer": ["C"],
               "explain": "答案：C。"
             },
             {
@@ -668,7 +668,7 @@ const TEST = {
                 "B": "Monday, Tuesday and Wednesday.",
                 "C": "Monday, Thursday and Friday."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
@@ -680,7 +680,7 @@ const TEST = {
                 "B": "advice on coping with stress.",
                 "C": "a detailed weekly planner."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
@@ -692,7 +692,7 @@ const TEST = {
                 "B": "he wants to start at the beginning.",
                 "C": "he seeks to revise his skills."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             }
           ]
@@ -843,7 +843,7 @@ const TEST = {
                 "B": "It would be a poor use of resources because only a minority would use it.",
                 "C": "It could not accommodate large productions of plays."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             }
           ]
@@ -1037,9 +1037,9 @@ function submitTest(){
     s.groups.forEach(g=>g.questions.forEach(q=>{
       const ua=readAns(q); let ok;
       if(g.kind==='multi') ok=!!pairCorrect[q.id];
-      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      else ok = ua!=='' && [].concat(q.answer).map(norm).includes(norm(ua));
       total++; if(ok){correct++;sc++;}
-      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:[].concat(q.answer))});
     }));
     detail.push({s,sc,total:allQs(s).length,items});
   });

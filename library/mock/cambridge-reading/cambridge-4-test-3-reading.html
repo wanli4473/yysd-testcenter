@@ -303,7 +303,7 @@ const TEST = {
                 "C": "outline the problems of street children.",
                 "D": "highlight the benefits to society of S.K.I."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -316,7 +316,7 @@ const TEST = {
                 "C": "encourage the public to give money to street children.",
                 "D": "give business training and loans to street children."
               },
-              "answer": "D",
+              "answer": ["D"],
               "explain": "答案：D。"
             },
             {
@@ -329,7 +329,7 @@ const TEST = {
                 "C": "poverty",
                 "D": "crime"
               },
-              "answer": "C",
+              "answer": ["C"],
               "explain": "答案：C。"
             },
             {
@@ -342,7 +342,7 @@ const TEST = {
                 "C": "set up their own businesses.",
                 "D": "employ other children."
               },
-              "answer": "C",
+              "answer": ["C"],
               "explain": "答案：C。"
             }
           ]
@@ -424,28 +424,28 @@ const TEST = {
               "id": "R9",
               "no": 9,
               "q": "Any street child can set up their own small business if given enough support.",
-              "answer": "NO",
+              "answer": ["NO"],
               "explain": "答案：NO。"
             },
             {
               "id": "R10",
               "no": 10,
               "q": "In some cases, the families of street children may need financial support from S.K.I.",
-              "answer": "NOT GIVEN",
+              "answer": ["NOT GIVEN"],
               "explain": "答案：NOT GIVEN。"
             },
             {
               "id": "R11",
               "no": 11,
               "q": "Only one fixed loan should be given to each child.",
-              "answer": "NO",
+              "answer": ["NO"],
               "explain": "答案：NO。"
             },
             {
               "id": "R12",
               "no": 12,
               "q": "The children have to pay back slightly more money than they borrowed.",
-              "answer": "YES",
+              "answer": ["YES"],
               "explain": "答案：YES。"
             }
           ]
@@ -465,7 +465,7 @@ const TEST = {
                 "C": "when programs are supported by local businesses.",
                 "D": "if the projects planned are realistic and useful."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             }
           ]
@@ -512,28 +512,28 @@ const TEST = {
               "id": "R14",
               "no": 14,
               "q": "Section A",
-              "answer": "iii",
+              "answer": ["iii"],
               "explain": "答案：iii。"
             },
             {
               "id": "R15",
               "no": 15,
               "q": "Section B",
-              "answer": "i",
+              "answer": ["i"],
               "explain": "答案：i。"
             },
             {
               "id": "R16",
               "no": 16,
               "q": "Section C",
-              "answer": "iv",
+              "answer": ["iv"],
               "explain": "答案：iv。"
             },
             {
               "id": "R17",
               "no": 17,
               "q": "Section D",
-              "answer": "vi",
+              "answer": ["vi"],
               "explain": "答案：vi。"
             }
           ]
@@ -700,35 +700,35 @@ const TEST = {
               "id": "R27",
               "no": 27,
               "q": "the effect of recording on the way people talk",
-              "answer": "D",
+              "answer": ["D"],
               "explain": "答案：D。"
             },
             {
               "id": "R28",
               "no": 28,
               "q": "the importance of taking notes on body language",
-              "answer": "E",
+              "answer": ["E"],
               "explain": "答案：E。"
             },
             {
               "id": "R29",
               "no": 29,
               "q": "the fact that language is influenced by social situation",
-              "answer": "C",
+              "answer": ["C"],
               "explain": "答案：C。"
             },
             {
               "id": "R30",
               "no": 30,
               "q": "how informants can be helped to be less self-conscious",
-              "answer": "D",
+              "answer": ["D"],
               "explain": "答案：D。"
             },
             {
               "id": "R31",
               "no": 31,
               "q": "various methods that can be used to generate specific data",
-              "answer": "F",
+              "answer": ["F"],
               "explain": "答案：F。"
             }
           ]
@@ -1039,9 +1039,9 @@ function submitTest(){
     s.groups.forEach(g=>g.questions.forEach(q=>{
       const ua=readAns(q); let ok;
       if(g.kind==='multi') ok=!!pairCorrect[q.id];
-      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      else ok = ua!=='' && [].concat(q.answer).map(norm).includes(norm(ua));
       total++; if(ok){correct++;sc++;}
-      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:[].concat(q.answer))});
     }));
     detail.push({s,sc,total:allQs(s).length,items});
   });

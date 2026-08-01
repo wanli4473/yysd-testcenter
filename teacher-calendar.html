@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260731assign1">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260801browse2">
   <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260722polish">
 </head>
 <body class="home-minimal teacher-page teacher-layout shell-compact-nav page-premium">
@@ -127,17 +127,20 @@
             <input type="file" id="f-html" accept=".html,text/html">
             <p class="profile-hint" id="html-file-hint">上传后优先生效；学生将在站内打开做题。也可下方勾选网站现有练习。</p>
           </label>
-          <div class="cal-ex-cats" id="exercise-cats" role="tablist" aria-label="练习分类">
+          <div class="cal-ex-cats" id="exercise-cats" role="tablist" aria-label="作业类型">
             <button type="button" class="chip is-active" data-ex-cat="vocab">单词</button>
-            <button type="button" class="chip" data-ex-cat="listening">听力练习</button>
-            <button type="button" class="chip" data-ex-cat="reading">阅读练习</button>
-            <button type="button" class="chip" data-ex-cat="writing">写作练习</button>
-            <button type="button" class="chip" data-ex-cat="part">单项 Section / Passage</button>
+            <button type="button" class="chip" data-ex-cat="part">补弱练习</button>
+            <button type="button" class="chip" data-ex-cat="skill">单项模考</button>
             <button type="button" class="chip" data-ex-cat="suite">全套模考</button>
           </div>
-          <p class="profile-hint" id="exercise-cat-hint">先点上方分类，再勾选要布置的内容。</p>
+          <p class="profile-hint" id="exercise-cat-hint">先选作业类型，再按下钻勾选。</p>
+          <div class="cal-ex-browse" id="exercise-browse" hidden>
+            <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-vol-filter" role="tablist" aria-label="剑桥册"></div>
+            <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-test-filter" role="tablist" aria-label="Test"></div>
+            <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-skill-filter" hidden role="tablist" aria-label="技能"></div>
+          </div>
           <div class="cal-picker-toolbar cal-picker-toolbar--ex">
-            <input type="search" id="exercise-q" placeholder="搜索如：c20 t1 / section1 / 高中词汇" autocomplete="off">
+            <input type="search" id="exercise-q" placeholder="或直接搜索：c20 t1 / section2 / 高中词汇" autocomplete="off">
           </div>
           <div class="cal-check-list cal-check-list--tall" id="exercise-list"></div>
           <p class="profile-hint" id="exercise-picked">已选 0 份练习</p>
@@ -173,10 +176,10 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=20260716parts"></script>
-  <script src="assets/js/auth.js?v=20260731open1"></script>
-  <script src="assets/js/teacher-auth.js?v=20260731open1"></script>
+  <script src="assets/js/config.js?v=20260801skillmock"></script>
+  <script src="assets/js/auth.js?v=20260801wl1"></script>
+  <script src="assets/js/teacher-auth.js?v=20260801wl1"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/teacher-calendar.js?v=20260731assign1"></script>
+  <script src="assets/js/teacher-calendar.js?v=20260801browse2"></script>
 </body>
 </html>

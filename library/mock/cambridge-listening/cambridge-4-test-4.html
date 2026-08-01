@@ -425,7 +425,7 @@ const TEST = {
                 "B": "two.",
                 "C": "three."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
@@ -437,7 +437,7 @@ const TEST = {
                 "B": "all over Europe.",
                 "C": "outside Europe."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -449,7 +449,7 @@ const TEST = {
                 "B": "are planned by guides from the local area.",
                 "C": "are for people with good fitness levels."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -461,7 +461,7 @@ const TEST = {
                 "B": "only a little more than other clients.",
                 "C": "extra only if they stay in a large room."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -473,7 +473,7 @@ const TEST = {
                 "B": "most nights.",
                 "C": "every night."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             }
           ]
@@ -669,28 +669,28 @@ const TEST = {
               "id": "L27",
               "no": 27,
               "q": "Experiment 1",
-              "answer": "H",
+              "answer": ["H"],
               "explain": "答案：H。"
             },
             {
               "id": "L28",
               "no": 28,
               "q": "Experiment 2",
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
               "id": "L29",
               "no": 29,
               "q": "Experiment 3",
-              "answer": "E",
+              "answer": ["E"],
               "explain": "答案：E。"
             },
             {
               "id": "L30",
               "no": 30,
               "q": "Experiment 5",
-              "answer": "C",
+              "answer": ["C"],
               "explain": "答案：C。"
             }
           ]
@@ -774,7 +774,7 @@ const TEST = {
                 "B": "at an angle to the beach.",
                 "C": "from the beach to the sea."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -786,7 +786,7 @@ const TEST = {
                 "B": "New Zealand.",
                 "C": "Tahiti."
               },
-              "answer": "A",
+              "answer": ["A"],
               "explain": "答案：A。"
             },
             {
@@ -798,7 +798,7 @@ const TEST = {
                 "B": "150.",
                 "C": "1,500."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             },
             {
@@ -810,7 +810,7 @@ const TEST = {
                 "B": "summer.",
                 "C": "winter."
               },
-              "answer": "B",
+              "answer": ["B"],
               "explain": "答案：B。"
             }
           ]
@@ -1010,9 +1010,9 @@ function submitTest(){
     s.groups.forEach(g=>g.questions.forEach(q=>{
       const ua=readAns(q); let ok;
       if(g.kind==='multi') ok=!!pairCorrect[q.id];
-      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      else ok = ua!=='' && [].concat(q.answer).map(norm).includes(norm(ua));
       total++; if(ok){correct++;sc++;}
-      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:[].concat(q.answer))});
     }));
     detail.push({s,sc,total:allQs(s).length,items});
   });

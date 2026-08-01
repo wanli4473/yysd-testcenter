@@ -16,19 +16,93 @@
   var selectedStudents = {};
   var selectedExercises = {};
   var exerciseCat = "vocab";
+  var exerciseSkill = "listening";
+  var pickVol = "";
+  var pickTest = "";
+  var pickVocabBook = "";
+  var pickVocabRange = "";
   var detailEventId = null;
 
+  // ponytail: mirrors zone vocab nav; themes hub has no assignable lists yet
+  var VOCAB_BOOK_OPTS = [
+    { subject: "vocab", label: "高中词汇" },
+    { subject: "vocab-cet4", label: "四级词汇" },
+    { subject: "vocab-special-listening", label: "听力专项" },
+    { subject: "vocab-special-reading", label: "阅读专项" },
+    { subject: "vocab-special-writing", label: "写作专项" }
+  ];
+
   var CAT_HINT = {
-    vocab: "单词区词书单元，适合布置背单词作业。",
-    listening: "剑桥听力整套 Test（含四个 Section）。",
-    reading: "剑桥阅读整套 Test（含三个 Passage）。",
-    writing: "剑桥写作整套 Test（Task 1 + Task 2）。",
-    part: "只练某一个 Section / Passage，适合单项补弱。",
-    suite: "一键勾选听力+阅读+写作三科，学生端按全套模考流程作答。"
+    vocab: "单词：先选词书，再按单元段勾选（也可直接搜索）。",
+    part: "补弱：先选册与 Test，再勾 Section / Passage（练习规则，可续做）。",
+    skill: "单项模考：先选册与 Test，再勾单科整卷（机考模考规则）。",
+    suite: "全套模考：先选册，再勾某套 Test 的听力+阅读+写作。"
   };
+
+  function cdtPackForCat(cat) {
+    if (cat === "part") return "drill";
+    if (cat === "skill" || cat === "suite") return "exam";
+    return "";
+  }
+
+  function isCambridgeBrowse() {
+    return exerciseCat === "part" || exerciseCat === "skill" || exerciseCat === "suite";
+  }
+
+  function isVocabBrowse() {
+    return exerciseCat === "vocab";
+  }
+
+  function isBrowseMode() {
+    return isCambridgeBrowse() || isVocabBrowse();
+  }
 
   function isVocabSubject(subject) {
     return /^vocab/.test(subject || "");
+  }
+
+  function vocabBookOpts() {
+    return VOCAB_BOOK_OPTS.filter(function (opt) {
+      return catalog.some(function (it) { return it.subject === opt.subject; });
+    });
+  }
+
+  function vocabListsForBook(subject) {
+    return catalog.filter(function (it) { return it.subject === subject; });
+  }
+
+  function vocabRangesForBook(subject) {
+    var lists = vocabListsForBook(subject);
+    var chunk = (Y.VOCAB_BOOKS && Y.VOCAB_BOOKS.gaozhong && Y.VOCAB_BOOKS.gaozhong.chunk) || 10;
+    if (Y.vocabListRanges) return Y.vocabListRanges(lists, chunk);
+    return [{ id: "all", label: "全部", start: 0, end: 9999 }];
+  }
+
+  function ensureVocabBrowseDefaults() {
+    var books = vocabBookOpts();
+    var subjects = books.map(function (b) { return b.subject; });
+    if (!pickVocabBook || subjects.indexOf(pickVocabBook) < 0) {
+      pickVocabBook = subjects[0] || "";
+    }
+    var ranges = pickVocabBook ? vocabRangesForBook(pickVocabBook) : [];
+    var ids = ranges.map(function (r) { return r.id; });
+    if (!pickVocabRange || ids.indexOf(pickVocabRange) < 0) {
+      pickVocabRange = ids[0] || "";
+    }
+  }
+
+  function matchVocabBrowse(it) {
+    if (!pickVocabBook) return false;
+    if (it.subject !== pickVocabBook) return false;
+    var ranges = vocabRangesForBook(pickVocabBook);
+    var range = null;
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id === pickVocabRange) { range = ranges[i]; break; }
+    }
+    if (!range) return true;
+    var n = Y.vocabListNo ? Y.vocabListNo(it) : 0;
+    if (!n) return true;
+    return n >= range.start && n <= range.end;
   }
 
   function suiteBaseId(id) {
@@ -60,16 +134,21 @@
   function itemInCat(it, cat) {
     if (!cat) return true;
     if (cat === "vocab") return isVocabSubject(it.subject);
-    if (cat === "listening") {
-      return it.subject === "cambridge-listening" && !it.partNum;
+    if (cat === "part") {
+      if (!it.partNum) return false;
+      if (exerciseSkill === "listening") return it.subject === "cambridge-listening";
+      if (exerciseSkill === "reading") return it.subject === "cambridge-reading";
+      return it.subject === "cambridge-listening" || it.subject === "cambridge-reading";
     }
-    if (cat === "reading") {
-      return it.subject === "cambridge-reading" && !it.partNum;
+    if (cat === "skill") {
+      if (it.partNum) return false;
+      if (exerciseSkill === "listening") return it.subject === "cambridge-listening";
+      if (exerciseSkill === "reading") return it.subject === "cambridge-reading";
+      if (exerciseSkill === "writing") return it.subject === "cambridge-writing";
+      return it.subject === "cambridge-listening" ||
+        it.subject === "cambridge-reading" ||
+        it.subject === "cambridge-writing";
     }
-    if (cat === "writing") {
-      return it.subject === "cambridge-writing" && !it.partNum;
-    }
-    if (cat === "part") return !!it.partNum;
     if (cat === "suite") return false;
     return true;
   }
@@ -78,12 +157,78 @@
     if (it.partNum) {
       return it.partKind === "s" ? ("Section " + it.partNum) : ("Passage " + it.partNum);
     }
-    if (isVocabSubject(it.subject)) return "单词";
-    if (it.subject === "cambridge-listening") return "听力练习";
-    if (it.subject === "cambridge-reading") return "阅读练习";
-    if (it.subject === "cambridge-writing") return "写作练习";
+    if (isVocabSubject(it.subject)) {
+      for (var i = 0; i < VOCAB_BOOK_OPTS.length; i++) {
+        if (VOCAB_BOOK_OPTS[i].subject === it.subject) return VOCAB_BOOK_OPTS[i].label;
+      }
+      return "单词";
+    }
+    if (it.subject === "cambridge-listening") return "听力整卷";
+    if (it.subject === "cambridge-reading") return "阅读整卷";
+    if (it.subject === "cambridge-writing") return "写作整卷";
     if (it.subject === "ielts") return "模考";
     return (Y.ZONE[it.zone] || {}).label || it.zone || "";
+  }
+
+  function cambridgeVolumes() {
+    var seen = {};
+    var out = [];
+    catalog.forEach(function (it) {
+      if (!Y.isCambridge || !Y.isCambridge(it.subject)) return;
+      if (it.partNum) return;
+      var v = Y.camVolume ? String(Y.camVolume(it) || "") : "";
+      if (!v || seen[v]) return;
+      seen[v] = 1;
+      out.push(v);
+    });
+    return out.sort(function (a, b) {
+      return Number(b) - Number(a);
+    });
+  }
+
+  function testsForVolume(vol) {
+    var seen = {};
+    var out = [];
+    catalog.forEach(function (it) {
+      if (!Y.isCambridge || !Y.isCambridge(it.subject)) return;
+      if (it.partNum) return;
+      if (String(Y.camVolume(it) || "") !== String(vol)) return;
+      var t = String(Y.camTestNo(it) || "");
+      if (!t || seen[t]) return;
+      seen[t] = 1;
+      out.push(t);
+    });
+    return out.sort(function (a, b) { return Number(a) - Number(b); });
+  }
+
+  function ensureBrowseDefaults() {
+    if (!isCambridgeBrowse()) return;
+    var vols = cambridgeVolumes();
+    if (!pickVol || vols.indexOf(pickVol) < 0) pickVol = vols[0] || "";
+    var tests = pickVol ? testsForVolume(pickVol) : [];
+    if (!pickTest || tests.indexOf(pickTest) < 0) pickTest = tests[0] || "";
+    if (exerciseCat === "part") {
+      if (exerciseSkill !== "listening" && exerciseSkill !== "reading") exerciseSkill = "listening";
+    } else if (exerciseCat === "skill") {
+      if (["listening", "reading", "writing", "all"].indexOf(exerciseSkill) < 0) {
+        exerciseSkill = "listening";
+      }
+    }
+  }
+
+  function matchVolTest(it) {
+    if (!pickVol || !pickTest) return false;
+    return String(Y.camVolume(it) || "") === String(pickVol) &&
+      String(Y.camTestNo(it) || "") === String(pickTest);
+  }
+
+  function renderChipRow(host, items, attr, active, prefix) {
+    if (!host) return;
+    host.innerHTML = items.map(function (v) {
+      var on = String(v) === String(active);
+      return '<button type="button" class="chip chip--sub' + (on ? " is-active" : "") +
+        '" data-' + attr + '="' + esc(v) + '">' + esc((prefix || "") + v) + "</button>";
+    }).join("");
   }
 
   var viewEl = document.getElementById("cal-view");
@@ -128,6 +273,11 @@
     selectedStudents = {};
     selectedExercises = {};
     exerciseCat = "vocab";
+    exerciseSkill = "listening";
+    pickVol = "";
+    pickTest = "";
+    pickVocabBook = "";
+    pickVocabRange = "";
     var hint = document.getElementById("html-file-hint");
     if (hint) hint.textContent = "上传后优先生效；学生将在站内打开做题。也可下方勾选网站现有练习。";
     document.getElementById("f-type").value = "ASSIGNMENT";
@@ -174,21 +324,100 @@
     document.querySelectorAll("#exercise-cats [data-ex-cat]").forEach(function (btn) {
       btn.classList.toggle("is-active", btn.getAttribute("data-ex-cat") === exerciseCat);
     });
+    var browse = document.getElementById("exercise-browse");
+    var q = (document.getElementById("exercise-q").value || "").trim();
+    var showBrowse = isBrowseMode() && !q;
+    if (browse) browse.hidden = !showBrowse;
     var hint = document.getElementById("exercise-cat-hint");
-    if (hint) hint.textContent = CAT_HINT[exerciseCat] || "先点上方分类，再勾选要布置的内容。";
+    if (hint) {
+      hint.textContent = q && isBrowseMode()
+        ? (isVocabBrowse()
+          ? "正在搜索全部词书；清空搜索可回到「词书 → 单元段」下钻。"
+          : "正在搜索全部匹配项；清空搜索可回到「册 → Test」下钻。")
+        : (CAT_HINT[exerciseCat] || "先选作业类型，再勾选内容。");
+    }
+    if (!showBrowse) return;
+
+    var volHost = document.getElementById("exercise-vol-filter");
+    var testHost = document.getElementById("exercise-test-filter");
+    var skillBar = document.getElementById("exercise-skill-filter");
+
+    if (isVocabBrowse()) {
+      ensureVocabBrowseDefaults();
+      var books = vocabBookOpts();
+      if (volHost) {
+        volHost.setAttribute("aria-label", "词书");
+        volHost.innerHTML = books.map(function (b) {
+          var on = b.subject === pickVocabBook;
+          return '<button type="button" class="chip chip--sub' + (on ? " is-active" : "") +
+            '" data-ex-vbook="' + esc(b.subject) + '">' + esc(b.label) + "</button>";
+        }).join("");
+      }
+      var ranges = pickVocabBook ? vocabRangesForBook(pickVocabBook) : [];
+      if (testHost) {
+        testHost.setAttribute("aria-label", "单元段");
+        testHost.innerHTML = ranges.map(function (r) {
+          var on = r.id === pickVocabRange;
+          return '<button type="button" class="chip chip--sub' + (on ? " is-active" : "") +
+            '" data-ex-vrange="' + esc(r.id) + '">' + esc(r.label) + "</button>";
+        }).join("");
+      }
+      if (skillBar) {
+        skillBar.hidden = true;
+        skillBar.innerHTML = "";
+      }
+      return;
+    }
+
+    ensureBrowseDefaults();
+    if (volHost) volHost.setAttribute("aria-label", "剑桥册");
+    if (testHost) testHost.setAttribute("aria-label", "Test");
+    var vols = cambridgeVolumes();
+    renderChipRow(volHost, vols, "ex-vol", pickVol, "Cam ");
+    var tests = pickVol ? testsForVolume(pickVol) : [];
+    renderChipRow(testHost, tests, "ex-test", pickTest, "Test ");
+
+    if (skillBar) {
+      if (exerciseCat === "suite") {
+        skillBar.hidden = true;
+        skillBar.innerHTML = "";
+      } else if (exerciseCat === "part") {
+        skillBar.hidden = false;
+        skillBar.innerHTML =
+          '<button type="button" class="chip chip--sub' + (exerciseSkill === "listening" ? " is-active" : "") +
+          '" data-ex-skill="listening">听力 Section</button>' +
+          '<button type="button" class="chip chip--sub' + (exerciseSkill === "reading" ? " is-active" : "") +
+          '" data-ex-skill="reading">阅读 Passage</button>';
+      } else {
+        skillBar.hidden = false;
+        skillBar.innerHTML =
+          '<button type="button" class="chip chip--sub' + (exerciseSkill === "listening" ? " is-active" : "") +
+          '" data-ex-skill="listening">听力</button>' +
+          '<button type="button" class="chip chip--sub' + (exerciseSkill === "reading" ? " is-active" : "") +
+          '" data-ex-skill="reading">阅读</button>' +
+          '<button type="button" class="chip chip--sub' + (exerciseSkill === "writing" ? " is-active" : "") +
+          '" data-ex-skill="writing">写作</button>' +
+          '<button type="button" class="chip chip--sub' + (exerciseSkill === "all" ? " is-active" : "") +
+          '" data-ex-skill="all">全部</button>';
+      }
+    }
   }
 
   function renderExerciseList() {
     syncExerciseCatUi();
     var q = (document.getElementById("exercise-q").value || "").trim().toLowerCase();
     var html = "";
+    var searching = !!q;
 
     if (exerciseCat === "suite") {
       var suites = buildSuites().filter(function (s) {
-        if (!q) return true;
-        var hay = (s.base + " " + Y.displayTitle(s.listening)).toLowerCase();
-        return hay.indexOf(q) >= 0;
-      }).slice(0, 80);
+        if (searching) {
+          var hay = (s.base + " " + Y.displayTitle(s.listening)).toLowerCase();
+          return hay.indexOf(q) >= 0;
+        }
+        return String(Y.camVolume(s.listening) || "") === String(pickVol) &&
+          String(Y.camTestNo(s.listening) || "") === String(pickTest);
+      }).slice(0, searching ? 80 : 8);
       html = suites.map(function (s) {
         var ids = suiteIdsOf(s.base);
         var allOn = ids.every(function (id) { return selectedExercises[id]; });
@@ -204,21 +433,37 @@
     } else {
       var items = catalog.filter(function (it) {
         if (!itemInCat(it, exerciseCat)) return false;
-        if (!q) return true;
-        var hay = (Y.displayTitle(it) + " " + it.title + " " + it.id + " " +
-          (it.subject || "") + " " + (Y.partSearchText ? Y.partSearchText(it) : "")).toLowerCase();
-        return hay.indexOf(q) >= 0;
-      }).slice(0, 120);
+        if (searching) {
+          var hay = (Y.displayTitle(it) + " " + it.title + " " + it.id + " " +
+            (it.subject || "") + " " + (Y.partSearchText ? Y.partSearchText(it) : "")).toLowerCase();
+          return hay.indexOf(q) >= 0;
+        }
+        if (isCambridgeBrowse() && !matchVolTest(it)) return false;
+        if (isVocabBrowse() && !matchVocabBrowse(it)) return false;
+        return true;
+      });
+      if (isVocabBrowse() && !searching && Y.vocabListNo) {
+        items.sort(function (a, b) { return Y.vocabListNo(a) - Y.vocabListNo(b); });
+      }
+      items = items.slice(0, searching ? 120 : 40);
       html = items.map(function (it) {
         var checked = selectedExercises[it.id] ? " checked" : "";
+        var label = exerciseCat === "skill"
+          ? ("单项模考 · " + itemCatLabel(it))
+          : itemCatLabel(it);
         return '<label class="cal-check">' +
           '<input type="checkbox" data-exercise="' + esc(it.id) + '"' + checked + ">" +
-          "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(itemCatLabel(it)) + "</small></span></label>";
+          "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(label) + "</small></span></label>";
       }).join("");
     }
 
+    var emptyMsg = searching
+      ? "没有匹配的练习"
+      : (isVocabBrowse()
+        ? "该词书 / 单元段暂无内容，换一本试试"
+        : (isCambridgeBrowse() ? "该册 / Test 下暂无内容，换一册试试" : "没有匹配的练习"));
     document.getElementById("exercise-list").innerHTML =
-      html || '<p class="profile-hint">没有匹配的练习</p>';
+      html || '<p class="profile-hint">' + emptyMsg + "</p>";
     document.getElementById("exercise-picked").textContent =
       "已选 " + Object.keys(selectedExercises).length + " 份练习";
   }
@@ -450,8 +695,51 @@
     var btn = e.target.closest("[data-ex-cat]");
     if (!btn) return;
     exerciseCat = btn.getAttribute("data-ex-cat") || "vocab";
+    if (exerciseCat === "part") exerciseSkill = "listening";
+    else if (exerciseCat === "skill") exerciseSkill = "listening";
+    pickVol = "";
+    pickTest = "";
+    pickVocabBook = "";
+    pickVocabRange = "";
     renderExerciseList();
   });
+
+  var browseEl = document.getElementById("exercise-browse");
+  if (browseEl) {
+    browseEl.addEventListener("click", function (e) {
+      var vbook = e.target.closest("[data-ex-vbook]");
+      if (vbook) {
+        pickVocabBook = vbook.getAttribute("data-ex-vbook") || "";
+        pickVocabRange = "";
+        renderExerciseList();
+        return;
+      }
+      var vrange = e.target.closest("[data-ex-vrange]");
+      if (vrange) {
+        pickVocabRange = vrange.getAttribute("data-ex-vrange") || "";
+        renderExerciseList();
+        return;
+      }
+      var volBtn = e.target.closest("[data-ex-vol]");
+      if (volBtn) {
+        pickVol = volBtn.getAttribute("data-ex-vol") || "";
+        pickTest = "";
+        renderExerciseList();
+        return;
+      }
+      var testBtn = e.target.closest("[data-ex-test]");
+      if (testBtn) {
+        pickTest = testBtn.getAttribute("data-ex-test") || "";
+        renderExerciseList();
+        return;
+      }
+      var skillBtn = e.target.closest("[data-ex-skill]");
+      if (skillBtn) {
+        exerciseSkill = skillBtn.getAttribute("data-ex-skill") || "listening";
+        renderExerciseList();
+      }
+    });
+  }
 
   document.getElementById("select-all-students").addEventListener("click", function () {
     students.forEach(function (s) { selectedStudents[s.id] = true; });
@@ -558,7 +846,8 @@
       startTime: fromLocalInput(document.getElementById("f-start").value),
       dueTime: fromLocalInput(document.getElementById("f-due").value),
       targetStudentIds: targetStudentIds,
-      linkedExerciseIds: type === "ASSIGNMENT" && !file ? Object.keys(selectedExercises) : []
+      linkedExerciseIds: type === "ASSIGNMENT" && !file ? Object.keys(selectedExercises) : [],
+      cdtPack: type === "ASSIGNMENT" && !file ? cdtPackForCat(exerciseCat) : ""
     };
 
     if (file) {

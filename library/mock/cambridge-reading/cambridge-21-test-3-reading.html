@@ -997,9 +997,9 @@ function submitTest(){
     s.groups.forEach(g=>g.questions.forEach(q=>{
       const ua=readAns(q); let ok;
       if(g.kind==='multi') ok=!!pairCorrect[q.id];
-      else ok = ua!=='' && q.answer.map(norm).includes(norm(ua));
+      else ok = ua!=='' && [].concat(q.answer).map(norm).includes(norm(ua));
       total++; if(ok){correct++;sc++;}
-      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:q.answer)});
+      items.push({q,ua,ok, ans:(g.kind==='multi'?g.answerSet:[].concat(q.answer))});
     }));
     detail.push({s,sc,total:allQs(s).length,items});
   });

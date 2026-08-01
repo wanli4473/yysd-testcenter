@@ -416,6 +416,28 @@ window.YYSD = (function () {
     return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]) };
   }
 
+  // Calendar / dashboard: Cambridge L/R/W (full or part) → CDT chrome query
+  // cdtPack from teacher assign: drill | exam | "" (infer)
+  function cambridgeCdtQs(itemId, linkedIds, cdtPack) {
+    var id = String(itemId || "");
+    if (!/^cambridge-\d+-test-\d+(-reading(-p\d+)?|-writing|-s\d+)?$/.test(id)) return "";
+    var base = "";
+    if (/^cambridge-\d+-test-\d+$/.test(id)) base = id;
+    else {
+      var m = id.match(/^(cambridge-\d+-test-\d+)(?:-reading(?:-p\d+)?|-writing|-s\d+)$/);
+      if (m) base = m[1];
+    }
+    var ids = linkedIds || [];
+    if (base && ids.indexOf(base) >= 0 &&
+        ids.indexOf(base + "-reading") >= 0 &&
+        ids.indexOf(base + "-writing") >= 0) {
+      return "&cdt=1&pack=exam&suite=1";
+    }
+    var pack = String(cdtPack || "").toLowerCase();
+    if (pack === "exam") return "&cdt=1&pack=exam";
+    return "&cdt=1&pack=drill";
+  }
+
   function makePartItem(parent, kind, num) {
     if (!parent || !num) return null;
     var label = kind === "s" ? ("Section " + num) : ("Passage " + num);
@@ -1178,6 +1200,7 @@ window.YYSD = (function () {
     needsVocabBridge: needsVocabBridge,
     vocabListNo: vocabListNo, vocabDisplayTitle: vocabDisplayTitle,     displayTitle: displayTitle,
     parsePartId: parsePartId, makePartItem: makePartItem, resolveItem: resolveItem,
+    cambridgeCdtQs: cambridgeCdtQs,
     expandAssignableParts: expandAssignableParts, partSearchText: partSearchText,
     vocabTopic: vocabTopic,
     vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,

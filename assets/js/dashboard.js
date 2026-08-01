@@ -112,14 +112,16 @@
       if (listen && ids.indexOf(listen + "-reading") >= 0 && ids.indexOf(listen + "-writing") >= 0) {
         return {
           href: "exam.html?id=" + encodeURIComponent(listen) +
-            "&event=" + encodeURIComponent(ev.id) + "&cdt=1&pack=exam&suite=1",
+            "&event=" + encodeURIComponent(ev.id) +
+            (Y.cambridgeCdtQs ? Y.cambridgeCdtQs(listen, ids, ev.cdtPack) : "&cdt=1&pack=exam&suite=1"),
           label: "开始全套模考"
         };
       }
       if (ids.length === 1) {
         return {
           href: "exam.html?id=" + encodeURIComponent(ids[0]) +
-            "&event=" + encodeURIComponent(ev.id),
+            "&event=" + encodeURIComponent(ev.id) +
+            (Y.cambridgeCdtQs ? Y.cambridgeCdtQs(ids[0], ids, ev.cdtPack) : ""),
           label: "开始这项"
         };
       }

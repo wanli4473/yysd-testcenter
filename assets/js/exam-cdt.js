@@ -1181,6 +1181,23 @@
     }
   }
 
+  function showSubmitLoading(msg) {
+    var text = $("cdt-submit-loading-text");
+    if (text) text.textContent = msg || "正在加载成绩报告…";
+    showMask("cdt-submit-loading", true);
+  }
+
+  function hideSubmitLoading() {
+    showMask("cdt-submit-loading", false);
+  }
+
+  function submitLoadingMsg(plan) {
+    if (!plan) return "正在加载成绩报告…";
+    if (plan.action === "hop") return "正在进入下一科…";
+    if (plan.action === "report") return "正在加载成绩报告…";
+    return "正在生成成绩单…";
+  }
+
   function updateTimer(seconds) {
     var el = $("cdt-timer");
     if (!el || !state.active) return;
@@ -1312,8 +1329,73 @@
     return "";
   }
 
+  function reviewCssHref() {
+    // iframe base is /library/... — must be origin-absolute, not relative
+    try {
+      return location.origin + "/assets/css/cdt-review.css?v=20260801rev1";
+    } catch (e) {
+      return "/assets/css/cdt-review.css?v=20260801rev1";
+    }
+  }
+
+  function injectReviewStyles(doc, unlockAudio) {
+    if (!doc || !doc.head) return;
+    if (!doc.getElementById("yysd-cdt-review-link")) {
+      var link = doc.createElement("link");
+      link.id = "yysd-cdt-review-link";
+      link.rel = "stylesheet";
+      link.href = reviewCssHref();
+      doc.head.appendChild(link);
+    }
+    var style = doc.getElementById("yysd-cdt-review-css");
+    if (!style) {
+      style = doc.createElement("style");
+      style.id = "yysd-cdt-review-css";
+      doc.head.appendChild(style);
+    }
+    // display toggles only — look-and-feel lives in cdt-review.css
+    style.textContent =
+      (unlockAudio
+        ? "body.yysd-cdt-review #testArea{display:block!important}" +
+          "body.yysd-cdt-review #questionsHolder,.submit-btn,.header,.test-topbar{display:none!important}" +
+          "body.yysd-cdt-review .audio-bar{display:block!important}" +
+          "body.yysd-cdt-review .audio-play,body.yysd-cdt-review #aProg{" +
+            "pointer-events:auto!important;opacity:1!important}"
+        : "body.yysd-cdt-review #testArea,.test-area,#questionsHolder{display:none!important}");
+  }
+
+  function polishResultDom(doc) {
+    if (!doc) return;
+    var ra = doc.getElementById("resultArea") || doc.querySelector(".result-area");
+    if (!ra) return;
+    var card = ra.querySelector(".res-card");
+    if (card && !card.getAttribute("data-yysd-res")) {
+      card.setAttribute("data-yysd-res", "1");
+      var nodes = card.children;
+      var i, el, t;
+      for (i = 0; i < nodes.length; i++) {
+        el = nodes[i];
+        if (el.children && el.children.length) continue;
+        t = (el.textContent || "").replace(/\s+/g, " ").trim();
+        if (/批改报告|写作完成/.test(t)) {
+          el.className = "yysd-res-eyebrow";
+          el.textContent = /写作/.test(t) ? "Writing report" : "Practice result";
+          break;
+        }
+      }
+    }
+    ra.querySelectorAll(".ritem .rex").forEach(function (ex) {
+      var raw = ex.textContent || "";
+      if (raw.indexOf("💡") >= 0) ex.textContent = raw.split("💡").join("").replace(/^\s+/, "");
+    });
+    ra.querySelectorAll(".sec-result").forEach(function (sec) {
+      sec.classList.add("open");
+    });
+  }
+
   function enterReviewMode() {
     showMask("cdt-finish-mask", false);
+    hideSubmitLoading();
     stopParentTimer();
     document.body.classList.remove("viewer--cdt", "viewer--cdt-gating", "viewer--cdt-listen-review");
     document.body.classList.add("viewer--after-cdt");
@@ -1335,31 +1417,21 @@
         doc.body.classList.remove("yysd-cdt-reading", "yysd-cdt-listening", "yysd-cdt-writing");
         doc.body.classList.add("yysd-cdt-review");
       }
-      var style = doc.getElementById("yysd-cdt-review-css");
-      if (!style) {
-        style = doc.createElement("style");
-        style.id = "yysd-cdt-review-css";
-        doc.head.appendChild(style);
-      }
       var unlockAudio = state.pack === "drill" && isListening(state.item);
-      style.textContent =
-        "html,body.yysd-cdt-review{overflow:auto!important;height:auto!important;background:#fff!important}" +
-        "body.yysd-cdt-review #resultArea,.result-area,#results{" +
-          "display:block!important;visibility:visible!important}" +
-        (unlockAudio
-          ? "body.yysd-cdt-review #testArea{display:block!important}" +
-            "body.yysd-cdt-review #questionsHolder,.submit-btn,.header,.test-topbar{display:none!important}" +
-            "body.yysd-cdt-review .audio-bar{display:block!important}" +
-            "body.yysd-cdt-review .audio-play,body.yysd-cdt-review #aProg{" +
-              "pointer-events:auto!important;opacity:1!important}"
-          : "body.yysd-cdt-review #testArea,.test-area,#questionsHolder{display:none!important}") +
-        ".yysd-cdt-split,.yysd-cdt-w-split{display:none!important}";
+      injectReviewStyles(doc, unlockAudio);
       if (unlockAudio && state.frame.contentWindow) {
         state.frame.contentWindow.postMessage({ type: "yysd:unlock-listening" }, "*");
       }
       var ra = doc.getElementById("resultArea") || doc.querySelector(".result-area");
       if (ra) {
         try { ra.style.setProperty("display", "block", "important"); } catch (e0) { ra.style.display = "block"; }
+        polishResultDom(doc);
+        // detail rows may paint a tick later via MutationObserver in papers — re-polish once
+        try {
+          var mo = new MutationObserver(function () { polishResultDom(doc); });
+          mo.observe(ra, { childList: true, subtree: true });
+          setTimeout(function () { try { mo.disconnect(); } catch (e2) {} }, 2500);
+        } catch (e3) { /* ignore */ }
         ra.scrollIntoView({ block: "start" });
       }
       var ta = doc.getElementById("testArea");
@@ -1372,8 +1444,8 @@
       hint.hidden = false;
       hint.textContent = state.pack === "drill"
         ? (isListening(state.item)
-          ? "练习已交卷 · 下方为答案解析；可用播放器回放听力（学习回放）。"
-          : "练习已交卷 · 下方为答案解析（可中文）。")
+          ? "练习已交卷 · 成绩单与解析如下；可用顶部播放器回放听力。"
+          : "练习已交卷 · 成绩单与解析如下。")
         : "模考已交卷 · 下方为本次作答与解析。";
     }
   }
@@ -1383,6 +1455,7 @@
     state.hopping = true;
     showMask("cdt-finish-mask", false);
     var plan = resolveAfterSubmit(state.pack, state.suite, state.item);
+    showSubmitLoading(submitLoadingMsg(plan));
     var evQs = eventQuery();
     submitPaperThen(function () {
       stopParentTimer();

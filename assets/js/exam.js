@@ -412,11 +412,27 @@
     }
   }
 
+  function forceCdtForAssignment() {
+    // Teacher calendar links may omit cdt=1 (cached dashboard / old href).
+    // Any Cambridge L/R/W opened with ?event= must use CDT chrome.
+    if (!assignmentEventId || cdtWanted) return;
+    if (!item || item.zone !== "mock" || !Y.isCambridge(item.subject)) return;
+    cdtWanted = true;
+    if (!cdtPack) cdtPack = cdtSuite ? "exam" : "drill";
+    try {
+      var u = new URL(location.href);
+      u.searchParams.set("cdt", "1");
+      if (!u.searchParams.get("pack")) u.searchParams.set("pack", cdtPack);
+      history.replaceState(null, "", u.pathname + u.search + u.hash);
+    } catch (e) { /* ignore */ }
+  }
+
   function start() {
     var zoneLabel = (Y.ZONE[item.zone] || {}).label || "";
     var subjLabel = (Y.SUBJECT[item.subject] || {}).label || "";
     var isStudy = item.zone === "study";
     var badges = parseBadges(item);
+    forceCdtForAssignment();
 
     var shown = Y.displayTitle(item);
     titleEl.textContent = shown;
@@ -646,7 +662,7 @@
 
     var script = doc.createElement("script");
     script.id = "yysd-exam-bridge-js";
-    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt23" : "");
+    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt24" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
     if (cdtWanted) {
@@ -671,7 +687,7 @@
     var base = new URL("./", location.href).href;
     var script = doc.createElement("script");
     script.id = "yysd-cdt-qux-js";
-    script.src = base + "assets/js/cdt-qux.js?v=" + v + "b3";
+    script.src = base + "assets/js/cdt-qux.js?v=" + v + "b5";
     doc.body.appendChild(script);
   }
 

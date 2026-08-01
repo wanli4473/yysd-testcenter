@@ -914,6 +914,7 @@
     var player = document.getElementById("player");
     if (!player || cdtListenEndedBound) return;
     cdtListenEndedBound = true;
+    // capture: must read curAudioSec BEFORE paper's bubble handler advances it via loadSection
     player.addEventListener("ended", function () {
       try {
         var paper = typeof currentPaper !== "undefined" ? currentPaper : null;
@@ -926,7 +927,8 @@
         for (var i = 0; i < paper.length; i++) {
           if (paper[i].id === cur) { idx = i; break; }
         }
-        var isLast = idx < 0 || idx >= paper.length - 1;
+        if (idx < 0) return;
+        var isLast = idx >= paper.length - 1;
         // exam mode: paper already auto-chains; practice under CDT must chain here
         if (!isLast && paperMode() !== "exam" && typeof loadSection === "function") {
           loadSection(paper[idx + 1].id, true);
@@ -940,7 +942,7 @@
           }, 80);
         }
       } catch (err) { /* ignore */ }
-    });
+    }, true);
   }
 
   function unlockCdtListening() {

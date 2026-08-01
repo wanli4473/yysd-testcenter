@@ -127,6 +127,7 @@ db.exec(
 );
 
 try { db.exec("ALTER TABLE calendar_events ADD COLUMN attachment_name TEXT"); } catch (e) { /* already exists */ }
+try { db.exec("ALTER TABLE calendar_events ADD COLUMN cdt_pack TEXT"); } catch (e) { /* already exists */ }
 
 // ponytail: truly one-shot — re-running backfill after shared-PC sync pollution mints fake attempts
 db.exec("CREATE TABLE IF NOT EXISTS _yysd_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
@@ -195,8 +196,8 @@ const stmts = {
   ),
   findUserById: db.prepare("SELECT id, phone, display_name, avatar_url, org_id FROM users WHERE id = ?"),
   insertCalendarEvent: db.prepare(
-    "INSERT INTO calendar_events (title, description, event_type, start_time, due_time, created_by, target_student_ids, linked_exercise_ids, created_at, attachment_name) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO calendar_events (title, description, event_type, start_time, due_time, created_by, target_student_ids, linked_exercise_ids, created_at, attachment_name, cdt_pack) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   ),
   setEventAttachment: db.prepare(
     "UPDATE calendar_events SET attachment_name = ?, linked_exercise_ids = ? WHERE id = ?"
@@ -539,6 +540,8 @@ function eventFromRow(row, extra) {
   try { targetIds = JSON.parse(row.target_student_ids || "[]"); } catch (e) {}
   try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
   var hasUpload = exerciseIds.some(function (id) { return String(id).indexOf("upload-") === 0; });
+  var cdtPack = String(row.cdt_pack || "").toLowerCase();
+  if (cdtPack !== "drill" && cdtPack !== "exam") cdtPack = "";
   var ev = {
     id: row.id,
     title: row.title,
@@ -551,6 +554,7 @@ function eventFromRow(row, extra) {
     linkedExerciseIds: exerciseIds,
     attachmentName: row.attachment_name || "",
     hasUpload: hasUpload || !!row.attachment_name,
+    cdtPack: cdtPack,
     createdAt: row.created_at
   };
   if (extra) Object.keys(extra).forEach(function (k) { ev[k] = extra[k]; });
@@ -1903,6 +1907,8 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
   var linkedExerciseIds = parseExerciseIds(body.linkedExerciseIds || body.linked_exercise_ids);
   var htmlContent = body.htmlContent != null ? String(body.htmlContent) : "";
   var htmlFileName = clipText(body.htmlFileName || body.html_file_name, 120);
+  var cdtPack = String(body.cdtPack || body.cdt_pack || "").toLowerCase();
+  if (cdtPack !== "drill" && cdtPack !== "exam") cdtPack = "";
 
   if (!title) return res.status(400).json({ error: "请填写标题" });
   if (!EVENT_TYPES[eventType]) {
@@ -1934,6 +1940,7 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
 
   var now = new Date().toISOString();
   var exerciseJson = JSON.stringify(eventType === "ASSIGNMENT" ? linkedExerciseIds : []);
+  var packToStore = eventType === "ASSIGNMENT" && !htmlContent ? cdtPack : "";
   var info = stmts.insertCalendarEvent.run(
     title,
     description || "",
@@ -1944,7 +1951,8 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
     JSON.stringify(targetStudentIds),
     exerciseJson,
     now,
-    null
+    null,
+    packToStore || null
   );
   var eventId = info.lastInsertRowid;
 

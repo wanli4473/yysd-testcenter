@@ -59,10 +59,19 @@
     return true;
   }
 
-  function allowsReuse(group) {
+  function allowsReuse(group, letterCount, slotCount) {
     var el = group.querySelector(".instruction");
     var t = (el && el.textContent) || "";
-    return /more than once|一次以上|可重复|任意.*多次/i.test(t);
+    if (/more than once|一次以上|可重复|任意.*多次/i.test(t)) return true;
+    if (/only once|each (letter|answer) only once|仅.*一次|每个字母.*一次/i.test(t)) return false;
+    // pigeonhole: more gaps than letters ⇒ must reuse
+    if (slotCount && letterCount && slotCount > letterCount) return true;
+    // exclusive list/heading/map when enough distinct options
+    var enough = letterCount && slotCount && letterCount >= slotCount;
+    if (enough && /heading|标题|from the box and write/i.test(t)) return false;
+    if (enough && group.querySelector && group.querySelector(".map-wrap")) return false;
+    // ponytail: default reusable — exclusive-by-default broke paragraph/classify matches
+    return true;
   }
 
   function isMultiHint(text) {
@@ -178,8 +187,8 @@
   function enhanceMatchDnd(group, pairs) {
     if (group.dataset.yysdQuxDnd) return;
     group.dataset.yysdQuxDnd = "1";
-    var reuse = allowsReuse(group);
     var letters = optionLetters(pairs[0].sel);
+    var reuse = allowsReuse(group, letters.length, pairs.length);
 
     var pool = document.createElement("div");
     pool.className = "yysd-qux-pool";
@@ -394,6 +403,10 @@
   console.assert(isMultiHint("选择一项（两题合计选出正确的两项，顺序不限）"), "cdt-qux: multi hint");
   console.assert(!isMultiHint("Which gallery has the best collection of ceramics?"), "cdt-qux: not multi");
   console.assert(allowsReuse({ querySelector: function () { return { textContent: "You may use any letter more than once." }; } }), "cdt-qux: reuse");
+  console.assert(allowsReuse({ querySelector: function () { return { textContent: "Write the correct letter, A, B or C." }; } }, 3, 6), "cdt-qux: pigeonhole reuse");
+  console.assert(allowsReuse({ querySelector: function (s) { return s === ".instruction" ? { textContent: "Which paragraph contains the following information?" } : null; } }, 7, 5), "cdt-qux: paragraph reuse");
+  console.assert(!allowsReuse({ querySelector: function () { return { textContent: "Choose FIVE answers from the box and write the correct letter." }; } }, 7, 5), "cdt-qux: exclusive match");
+  console.assert(!allowsReuse({ querySelector: function () { return { textContent: "Choose the correct heading for each section." }; } }, 8, 4), "cdt-qux: heading exclusive");
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {

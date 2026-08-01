@@ -51,26 +51,11 @@
     return it ? Y.displayTitle(it) : xid;
   }
 
-  function isSuiteCdtLink(itemId, linkedIds) {
-    // ponytail: full mock assign = L+R+W; any skill opens in CDT chrome
-    if (!itemId) return false;
-    var ids = linkedIds || [];
-    var base = "";
-    if (/^cambridge-\d+-test-\d+$/.test(itemId)) base = itemId;
-    else {
-      var m = String(itemId).match(/^(cambridge-\d+-test-\d+)-(reading|writing)$/);
-      if (m) base = m[1];
-    }
-    if (!base) return false;
-    return ids.indexOf(base) >= 0 &&
-      ids.indexOf(base + "-reading") >= 0 &&
-      ids.indexOf(base + "-writing") >= 0;
-  }
-
-  function examHref(itemId, eventId, linkedIds) {
+  function examHref(itemId, eventId, linkedIds, cdtPack) {
     var href = "exam.html?id=" + encodeURIComponent(itemId) +
       "&event=" + encodeURIComponent(eventId);
-    if (isSuiteCdtLink(itemId, linkedIds)) href += "&cdt=1&pack=exam&suite=1";
+    // ponytail: any Cambridge assign → CDT; cdtPack from teacher (skill mock = exam)
+    if (Y.cambridgeCdtQs) href += Y.cambridgeCdtQs(itemId, linkedIds, cdtPack);
     return href;
   }
 
@@ -244,7 +229,7 @@
       var cta = ev.status === "COMPLETED"
         ? '<button type="button" class="btn btn--ghost btn--sm" data-open="' + ev.id + '">查看</button>'
         : (ids.length === 1
-          ? '<a class="btn btn--primary btn--sm" href="' + examHref(ids[0], ev.id, ids) + '">去做</a>'
+          ? '<a class="btn btn--primary btn--sm" href="' + examHref(ids[0], ev.id, ids, ev.cdtPack) + '">去做</a>'
           : '<button type="button" class="btn btn--primary btn--sm" data-open="' + ev.id + '">去做</button>');
       return '<article class="cal-todo-row ' + statusClass(ev.status) + '">' +
         '<div class="cal-todo-row__main">' +
@@ -306,7 +291,7 @@
     var exList = linkedIds.map(function (xid) {
       var title = catalogTitle(xid, ev.attachmentName);
       var done = !!doneSet[xid];
-      var href = examHref(xid, ev.id, linkedIds);
+      var href = examHref(xid, ev.id, linkedIds, ev.cdtPack);
       return '<li class="cal-ex-row' + (done ? " is-done" : "") + '">' +
         "<span><b>" + esc(title) + "</b>" +
           (done ? '<small class="cal-ex-done">已完成</small>' : "") +
@@ -345,7 +330,7 @@
         (ev.completedAt ? " · " + esc(fmtDate(ev.completedAt)) : "") + "</span>";
     } else if ((ev.linkedExerciseIds || []).length === 1) {
       acts += '<a class="btn btn--primary" href="' +
-        examHref(ev.linkedExerciseIds[0], ev.id, ev.linkedExerciseIds) + '">立即去做</a>';
+        examHref(ev.linkedExerciseIds[0], ev.id, ev.linkedExerciseIds, ev.cdtPack) + '">立即去做</a>';
     }
     detailActions.innerHTML = acts;
     modal.hidden = false;

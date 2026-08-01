@@ -24,6 +24,8 @@ window.YYSD_AUTH = (function () {
     "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
     "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1
   };
+  // ponytail: temporary IELTS relaunch preview — remove when public
+  var IELTS_PREVIEW_PHONES = { "15901754473": 1, "18956023079": 1 };
   var ORG_KEY = "yysd:org";
 
   function tenantSlug() {
@@ -67,13 +69,55 @@ window.YYSD_AUTH = (function () {
     return isHqSite();
   }
 
-  /** 雅思区域：已对全体师生开放（仍需登录） */
+  function isLocalDevHost() {
+    var h = (location.hostname || "").toLowerCase();
+    return !h || h === "localhost" || h === "127.0.0.1";
+  }
+
+  /** JWT carries real phone; /api/auth/me only returns maskPhone() */
+  function jwtPhoneDigits() {
+    var tok = getToken();
+    if (!tok) return "";
+    try {
+      var parts = tok.split(".");
+      if (parts.length < 2) return "";
+      var b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      var payload = JSON.parse(atob(b64));
+      return String(payload.phone || "").replace(/\D/g, "");
+    } catch (e) { return ""; }
+  }
+
+  /** 雅思区域预览白名单（生产站）；本地开发不拦 */
   function canIeltsArea() {
-    return true;
+    if (isLocalDevHost()) return true;
+    // teacher-assigned homework must remain completable during IELTS relaunch
+    try {
+      if (/(?:^|[?&])event=\d+(?:&|$)/.test(location.search || "")) return true;
+    } catch (e0) { /* ignore */ }
+    // ponytail: never trust localStorage phone after /me — it is masked
+    var phone = jwtPhoneDigits() || String((getUser().phone || "")).replace(/\D/g, "");
+    return !!IELTS_PREVIEW_PHONES[phone];
+  }
+
+  function isIeltsAreaPage() {
+    var name = pageName();
+    if (name === "ielts-upgrade.html") return false;
+    if (name === "cambridge.html" || name === "exam.html" || name === "cdt-report.html") return true;
+    if (name === "speaking.html" || name.indexOf("speaking-") === 0) return true;
+    if (name === "jingting-player.html") return true;
+    if (name === "ai-tutor.html" && /(?:^|[?&])track=writing(?:&|$)/.test(location.search || "")) return true;
+    if (name === "zone.html" && /(?:^|[?&])zone=mock(?:&|$)/.test(location.search || "")) return true;
+    if (/\/library\/mock\/cambridge/.test(location.pathname || "")) return true;
+    if (/\/library\/practice\/jingting/.test(location.pathname || "")) return true;
+    return false;
   }
 
   function guardIeltsArea() {
-    return true;
+    if (!isIeltsAreaPage()) return true;
+    if (canIeltsArea()) return true;
+    location.replace("ielts-upgrade.html");
+    return false;
   }
 
   function logoSrc(url) {
