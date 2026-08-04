@@ -99,10 +99,12 @@
         persist();
         start.disabled = true;
         start.textContent = "抽词中…";
-        var listN = Math.max(12, Math.min(40, Math.ceil(state.count / 12) + 4));
-        DW.fetchBookPool(state.bookId, listN).then(function (data) {
+        // load full book pool so daily pick is random across all units
+        DW.fetchBookPool(state.bookId, 0).then(function (data) {
           var picked = DW.pickDaily(data.pool, state.bookId, state.count, DW.getRecords());
           if (!picked.length) throw new Error("词库暂无可用单词");
+          var A = window.YYSD_AUTH;
+          var user = (A && A.getUser) ? A.getUser() : {};
           var task = {
             date: DW.todayStr(),
             bookId: state.bookId,
@@ -117,7 +119,9 @@
             spellingFails: {},
             speakTries: {},
             weakSpeak: [],
-            weakSpell: []
+            weakSpell: [],
+            studentName: (user && (user.displayName || user.name)) || "",
+            studentPhone: (user && user.phone) || ""
           };
           DW.saveTask(task);
           location.href = "daily-word-learn.html";

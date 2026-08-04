@@ -210,21 +210,13 @@
   }
 
   /**
-   * 70% new + 30% review (weak first). First-ever book → 100% new in list order.
-   * @param {object[]} pool
-   * @param {string} bookId
-   * @param {number} count
-   * @param {object} recs
+   * Fully random daily pick from pool. ~30% weak/review when available, rest new;
+   * final study order is always shuffled (never LIST order).
    */
   function pickDaily(pool, bookId, count, recs) {
     count = clampCount(count);
     pool = pool || [];
     recs = recs || {};
-    var seenBook = false;
-    var k;
-    for (k in recs) {
-      if (k.indexOf(String(bookId) + ":") === 0) { seenBook = true; break; }
-    }
 
     var newOnes = [];
     var review = [];
@@ -234,42 +226,26 @@
       else if (r.speakingWrong || r.spellingWrong || r.status === "learning") review.push(w);
     });
 
-    review.sort(function (a, b) {
-      var ra = recordOf(recs, bookId, a.word) || {};
-      var rb = recordOf(recs, bookId, b.word) || {};
-      var wa = (ra.wrongCount || 0) - (ra.correctCount || 0);
-      var wb = (rb.wrongCount || 0) - (rb.correctCount || 0);
-      return wb - wa;
-    });
-
     var picked = [];
     var used = {};
     function take(w) {
       var key = String(w.word || "").toLowerCase().trim();
-      if (!key || used[key]) return;
+      if (!key || used[key]) return false;
       used[key] = true;
       picked.push(w);
+      return true;
     }
 
-    if (!seenBook) {
-      newOnes.forEach(function (w) {
-        if (picked.length < count) take(w);
-      });
-      return picked.slice(0, count);
-    }
-
-    var reviewN = Math.min(review.length, Math.round(count * 0.3));
-    var newN = count - reviewN;
-    shuffle(review).slice(0, reviewN).forEach(take);
-    // prefer front of list for new (LIST order ≈ curriculum order)
-    newOnes.forEach(function (w) {
-      if (picked.length < count && picked.length < reviewN + newN) take(w);
+    var reviewShuf = shuffle(review);
+    var reviewN = Math.min(reviewShuf.length, Math.round(count * 0.3));
+    reviewShuf.slice(0, reviewN).forEach(take);
+    shuffle(newOnes).forEach(function (w) {
+      if (picked.length < count) take(w);
     });
-    // fill remainder from leftover pool
     shuffle(pool).forEach(function (w) {
       if (picked.length < count) take(w);
     });
-    return picked.slice(0, count);
+    return shuffle(picked).slice(0, count);
   }
 
   function upsertRecord(bookId, word, patch) {
@@ -342,36 +318,34 @@
 
   function fetchBookPool(bookKey, maxLists) {
     var Y = global.YYSD;
-    maxLists = maxLists || 12;
+    // 0 / null / undefined → whole book (needed for true random)
     return Y.load().then(function (items) {
       var stats = Y.vocabBookStats(items, bookKey);
       if (!stats || !stats.lists.length) throw new Error("词书为空或不存在");
-      var lists = stats.lists.slice(0, maxLists);
-      var chain = Promise.resolve([]);
-      lists.forEach(function (item) {
-        chain = chain.then(function (acc) {
-          return fetch(libraryUrl(item.file)).then(function (r) {
-            if (!r.ok) return acc;
-            return r.text().then(function (html) {
-              var words = parseWordData(html).map(function (w) {
-                w.sourceId = item.id;
-                w.bookId = bookKey;
-                return w;
-              });
-              return acc.concat(words);
+      var lists = stats.lists;
+      if (maxLists > 0) lists = lists.slice(0, maxLists);
+      // ponytail: parallel fetch; ceiling = whole book (~40 LISTs)
+      return Promise.all(lists.map(function (item) {
+        return fetch(libraryUrl(item.file)).then(function (r) {
+          if (!r.ok) return [];
+          return r.text().then(function (html) {
+            return parseWordData(html).map(function (w) {
+              w.sourceId = item.id;
+              w.bookId = bookKey;
+              return w;
             });
-          }).catch(function () { return acc; });
-        });
-      });
-      return chain.then(function (pool) {
-        // dedupe by word
+          });
+        }).catch(function () { return []; });
+      })).then(function (chunks) {
         var seen = {};
         var out = [];
-        pool.forEach(function (w) {
-          var k = String(w.word || "").toLowerCase().trim();
-          if (!k || seen[k]) return;
-          seen[k] = true;
-          out.push(w);
+        chunks.forEach(function (arr) {
+          (arr || []).forEach(function (w) {
+            var k = String(w.word || "").toLowerCase().trim();
+            if (!k || seen[k]) return;
+            seen[k] = true;
+            out.push(w);
+          });
         });
         return { book: stats.book, pool: out, listCount: lists.length };
       });

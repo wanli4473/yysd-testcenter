@@ -21,7 +21,13 @@ for (var i = 0; i < 40; i++) {
 }
 var first = DW.pickDaily(pool, "gaozhong", 10, {});
 assert.strictEqual(first.length, 10);
-assert.strictEqual(first[0].word, "w0");
+// random order — must not always be LIST head
+var alwaysHead = true;
+for (var t = 0; t < 8; t++) {
+  var sample = DW.pickDaily(pool, "gaozhong", 10, {});
+  if (sample[0].word !== "w0") { alwaysHead = false; break; }
+}
+assert.strictEqual(alwaysHead, false);
 
 var recs = {};
 recs[DW.wordKey("gaozhong", "w5")] = {

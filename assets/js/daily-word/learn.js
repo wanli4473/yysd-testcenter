@@ -183,6 +183,18 @@
     weakSpeak.concat(weakSpell).forEach(function (x) { weakSet[x] = true; });
     var weakN = Object.keys(weakSet).length;
     var mastered = Math.max(0, total - weakN);
+    var A = window.YYSD_AUTH;
+    var user = (A && A.getUser) ? A.getUser() : {};
+    var words = (task.wordList || []).map(function (w) {
+      var ww = w.word;
+      return {
+        word: ww,
+        meaning: w.meaning || "",
+        ipa: w.ipa || "",
+        speakingWrong: weakSpeak.indexOf(ww) >= 0,
+        spellingWrong: weakSpell.indexOf(ww) >= 0
+      };
+    });
     var result = {
       date: task.date,
       bookId: task.bookId,
@@ -191,6 +203,9 @@
       mastered: Math.max(0, mastered),
       weakSpeak: weakSpeak,
       weakSpell: weakSpell,
+      words: words,
+      studentName: task.studentName || (user && (user.displayName || user.name)) || "",
+      studentPhone: task.studentPhone || (user && user.phone) || "",
       elapsedSec: elapsed,
       finishedAt: Date.now()
     };
