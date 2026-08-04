@@ -18,7 +18,9 @@
     spellValue: "",
     spellFeedback: "",
     spellReveal: false,
-    spellTries: 0
+    spellTries: 0,
+    // ponytail: block Enter briefly after stage change — spelling Enter was bubbling into detail→nextWord
+    enterArmedAt: 0
   };
   var imageTimer = null;
   var mediaRec = null;
@@ -123,8 +125,17 @@
     }, 50);
   }
 
+  function armEnter(ms) {
+    ui.enterArmedAt = Date.now() + (ms || 500);
+  }
+
+  function enterReady() {
+    return Date.now() >= (ui.enterArmedAt || 0);
+  }
+
   function enterDetail() {
     task.stage = "detail";
+    armEnter(600);
     persist();
     paint();
   }
@@ -350,6 +361,7 @@
       inp.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
           e.preventDefault();
+          e.stopPropagation();
           submitSpell();
         }
       });
@@ -427,10 +439,16 @@
       // handled on keyup
     }
     if (e.key === "Enter") {
+      if (!enterReady()) {
+        e.preventDefault();
+        return;
+      }
       if (task.stage === "image" && ui.canNext) {
         e.preventDefault();
         enterSpeaking();
       } else if (task.stage === "spelling") {
+        // input handler already covers focused field; this is for button/global Enter
+        if (e.target && e.target.classList && e.target.classList.contains("dw-spell-input")) return;
         e.preventDefault();
         submitSpell();
       } else if (task.stage === "detail") {
