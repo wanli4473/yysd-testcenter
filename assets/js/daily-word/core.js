@@ -316,7 +316,86 @@
     } catch (e) {}
   }
 
+  var THEME_PREFIX = "theme:";
+
+  function isThemeBook(bookKey) {
+    return String(bookKey || "").indexOf(THEME_PREFIX) === 0;
+  }
+
+  function themeIdOf(bookKey) {
+    return isThemeBook(bookKey) ? String(bookKey).slice(THEME_PREFIX.length) : "";
+  }
+
+  function fetchThemesCatalog() {
+    return fetch(libraryUrl("study/vocab-themes/themes.json")).then(function (r) {
+      if (!r.ok) throw new Error("分类词库目录加载失败");
+      return r.json();
+    });
+  }
+
+  function mapThemeWords(words, bookKey, themeId) {
+    var seen = {};
+    var out = [];
+    (words || []).forEach(function (w) {
+      var word = String(w.word || "").trim();
+      var key = word.toLowerCase();
+      if (!word || seen[key]) return;
+      seen[key] = true;
+      out.push({
+        id: String(w.id != null ? w.id : word),
+        word: word,
+        meaning: String(w.meaning || "").trim(),
+        ipa: String(w.ipa || "").trim(),
+        acceptCN: Array.isArray(w.acceptCN) ? w.acceptCN : [],
+        example: String(w.example || "").trim(),
+        phrases: String(w.phrases || "").trim(),
+        pos: String(w.pos || "").trim(),
+        sourceId: "theme:" + themeId,
+        bookId: bookKey
+      });
+    });
+    return out;
+  }
+
+  function fetchThemePool(bookKey) {
+    var themeId = themeIdOf(bookKey);
+    if (!themeId) return Promise.reject(new Error("分类词库无效"));
+    return fetchThemesCatalog().then(function (cat) {
+      var t = null;
+      var i;
+      for (i = 0; i < (cat.themes || []).length; i++) {
+        if (cat.themes[i].id === themeId) { t = cat.themes[i]; break; }
+      }
+      if (!t || !t.dataFile) throw new Error("分类词库不存在");
+      var catLabel = "";
+      for (i = 0; i < (cat.categories || []).length; i++) {
+        if (cat.categories[i].id === t.category) {
+          catLabel = cat.categories[i].label || "";
+          break;
+        }
+      }
+      return fetch(libraryUrl(t.dataFile)).then(function (r) {
+        if (!r.ok) throw new Error("分类词库加载失败");
+        return r.json();
+      }).then(function (detail) {
+        var pool = mapThemeWords((detail && detail.words) || [], bookKey, themeId)
+          .filter(function (w) { return w.word; });
+        if (!pool.length) throw new Error("分类词库暂无可用单词");
+        return {
+          book: {
+            key: bookKey,
+            label: t.title || themeId,
+            tag: catLabel || "分类词库"
+          },
+          pool: pool,
+          listCount: 1
+        };
+      });
+    });
+  }
+
   function fetchBookPool(bookKey, maxLists) {
+    if (isThemeBook(bookKey)) return fetchThemePool(bookKey);
     var Y = global.YYSD;
     // 0 / null / undefined → whole book (needed for true random)
     return Y.load().then(function (items) {
@@ -392,6 +471,9 @@
     api: api,
     speakWord: speakWord,
     fetchBookPool: fetchBookPool,
+    fetchThemesCatalog: fetchThemesCatalog,
+    isThemeBook: isThemeBook,
+    THEME_PREFIX: THEME_PREFIX,
     todayStr: todayStr,
     estimateMinutes: estimateMinutes,
     normalizeWord: normalizeWord,

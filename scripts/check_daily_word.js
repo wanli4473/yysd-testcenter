@@ -38,4 +38,8 @@ recs[DW.wordKey("gaozhong", "w6")] = {
 };
 var mixed = DW.pickDaily(pool, "gaozhong", 10, recs);
 assert.strictEqual(mixed.length, 10);
+
+assert.strictEqual(DW.isThemeBook("theme:nce"), true);
+assert.strictEqual(DW.isThemeBook("gaozhong"), false);
+assert.strictEqual(DW.THEME_PREFIX + "nce", "theme:nce");
 console.log("check_daily_word: ok");

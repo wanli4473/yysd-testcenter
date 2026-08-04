@@ -1,5 +1,5 @@
 /* =========================================================================
-   daily-word/setup.js — 任务设置页：选词书 + 每日数量
+   daily-word/setup.js — 任务设置页：选词书（单元 + 分类词库）+ 每日数量
    ========================================================================= */
 (function () {
   "use strict";
@@ -10,7 +10,8 @@
   var state = {
     bookId: "",
     count: DW.DEFAULT_COUNT,
-    books: []
+    books: [],
+    themes: []
   };
 
   function persist() {
@@ -22,15 +23,20 @@
     });
   }
 
+  function bookBtn(b) {
+    var on = b.key === state.bookId ? " is-on" : "";
+    return '<button type="button" class="dw-book' + on + '" data-book="' + DW.esc(b.key) + '">' +
+      '<span class="dw-book__check">✓</span>' +
+      '<p class="dw-book__name">' + DW.esc(b.label) + "</p>" +
+      '<p class="dw-book__meta">' + DW.esc(b.meta || "") + "</p>" +
+      "</button>";
+  }
+
   function render() {
-    var booksHtml = state.books.map(function (b) {
-      var on = b.key === state.bookId ? " is-on" : "";
-      return '<button type="button" class="dw-book' + on + '" data-book="' + DW.esc(b.key) + '">' +
-        '<span class="dw-book__check">✓</span>' +
-        '<p class="dw-book__name">' + DW.esc(b.label) + "</p>" +
-        '<p class="dw-book__meta">' + b.total + " 个单元 · " + DW.esc(b.tag || "") + "</p>" +
-        "</button>";
-    }).join("");
+    var unitHtml = state.books.map(bookBtn).join("") ||
+      '<p class="dw-hint">暂无单元词书</p>';
+    var themeHtml = state.themes.map(bookBtn).join("") ||
+      '<p class="dw-hint">暂无分类词库</p>';
 
     var chips = DW.PRESETS.map(function (n) {
       var on = n === state.count ? " is-on" : "";
@@ -45,8 +51,13 @@
           '<div class="dw-top__title">设置今日任务</div>' +
         "</header>" +
         '<section class="dw-setup-sec">' +
-          "<h2>选择单词册</h2>" +
-          '<div class="dw-books">' + booksHtml + "</div>" +
+          "<h2>单元词书</h2>" +
+          '<div class="dw-books">' + unitHtml + "</div>" +
+        "</section>" +
+        '<section class="dw-setup-sec">' +
+          "<h2>分类词库</h2>" +
+          '<p class="dw-hint">与「分类词库」页同源，共 ' + state.themes.length + " 本</p>" +
+          '<div class="dw-books dw-books--themes">' + themeHtml + "</div>" +
         "</section>" +
         '<section class="dw-setup-sec">' +
           "<h2>每日学习数量</h2>" +
@@ -85,8 +96,9 @@
         persist();
         var strong = root.querySelector(".dw-count-line strong");
         if (strong) strong.textContent = String(state.count);
-        var hint = root.querySelector(".dw-setup-sec .dw-hint");
-        if (hint) hint.textContent = "预计约 " + DW.estimateMinutes(state.count) + " 分钟";
+        var hint = root.querySelectorAll(".dw-setup-sec .dw-hint");
+        var lastHint = hint.length ? hint[hint.length - 1] : null;
+        if (lastHint) lastHint.textContent = "预计约 " + DW.estimateMinutes(state.count) + " 分钟";
         root.querySelectorAll(".dw-chip").forEach(function (c) {
           c.classList.toggle("is-on", Number(c.getAttribute("data-count")) === state.count);
         });
@@ -99,7 +111,6 @@
         persist();
         start.disabled = true;
         start.textContent = "抽词中…";
-        // load full book pool so daily pick is random across all units
         DW.fetchBookPool(state.bookId, 0).then(function (data) {
           var picked = DW.pickDaily(data.pool, state.bookId, state.count, DW.getRecords());
           if (!picked.length) throw new Error("词库暂无可用单词");
@@ -140,16 +151,38 @@
       state.bookId = plan.bookId || "";
       state.count = DW.clampCount(plan.targetCount || DW.DEFAULT_COUNT);
     }
-    Y.load().then(function (items) {
+    Promise.all([
+      Y.load(),
+      DW.fetchThemesCatalog().catch(function () { return { themes: [], categories: [] }; })
+    ]).then(function (pair) {
+      var items = pair[0];
+      var cat = pair[1] || {};
+      var catLabel = {};
+      (cat.categories || []).forEach(function (c) { catLabel[c.id] = c.label; });
+
       state.books = Y.vocabBooksForZone(items).map(function (s) {
         return {
           key: s.book.key,
           label: s.book.label,
-          tag: s.book.tag || "",
-          total: s.total
+          meta: s.total + " 个单元 · " + (s.book.tag || "")
         };
       });
-      if (!state.bookId && state.books[0]) state.bookId = state.books[0].key;
+      state.themes = (cat.themes || []).slice().sort(function (a, b) {
+        return (a.no || 0) - (b.no || 0);
+      }).map(function (t) {
+        return {
+          key: DW.THEME_PREFIX + t.id,
+          label: t.title,
+          meta: (t.count || 0) + " 词 · " + (catLabel[t.category] || "分类词库")
+        };
+      });
+
+      var known = {};
+      state.books.concat(state.themes).forEach(function (b) { known[b.key] = true; });
+      if (!state.bookId || !known[state.bookId]) {
+        state.bookId = (state.books[0] && state.books[0].key) ||
+          (state.themes[0] && state.themes[0].key) || "";
+      }
       render();
     }).catch(function (e) {
       root.innerHTML = '<div class="dw-fail"><p>无法加载词书</p><p>' +
