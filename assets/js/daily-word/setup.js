@@ -164,7 +164,7 @@
           '<div class="dw-books" id="dw-unit-list">' + unitHtml + "</div>" +
         "</section>" +
         '<section class="dw-setup-sec">' +
-          "<h2>分类词库 <span class="dw-setup-sec__n">" + state.themes.length + " 本</span></h2>" +
+          '<h2>分类词库 <span class="dw-setup-sec__n">' + state.themes.length + " 本</span></h2>" +
           '<div class="dw-cats" id="dw-cats">' + catChips + "</div>" +
           '<div class="dw-books dw-books--themes" id="dw-theme-list"></div>' +
         "</section>" +
