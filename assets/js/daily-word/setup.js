@@ -11,8 +11,15 @@
     bookId: "",
     count: DW.DEFAULT_COUNT,
     books: [],
-    themes: []
+    themes: [],
+    resume: null // unfinished task, if any
   };
+
+  function activeResume() {
+    var t = DW.getTask();
+    if (t && t.wordList && t.wordList.length && !t.completed) return t;
+    return null;
+  }
 
   function persist() {
     if (!state.bookId) return;
@@ -44,12 +51,28 @@
         n + ' <small>≈' + DW.estimateMinutes(n) + "分</small></button>";
     }).join("");
 
+    var resume = state.resume;
+    var banner = "";
+    if (resume) {
+      banner =
+        '<div class="dw-resume-banner">' +
+          '<p><strong>进行中</strong> ' +
+            ((resume.currentIndex || 0) + 1) + "/" + resume.wordList.length +
+            " · " + DW.esc(resume.bookLabel || "今日任务") + "</p>" +
+          '<p class="dw-hint">可在下方改词书或数量后重新开始；当前进度将被清除。</p>' +
+          '<div class="dw-resume-banner__acts">' +
+            '<a class="dw-btn dw-btn--ghost" href="daily-word-learn.html">继续当前进度</a>' +
+          "</div>" +
+        "</div>";
+    }
+
     root.innerHTML =
       '<div class="dw-shell">' +
         '<header class="dw-top">' +
           '<a class="dw-back" href="zone.html?zone=study&s=vocab" aria-label="返回">←</a>' +
-          '<div class="dw-top__title">设置今日任务</div>' +
+          '<div class="dw-top__title">' + (resume ? "重新设置任务" : "设置今日任务") + "</div>" +
         "</header>" +
+        banner +
         '<section class="dw-setup-sec">' +
           "<h2>单元词书</h2>" +
           '<div class="dw-books">' + unitHtml + "</div>" +
@@ -71,7 +94,8 @@
         "</section>" +
         '<div class="dw-setup-foot">' +
           '<button type="button" class="dw-btn dw-btn--primary" id="dw-start"' +
-            (state.bookId ? "" : " disabled") + ">开始学习</button>" +
+            (state.bookId ? "" : " disabled") + ">" +
+            (resume ? "重新开始" : "开始学习") + "</button>" +
         "</div>" +
       "</div>";
 
@@ -108,6 +132,7 @@
     if (start) {
       start.addEventListener("click", function () {
         if (!state.bookId) return;
+        if (state.resume && !window.confirm("重新开始将清除当前进度，确定吗？")) return;
         persist();
         start.disabled = true;
         start.textContent = "抽词中…";
@@ -134,11 +159,13 @@
             studentName: (user && (user.displayName || user.name)) || "",
             studentPhone: (user && user.phone) || ""
           };
+          // overwrite only after new pool is ready
           DW.saveTask(task);
+          state.resume = null;
           location.href = "daily-word-learn.html";
         }).catch(function (e) {
           start.disabled = false;
-          start.textContent = "开始学习";
+          start.textContent = state.resume ? "重新开始" : "开始学习";
           alert(e.message || "抽词失败");
         });
       });
@@ -146,10 +173,16 @@
   }
 
   function boot() {
+    state.resume = activeResume();
     var plan = DW.getPlan();
     if (plan) {
       state.bookId = plan.bookId || "";
       state.count = DW.clampCount(plan.targetCount || DW.DEFAULT_COUNT);
+    }
+    // prefer current task's book/count when resetting mid-run
+    if (state.resume) {
+      if (state.resume.bookId) state.bookId = state.resume.bookId;
+      if (state.resume.targetCount) state.count = DW.clampCount(state.resume.targetCount);
     }
     Promise.all([
       Y.load(),

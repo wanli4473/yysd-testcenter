@@ -435,6 +435,12 @@
   document.getElementById("dw-exit-confirm").addEventListener("click", function () {
     location.href = "zone.html?zone=study&s=vocab";
   });
+  var resetBtn = document.getElementById("dw-exit-reset");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", function () {
+      location.href = "daily-word-setup.html?reset=1";
+    });
+  }
 
   document.addEventListener("keydown", function (e) {
     if (exitModal && !exitModal.hidden) return;

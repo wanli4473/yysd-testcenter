@@ -384,13 +384,14 @@
     var dwResume = !!(dwTask && dwTask.wordList && dwTask.wordList.length && !dwTask.completed);
     var dwHref = dwResume ? "daily-word-learn.html" : "daily-word-setup.html";
     var dwCount = dwPlan && dwPlan.targetCount ? dwPlan.targetCount : 50;
+    if (dwResume && dwTask.bookLabel) dwBookLabel = dwTask.bookLabel;
     var dwDesc = dwResume
-      ? ("继续 " + ((dwTask.currentIndex || 0) + 1) + "/" + dwTask.wordList.length + " · " + (dwTask.bookLabel || dwBookLabel || "今日任务"))
+      ? ("继续 " + ((dwTask.currentIndex || 0) + 1) + "/" + dwTask.wordList.length + " · " + (dwBookLabel || "今日任务"))
       : (dwBookLabel
         ? (dwBookLabel + " · 每日 " + dwCount + " 词")
         : "图片 · 跟读 · 拼写 · 详解，四步记单词");
     var dailyCard =
-      '<a class="vocab-daily-card" href="' + dwHref + '">' +
+      '<div class="vocab-daily-card">' +
         '<div class="vocab-daily-card__top">' +
           '<span class="vocab-daily-card__kicker">今日任务</span>' +
           (dwResume ? '<span class="vocab-daily-card__badge">进行中</span>' : "") +
@@ -399,8 +400,14 @@
           (dwResume ? "继续每日单词" : (dwCount + " 个新词")) +
         "</p>" +
         '<p class="vocab-daily-card__desc">' + Y.esc(dwDesc) + "</p>" +
-        '<span class="vocab-daily-card__go">' + (dwResume ? "继续学习 ›" : "开始学习 ›") + "</span>" +
-      "</a>";
+        '<div class="vocab-daily-card__actions">' +
+          '<a class="vocab-daily-card__go" href="' + dwHref + '">' +
+            (dwResume ? "继续学习 ›" : "开始学习 ›") + "</a>" +
+          (dwResume
+            ? '<a class="vocab-daily-card__reset" href="daily-word-setup.html?reset=1">重新设置 ›</a>'
+            : '<a class="vocab-daily-card__reset" href="daily-word-setup.html">更改词书 / 数量 ›</a>') +
+        "</div>" +
+      "</div>";
 
     return '<div class="vocab-bento">' +
       realmBanner +
