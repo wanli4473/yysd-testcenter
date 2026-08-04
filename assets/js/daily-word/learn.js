@@ -19,6 +19,10 @@
     spellFeedback: "",
     spellReveal: false,
     spellTries: 0,
+    meaningValue: "",
+    meaningFeedback: "",
+    meaningReveal: false,
+    meaningTries: 0,
     // ponytail: block Enter briefly after stage change — spelling Enter was bubbling into detail→nextWord
     enterArmedAt: 0
   };
@@ -46,6 +50,7 @@
     if (task.stage === "image") return "看图识词";
     if (task.stage === "speaking") return "跟读";
     if (task.stage === "spelling") return "拼写";
+    if (task.stage === "meaning") return "释义";
     if (task.stage === "detail") return "详解";
     return "学习";
   }
@@ -80,6 +85,9 @@
       spellValue: ui.spellValue,
       spellFeedback: ui.spellFeedback,
       spellReveal: ui.spellReveal,
+      meaningValue: ui.meaningValue,
+      meaningFeedback: ui.meaningFeedback,
+      meaningReveal: ui.meaningReveal,
       isLast: task.currentIndex >= task.wordList.length - 1
     };
   }
@@ -100,6 +108,10 @@
     ui.spellValue = "";
     ui.spellFeedback = "";
     ui.spellReveal = false;
+    ui.meaningTries = 0;
+    ui.meaningValue = "";
+    ui.meaningFeedback = "";
+    ui.meaningReveal = false;
     ui.speakStatus = "";
     persist();
     paint();
@@ -143,6 +155,21 @@
 
   function enterReady() {
     return Date.now() >= (ui.enterArmedAt || 0);
+  }
+
+  function enterMeaning() {
+    task.stage = "meaning";
+    ui.meaningValue = "";
+    ui.meaningFeedback = "";
+    ui.meaningReveal = false;
+    ui.meaningTries = 0;
+    armEnter(400);
+    persist();
+    paint();
+    setTimeout(function () {
+      var inp = root.querySelector(".dw-meaning-input");
+      if (inp) inp.focus();
+    }, 50);
   }
 
   function enterDetail() {
@@ -190,15 +217,30 @@
     });
   }
 
+  function markMeaningFail() {
+    if (!task.weakMeaning) task.weakMeaning = [];
+    var w = word().word;
+    if (task.weakMeaning.indexOf(w) < 0) task.weakMeaning.push(w);
+    var prev = DW.getRecords()[DW.wordKey(task.bookId, w)] || {};
+    DW.upsertRecord(task.bookId, w, {
+      meaningWrong: true,
+      wrongCount: (prev.wrongCount || 0) + 1,
+      status: "learning"
+    });
+  }
+
   function markWordOk() {
     var w = word().word;
     var prev = DW.getRecords()[DW.wordKey(task.bookId, w)] || {};
-    var weak = task.weakSpeak.indexOf(w) >= 0 || task.weakSpell.indexOf(w) >= 0;
+    var weak = task.weakSpeak.indexOf(w) >= 0 ||
+      task.weakSpell.indexOf(w) >= 0 ||
+      (task.weakMeaning && task.weakMeaning.indexOf(w) >= 0);
     DW.upsertRecord(task.bookId, w, {
       correctCount: (prev.correctCount || 0) + (weak ? 0 : 1),
       status: "learning",
       speakingWrong: task.weakSpeak.indexOf(w) >= 0,
-      spellingWrong: task.weakSpell.indexOf(w) >= 0
+      spellingWrong: task.weakSpell.indexOf(w) >= 0,
+      meaningWrong: !!(task.weakMeaning && task.weakMeaning.indexOf(w) >= 0)
     });
   }
 
@@ -207,8 +249,9 @@
     var total = task.wordList.length;
     var weakSpeak = task.weakSpeak || [];
     var weakSpell = task.weakSpell || [];
+    var weakMeaning = task.weakMeaning || [];
     var weakSet = {};
-    weakSpeak.concat(weakSpell).forEach(function (x) { weakSet[x] = true; });
+    weakSpeak.concat(weakSpell).concat(weakMeaning).forEach(function (x) { weakSet[x] = true; });
     var weakN = Object.keys(weakSet).length;
     var mastered = Math.max(0, total - weakN);
     var A = window.YYSD_AUTH;
@@ -220,7 +263,8 @@
         meaning: w.meaning || "",
         ipa: w.ipa || "",
         speakingWrong: weakSpeak.indexOf(ww) >= 0,
-        spellingWrong: weakSpell.indexOf(ww) >= 0
+        spellingWrong: weakSpell.indexOf(ww) >= 0,
+        meaningWrong: weakMeaning.indexOf(ww) >= 0
       };
     });
     var result = {
@@ -231,6 +275,7 @@
       mastered: Math.max(0, mastered),
       weakSpeak: weakSpeak,
       weakSpell: weakSpell,
+      weakMeaning: weakMeaning,
       words: words,
       studentName: task.studentName || (user && (user.displayName || user.name)) || "",
       studentPhone: task.studentPhone || (user && user.phone) || "",
@@ -367,7 +412,7 @@
     var w = word();
     var res = DW.spellCheck(ui.spellValue, w.word);
     if (res.ok) {
-      enterDetail();
+      enterMeaning();
       return;
     }
     ui.spellTries += 1;
@@ -376,13 +421,38 @@
       ui.spellFeedback = "两次错误，已显示答案";
       markSpellFail();
       paint();
-      setTimeout(enterDetail, 2000);
+      setTimeout(enterMeaning, 2000);
       return;
     }
     ui.spellFeedback = "拼写不正确，再试一次";
     paint();
     setTimeout(function () {
       var inp = root.querySelector(".dw-spell-input");
+      if (inp) { inp.focus(); inp.select(); }
+    }, 30);
+  }
+
+  function submitMeaning() {
+    if (ui.meaningReveal) return;
+    var w = word();
+    var res = DW.meaningCheck(ui.meaningValue, w);
+    if (res.ok) {
+      enterDetail();
+      return;
+    }
+    ui.meaningTries += 1;
+    if (ui.meaningTries >= 2) {
+      ui.meaningReveal = true;
+      ui.meaningFeedback = "两次错误，已显示参考释义";
+      markMeaningFail();
+      paint();
+      setTimeout(enterDetail, 2000);
+      return;
+    }
+    ui.meaningFeedback = "释义不太对，再试一次";
+    paint();
+    setTimeout(function () {
+      var inp = root.querySelector(".dw-meaning-input");
       if (inp) { inp.focus(); inp.select(); }
     }, 30);
   }
@@ -467,15 +537,26 @@
         if (pressIntent || ui.recording) stopRec();
       });
     }
-    var inp = host.querySelector(".dw-spell-input");
-    if (inp) {
-      inp.addEventListener("input", function () { ui.spellValue = inp.value; });
-      inp.addEventListener("paste", function (e) { e.preventDefault(); });
-      inp.addEventListener("keydown", function (e) {
+    var spellInp = host.querySelector(".dw-spell-input:not(.dw-meaning-input)");
+    if (spellInp) {
+      spellInp.addEventListener("input", function () { ui.spellValue = spellInp.value; });
+      spellInp.addEventListener("paste", function (e) { e.preventDefault(); });
+      spellInp.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
           e.preventDefault();
           e.stopPropagation();
           submitSpell();
+        }
+      });
+    }
+    var meaningInp = host.querySelector(".dw-meaning-input");
+    if (meaningInp) {
+      meaningInp.addEventListener("input", function () { ui.meaningValue = meaningInp.value; });
+      meaningInp.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.stopPropagation();
+          submitMeaning();
         }
       });
     }
@@ -520,6 +601,10 @@
     }
     if (act === "submit-spell") {
       submitSpell();
+      return;
+    }
+    if (act === "submit-meaning") {
+      submitMeaning();
       return;
     }
     if (act === "play-ex") {
@@ -580,6 +665,10 @@
         if (e.target && e.target.classList && e.target.classList.contains("dw-spell-input")) return;
         e.preventDefault();
         submitSpell();
+      } else if (task.stage === "meaning") {
+        if (e.target && e.target.classList && e.target.classList.contains("dw-meaning-input")) return;
+        e.preventDefault();
+        submitMeaning();
       } else if (task.stage === "detail") {
         e.preventDefault();
         nextWord();
@@ -614,9 +703,11 @@
       location.replace("daily-word-result.html");
       return;
     }
+    if (!task.weakMeaning) task.weakMeaning = [];
     ui.speakTries = task.speakTries[word().word] || 0;
     if (task.stage === "speaking") enterSpeaking();
     else if (task.stage === "spelling") enterSpelling();
+    else if (task.stage === "meaning") enterMeaning();
     else if (task.stage === "detail") enterDetail();
     else enterImage();
   }

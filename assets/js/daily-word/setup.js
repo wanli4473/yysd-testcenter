@@ -247,6 +247,7 @@
             speakTries: {},
             weakSpeak: [],
             weakSpell: [],
+            weakMeaning: [],
             studentName: (user && (user.displayName || user.name)) || "",
             studentPhone: (user && user.phone) || ""
           };

@@ -1,5 +1,5 @@
 /* =========================================================================
-   daily-word/stages.js — 四步学习 UI：image / speaking / spelling / detail
+   daily-word/stages.js — 五步：image / speaking / spelling / meaning / detail
    ========================================================================= */
 (function (global) {
   "use strict";
@@ -102,6 +102,33 @@
       "</div>";
   }
 
+  function renderMeaning(host, ctx) {
+    var w = ctx.word;
+    var feedback = ctx.meaningFeedback || "";
+    var reveal = ctx.meaningReveal;
+    host.innerHTML =
+      '<div class="dw-stage dw-stage--meaning">' +
+        '<div class="dw-spell-head">' +
+          '<img class="dw-spell-thumb" alt="" src="' + DW.esc(imgSrc(w, ctx.bookId)) + '">' +
+          '<div>' +
+            '<div class="dw-word" style="font-size:1.55rem;margin:0">' + DW.esc(w.word) + "</div>" +
+            (w.ipa ? '<div class="dw-ipa">' + DW.esc(w.ipa) + "</div>" : "") +
+          "</div>" +
+        "</div>" +
+        '<label class="dw-spell-label">写出中文含义' +
+          '<input class="dw-spell-input dw-meaning-input" type="text" autocomplete="off" ' +
+            'lang="zh-CN" inputmode="text" spellcheck="false" ' +
+            'data-act="meaning-input" placeholder="例如：牢固的；公司" value="' +
+            DW.esc(ctx.meaningValue || "") + '"' +
+            (reveal ? " disabled" : "") + ">" +
+        "</label>" +
+        (feedback ? '<p class="dw-feedback">' + feedback + "</p>" : "") +
+        (reveal
+          ? '<p class="dw-answer">参考释义：<strong>' + DW.esc(w.meaning || "—") + "</strong></p>"
+          : '<button type="button" class="dw-btn dw-btn--primary" data-act="submit-meaning">提交</button>') +
+      "</div>";
+  }
+
   function renderDetail(host, ctx) {
     var w = ctx.word;
     var isLast = ctx.isLast;
@@ -128,6 +155,7 @@
     if (stage === "image") return renderImage(host, ctx);
     if (stage === "speaking") return renderSpeaking(host, ctx);
     if (stage === "spelling") return renderSpelling(host, ctx);
+    if (stage === "meaning") return renderMeaning(host, ctx);
     if (stage === "detail") return renderDetail(host, ctx);
     host.innerHTML = '<p class="dw-fail">未知阶段</p>';
   }

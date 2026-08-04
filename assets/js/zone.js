@@ -393,7 +393,7 @@
       ? ("继续 " + ((dwTask.currentIndex || 0) + 1) + "/" + dwTask.wordList.length + " · " + (dwBookLabel || "今日任务"))
       : (dwBookLabel
         ? (dwBookLabel + " · 每日 " + dwCount + " 词")
-        : "图片 · 跟读 · 拼写 · 详解，四步记单词");
+        : "图片 · 跟读 · 拼写 · 释义 · 详解");
     var dailyCard =
       '<div class="vocab-daily-card">' +
         '<div class="vocab-daily-card__top">' +

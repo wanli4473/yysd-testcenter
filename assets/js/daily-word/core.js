@@ -178,6 +178,34 @@
     return { ok: false, marks: marks };
   }
 
+  // ponytail: same idea as wrong-words.meaningCorrect — accept partial / acceptCN
+  function meaningCheck(input, wordObj) {
+    var userCN = String(input || "").replace(/\s+/g, "");
+    if (!userCN) return { ok: false };
+    var accepts = [];
+    var i;
+    var list = (wordObj && wordObj.acceptCN) || [];
+    for (i = 0; i < list.length; i++) {
+      if (list[i]) accepts.push(String(list[i]).replace(/\s+/g, ""));
+    }
+    String((wordObj && wordObj.meaning) || "").split(/[；;，,、\/|]/).forEach(function (p) {
+      p = String(p || "").replace(/\s+/g, "").replace(/（[^）]*）|\([^)]*\)/g, "");
+      if (p) accepts.push(p);
+    });
+    for (i = 0; i < accepts.length; i++) {
+      var a = accepts[i];
+      if (!a) continue;
+      if (userCN === a || userCN.indexOf(a) >= 0 || a.indexOf(userCN) >= 0) return { ok: true };
+    }
+    var meaningClean = String((wordObj && wordObj.meaning) || "").replace(/[；;，,、\s]/g, "");
+    if (!meaningClean) return { ok: false };
+    var head = meaningClean.substring(0, Math.min(2, meaningClean.length));
+    if (userCN.length >= 2 && (userCN.indexOf(head) >= 0 || meaningClean.indexOf(userCN) >= 0)) {
+      return { ok: true };
+    }
+    return { ok: false };
+  }
+
   function lev(a, b) {
     a = String(a); b = String(b);
     var m = a.length, n = b.length;
@@ -232,7 +260,7 @@
     pool.forEach(function (w) {
       var r = recordOf(recs, bookId, w.word);
       if (!r || r.status === "new") newOnes.push(w);
-      else if (r.speakingWrong || r.spellingWrong || r.status === "learning") review.push(w);
+      else if (r.speakingWrong || r.spellingWrong || r.meaningWrong || r.status === "learning") review.push(w);
     });
 
     var picked = [];
@@ -269,12 +297,15 @@
       wrongCount: 0,
       speakingWrong: false,
       spellingWrong: false,
+      meaningWrong: false,
       lastReviewTime: 0
     };
     Object.keys(patch || {}).forEach(function (p) { cur[p] = patch[p]; });
     cur.lastReviewTime = Date.now();
-    if (cur.speakingWrong || cur.spellingWrong) cur.status = "learning";
-    else if (cur.correctCount >= 1 && !cur.speakingWrong && !cur.spellingWrong) cur.status = "learning";
+    if (cur.speakingWrong || cur.spellingWrong || cur.meaningWrong) cur.status = "learning";
+    else if (cur.correctCount >= 1 && !cur.speakingWrong && !cur.spellingWrong && !cur.meaningWrong) {
+      cur.status = "learning";
+    }
     recs[key] = cur;
     saveRecords(recs);
     return cur;
@@ -448,8 +479,8 @@
   }
 
   function estimateMinutes(count) {
-    // ~24s/word for 4 stages
-    return Math.max(5, Math.round(clampCount(count) * 0.4));
+    // ~30s/word for 5 stages (incl. meaning)
+    return Math.max(5, Math.round(clampCount(count) * 0.5));
   }
 
   var API = {
@@ -475,6 +506,7 @@
     libraryUrl: libraryUrl,
     parseWordData: parseWordData,
     spellCheck: spellCheck,
+    meaningCheck: meaningCheck,
     speakPass: speakPass,
     pickDaily: pickDaily,
     upsertRecord: upsertRecord,

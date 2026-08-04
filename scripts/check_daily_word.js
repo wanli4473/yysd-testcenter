@@ -42,4 +42,9 @@ assert.strictEqual(mixed.length, 10);
 assert.strictEqual(DW.isThemeBook("theme:nce"), true);
 assert.strictEqual(DW.isThemeBook("gaozhong"), false);
 assert.strictEqual(DW.THEME_PREFIX + "nce", "theme:nce");
+
+assert.strictEqual(DW.meaningCheck("公司", { meaning: "公司；牢固的", acceptCN: [] }).ok, true);
+assert.strictEqual(DW.meaningCheck("牢固", { meaning: "公司；牢固的", acceptCN: ["坚固"] }).ok, true);
+assert.strictEqual(DW.meaningCheck("坚固", { meaning: "公司；牢固的", acceptCN: ["坚固"] }).ok, true);
+assert.strictEqual(DW.meaningCheck("香蕉", { meaning: "公司；牢固的", acceptCN: [] }).ok, false);
 console.log("check_daily_word: ok");

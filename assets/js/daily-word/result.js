@@ -56,12 +56,14 @@
     lines.push("");
     lines.push("发音薄弱词：" + ((r.weakSpeak && r.weakSpeak.length) ? r.weakSpeak.join("、") : "无"));
     lines.push("拼写易错词：" + ((r.weakSpell && r.weakSpell.length) ? r.weakSpell.join("、") : "无"));
+    lines.push("释义易错词：" + ((r.weakMeaning && r.weakMeaning.length) ? r.weakMeaning.join("、") : "无"));
     lines.push("");
     lines.push("今日学习单词明细：");
     (r.words || []).forEach(function (w, i) {
       var tags = [];
       if (w.speakingWrong) tags.push("发音弱");
       if (w.spellingWrong) tags.push("拼写弱");
+      if (w.meaningWrong) tags.push("释义弱");
       lines.push((i + 1) + ". " + w.word +
         (w.ipa ? " " + w.ipa : "") +
         (w.meaning ? " — " + w.meaning : "") +
@@ -142,6 +144,7 @@
     var rate = total ? Math.round((mastered / total) * 100) : 0;
     var speakN = (r.weakSpeak || []).length;
     var spellN = (r.weakSpell || []).length;
+    var meaningN = (r.weakMeaning || []).length;
     var reportText = buildReportText(r);
     var fileName = "每日单词报告-" + (r.date || DW.todayStr()) +
       (r.studentName ? "-" + r.studentName : "") + ".txt";
@@ -158,6 +161,7 @@
         var tags = [];
         if (w.speakingWrong) tags.push('<span class="dw-tag dw-tag--bad">发音</span>');
         if (w.spellingWrong) tags.push('<span class="dw-tag dw-tag--bad">拼写</span>');
+        if (w.meaningWrong) tags.push('<span class="dw-tag dw-tag--bad">释义</span>');
         if (!tags.length) tags.push('<span class="dw-tag dw-tag--ok">通过</span>');
         return "<tr>" +
           "<td>" + (i + 1) + "</td>" +
@@ -192,10 +196,11 @@
             '<div class="dw-stat"><div class="dw-stat__n">' + total + '</div><div class="dw-stat__l">今日学习</div></div>' +
             '<div class="dw-stat"><div class="dw-stat__n">' + rate + '%</div><div class="dw-stat__l">掌握率</div></div>' +
             '<div class="dw-stat"><div class="dw-stat__n">' + speakN + '</div><div class="dw-stat__l">发音薄弱</div></div>' +
-            '<div class="dw-stat"><div class="dw-stat__n">' + spellN + '</div><div class="dw-stat__l">拼写易错</div></div>' +
+            '<div class="dw-stat"><div class="dw-stat__n">' + (spellN + meaningN) + '</div><div class="dw-stat__l">拼写/释义弱</div></div>' +
           "</div>" +
           '<div class="dw-weak"><h3>发音薄弱词</h3><ul>' + listHtml(r.weakSpeak) + "</ul></div>" +
           '<div class="dw-weak"><h3>拼写易错词</h3><ul>' + listHtml(r.weakSpell) + "</ul></div>" +
+          '<div class="dw-weak"><h3>释义易错词</h3><ul>' + listHtml(r.weakMeaning) + "</ul></div>" +
           '<div class="dw-weak"><h3>今日单词明细</h3>' + wordsTable() + "</div>" +
           '<p class="dw-report__foot">请保存或转发本报告给老师</p>' +
         "</div>" +
