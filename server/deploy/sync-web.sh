@@ -80,6 +80,12 @@ check "library/practice/jingting/data/cam21-t1-p1.json"
 check "word-realm.html"
 check "assets/js/word-realm.js"
 check "library/practice/word-realm/lexicon.json"
+check "daily-word-setup.html"
+check "daily-word-learn.html"
+check "daily-word-result.html"
+check "assets/js/daily-word/core.js"
+check "assets/js/daily-word/learn.js"
+check "assets/css/daily-word.css"
 
 if grep -q "api.youyisida.com" "$WEB_ROOT/library/practice/jingting/cam20-test1-section1.html" 2>/dev/null; then
   echo "  ✓ 精听页已配置生产 API"

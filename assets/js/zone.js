@@ -369,8 +369,42 @@
     // ponytail: 词境远征入口先下线，恢复时改回 canWordRealm() 判断
     var realmBanner = "";
 
+    // 每日单词入口（独立模块；进度读 localStorage）
+    var dwPlan = null;
+    var dwTask = null;
+    try {
+      dwPlan = JSON.parse(localStorage.getItem("yysd:daily-word:plan") || "null");
+      dwTask = JSON.parse(localStorage.getItem("yysd:daily-word:task") || "null");
+    } catch (e) {}
+    var dwBookLabel = "";
+    if (dwPlan && dwPlan.bookId) {
+      var dwBook = (Y.VOCAB_BOOKS && Y.VOCAB_BOOKS[dwPlan.bookId]) || null;
+      dwBookLabel = dwBook ? dwBook.label : dwPlan.bookId;
+    }
+    var dwResume = !!(dwTask && dwTask.wordList && dwTask.wordList.length && !dwTask.completed);
+    var dwHref = dwResume ? "daily-word-learn.html" : "daily-word-setup.html";
+    var dwCount = dwPlan && dwPlan.targetCount ? dwPlan.targetCount : 50;
+    var dwDesc = dwResume
+      ? ("继续 " + ((dwTask.currentIndex || 0) + 1) + "/" + dwTask.wordList.length + " · " + (dwTask.bookLabel || dwBookLabel || "今日任务"))
+      : (dwBookLabel
+        ? (dwBookLabel + " · 每日 " + dwCount + " 词")
+        : "图片 · 跟读 · 拼写 · 详解，四步记单词");
+    var dailyCard =
+      '<a class="vocab-daily-card" href="' + dwHref + '">' +
+        '<div class="vocab-daily-card__top">' +
+          '<span class="vocab-daily-card__kicker">今日任务</span>' +
+          (dwResume ? '<span class="vocab-daily-card__badge">进行中</span>' : "") +
+        "</div>" +
+        '<p class="vocab-daily-card__title">' +
+          (dwResume ? "继续每日单词" : (dwCount + " 个新词")) +
+        "</p>" +
+        '<p class="vocab-daily-card__desc">' + Y.esc(dwDesc) + "</p>" +
+        '<span class="vocab-daily-card__go">' + (dwResume ? "继续学习 ›" : "开始学习 ›") + "</span>" +
+      "</a>";
+
     return '<div class="vocab-bento">' +
       realmBanner +
+      dailyCard +
       '<div class="vocab-entry-grid" role="navigation" aria-label="词书入口">' + entries + "</div>" +
       '<div class="vocab-bento__body bento-grid bento-grid--main-side">' +
       '<div class="vocab-bento__main">' +

@@ -819,6 +819,11 @@ var DASHSCOPE_MM_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/mult
 var DASHSCOPE_ASR_MODEL = process.env.DASHSCOPE_ASR_MODEL || "qwen3-asr-flash";
 var DASHSCOPE_TTS_MODEL = process.env.DASHSCOPE_TTS_MODEL || "qwen3-tts-flash";
 var DASHSCOPE_TTS_VOICE = process.env.DASHSCOPE_TTS_VOICE || "Neil";
+var DASHSCOPE_IMG_MODEL = process.env.DASHSCOPE_IMG_MODEL || "wanx2.1-t2i-turbo";
+var DASHSCOPE_IMG_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis";
+var DASHSCOPE_TASK_URL = "https://dashscope.aliyuncs.com/api/v1/tasks/";
+// ponytail: process-local image cache; Redis if multi-instance
+var dailyWordImageCache = Object.create(null);
 
 db.exec(
   "CREATE TABLE IF NOT EXISTS ai_tutor_sessions (" +
@@ -3307,6 +3312,160 @@ app.post("/api/ai-tutor/tts", authMiddleware, async function (req, res) {
   } catch (e) {
     console.error("[yysd-api] ai-tutor/tts", e.message);
     res.status(502).json({ error: "语音合成失败" });
+  }
+});
+
+// ---- Daily word (跟读 pass/fail + 配图) ----
+
+function dailyWordNorm(s) {
+  return String(s || "").toLowerCase().replace(/[^a-z']/g, "").trim();
+}
+
+function dailyWordLev(a, b) {
+  a = String(a); b = String(b);
+  var m = a.length, n = b.length, i, j;
+  if (!m) return n;
+  if (!n) return m;
+  var dp = [];
+  for (i = 0; i <= m; i++) {
+    dp[i] = [i];
+    for (j = 1; j <= n; j++) dp[i][j] = i === 0 ? j : 0;
+  }
+  for (i = 1; i <= m; i++) {
+    for (j = 1; j <= n; j++) {
+      var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+function dailyWordSpeakPass(heard, target) {
+  var h = dailyWordNorm(heard);
+  var t = dailyWordNorm(target);
+  if (!h || !t) return false;
+  if (h === t || h.indexOf(t) >= 0 || t.indexOf(h) >= 0) return true;
+  return dailyWordLev(h, t) <= (t.length <= 4 ? 1 : 2);
+}
+
+async function dashscopeAsrDataUrl(audio) {
+  var r = await fetch(DASHSCOPE_MM_URL, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + DASHSCOPE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: DASHSCOPE_ASR_MODEL,
+      input: {
+        messages: [
+          { role: "system", content: [{ text: "Transcribe the single English word or short phrase accurately." }] },
+          { role: "user", content: [{ audio: audio }] }
+        ]
+      },
+      parameters: { asr_options: { language: "en", enable_itn: true } }
+    })
+  });
+  var data = await r.json();
+  if (!r.ok) {
+    throw new Error((data && (data.message || (data.error && data.error.message))) || "ASR 失败");
+  }
+  var text = "";
+  try {
+    var choices = data.output && data.output.choices;
+    if (choices && choices[0] && choices[0].message) {
+      var c = choices[0].message.content;
+      if (typeof c === "string") text = c;
+      else if (Array.isArray(c)) text = c.map(function (p) { return p.text || p; }).filter(Boolean).join(" ");
+    }
+    if (!text && data.output && data.output.text) text = data.output.text;
+  } catch (e) {}
+  return clipText(text, 200);
+}
+
+function sleepMs(ms) {
+  return new Promise(function (resolve) { setTimeout(resolve, ms); });
+}
+
+async function dashscopeImageForWord(word, meaning) {
+  var prompt = "Simple clear educational illustration for English vocabulary word \"" + word + "\"" +
+    (meaning ? (" meaning: " + meaning) : "") +
+    ", friendly flat illustration, no text letters in the image, square composition";
+  var r = await fetch(DASHSCOPE_IMG_URL, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + DASHSCOPE_KEY,
+      "Content-Type": "application/json",
+      "X-DashScope-Async": "enable"
+    },
+    body: JSON.stringify({
+      model: DASHSCOPE_IMG_MODEL,
+      input: { prompt: prompt },
+      parameters: { size: "1024*1024", n: 1 }
+    })
+  });
+  var data = await r.json();
+  if (!r.ok) {
+    throw new Error((data && (data.message || (data.error && data.error.message))) || "文生图失败");
+  }
+  var taskId = data.output && data.output.task_id;
+  if (!taskId) throw new Error("文生图未返回 task_id");
+  var i;
+  for (i = 0; i < 20; i++) {
+    await sleepMs(800);
+    var tr = await fetch(DASHSCOPE_TASK_URL + encodeURIComponent(taskId), {
+      headers: { Authorization: "Bearer " + DASHSCOPE_KEY }
+    });
+    var td = await tr.json();
+    var st = (td.output && td.output.task_status) || "";
+    if (st === "SUCCEEDED") {
+      var results = td.output.results || [];
+      var url = results[0] && (results[0].url || results[0].orig_url);
+      if (!url) throw new Error("文生图无图片地址");
+      return url;
+    }
+    if (st === "FAILED" || st === "CANCELED") {
+      throw new Error((td.output && td.output.message) || "文生图任务失败");
+    }
+  }
+  throw new Error("文生图超时");
+}
+
+app.post("/api/daily-word/speak", authMiddleware, async function (req, res) {
+  if (!DASHSCOPE_KEY) return res.status(503).json({ error: "DASHSCOPE_API_KEY 未配置" });
+  var audio = clipText(req.body && req.body.audio, 12 * 1024 * 1024);
+  var target = clipText(req.body && req.body.target, 80);
+  var audioSec = Math.max(0, Math.min(60, Number(req.body && req.body.audioSec) || 0));
+  if (!audio || audio.indexOf("data:") !== 0) return res.status(400).json({ error: "缺少 audio（data URL）" });
+  if (!target) return res.status(400).json({ error: "缺少 target" });
+  var u = getUsage(req.user.sub);
+  if (!isAdminPhone(req.user.phone) && audioSec > 0 && u.voiceSec + audioSec > AI_QUOTA.voiceSec) {
+    return res.status(429).json({ error: "今日语音时长已达上限（15 分钟），明日再来" });
+  }
+  try {
+    var heard = await dashscopeAsrDataUrl(audio);
+    if (!heard) return res.status(502).json({ error: "未能识别出语音内容，请重试" });
+    if (audioSec > 0) bumpUsage(req.user.sub, { voiceSec: audioSec });
+    res.json({ ok: true, pass: dailyWordSpeakPass(heard, target), heard: heard });
+  } catch (e) {
+    console.error("[yysd-api] daily-word/speak", e.message);
+    res.status(502).json({ error: "跟读评测失败，请稍后再试" });
+  }
+});
+
+app.post("/api/daily-word/image", authMiddleware, async function (req, res) {
+  if (!DASHSCOPE_KEY) return res.status(503).json({ error: "DASHSCOPE_API_KEY 未配置" });
+  var word = clipText(req.body && req.body.word, 80);
+  var meaning = clipText(req.body && req.body.meaning, 120);
+  if (!word) return res.status(400).json({ error: "缺少 word" });
+  var cacheKey = dailyWordNorm(word);
+  if (cacheKey && dailyWordImageCache[cacheKey]) {
+    return res.json({ ok: true, url: dailyWordImageCache[cacheKey], cached: true });
+  }
+  try {
+    var url = await dashscopeImageForWord(word, meaning);
+    if (cacheKey) dailyWordImageCache[cacheKey] = url;
+    res.json({ ok: true, url: url, cached: false });
+  } catch (e) {
+    console.error("[yysd-api] daily-word/image", e.message);
+    res.status(502).json({ error: "配图生成失败" });
   }
 });
 
