@@ -25,7 +25,8 @@
   var imageTimer = null;
   var mediaRec = null;
   var mediaChunks = [];
-  var pressTimer = null;
+  var pressIntent = false; // true while user is holding mic / space
+  var scoring = false;
 
   function word() {
     return task.wordList[task.currentIndex];
@@ -37,7 +38,16 @@
 
   function progressPct() {
     var n = task.wordList.length || 1;
-    return Math.round((task.currentIndex / n) * 100);
+    // include current word so 1/N doesn't look empty
+    return Math.min(100, Math.round(((task.currentIndex + 1) / n) * 100));
+  }
+
+  function stageLabel() {
+    if (task.stage === "image") return "看图识词";
+    if (task.stage === "speaking") return "跟读";
+    if (task.stage === "spelling") return "拼写";
+    if (task.stage === "detail") return "详解";
+    return "学习";
   }
 
   function shell(inner) {
@@ -47,7 +57,7 @@
     return '<div class="dw-shell">' +
       '<header class="dw-top">' +
         '<button type="button" class="dw-icon-btn" data-act="exit" aria-label="退出">✕</button>' +
-        '<span class="dw-badge">学习阶段</span>' +
+        '<span class="dw-badge">' + stageLabel() + "</span>" +
         '<div class="dw-progress-wrap">' +
           '<div class="dw-progress" aria-hidden="true"><div class="dw-progress__bar" style="width:' +
             progressPct() + '%"></div></div>' +
@@ -107,6 +117,8 @@
     ui.recording = false;
     ui.speakStatus = "";
     ui.speakTries = task.speakTries[word().word] || 0;
+    pressIntent = false;
+    scoring = false;
     persist();
     paint();
   }
@@ -142,13 +154,29 @@
 
   function markSpeakFail() {
     var w = word().word;
-    if (task.weakSpeak.indexOf(w) < 0) task.weakSpeak.push(w);
+    if (task.weakSpeak.indexOf(w) >= 0) return;
+    task.weakSpeak.push(w);
     var prev = DW.getRecords()[DW.wordKey(task.bookId, w)] || {};
     DW.upsertRecord(task.bookId, w, {
       speakingWrong: true,
       wrongCount: (prev.wrongCount || 0) + 1,
       status: "learning"
     });
+  }
+
+  function syncMicUi() {
+    var mic = root.querySelector('[data-act="mic"]');
+    var hint = document.getElementById("dw-speak-hint");
+    if (mic) {
+      mic.classList.toggle("is-rec", !!ui.recording);
+      mic.textContent = ui.recording ? "●" : "◎";
+      mic.setAttribute("aria-label", ui.recording ? "松开结束" : "按住录音");
+    }
+    if (hint) {
+      hint.textContent = ui.recording
+        ? "松开结束录音"
+        : (ui.speakStatus || "按住麦克风跟读，松开结束");
+    }
   }
 
   function markSpellFail() {
@@ -237,12 +265,20 @@
   }
 
   function startRec() {
-    if (ui.recording || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (ui.recording || scoring) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       ui.speakStatus = "当前环境不支持录音";
+      syncMicUi();
       paint();
       return;
     }
+    pressIntent = true;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      // released before mic ready → drop stream, don't hang in recording
+      if (!pressIntent || task.stage !== "speaking") {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        return;
+      }
       mediaChunks = [];
       var mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
       mediaRec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
@@ -252,28 +288,42 @@
       mediaRec.onstop = function () {
         stream.getTracks().forEach(function (t) { t.stop(); });
         var blob = new Blob(mediaChunks, { type: mediaRec.mimeType || "audio/webm" });
+        mediaRec = null;
+        if (!blob.size) {
+          ui.speakStatus = "录音太短，请按住再说一次";
+          scoring = false;
+          paint();
+          return;
+        }
         scoreSpeak(blob);
       };
       mediaRec.start();
       ui.recording = true;
       ui.speakStatus = "松开结束录音";
-      paint();
+      // ponytail: don't full-paint while finger is down — destroys pointer target
+      syncMicUi();
     }).catch(function () {
+      pressIntent = false;
       ui.speakStatus = "无法使用麦克风，请检查权限";
       paint();
     });
   }
 
   function stopRec() {
-    if (!mediaRec || mediaRec.state === "inactive") {
-      ui.recording = false;
-      paint();
+    pressIntent = false;
+    if (!ui.recording && (!mediaRec || mediaRec.state === "inactive")) {
       return;
     }
     ui.recording = false;
+    if (!mediaRec || mediaRec.state === "inactive") {
+      syncMicUi();
+      return;
+    }
     ui.speakStatus = "评测中…";
-    paint();
+    scoring = true;
+    syncMicUi();
     try { mediaRec.stop(); } catch (e) {
+      scoring = false;
       ui.speakStatus = "录音失败";
       paint();
     }
@@ -288,6 +338,7 @@
         audioSec: Math.min(15, Math.max(1, blob.size / 16000))
       });
     }).then(function (d) {
+      scoring = false;
       task.speakTries[w] = (task.speakTries[w] || 0) + 1;
       ui.speakTries = task.speakTries[w];
       persist();
@@ -301,6 +352,7 @@
         paint();
       }
     }).catch(function (e) {
+      scoring = false;
       task.speakTries[w] = (task.speakTries[w] || 0) + 1;
       ui.speakTries = task.speakTries[w];
       ui.speakStatus = (e && e.message) || "评测失败";
@@ -347,7 +399,14 @@
         if (d && d.url) {
           DW.saveImage(key, d.url);
           w.imageUrl = d.url;
-          if (i === task.currentIndex && (task.stage === "image" || task.stage === "speaking")) paint();
+          if (i !== task.currentIndex) return;
+          // don't full-paint while holding mic
+          if (task.stage === "speaking" && (ui.recording || pressIntent || scoring)) {
+            var img = root.querySelector(".dw-card__img");
+            if (img) img.src = d.url;
+            return;
+          }
+          if (task.stage === "image" || task.stage === "speaking") paint();
         }
       }).catch(function () { /* ponytail: placeholder ok */ });
     });
@@ -359,14 +418,19 @@
     if (mic) {
       mic.addEventListener("pointerdown", function (e) {
         e.preventDefault();
+        try { mic.setPointerCapture(e.pointerId); } catch (err) {}
         startRec();
       });
       mic.addEventListener("pointerup", function (e) {
         e.preventDefault();
         stopRec();
       });
-      mic.addEventListener("pointerleave", function () {
-        if (ui.recording) stopRec();
+      mic.addEventListener("pointercancel", function () {
+        stopRec();
+      });
+      // lostcapture covers finger sliding off after capture
+      mic.addEventListener("lostpointercapture", function () {
+        if (pressIntent || ui.recording) stopRec();
       });
     }
     var inp = host.querySelector(".dw-spell-input");
@@ -387,8 +451,18 @@
     var btn = e.target.closest("[data-act]");
     if (!btn) return;
     var act = btn.getAttribute("data-act");
+    if (act === "mic") {
+      // hold handled by pointer events; ignore click
+      e.preventDefault();
+      return;
+    }
     if (act === "exit") {
       exitModal.hidden = false;
+      return;
+    }
+    if (act === "hint") {
+      ui.showHint = true;
+      paint();
       return;
     }
     if (act === "play") {

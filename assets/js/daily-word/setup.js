@@ -23,8 +23,13 @@
 
   function persist() {
     if (!state.bookId) return;
+    var label = "";
+    state.books.concat(state.themes).forEach(function (b) {
+      if (b.key === state.bookId) label = b.label;
+    });
     DW.savePlan({
       bookId: state.bookId,
+      bookLabel: label,
       targetCount: DW.clampCount(state.count),
       updatedAt: Date.now()
     });

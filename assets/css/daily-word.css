@@ -267,9 +267,11 @@ html, body.dw-page {
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
 }
 .dw-card__img-wrap {
-  aspect-ratio: 1;
+  /* ponytail: fixed height avoids aspect-ratio + max-height leaving a side gap */
+  width: 100%;
+  height: min(42vh, 320px);
   background: var(--dw-blue-soft);
-  max-height: min(52vh, 420px);
+  overflow: hidden;
 }
 .dw-card__img {
   width: 100%;
@@ -281,6 +283,21 @@ html, body.dw-page {
   padding: 1rem 1.1rem 1.2rem;
   background: linear-gradient(180deg, #eff6ff, #fff);
 }
+.dw-card__body--speak {
+  padding-top: 0.75rem;
+  padding-bottom: 0.85rem;
+}
+.dw-hint-btn {
+  border: 0;
+  background: transparent;
+  color: var(--dw-muted);
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.25rem;
+  text-align: center;
+}
+.dw-hint-btn:hover { color: var(--dw-blue); }
 .dw-def-play {
   border: 0;
   background: transparent;

@@ -33,15 +33,17 @@
         '<div class="dw-card">' +
           '<div class="dw-card__img-wrap"><img class="dw-card__img" alt="" src="' + DW.esc(imgSrc(w, ctx.bookId)) + '"></div>' +
           '<div class="dw-card__body">' +
-            '<button type="button" class="dw-def-play" data-act="play">Definition 点击即可播放</button>' +
+            '<button type="button" class="dw-def-play" data-act="play">点击播放发音</button>' +
             '<div class="dw-word">' + DW.esc(w.word) + "</div>" +
             (w.ipa ? '<div class="dw-ipa">' + DW.esc(w.ipa) + "</div>" : "") +
-            (showZh ? '<div class="dw-zh">' + DW.esc(w.meaning) + "</div>" : "") +
+            (showZh ? '<div class="dw-zh">' + DW.esc(w.meaning || "—") + "</div>" : "") +
           "</div>" +
         "</div>" +
-        '<p class="dw-hint">' + (showZh ? "已显示中文提示" : "中文提示 请按 Space") + "</p>" +
+        '<button type="button" class="dw-hint-btn" data-act="hint">' +
+          (showZh ? "已显示中文提示" : "显示中文提示（或按空格）") +
+        "</button>" +
         '<button type="button" class="dw-btn dw-btn--primary" data-act="to-speak"' +
-          (canNext ? "" : " disabled") + ">开始跟读 Enter ↵</button>" +
+          (canNext ? "" : " disabled") + ">开始跟读</button>" +
       "</div>";
   }
 
@@ -55,18 +57,24 @@
       '<div class="dw-stage dw-stage--speak">' +
         '<div class="dw-card dw-card--speak">' +
           '<div class="dw-card__img-wrap"><img class="dw-card__img" alt="" src="' + DW.esc(imgSrc(w, ctx.bookId)) + '"></div>' +
+          '<div class="dw-card__body dw-card__body--speak">' +
+            '<button type="button" class="dw-def-play" data-act="play">播放标准音</button>' +
+            '<div class="dw-word">' + DW.esc(w.word) + "</div>" +
+            (w.ipa ? '<div class="dw-ipa">' + DW.esc(w.ipa) + "</div>" : "") +
+          "</div>" +
         "</div>" +
-        '<button type="button" class="dw-mic' + (rec ? " is-rec" : "") + '" data-act="mic" aria-label="录音">' +
-          (rec ? "●" : "🎤") +
+        '<button type="button" class="dw-mic' + (rec ? " is-rec" : "") +
+          '" data-act="mic" aria-label="' + (rec ? "松开结束" : "按住录音") + '">' +
+          (rec ? "●" : "◎") +
         "</button>" +
-        '<p class="dw-hint">' +
-          (rec ? "松开结束录音" : (status || "长按录音跟读，松开结束")) +
+        '<p class="dw-hint" id="dw-speak-hint">' +
+          (rec ? "松开结束录音" : (status || "按住麦克风跟读，松开结束")) +
         "</p>" +
         (canSkip
           ? '<button type="button" class="dw-btn dw-btn--ghost" data-act="skip-speak">跳过并标记薄弱</button>'
           : "") +
         (tries > 0 && !canSkip
-          ? '<button type="button" class="dw-btn dw-btn--ghost" data-act="retry-speak">再试一次 (R)</button>'
+          ? '<button type="button" class="dw-btn dw-btn--ghost" data-act="retry-speak">再试一次</button>'
           : "") +
       "</div>";
   }
@@ -89,7 +97,7 @@
         (feedback ? '<p class="dw-feedback">' + feedback + "</p>" : "") +
         (reveal
           ? '<p class="dw-answer">正确答案：<strong>' + DW.esc(w.word) + "</strong></p>"
-          : '<button type="button" class="dw-btn dw-btn--primary" data-act="submit-spell">提交 Enter</button>') +
+          : '<button type="button" class="dw-btn dw-btn--primary" data-act="submit-spell">提交</button>') +
       "</div>";
   }
 

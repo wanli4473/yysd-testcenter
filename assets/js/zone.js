@@ -377,14 +377,18 @@
       dwTask = JSON.parse(localStorage.getItem("yysd:daily-word:task") || "null");
     } catch (e) {}
     var dwBookLabel = "";
-    if (dwPlan && dwPlan.bookId) {
+    if (dwTask && dwTask.bookLabel) {
+      dwBookLabel = dwTask.bookLabel;
+    } else if (dwPlan && dwPlan.bookLabel) {
+      dwBookLabel = dwPlan.bookLabel;
+    } else if (dwPlan && dwPlan.bookId) {
       var dwBook = (Y.VOCAB_BOOKS && Y.VOCAB_BOOKS[dwPlan.bookId]) || null;
-      dwBookLabel = dwBook ? dwBook.label : dwPlan.bookId;
+      if (dwBook) dwBookLabel = dwBook.label;
+      else if (String(dwPlan.bookId).indexOf("theme:") === 0) dwBookLabel = "分类词库";
     }
     var dwResume = !!(dwTask && dwTask.wordList && dwTask.wordList.length && !dwTask.completed);
     var dwHref = dwResume ? "daily-word-learn.html" : "daily-word-setup.html";
     var dwCount = dwPlan && dwPlan.targetCount ? dwPlan.targetCount : 50;
-    if (dwResume && dwTask.bookLabel) dwBookLabel = dwTask.bookLabel;
     var dwDesc = dwResume
       ? ("继续 " + ((dwTask.currentIndex || 0) + 1) + "/" + dwTask.wordList.length + " · " + (dwBookLabel || "今日任务"))
       : (dwBookLabel
