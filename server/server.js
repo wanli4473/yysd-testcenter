@@ -819,11 +819,24 @@ var DASHSCOPE_MM_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/mult
 var DASHSCOPE_ASR_MODEL = process.env.DASHSCOPE_ASR_MODEL || "qwen3-asr-flash";
 var DASHSCOPE_TTS_MODEL = process.env.DASHSCOPE_TTS_MODEL || "qwen3-tts-flash";
 var DASHSCOPE_TTS_VOICE = process.env.DASHSCOPE_TTS_VOICE || "Neil";
-var DASHSCOPE_IMG_MODEL = process.env.DASHSCOPE_IMG_MODEL || "wanx2.1-t2i-turbo";
+// wan2.2-flash: better quality than 2.1-turbo, still relatively fast; override via env
+var DASHSCOPE_IMG_MODEL = process.env.DASHSCOPE_IMG_MODEL || "wan2.2-t2i-flash";
+var DASHSCOPE_IMG_SIZE = process.env.DASHSCOPE_IMG_SIZE || "1024*1024";
 var DASHSCOPE_IMG_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis";
 var DASHSCOPE_TASK_URL = "https://dashscope.aliyuncs.com/api/v1/tasks/";
-// ponytail: process-local image cache; Redis if multi-instance
+var PUBLIC_API_BASE = String(process.env.PUBLIC_API_BASE || "https://api.youyisida.com").replace(/\/$/, "");
+// ponytail: mem + sqlite + disk; same word shared by all students
 var dailyWordImageCache = Object.create(null);
+var dailyWordImageInflight = Object.create(null);
+var dailyWordImgDir = path.join(uploadsRoot, "daily-word");
+if (!fs.existsSync(dailyWordImgDir)) fs.mkdirSync(dailyWordImgDir, { recursive: true });
+db.exec(
+  "CREATE TABLE IF NOT EXISTS daily_word_images (" +
+  "word_key TEXT PRIMARY KEY," +
+  "file_name TEXT NOT NULL," +
+  "created_at TEXT NOT NULL" +
+  ");"
+);
 
 db.exec(
   "CREATE TABLE IF NOT EXISTS ai_tutor_sessions (" +
@@ -3384,10 +3397,71 @@ function sleepMs(ms) {
   return new Promise(function (resolve) { setTimeout(resolve, ms); });
 }
 
-async function dashscopeImageForWord(word, meaning) {
-  var prompt = "Simple clear educational illustration for English vocabulary word \"" + word + "\"" +
-    (meaning ? (" meaning: " + meaning) : "") +
-    ", friendly flat illustration, no text letters in the image, square composition";
+function dailyWordImagePublicUrl(fileName) {
+  return PUBLIC_API_BASE + "/uploads/daily-word/" + fileName;
+}
+
+function lookupDailyWordImage(wordKey) {
+  if (!wordKey) return null;
+  if (dailyWordImageCache[wordKey]) return dailyWordImageCache[wordKey];
+  var row = db.prepare("SELECT file_name FROM daily_word_images WHERE word_key = ?").get(wordKey);
+  if (!row) return null;
+  var abs = path.join(dailyWordImgDir, row.file_name);
+  if (!fs.existsSync(abs) || fs.statSync(abs).size < 200) {
+    try { db.prepare("DELETE FROM daily_word_images WHERE word_key = ?").run(wordKey); } catch (e) {}
+    return null;
+  }
+  var url = dailyWordImagePublicUrl(row.file_name);
+  dailyWordImageCache[wordKey] = url;
+  return url;
+}
+
+async function persistDailyWordImage(remoteUrl, wordKey) {
+  var r = await fetch(remoteUrl);
+  if (!r.ok) throw new Error("配图下载失败");
+  var buf = Buffer.from(await r.arrayBuffer());
+  if (buf.length < 200) throw new Error("配图文件过小");
+  var ct = String(r.headers.get("content-type") || "").toLowerCase();
+  var ext = ".jpg";
+  if (ct.indexOf("png") >= 0) ext = ".png";
+  else if (ct.indexOf("webp") >= 0) ext = ".webp";
+  var fileName = crypto.createHash("sha1").update(wordKey).digest("hex") + ext;
+  fs.writeFileSync(path.join(dailyWordImgDir, fileName), buf);
+  db.prepare(
+    "INSERT OR REPLACE INTO daily_word_images (word_key, file_name, created_at) VALUES (?, ?, ?)"
+  ).run(wordKey, fileName, new Date().toISOString());
+  var url = dailyWordImagePublicUrl(fileName);
+  dailyWordImageCache[wordKey] = url;
+  return url;
+}
+
+function dailyWordImagePrompt(word, meaning) {
+  // ReMe-like: soft cinematic educational art, not flat stickers
+  return [
+    "Premium language-learning vocabulary image for the English word \"" + word + "\"",
+    meaning ? ("visualizing the meaning: " + String(meaning).slice(0, 80)) : "",
+    "style: refined editorial illustration, cinematic soft light, subtle depth,",
+    "muted blue and warm cream palette, clean uncluttered composition, high-end app aesthetic,",
+    "photoreal-meets-illustration quality, emotionally clear subject,",
+    "absolutely no text, no letters, no watermark, no logo, square 1:1"
+  ].filter(Boolean).join(" ");
+}
+
+async function dashscopeImageForWord(word, meaning, model) {
+  model = model || DASHSCOPE_IMG_MODEL;
+  var prompt = dailyWordImagePrompt(word, meaning);
+  var body = {
+    model: model,
+    input: {
+      prompt: prompt,
+      negative_prompt: "text, letters, words, watermark, logo, lowres, blurry, cluttered, ugly, deformed, sticker border"
+    },
+    parameters: {
+      size: DASHSCOPE_IMG_SIZE,
+      n: 1,
+      prompt_extend: true
+    }
+  };
   var r = await fetch(DASHSCOPE_IMG_URL, {
     method: "POST",
     headers: {
@@ -3395,11 +3469,7 @@ async function dashscopeImageForWord(word, meaning) {
       "Content-Type": "application/json",
       "X-DashScope-Async": "enable"
     },
-    body: JSON.stringify({
-      model: DASHSCOPE_IMG_MODEL,
-      input: { prompt: prompt },
-      parameters: { size: "1024*1024", n: 1 }
-    })
+    body: JSON.stringify(body)
   });
   var data = await r.json();
   if (!r.ok) {
@@ -3408,8 +3478,8 @@ async function dashscopeImageForWord(word, meaning) {
   var taskId = data.output && data.output.task_id;
   if (!taskId) throw new Error("文生图未返回 task_id");
   var i;
-  for (i = 0; i < 20; i++) {
-    await sleepMs(800);
+  for (i = 0; i < 30; i++) {
+    await sleepMs(700);
     var tr = await fetch(DASHSCOPE_TASK_URL + encodeURIComponent(taskId), {
       headers: { Authorization: "Bearer " + DASHSCOPE_KEY }
     });
@@ -3426,6 +3496,37 @@ async function dashscopeImageForWord(word, meaning) {
     }
   }
   throw new Error("文生图超时");
+}
+
+async function ensureDailyWordImage(word, meaning) {
+  var cacheKey = dailyWordNorm(word);
+  if (!cacheKey) throw new Error("无效单词");
+  var hit = lookupDailyWordImage(cacheKey);
+  if (hit) return { url: hit, cached: true };
+  if (dailyWordImageInflight[cacheKey]) return dailyWordImageInflight[cacheKey];
+
+  dailyWordImageInflight[cacheKey] = (async function () {
+    try {
+      var remote;
+      try {
+        remote = await dashscopeImageForWord(word, meaning, DASHSCOPE_IMG_MODEL);
+      } catch (e1) {
+        // fallback if newer model unavailable on the account
+        if (DASHSCOPE_IMG_MODEL !== "wanx2.1-t2i-turbo") {
+          console.warn("[yysd-api] img model fallback", DASHSCOPE_IMG_MODEL, "-> wanx2.1-t2i-turbo", e1.message);
+          remote = await dashscopeImageForWord(word, meaning, "wanx2.1-t2i-turbo");
+        } else {
+          throw e1;
+        }
+      }
+      var local = await persistDailyWordImage(remote, cacheKey);
+      return { url: local, cached: false };
+    } finally {
+      delete dailyWordImageInflight[cacheKey];
+    }
+  })();
+
+  return dailyWordImageInflight[cacheKey];
 }
 
 app.post("/api/daily-word/speak", authMiddleware, async function (req, res) {
@@ -3455,14 +3556,9 @@ app.post("/api/daily-word/image", authMiddleware, async function (req, res) {
   var word = clipText(req.body && req.body.word, 80);
   var meaning = clipText(req.body && req.body.meaning, 120);
   if (!word) return res.status(400).json({ error: "缺少 word" });
-  var cacheKey = dailyWordNorm(word);
-  if (cacheKey && dailyWordImageCache[cacheKey]) {
-    return res.json({ ok: true, url: dailyWordImageCache[cacheKey], cached: true });
-  }
   try {
-    var url = await dashscopeImageForWord(word, meaning);
-    if (cacheKey) dailyWordImageCache[cacheKey] = url;
-    res.json({ ok: true, url: url, cached: false });
+    var out = await ensureDailyWordImage(word, meaning);
+    res.json({ ok: true, url: out.url, cached: !!out.cached });
   } catch (e) {
     console.error("[yysd-api] daily-word/image", e.message);
     res.status(502).json({ error: "配图生成失败" });

@@ -387,29 +387,63 @@
     }, 30);
   }
 
+  // ahead window + limited concurrency — 200-word days need pipeline, not 1-by-1
+  var PREFETCH_AHEAD = 6;
+  var PREFETCH_CONCURRENCY = 2;
+  var prefetchBusy = 0;
+  var prefetchQueue = [];
+
+  function applyImage(i, url) {
+    if (!url || !task) return;
+    var w = task.wordList[i];
+    if (!w) return;
+    var key = DW.imageKey(task.bookId, w.word);
+    var abs = DW.absMediaUrl(url);
+    DW.saveImage(key, abs);
+    w.imageUrl = abs;
+    if (i !== task.currentIndex) return;
+    if (task.stage === "speaking" && (ui.recording || pressIntent || scoring)) {
+      var img = root.querySelector(".dw-card__img");
+      if (img) img.src = abs;
+      return;
+    }
+    if (task.stage === "image" || task.stage === "speaking") paint();
+  }
+
+  function pumpPrefetch() {
+    while (prefetchBusy < PREFETCH_CONCURRENCY && prefetchQueue.length) {
+      var i = prefetchQueue.shift();
+      var w = task.wordList[i];
+      if (!w) continue;
+      var key = DW.imageKey(task.bookId, w.word);
+      if (DW.getImages()[key] || w.imageUrl || w._imgFetching) continue;
+      w._imgFetching = true;
+      prefetchBusy += 1;
+      (function (idx, wordObj) {
+        DW.api("/api/daily-word/image", { word: wordObj.word, meaning: wordObj.meaning }).then(function (d) {
+          applyImage(idx, d && d.url);
+        }).catch(function () { /* placeholder ok */ }).then(function () {
+          wordObj._imgFetching = false;
+          prefetchBusy -= 1;
+          pumpPrefetch();
+        });
+      })(i, w);
+    }
+  }
+
   function prefetchImages() {
+    if (!task || !task.wordList) return;
     var list = task.wordList;
     var idx = task.currentIndex;
-    [idx, idx + 1].forEach(function (i) {
-      if (i < 0 || i >= list.length) return;
+    var end = Math.min(list.length, idx + PREFETCH_AHEAD);
+    var i;
+    for (i = idx; i < end; i++) {
       var w = list[i];
       var key = DW.imageKey(task.bookId, w.word);
-      if (DW.getImages()[key] || w.imageUrl) return;
-      DW.api("/api/daily-word/image", { word: w.word, meaning: w.meaning }).then(function (d) {
-        if (d && d.url) {
-          DW.saveImage(key, d.url);
-          w.imageUrl = d.url;
-          if (i !== task.currentIndex) return;
-          // don't full-paint while holding mic
-          if (task.stage === "speaking" && (ui.recording || pressIntent || scoring)) {
-            var img = root.querySelector(".dw-card__img");
-            if (img) img.src = d.url;
-            return;
-          }
-          if (task.stage === "image" || task.stage === "speaking") paint();
-        }
-      }).catch(function () { /* ponytail: placeholder ok */ });
-    });
+      if (DW.getImages()[key] || w.imageUrl || w._imgFetching) continue;
+      if (prefetchQueue.indexOf(i) < 0) prefetchQueue.push(i);
+    }
+    pumpPrefetch();
   }
 
   function bindStage(host) {

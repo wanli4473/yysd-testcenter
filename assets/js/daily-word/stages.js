@@ -21,7 +21,8 @@
   function imgSrc(wordObj, bookId) {
     var key = DW.imageKey(bookId, wordObj.word);
     var cached = DW.getImages()[key];
-    return cached || wordObj.imageUrl || placeholderSvg(wordObj.word);
+    var url = cached || wordObj.imageUrl || "";
+    return url ? DW.absMediaUrl(url) : placeholderSvg(wordObj.word);
   }
 
   function renderImage(host, ctx) {

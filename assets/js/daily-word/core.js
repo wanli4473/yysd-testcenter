@@ -84,12 +84,21 @@
 
   function saveImage(cacheKey, url) {
     var imgs = getImages();
-    imgs[cacheKey] = url;
+    imgs[cacheKey] = absMediaUrl(url);
     writeJson(KEYS.images, imgs);
   }
 
   function imageKey(bookId, word) {
     return String(bookId || "") + ":" + String(word || "").toLowerCase();
+  }
+
+  function absMediaUrl(url) {
+    if (!url) return "";
+    if (/^(https?:|data:|blob:)/i.test(url)) return url;
+    var A = global.YYSD_AUTH;
+    var base = (A && A.API_BASE) || "";
+    if (!base) return url;
+    return String(base).replace(/\/$/, "") + (url.charAt(0) === "/" ? url : "/" + url);
   }
 
   function clampCount(n) {
@@ -461,6 +470,7 @@
     getImages: getImages,
     saveImage: saveImage,
     imageKey: imageKey,
+    absMediaUrl: absMediaUrl,
     clampCount: clampCount,
     libraryUrl: libraryUrl,
     parseWordData: parseWordData,
