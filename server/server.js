@@ -194,6 +194,12 @@ const stmts = {
   insertAttempt: db.prepare(
     "INSERT INTO user_score_attempts (user_id, item_id, payload, created_at) VALUES (?, ?, ?, ?)"
   ),
+  getAttemptByStamp: db.prepare(
+    "SELECT id, payload FROM user_score_attempts WHERE user_id = ? AND item_id = ? AND created_at = ? LIMIT 1"
+  ),
+  updateAttemptPayload: db.prepare(
+    "UPDATE user_score_attempts SET payload = ? WHERE id = ?"
+  ),
   findUserById: db.prepare("SELECT id, phone, display_name, avatar_url, org_id FROM users WHERE id = ?"),
   insertCalendarEvent: db.prepare(
     "INSERT INTO calendar_events (title, description, event_type, start_time, due_time, created_by, target_student_ids, linked_exercise_ids, created_at, attachment_name, cdt_pack) " +
@@ -561,15 +567,50 @@ function eventFromRow(row, extra) {
   return ev;
 }
 
+// ponytail: V2 posts wrong[]; upgrade empty→nonempty; old V1 stripped on inject
 var SCORE_BRIDGE_SCRIPT =
   "<script>(function(){" +
-  "if(window.__yysdScoreBridge)return;window.__yysdScoreBridge=1;" +
-  "var sent='';" +
+  "if(window.__yysdScoreBridgeV2)return;window.__yysdScoreBridgeV2=1;window.__yysdScoreBridge=1;" +
+  "var sent='';var sentWrong=-1;" +
+  "function scrapeWrong(){" +
+  "var out=[];" +
+  "try{" +
+  "function rowOf(el){" +
+  "var rq=((el.querySelector('.rq')||{}).textContent||'').trim();" +
+  "var m=rq.match(/第\\s*([^\\s题]+)\\s*题/);" +
+  "var yoursEl=el.querySelector('.yours');" +
+  "var ansEl=el.querySelector('.correctv');" +
+  "var rexEl=el.querySelector('.rex');" +
+  "var ua=yoursEl?yoursEl.textContent.trim():'';" +
+  "if(ua==='未作答')ua='';" +
+  "var explain=rexEl?rexEl.textContent.replace(/^\\s*💡\\s*/,'').trim():'';" +
+  "var row={no:m?m[1]:rq.replace(/^[✘✔✗]\\s*/,''),ua:ua,ans:ansEl?ansEl.textContent.trim():''};" +
+  "if(explain)row.explain=explain;" +
+  "return row;" +
+  "}" +
+  "var nodes=document.querySelectorAll('.ritem.wrong');" +
+  "for(var i=0;i<nodes.length&&out.length<80;i++)out.push(rowOf(nodes[i]));" +
+  "if(!out.length){" +
+  "var alt=document.querySelectorAll('.ritem,.result-item,.wrong-item');" +
+  "for(var j=0;j<alt.length&&out.length<80;j++){" +
+  "var a=alt[j];" +
+  "if(a.classList.contains('correct')||a.classList.contains('right'))continue;" +
+  "if(!a.querySelector('.yours')||!a.querySelector('.correctv'))continue;" +
+  "var mark=((a.querySelector('.rq')||a).textContent||'');" +
+  "if(!(a.classList.contains('wrong')||/✘|✗|错误/.test(mark)))continue;" +
+  "out.push(rowOf(a));" +
+  "}" +
+  "}" +
+  "}catch(e){}" +
+  "return out;" +
+  "}" +
   "function report(score,total){" +
   "if(!(total>0))return;" +
+  "var wrong=scrapeWrong();" +
   "var key=score+'|'+total;" +
-  "if(sent===key)return;sent=key;" +
-  "try{parent.postMessage({type:'yysd:score',score:score,total:total,completed:true},'*');}catch(e){}" +
+  "if(sent===key&&wrong.length<=sentWrong)return;" +
+  "sent=key;sentWrong=wrong.length;" +
+  "try{parent.postMessage({type:'yysd:score',score:score,total:total,completed:true,wrong:wrong},'*');}catch(e){}" +
   "}" +
   "function fromSummary(){" +
   "var sum=document.getElementById('summary');" +
@@ -610,7 +651,10 @@ var SCORE_BRIDGE_SCRIPT =
 
 function injectScoreBridge(html) {
   var raw = String(html || "");
-  if (raw.indexOf("__yysdScoreBridge") >= 0) return raw;
+  if (raw.indexOf("__yysdScoreBridgeV2") >= 0) return raw;
+  if (raw.indexOf("__yysdScoreBridge") >= 0) {
+    raw = raw.replace(/<script>\(function\(\)\{if\(window\.__yysdScoreBridge\)return;[\s\S]*?\}\)\(\);<\/script>/g, "");
+  }
   if (/<\/body>/i.test(raw)) return raw.replace(/<\/body>/i, SCORE_BRIDGE_SCRIPT + "</body>");
   return raw + SCORE_BRIDGE_SCRIPT;
 }
@@ -1790,6 +1834,7 @@ function parseScorePayload(row) {
     durationSec: durationSec,
     assignmentEventId: clipText(rec.assignmentEventId != null ? String(rec.assignmentEventId) : "", 40) || null,
     cdt: !!rec.cdt,
+    wrongCapture: clipText(rec.wrongCapture, 40) || null,
     updatedAt: row.created_at || row.updated_at,
     wrong: wrong
   };
@@ -2301,6 +2346,10 @@ function sanitizeScore(body) {
   if (assignmentEventId) out.assignmentEventId = assignmentEventId;
   if (body.cdt) out.cdt = true;
   if (body.completed) out.completed = true;
+  var wrongCapture = clipText(body.wrongCapture, 40);
+  if (wrongCapture === "ok" || wrongCapture === "empty_perfect" || wrongCapture === "empty_missed") {
+    out.wrongCapture = wrongCapture;
+  }
   return out;
 }
 
@@ -2335,7 +2384,19 @@ app.put("/api/scores/:itemId", authMiddleware, function (req, res) {
   }
   stmts.upsertScore.run(req.user.sub, itemId, JSON.stringify(rec), rec.date);
   var attempt = Object.assign({}, rec, { wrong: sanitizeWrong(body.wrong) });
-  stmts.insertAttempt.run(req.user.sub, itemId, JSON.stringify(attempt), attemptAt);
+  var prevAttempt = stmts.getAttemptByStamp.get(req.user.sub, itemId, attemptAt);
+  if (prevAttempt) {
+    var oldAtt = {};
+    try { oldAtt = JSON.parse(prevAttempt.payload) || {}; } catch (e) { oldAtt = {}; }
+    var oldWrong = Array.isArray(oldAtt.wrong) ? oldAtt.wrong : [];
+    if ((!attempt.wrong || !attempt.wrong.length) && oldWrong.length) {
+      attempt.wrong = sanitizeWrong(oldWrong);
+      if (!attempt.wrongCapture || attempt.wrongCapture === "empty_missed") attempt.wrongCapture = "ok";
+    }
+    stmts.updateAttemptPayload.run(JSON.stringify(attempt), prevAttempt.id);
+  } else {
+    stmts.insertAttempt.run(req.user.sub, itemId, JSON.stringify(attempt), attemptAt);
+  }
   try { autoCompleteAssignments(req.user.sub, itemId); } catch (e) {
     console.error("[yysd-api] calendar auto-complete", e && e.message);
   }
@@ -3361,6 +3422,32 @@ function dailyWordSpeakPass(heard, target) {
   return dailyWordLev(h, t) <= (t.length <= 4 ? 1 : 2);
 }
 
+// ponytail: map DashScope codes so students don't see opaque 502
+function dashscopeAsrUserError(errOrData, fallback) {
+  var code = "";
+  var msg = "";
+  if (errOrData && typeof errOrData === "object") {
+    code = String(errOrData.code || (errOrData.error && errOrData.error.code) || "");
+    msg = String(errOrData.message || (errOrData.error && errOrData.error.message) || errOrData.msg || "");
+  } else {
+    msg = String(errOrData || "");
+  }
+  var blob = (code + " " + msg).toLowerCase();
+  if (code === "Arrearage" || /overdue|arrear|欠费|good standing/.test(blob)) {
+    return "语音服务账户欠费，请管理员在阿里云百炼充值后重试";
+  }
+  if (code === "InvalidApiKey" || /invalid.*api.?key|unauthorized|鉴权/.test(blob)) {
+    return "语音服务密钥无效，请联系管理员";
+  }
+  if (/throttl|rate.?limit|限流|quota/.test(blob)) {
+    return "语音识别繁忙，请稍后再试";
+  }
+  if (/format|unsupported.*audio|audio.*invalid|解码/.test(blob)) {
+    return "录音格式不被识别，请换 Chrome 重试或说得稍长一点";
+  }
+  return fallback || "跟读评测失败，请稍后再试";
+}
+
 async function dashscopeAsrDataUrl(audio) {
   var r = await fetch(DASHSCOPE_MM_URL, {
     method: "POST",
@@ -3376,9 +3463,12 @@ async function dashscopeAsrDataUrl(audio) {
       parameters: { asr_options: { language: "en", enable_itn: true } }
     })
   });
-  var data = await r.json();
+  var data = null;
+  try { data = await r.json(); } catch (e) { data = null; }
   if (!r.ok) {
-    throw new Error((data && (data.message || (data.error && data.error.message))) || "ASR 失败");
+    var err = new Error(dashscopeAsrUserError(data, "ASR 失败"));
+    err.code = data && data.code;
+    throw err;
   }
   var text = "";
   try {
@@ -3546,8 +3636,13 @@ app.post("/api/daily-word/speak", authMiddleware, async function (req, res) {
     if (audioSec > 0) bumpUsage(req.user.sub, { voiceSec: audioSec });
     res.json({ ok: true, pass: dailyWordSpeakPass(heard, target), heard: heard });
   } catch (e) {
-    console.error("[yysd-api] daily-word/speak", e.message);
-    res.status(502).json({ error: "跟读评测失败，请稍后再试" });
+    console.error("[yysd-api] daily-word/speak", e && e.code, e && e.message);
+    res.status(502).json({
+      error: dashscopeAsrUserError(
+        { code: e && e.code, message: e && e.message },
+        "跟读评测失败，请稍后再试"
+      )
+    });
   }
 });
 

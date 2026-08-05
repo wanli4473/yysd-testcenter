@@ -372,44 +372,175 @@
     // 每日单词入口（独立模块；进度读 localStorage）
     var dwPlan = null;
     var dwTask = null;
+    var dwResult = null;
+    var dwCheckins = [];
+    var dwImgs = {};
     try {
       dwPlan = JSON.parse(localStorage.getItem("yysd:daily-word:plan") || "null");
       dwTask = JSON.parse(localStorage.getItem("yysd:daily-word:task") || "null");
+      dwResult = JSON.parse(localStorage.getItem("yysd:daily-word:result") || "null");
+      dwCheckins = JSON.parse(localStorage.getItem("yysd:daily-word:checkins") || "[]");
+      dwImgs = JSON.parse(localStorage.getItem("yysd:daily-word:images") || "{}");
     } catch (e) {}
+    if (!Array.isArray(dwCheckins)) dwCheckins = [];
+    if (!dwImgs || typeof dwImgs !== "object") dwImgs = {};
     var dwBookLabel = "";
+    var dwBookId = (dwTask && dwTask.bookId) || (dwPlan && dwPlan.bookId) ||
+      (dwResult && dwResult.bookId) || "";
     if (dwTask && dwTask.bookLabel) {
       dwBookLabel = dwTask.bookLabel;
     } else if (dwPlan && dwPlan.bookLabel) {
       dwBookLabel = dwPlan.bookLabel;
-    } else if (dwPlan && dwPlan.bookId) {
-      var dwBook = (Y.VOCAB_BOOKS && Y.VOCAB_BOOKS[dwPlan.bookId]) || null;
+    } else if (dwResult && dwResult.bookLabel) {
+      dwBookLabel = dwResult.bookLabel;
+    } else if (dwBookId) {
+      var dwBook = (Y.VOCAB_BOOKS && Y.VOCAB_BOOKS[dwBookId]) || null;
       if (dwBook) dwBookLabel = dwBook.label;
-      else if (String(dwPlan.bookId).indexOf("theme:") === 0) dwBookLabel = "分类词库";
+      else if (String(dwBookId).indexOf("theme:") === 0) dwBookLabel = "分类词库";
     }
+    function dwPad(n) { return (n < 10 ? "0" : "") + n; }
+    function dwDateKey(d) {
+      return d.getFullYear() + "-" + dwPad(d.getMonth() + 1) + "-" + dwPad(d.getDate());
+    }
+    var dwToday = dwDateKey(new Date());
     var dwResume = !!(dwTask && dwTask.wordList && dwTask.wordList.length && !dwTask.completed);
-    var dwHref = dwResume ? "daily-word-learn.html" : "daily-word-setup.html";
+    var dwDone = !dwResume && !!(dwResult && dwResult.date === dwToday);
+    // ponytail: self-heal — old completes before checkins key existed
+    if (dwDone && dwCheckins.indexOf(dwToday) < 0) {
+      dwCheckins.push(dwToday);
+      try {
+        localStorage.setItem("yysd:daily-word:checkins", JSON.stringify(dwCheckins.slice(-60)));
+      } catch (e2) {}
+    }
     var dwCount = dwPlan && dwPlan.targetCount ? dwPlan.targetCount : 50;
-    var dwDesc = dwResume
-      ? ("继续 " + ((dwTask.currentIndex || 0) + 1) + "/" + dwTask.wordList.length + " · " + (dwBookLabel || "今日任务"))
-      : (dwBookLabel
-        ? (dwBookLabel + " · 每日 " + dwCount + " 词")
-        : "图片 · 跟读 · 拼写 · 释义 · 详解");
+    var dwPct = 0;
+    var dwRing = String(dwCount);
+    var dwTitle = dwCount + " 个新词";
+    var dwDesc = dwBookLabel
+      ? (dwBookLabel + " · 约 " + Math.max(5, Math.round(dwCount * 0.5)) + " 分钟")
+      : ("图片 · 跟读 · 拼写 · 释义 · 详解 · 约 " +
+        Math.max(5, Math.round(dwCount * 0.5)) + " 分钟");
+    var dwHref = "daily-word-setup.html";
+    var dwCta = "开始学习 →";
+    var dwReset = '<a class="vocab-daily-card__reset" href="daily-word-setup.html">更改词书 / 数量</a>';
+    var dwState = "is-idle";
+    var dwBadge = "";
+    if (dwResume) {
+      var dwTotal = dwTask.wordList.length;
+      var dwCur = (dwTask.currentIndex || 0) + 1;
+      var dwFinished = dwTask.currentIndex || 0;
+      dwPct = dwTotal ? Math.round((dwFinished / dwTotal) * 100) : 0;
+      dwRing = dwFinished + "<small>/" + dwTotal + "</small>";
+      dwTitle = "继续每日单词";
+      dwDesc = "第 " + dwCur + " / " + dwTotal + " 词 · " + (dwBookLabel || "今日任务");
+      dwHref = "daily-word-learn.html";
+      dwCta = "继续学习 →";
+      dwReset = '<a class="vocab-daily-card__reset" href="daily-word-setup.html?reset=1">重新设置</a>';
+      dwState = "is-resume";
+      dwBadge = '<span class="vocab-daily-card__badge">进行中</span>';
+    } else if (dwDone) {
+      var dwDoneTotal = dwResult.total || dwCount;
+      dwPct = 100;
+      dwRing = "✓";
+      dwTitle = "今日已完成";
+      dwDesc = (dwBookLabel || "每日单词") + " · " + dwDoneTotal + " 词已清";
+      dwHref = "daily-word-result.html";
+      dwCta = "查看报告 →";
+      dwReset = '<a class="vocab-daily-card__reset" href="daily-word-setup.html">再学一组</a>';
+      dwState = "is-done";
+      dwBadge = '<span class="vocab-daily-card__badge vocab-daily-card__badge--done">已完成</span>';
+    }
+
+    var dwDoneSet = {};
+    dwCheckins.forEach(function (d) { dwDoneSet[d] = 1; });
+    if (dwDone) dwDoneSet[dwToday] = 1;
+    var dwStreak = 0;
+    (function () {
+      var cursor = new Date();
+      cursor.setHours(12, 0, 0, 0);
+      if (!dwDoneSet[dwDateKey(cursor)]) cursor.setDate(cursor.getDate() - 1);
+      while (dwDoneSet[dwDateKey(cursor)]) {
+        dwStreak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+    })();
+    var dwWeekLabels = ["日", "一", "二", "三", "四", "五", "六"];
+    var dwWeek = "";
+    for (var dwI = 6; dwI >= 0; dwI--) {
+      var dwD = new Date();
+      dwD.setHours(12, 0, 0, 0);
+      dwD.setDate(dwD.getDate() - dwI);
+      var dwKey = dwDateKey(dwD);
+      var dwDotCls = "vocab-daily-card__dot";
+      if (dwDoneSet[dwKey]) dwDotCls += " is-done";
+      if (dwKey === dwToday) {
+        dwDotCls += " is-today";
+        if (dwResume) dwDotCls += " is-active";
+      }
+      dwWeek += '<span class="' + dwDotCls + '" title="' + dwKey + '">' +
+        dwWeekLabels[dwD.getDay()] + "</span>";
+    }
+    var dwStreakHtml = dwStreak >= 2
+      ? '<span class="vocab-daily-card__streak">连续 ' + dwStreak + " 天</span>"
+      : "";
+
+    var dwPreviewWords = [];
+    if (dwResume && dwTask.wordList) {
+      dwPreviewWords = dwTask.wordList.slice(
+        dwTask.currentIndex || 0,
+        (dwTask.currentIndex || 0) + 4
+      );
+    } else if (dwDone && dwResult.words && dwResult.words.length) {
+      dwPreviewWords = dwResult.words.slice(0, 4);
+    }
+    var dwPicks = "";
+    if (dwPreviewWords.length) {
+      dwPicks = '<div class="vocab-daily-card__picks" aria-label="今日单词预览">' +
+        dwPreviewWords.map(function (w) {
+          var word = String((w && w.word) || "").trim();
+          if (!word) return "";
+          var imgKey = String(dwBookId || "") + ":" + word.toLowerCase();
+          var src = dwImgs[imgKey] || w.imageUrl || "";
+          var thumb = src
+            ? '<img class="vocab-daily-card__pick-img" src="' + Y.esc(src) + '" alt="">'
+            : '<span class="vocab-daily-card__pick-letter">' +
+              Y.esc(word.charAt(0).toUpperCase()) + "</span>";
+          return '<span class="vocab-daily-card__pick">' + thumb +
+            "<b>" + Y.esc(word) + "</b></span>";
+        }).join("") +
+        "</div>";
+    } else {
+      dwPicks = '<div class="vocab-daily-card__picks vocab-daily-card__picks--stages" aria-hidden="true">' +
+        ["图片", "跟读", "拼写", "释义", "详解"].map(function (s) {
+          return '<span class="vocab-daily-card__stage">' + s + "</span>";
+        }).join("") +
+        "</div>";
+    }
+
     var dailyCard =
-      '<div class="vocab-daily-card">' +
+      '<div class="vocab-daily-card ' + dwState + '" style="--pct:' + dwPct + '">' +
         '<div class="vocab-daily-card__top">' +
-          '<span class="vocab-daily-card__kicker">今日任务</span>' +
-          (dwResume ? '<span class="vocab-daily-card__badge">进行中</span>' : "") +
+          '<div class="vocab-daily-card__top-left">' +
+            '<span class="vocab-daily-card__kicker">今日任务</span>' +
+            dwStreakHtml +
+          "</div>" +
+          dwBadge +
         "</div>" +
-        '<p class="vocab-daily-card__title">' +
-          (dwResume ? "继续每日单词" : (dwCount + " 个新词")) +
-        "</p>" +
-        '<p class="vocab-daily-card__desc">' + Y.esc(dwDesc) + "</p>" +
+        '<div class="vocab-daily-card__body">' +
+          '<div class="vocab-daily-card__copy">' +
+            '<p class="vocab-daily-card__title">' + Y.esc(dwTitle) + "</p>" +
+            '<p class="vocab-daily-card__desc">' + Y.esc(dwDesc) + "</p>" +
+            '<div class="vocab-daily-card__bar" aria-hidden="true"><i></i></div>' +
+          "</div>" +
+          '<div class="vocab-daily-card__ring" aria-hidden="true">' +
+            '<span class="vocab-daily-card__ring-num">' + dwRing + "</span>" +
+          "</div>" +
+        "</div>" +
+        dwPicks +
+        '<div class="vocab-daily-card__week" aria-label="近 7 日打卡">' + dwWeek + "</div>" +
         '<div class="vocab-daily-card__actions">' +
-          '<a class="vocab-daily-card__go" href="' + dwHref + '">' +
-            (dwResume ? "继续学习 ›" : "开始学习 ›") + "</a>" +
-          (dwResume
-            ? '<a class="vocab-daily-card__reset" href="daily-word-setup.html?reset=1">重新设置 ›</a>'
-            : '<a class="vocab-daily-card__reset" href="daily-word-setup.html">更改词书 / 数量 ›</a>') +
+          '<a class="vocab-daily-card__cta pressable" href="' + dwHref + '">' + dwCta + "</a>" +
+          dwReset +
         "</div>" +
       "</div>";
 

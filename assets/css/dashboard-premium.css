@@ -1214,74 +1214,346 @@
 }
 
 .page-premium .vocab-daily-card {
-  display: block;
-  text-decoration: none;
+  --pct: 0;
+  --daily-accent: var(--brand-navy, #07192f);
+  position: relative;
+  overflow: hidden;
   color: inherit;
-  background: linear-gradient(135deg, #eff6ff 0%, #fff 55%);
-  border: 1px solid rgba(37, 99, 235, 0.18);
-  border-radius: 20px;
+  background:
+    radial-gradient(90% 120% at 100% 0%, rgba(37, 99, 235, 0.12), transparent 50%),
+    radial-gradient(70% 90% at 0% 100%, rgba(232, 145, 58, 0.1), transparent 45%),
+    #fff;
+  border: 1px solid rgba(7, 25, 47, 0.08);
+  border-radius: 22px;
   padding: 20px 22px 18px;
-  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.08);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 12px 32px rgba(16, 24, 39, 0.08);
+  transition: transform var(--motion-fast, 180ms) ease, box-shadow var(--motion-fast, 180ms) ease;
 }
-.page-premium .vocab-daily-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.14);
+@media (hover: hover) {
+  .page-premium .vocab-daily-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(16, 24, 39, 0.12);
+  }
 }
-.page-premium .vocab-daily-card__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.85rem 1.25rem;
+.page-premium .vocab-daily-card.is-resume {
+  --daily-accent: #2563eb;
 }
-.page-premium .vocab-daily-card__go,
-.page-premium .vocab-daily-card__reset {
-  text-decoration: none;
+.page-premium .vocab-daily-card.is-done {
+  --daily-accent: #0f766e;
+  background:
+    radial-gradient(90% 120% at 100% 0%, rgba(15, 118, 110, 0.12), transparent 50%),
+    #fff;
 }
-.page-premium .vocab-daily-card__reset {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #64748b;
-}
-.page-premium .vocab-daily-card__reset:hover { color: #2563eb; }
 .page-premium .vocab-daily-card__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+.page-premium .vocab-daily-card__top-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  min-width: 0;
 }
 .page-premium .vocab-daily-card__kicker {
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #2563eb;
+  letter-spacing: 0.06em;
+  color: var(--daily-accent);
   text-transform: uppercase;
+}
+.page-premium .vocab-daily-card__streak {
+  font-size: 11px;
+  font-weight: 700;
+  color: #c2410c;
+  background: rgba(232, 145, 58, 0.16);
+  border-radius: 999px;
+  padding: 3px 9px;
 }
 .page-premium .vocab-daily-card__badge {
   font-size: 11px;
   font-weight: 700;
   color: #fff;
-  background: #2563eb;
+  background: var(--daily-accent);
   border-radius: 999px;
-  padding: 3px 8px;
+  padding: 4px 10px;
+}
+.page-premium .vocab-daily-card.is-resume .vocab-daily-card__badge {
+  animation: vocab-daily-pulse 1.6s ease-in-out infinite;
+}
+.page-premium .vocab-daily-card__badge--done {
+  background: #0f766e;
+}
+.page-premium .vocab-daily-card__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+.page-premium .vocab-daily-card__copy {
+  min-width: 0;
+  flex: 1;
 }
 .page-premium .vocab-daily-card__title {
   margin: 0;
-  font-size: 1.55rem;
+  font-size: clamp(1.45rem, 2.6vw, 1.85rem);
   font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.02em;
+  color: var(--brand-navy, #07192f);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 .page-premium .vocab-daily-card__desc {
-  margin: 6px 0 12px;
+  margin: 8px 0 0;
   font-size: 0.92rem;
   color: #64748b;
+  line-height: 1.45;
 }
-.page-premium .vocab-daily-card__go {
-  font-size: 0.9rem;
+.page-premium .vocab-daily-card__bar {
+  margin-top: 12px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(7, 25, 47, 0.08);
+  overflow: hidden;
+}
+.page-premium .vocab-daily-card.is-idle .vocab-daily-card__bar {
+  opacity: 0.45;
+}
+.page-premium .vocab-daily-card__bar i {
+  display: block;
+  width: calc(var(--pct) * 1%);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--daily-accent), color-mix(in srgb, var(--daily-accent) 70%, #60a5fa));
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.page-premium .vocab-daily-card__ring {
+  flex: 0 0 auto;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(
+    from -90deg,
+    var(--daily-accent) calc(var(--pct) * 1%),
+    rgba(7, 25, 47, 0.08) 0
+  );
+  box-shadow: inset 0 0 0 1px rgba(7, 25, 47, 0.04);
+}
+.page-premium .vocab-daily-card.is-idle .vocab-daily-card__ring {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(37, 99, 235, 0.08), transparent 55%),
+    conic-gradient(from -90deg, rgba(7, 25, 47, 0.14) 0 8%, rgba(7, 25, 47, 0.06) 0);
+}
+.page-premium .vocab-daily-card__ring::before {
+  content: "";
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(7, 25, 47, 0.04);
+  grid-area: 1 / 1;
+}
+.page-premium .vocab-daily-card__ring-num {
+  position: relative;
+  z-index: 1;
+  grid-area: 1 / 1;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--brand-navy, #07192f);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+}
+.page-premium .vocab-daily-card__ring-num small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.68rem;
   font-weight: 700;
-  color: #2563eb;
+  color: #64748b;
+  letter-spacing: 0;
+}
+.page-premium .vocab-daily-card.is-done .vocab-daily-card__ring-num {
+  font-size: 1.7rem;
+  color: #0f766e;
+}
+.page-premium .vocab-daily-card__picks {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.page-premium .vocab-daily-card__picks::-webkit-scrollbar { display: none; }
+.page-premium .vocab-daily-card__pick {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 140px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 999px;
+  background: rgba(7, 25, 47, 0.04);
+  border: 1px solid rgba(7, 25, 47, 0.06);
+}
+.page-premium .vocab-daily-card__pick-img,
+.page-premium .vocab-daily-card__pick-letter {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  object-fit: cover;
+  background: #e8eef8;
+}
+.page-premium .vocab-daily-card__pick-letter {
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--daily-accent);
+}
+.page-premium .vocab-daily-card__pick b {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--brand-navy, #07192f);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.page-premium .vocab-daily-card__picks--stages {
+  gap: 6px;
+}
+.page-premium .vocab-daily-card__stage {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #475569;
+  background: rgba(7, 25, 47, 0.04);
+  border-radius: 999px;
+  padding: 7px 4px;
+}
+.page-premium .vocab-daily-card__week {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+.page-premium .vocab-daily-card__dot {
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 1;
+  max-width: 40px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(7, 25, 47, 0.05);
+  border: 1.5px solid transparent;
+}
+.page-premium .vocab-daily-card__dot.is-done {
+  color: #fff;
+  background: var(--daily-accent);
+}
+.page-premium .vocab-daily-card__dot.is-today:not(.is-done) {
+  color: var(--daily-accent);
+  border-color: color-mix(in srgb, var(--daily-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--daily-accent) 10%, #fff);
+}
+.page-premium .vocab-daily-card__dot.is-today.is-active {
+  animation: vocab-daily-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--daily-accent) 16%, transparent);
+}
+.page-premium .vocab-daily-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.page-premium .vocab-daily-card__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: var(--daily-accent);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--daily-accent) 28%, transparent);
+  transition:
+    transform var(--motion-fast, 180ms) ease,
+    box-shadow var(--motion-fast, 180ms) ease,
+    background var(--motion-fast, 180ms) ease;
+}
+.page-premium .vocab-daily-card__cta:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--daily-accent) 22%, transparent);
+  transition-duration: 80ms;
+}
+@media (hover: hover) {
+  .page-premium .vocab-daily-card__cta:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--daily-accent) 34%, transparent);
+  }
+}
+.page-premium .vocab-daily-card__reset {
+  align-self: center;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  padding: 2px 6px;
+}
+@media (hover: hover) {
+  .page-premium .vocab-daily-card__reset:hover {
+    color: var(--daily-accent);
+  }
+}
+@keyframes vocab-daily-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.82; transform: scale(0.97); }
+}
+@media (max-width: 520px) {
+  .page-premium .vocab-daily-card {
+    padding: 18px 16px 16px;
+  }
+  .page-premium .vocab-daily-card__ring {
+    width: 78px;
+    height: 78px;
+  }
+  .page-premium .vocab-daily-card__ring::before {
+    width: 58px;
+    height: 58px;
+  }
+  .page-premium .vocab-daily-card__ring-num {
+    font-size: 1.15rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-premium .vocab-daily-card,
+  .page-premium .vocab-daily-card__cta,
+  .page-premium .vocab-daily-card__bar i {
+    transition: none;
+  }
+  .page-premium .vocab-daily-card.is-resume .vocab-daily-card__badge,
+  .page-premium .vocab-daily-card__dot.is-today.is-active {
+    animation: none;
+  }
 }
 
 .page-premium .vocab-entry-grid {

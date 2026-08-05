@@ -285,6 +285,7 @@
     try {
       localStorage.setItem(DW.KEYS.result, JSON.stringify(result));
     } catch (e) {}
+    if (DW.markCheckin) DW.markCheckin(result.date || DW.todayStr());
     task.completed = true;
     persist();
     location.href = "daily-word-result.html";
@@ -401,7 +402,13 @@
       task.speakTries[w] = (task.speakTries[w] || 0) + 1;
       ui.speakTries = task.speakTries[w];
       ui.speakStatus = (e && e.message) || "评测失败";
-      if (ui.speakTries >= 3) markSpeakFail();
+      // ponytail: billing/key failures — unlock skip immediately, don't burn 3 retries
+      if (/欠费|密钥无效|语音服务/.test(ui.speakStatus)) {
+        ui.speakTries = Math.max(ui.speakTries, 3);
+        markSpeakFail();
+      } else if (ui.speakTries >= 3) {
+        markSpeakFail();
+      }
       persist();
       paint();
     });

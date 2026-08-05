@@ -9,7 +9,8 @@
     task: "yysd:daily-word:task",
     records: "yysd:daily-word:records",
     images: "yysd:daily-word:images",
-    result: "yysd:daily-word:result"
+    result: "yysd:daily-word:result",
+    checkins: "yysd:daily-word:checkins"
   };
 
   var PRESETS = [10, 30, 50, 100, 200, 300];
@@ -68,6 +69,22 @@
 
   function clearTask() {
     try { localStorage.removeItem(KEYS.task); } catch (e) {}
+  }
+
+  // ponytail: date[] only — month calendar later if needed
+  function getCheckins() {
+    var arr = readJson(KEYS.checkins, []);
+    return Array.isArray(arr) ? arr : [];
+  }
+
+  function markCheckin(date) {
+    date = String(date || todayStr());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return getCheckins();
+    var arr = getCheckins();
+    if (arr.indexOf(date) < 0) arr.push(date);
+    if (arr.length > 60) arr = arr.slice(-60);
+    writeJson(KEYS.checkins, arr);
+    return arr;
   }
 
   function getRecords() {
@@ -496,6 +513,8 @@
     getTask: getTask,
     saveTask: saveTask,
     clearTask: clearTask,
+    getCheckins: getCheckins,
+    markCheckin: markCheckin,
     getRecords: getRecords,
     saveRecords: saveRecords,
     getImages: getImages,
