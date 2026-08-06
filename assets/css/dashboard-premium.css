@@ -3097,3 +3097,223 @@
   .page-premium .vrpg-hero { flex-direction: row; }
   .page-premium .vrpg-hero__badge { width: 64px; height: 64px; }
 }
+
+/* ==========================================================================
+   Apple hub shell — zone / dashboard / alevel (matches homepage chrome)
+   Loaded after page-premium tokens so these win the cascade.
+   ========================================================================== */
+body.home-apple-page.page-premium {
+  --ha-bg: #f5f5f7;
+  --ha-ink: #1d1d1f;
+  --ha-muted: #6e6e73;
+  --ha-faint: #86868b;
+  --ha-navy: #07192f;
+  --ha-orange: #e8913a;
+  --ha-orange-dark: #c77828;
+  --ha-gold: #c7a45d;
+  --ha-line: rgba(0, 0, 0, .08);
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --card: #ffffff;
+  --card-foreground: #1d1d1f;
+  --muted: #f5f5f7;
+  --muted-foreground: #6e6e73;
+  --primary: #e8913a;
+  --primary-foreground: #ffffff;
+  --accent: #fff6ec;
+  --border: rgba(0, 0, 0, .08);
+  --ring: #e8913a;
+  --bento-border: rgba(0, 0, 0, .06);
+  --bento-accent: #e8913a;
+  --bento-accent-soft: #fff6ec;
+  --bento-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  --bento-shadow-lift: 0 16px 40px -24px rgba(7, 25, 47, .18);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  background: var(--ha-bg);
+  color: var(--ha-ink);
+  letter-spacing: -.01em;
+}
+
+body.home-apple-page.page-premium .minimal-topbar,
+body.home-apple-page.page-premium .home-chrome-bar {
+  background: rgba(245, 245, 247, .72);
+  border-bottom: 1px solid transparent;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: none;
+}
+body.home-apple-page.page-premium .home-chrome-bar.is-scrolled,
+body.home-apple-page.page-premium .minimal-topbar.is-scrolled {
+  background: rgba(245, 245, 247, .86);
+  border-bottom-color: var(--ha-line);
+  box-shadow: none;
+}
+body.home-apple-page.page-premium .minimal-brand__logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  filter: none;
+}
+body.home-apple-page.page-premium .minimal-nav a,
+body.home-apple-page.page-premium .reme-nav a {
+  color: var(--ha-muted);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 980px;
+}
+body.home-apple-page.page-premium .minimal-nav a:hover,
+body.home-apple-page.page-premium .reme-nav a:hover {
+  background: rgba(0, 0, 0, .04);
+  color: var(--ha-ink);
+}
+body.home-apple-page.page-premium .minimal-nav a.is-active,
+body.home-apple-page.page-premium .reme-nav a.is-active {
+  background: rgba(0, 0, 0, .06);
+  border: 0;
+  color: var(--ha-ink);
+}
+body.home-apple-page.page-premium .nav-rankings__text,
+body.home-apple-page.page-premium .nav-ai-admit__text {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  color: var(--ha-muted);
+  -webkit-text-fill-color: var(--ha-muted);
+  font-weight: 500;
+}
+body.home-apple-page.page-premium .reme-nav a.nav-rankings,
+body.home-apple-page.page-premium .reme-nav a.nav-ai-admit {
+  background: transparent;
+  font-weight: 500;
+}
+
+body.home-apple-page.page-premium .minimal-page-head,
+body.home-apple-page.page-premium .dash-premium-head {
+  padding: 36px 0 24px;
+  border-bottom: 0;
+  margin-bottom: 8px;
+}
+body.home-apple-page.page-premium .dash-premium-eyebrow,
+body.home-apple-page.page-premium .minimal-eyebrow {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--ha-orange);
+  text-transform: none;
+}
+body.home-apple-page.page-premium .minimal-page-head h1,
+body.home-apple-page.page-premium .dash-premium-head h1 {
+  margin: 0 0 10px;
+  font-family: inherit;
+  font-size: clamp(1.85rem, 3.4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1.12;
+  color: var(--ha-ink);
+}
+body.home-apple-page.page-premium .minimal-page-desc {
+  margin: 0;
+  max-width: 36em;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ha-muted);
+}
+body.home-apple-page.page-premium .minimal-crumb a {
+  color: var(--ha-orange);
+}
+body.home-apple-page.page-premium .minimal-back__link {
+  color: var(--ha-orange);
+  font-weight: 600;
+}
+
+body.home-apple-page.page-premium .btn--primary,
+body.home-apple-page.page-premium .auth-form .btn--primary {
+  background: var(--ha-orange);
+  border-color: var(--ha-orange);
+  color: #fff;
+  border-radius: 980px;
+  box-shadow: 0 8px 20px -10px rgba(232, 145, 58, .55);
+}
+body.home-apple-page.page-premium .btn--primary:hover {
+  background: var(--ha-orange-dark);
+  border-color: var(--ha-orange-dark);
+  color: #fff;
+}
+body.home-apple-page.page-premium .btn--ghost {
+  border-radius: 980px;
+  border-color: rgba(0, 0, 0, .12);
+  color: var(--ha-ink);
+  background: transparent;
+}
+body.home-apple-page.page-premium .btn--ghost:hover {
+  border-color: rgba(0, 0, 0, .2);
+  color: var(--ha-ink);
+  background: rgba(0, 0, 0, .03);
+}
+
+body.home-apple-page.page-premium .chip.is-active,
+body.home-apple-page.page-premium .teacher-filter.is-active,
+body.home-apple-page.page-premium .alevel-board-tab.is-active,
+body.home-apple-page.page-premium .alevel-type-tab.is-active {
+  background: var(--ha-navy);
+  border-color: var(--ha-navy);
+  color: #fff;
+}
+body.home-apple-page.page-premium .chip,
+body.home-apple-page.page-premium .teacher-filter {
+  border-radius: 980px;
+}
+
+body.home-apple-page.page-premium .bento-panel,
+body.home-apple-page.page-premium .dash-cal-hero.bento-panel,
+body.home-apple-page.page-premium .dash-aside.bento-panel {
+  background: #fff;
+  border: 1px solid var(--ha-line);
+  border-radius: 24px;
+  box-shadow: var(--bento-shadow);
+}
+body.home-apple-page.page-premium .bento-panel__title,
+body.home-apple-page.page-premium .dash-cal-hero .bento-panel__title,
+body.home-apple-page.page-premium .dash-aside .bento-panel__title {
+  font-family: inherit;
+  letter-spacing: -.02em;
+  color: var(--ha-ink);
+}
+body.home-apple-page.page-premium .bento-panel__desc {
+  color: var(--ha-muted);
+}
+
+body.home-apple-page.page-premium .alevel-subject-card {
+  border-radius: 20px;
+  border-color: var(--ha-line);
+  background: #fff;
+  box-shadow: var(--bento-shadow);
+}
+body.home-apple-page.page-premium .alevel-subject-card b {
+  color: var(--ha-ink);
+}
+body.home-apple-page.page-premium .alevel-subject-card__go {
+  color: var(--ha-orange);
+}
+
+body.home-apple-page.page-premium .home-chrome-footer {
+  background: var(--ha-bg);
+  border-top: 1px solid var(--ha-line);
+  margin-top: 32px;
+}
+body.home-apple-page.page-premium .home-chrome-footer::after { display: none; }
+body.home-apple-page.page-premium .minimal-footer__links a:hover {
+  color: var(--ha-orange);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  body.home-apple-page.page-premium .minimal-topbar,
+  body.home-apple-page.page-premium .home-chrome-bar {
+    background: #f5f5f7;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
