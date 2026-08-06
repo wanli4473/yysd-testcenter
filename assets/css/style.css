@@ -6795,13 +6795,18 @@ body.is-vocab-hub .catalog-toolbar {
   color: var(--ha-orange);
 }
 .ha-accent { color: var(--ha-orange); }
+.ha-line {
+  display: block;
+  white-space: nowrap;
+}
 .ha-lead {
   margin: 0;
-  max-width: 38ch;
+  max-width: 36em;
   font-size: 17px;
-  line-height: 1.47;
+  line-height: 1.55;
   font-weight: 400;
   color: var(--ha-muted);
+  text-wrap: pretty;
 }
 .ha-text-link {
   display: inline-flex;
@@ -7507,22 +7512,23 @@ html:has(.home-apple-keynote) {
 }
 .home-apple-keynote .ha-hero__copy,
 .home-apple-keynote .ha-feature__copy {
-  max-width: 22em;
-  justify-self: center;
+  max-width: min(36rem, 100%);
+  justify-self: start;
 }
 .home-apple-keynote .ha-feature--flip .ha-feature__copy {
-  justify-self: center;
+  justify-self: start;
 }
 .home-apple-keynote .ha-hero h1 {
-  font-size: clamp(2.8rem, 6.2vw, 5rem);
+  /* Scale so each Chinese phrase stays on one line on phones */
+  font-size: clamp(2rem, 7.2vw, 4.6rem);
 }
 .home-apple-keynote .ha-feature h2,
 .home-apple-keynote .ha-trust h2,
 .home-apple-keynote .ha-finale h2 {
-  font-size: clamp(2.2rem, 4.6vw, 3.6rem);
+  font-size: clamp(1.65rem, 5vw, 3.2rem);
 }
 .home-apple-keynote .ha-lead {
-  max-width: 28ch;
+  max-width: 32em;
 }
 .home-apple-keynote .ha-mbp { width: min(100%, 680px); }
 .home-apple-keynote .ha-mbp--md { width: min(100%, 600px); }
@@ -7604,23 +7610,31 @@ html:has(.home-apple-keynote) {
   }
   .home-apple-keynote .ha-hero__inner,
   .home-apple-keynote .ha-feature__inner {
-    padding-inline: clamp(12px, 4vw, 28px);
+    padding-inline: clamp(16px, 5vw, 32px);
     gap: 28px;
   }
   .home-apple-keynote .ha-hero__copy,
   .home-apple-keynote .ha-feature__copy {
-    max-width: 34em;
+    max-width: 100%;
     margin-inline: auto;
     text-align: center;
   }
   .home-apple-keynote .ha-lead {
     margin-inline: auto;
+    max-width: 28em;
+  }
+  .home-apple-keynote .ha-cta {
+    justify-content: center;
   }
   .home-apple-keynote .ha-hero h1 {
-    font-size: clamp(2.35rem, 9vw, 3.2rem);
+    font-size: clamp(2rem, 9.5vw, 2.75rem);
   }
   .home-apple-keynote .ha-feature h2 {
-    font-size: clamp(1.85rem, 7vw, 2.4rem);
+    font-size: clamp(1.45rem, 6.5vw, 2.1rem);
+  }
+  .home-apple-keynote .ha-trust h2,
+  .home-apple-keynote .ha-finale h2 {
+    font-size: clamp(1.5rem, 6.5vw, 2.2rem);
   }
   .home-apple-keynote .ha-mbp,
   .home-apple-keynote .ha-mbp--md {
