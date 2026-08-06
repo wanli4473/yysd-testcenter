@@ -8,7 +8,7 @@
   <title>优益思达国际课程中心 · 雅思 & A-Level 备考平台</title>
   <meta name="description" content="高效备考 · 清晰路径 · 稳步提分。精选剑桥雅思真题与系统练习，登录即可开始。">
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/style.css?v=20260806demo">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260806tour2">
 </head>
 <body class="home-minimal home-apple-page home-apple-keynote">
 
@@ -55,19 +55,20 @@
               <div class="ha-mbp__bezel">
                 <div class="ha-mbp__camera"></div>
                 <div class="ha-screen ha-screen--demo">
-                  <div class="ha-demo">
-                    <div class="ha-demo__scene ha-demo__scene--hub">
+                  <div class="ha-demo" id="ha-product-tour" aria-hidden="true">
+                    <!-- 1. Home hub -->
+                    <div class="ha-demo__scene is-active" data-scene="hub">
                       <div class="ha-screen__bar">
                         <span></span><span></span><span></span>
                         <b>学习中心</b>
                       </div>
                       <div class="ha-screen__grid">
-                        <div class="ha-chip ha-chip--navy ha-demo__target">
+                        <div class="ha-chip ha-chip--navy" data-hit="ielts">
                           <em>IELTS</em>
                           <strong>剑桥真题</strong>
                           <small>听 · 读 · 写 · 说</small>
                         </div>
-                        <div class="ha-chip ha-chip--warm">
+                        <div class="ha-chip ha-chip--warm" data-hit="vocab">
                           <em>VOCAB</em>
                           <strong>今日 28 词</strong>
                           <small>完成 64%</small>
@@ -84,26 +85,93 @@
                         </div>
                       </div>
                     </div>
-                    <div class="ha-demo__scene ha-demo__scene--exam">
+
+                    <!-- 2. IELTS feature menu -->
+                    <div class="ha-demo__scene" data-scene="ielts-menu">
+                      <div class="ha-menu">
+                        <div class="ha-menu__bar">
+                          <b>雅思备考</b>
+                          <em>IELTS</em>
+                        </div>
+                        <div class="ha-menu__list">
+                          <div class="ha-menu__item" data-hit="listen"><b>听力真题</b><span>顺序练习</span></div>
+                          <div class="ha-menu__item" data-hit="read"><b>阅读真题</b><span>高亮笔记</span></div>
+                          <div class="ha-menu__item" data-hit="write"><b>写作真题</b><span>官方任务</span></div>
+                          <div class="ha-menu__item" data-hit="speak"><b>口语练习</b><span>AI 陪练</span></div>
+                          <div class="ha-menu__item ha-menu__item--feature" data-hit="full"><b>全套模考</b><span>机考体验</span></div>
+                          <div class="ha-menu__item" data-hit="aiw"><b>AI 写作批改</b><span>即时反馈</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 3. CDT full mock -->
+                    <div class="ha-demo__scene" data-scene="cdt">
                       <div class="ha-exam">
                         <div class="ha-exam__top">
-                          <b>Listening · Part 1</b>
+                          <b>全套模考 · Listening</b>
                           <em>12:48</em>
                         </div>
                         <div class="ha-exam__nums">
                           <i>1</i><i>2</i><i class="is-now">3</i><i>4</i><i>5</i><i>6</i>
                         </div>
                         <div class="ha-exam__q">
-                          <strong>Questions 3</strong>
+                          <strong>Question 3</strong>
                           <p>What does the speaker say about the museum tour?</p>
                           <div class="ha-exam__opts">
-                            <label class="ha-exam__opt" data-opt="A"><i></i><span>A. It starts at the main gate</span></label>
-                            <label class="ha-exam__opt ha-demo__pick" data-opt="B"><i></i><span>B. It includes a short film</span></label>
-                            <label class="ha-exam__opt" data-opt="C"><i></i><span>C. It ends at the café</span></label>
+                            <label class="ha-exam__opt" data-hit="optA"><i></i><span>A. It starts at the main gate</span></label>
+                            <label class="ha-exam__opt" data-hit="optB"><i></i><span>B. It includes a short film</span></label>
+                            <label class="ha-exam__opt" data-hit="optC"><i></i><span>C. It ends at the café</span></label>
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    <!-- 4. Vocab feature menu -->
+                    <div class="ha-demo__scene" data-scene="vocab-menu">
+                      <div class="ha-menu">
+                        <div class="ha-menu__bar">
+                          <b>系统背词</b>
+                          <em>VOCAB</em>
+                        </div>
+                        <div class="ha-menu__list ha-menu__list--5">
+                          <div class="ha-menu__item ha-menu__item--feature" data-hit="daily"><b>每日背词</b><span>今日计划</span></div>
+                          <div class="ha-menu__item" data-hit="books"><b>系统词书</b><span>高中 / 四级 / 雅思</span></div>
+                          <div class="ha-menu__item" data-hit="themes"><b>分类词库</b><span>按话题浏览</span></div>
+                          <div class="ha-menu__item" data-hit="wrong"><b>错题本</b><span>自动收录</span></div>
+                          <div class="ha-menu__item" data-hit="diag"><b>能力诊断</b><span>推荐起点</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 5. Daily word two-step -->
+                    <div class="ha-demo__scene" data-scene="daily">
+                      <div class="ha-daily">
+                        <div class="ha-daily__top">
+                          <b>每日背词</b>
+                          <em>12 / 28</em>
+                        </div>
+                        <div class="ha-daily__card" data-step="1">
+                          <strong class="ha-daily__word">coherent</strong>
+                          <span class="ha-daily__phon">/kəʊˈhɪərənt/</span>
+                          <div class="ha-daily__opts">
+                            <button type="button" data-hit="meanA">连贯的；一致的</button>
+                            <button type="button" data-hit="meanB">犹豫的；不情愿的</button>
+                            <button type="button" data-hit="meanC">精确的；精密的</button>
+                          </div>
+                        </div>
+                        <div class="ha-daily__card ha-daily__card--next" data-step="2" hidden>
+                          <p class="ha-daily__ok">回答正确</p>
+                          <strong class="ha-daily__word">substantial</strong>
+                          <span class="ha-daily__phon">下一词 · 继续</span>
+                          <div class="ha-daily__acts">
+                            <span data-hit="review">复习刚才</span>
+                            <span class="is-primary" data-hit="next">下一词</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="ha-demo__caption"></div>
                     <div class="ha-demo__cursor"></div>
                     <div class="ha-demo__ripple"></div>
                   </div>
@@ -313,6 +381,6 @@
   <script src="assets/js/auth.js?v=20260806report"></script>
   <script src="assets/js/nav.js?v=20260729admit2"></script>
   <script src="assets/js/ui.js?v=20260723motion"></script>
-  <script src="assets/js/home.js?v=20260806keynote"></script>
+  <script src="assets/js/home.js?v=20260806tour2"></script>
 </body>
 </html>

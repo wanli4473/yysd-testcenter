@@ -7651,13 +7651,14 @@ html:has(.home-apple-keynote) {
   }
 }
 
-/* —— Hero MacBook demo: cursor click → Cambridge mock —— */
+/* —— Hero product tour (JS-driven, ~60s) —— */
 .ha-screen--demo {
   position: relative;
   min-height: 320px;
   background: #f5f5f7;
   overflow: hidden;
 }
+.home-apple-keynote .ha-screen--demo { min-height: 340px; }
 .ha-demo {
   position: relative;
   height: 100%;
@@ -7667,46 +7668,98 @@ html:has(.home-apple-keynote) {
   position: absolute;
   inset: 0;
   opacity: 0;
+  transform: scale(.985);
+  transition: opacity .45s var(--ease-out), transform .45s var(--ease-out);
   pointer-events: none;
+  overflow: hidden;
 }
-.ha-demo__scene--hub {
-  animation: ha-demo-hub 14s var(--ease-out) infinite;
+.ha-demo__scene.is-active {
+  opacity: 1;
+  transform: none;
+  z-index: 1;
 }
-.ha-demo__scene--exam {
-  background: #e8eef4;
-  animation: ha-demo-exam 14s var(--ease-out) infinite;
-}
-.ha-demo__scene--hub .ha-screen__grid {
+.ha-demo__scene[data-scene="hub"] .ha-screen__grid {
   height: calc(100% - 36px);
 }
-.ha-demo__target {
-  animation: ha-demo-target 14s var(--ease-out) infinite;
-  transform-origin: center;
+.ha-chip.is-hot,
+.ha-menu__item.is-hot {
+  box-shadow: 0 0 0 2px rgba(232, 145, 58, .55);
+  transform: scale(1.02);
+  z-index: 2;
 }
-.ha-demo__cursor {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 16px;
-  height: 22px;
-  z-index: 5;
-  background: #1d1d1f;
-  clip-path: polygon(0 0, 0 100%, 35% 70%, 55% 100%, 68% 92%, 45% 62%, 100% 58%);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
-  animation: ha-demo-cursor 14s var(--ease-out) infinite;
-  will-change: transform, opacity;
+.ha-chip {
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
 }
-.ha-demo__ripple {
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  margin: -14px 0 0 -14px;
-  border-radius: 50%;
-  border: 2px solid rgba(232, 145, 58, .7);
-  opacity: 0;
-  z-index: 4;
-  animation: ha-demo-ripple 14s var(--ease-out) infinite;
-  pointer-events: none;
+.ha-menu {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f5f5f7;
+}
+.ha-menu__bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, .06);
+}
+.ha-menu__bar b {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: #1d1d1f;
+}
+.ha-menu__bar em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: #e8913a;
+}
+.ha-menu__list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px;
+  flex: 1;
+  align-content: start;
+}
+.ha-menu__list--5 { grid-template-columns: 1fr; }
+.ha-menu__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, .06);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s var(--ease);
+}
+.ha-menu__list--5 .ha-menu__item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+}
+.ha-menu__item b {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -.01em;
+}
+.ha-menu__item span {
+  font-size: 10px;
+  color: #6e6e73;
+}
+.ha-menu__item--feature {
+  background: linear-gradient(145deg, #16345c, #07192f);
+  border-color: transparent;
+}
+.ha-menu__item--feature b { color: #fff; }
+.ha-menu__item--feature span { color: #f1d38a; }
+.ha-menu__item--feature.is-hot {
+  box-shadow: 0 0 0 2px rgba(241, 211, 138, .7);
 }
 
 .ha-exam {
@@ -7715,6 +7768,7 @@ html:has(.home-apple-keynote) {
   height: 100%;
   font-size: 11px;
   color: #102a4c;
+  background: #e8eef4;
 }
 .ha-exam__top {
   display: flex;
@@ -7725,7 +7779,7 @@ html:has(.home-apple-keynote) {
   color: #f5f5f7;
   font-size: 10px;
 }
-.ha-exam__top b { font-weight: 650; letter-spacing: .02em; }
+.ha-exam__top b { font-weight: 650; }
 .ha-exam__top em { font-style: normal; color: #f1d38a; font-variant-numeric: tabular-nums; }
 .ha-exam__nums {
   display: flex;
@@ -7751,7 +7805,6 @@ html:has(.home-apple-keynote) {
   background: #07192f;
   color: #fff;
   border-color: #07192f;
-  animation: ha-demo-qpulse 14s var(--ease-out) infinite;
 }
 .ha-exam__q {
   flex: 1;
@@ -7760,7 +7813,6 @@ html:has(.home-apple-keynote) {
   margin: 8px;
   border-radius: 8px;
   border: 1px solid #c9d4e2;
-  box-shadow: 0 1px 2px rgba(7, 25, 47, .06);
 }
 .ha-exam__q strong {
   display: block;
@@ -7775,11 +7827,7 @@ html:has(.home-apple-keynote) {
   line-height: 1.35;
   color: #07192f;
 }
-.ha-exam__opts {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
+.ha-exam__opts { display: flex; flex-direction: column; gap: 5px; }
 .ha-exam__opt {
   display: flex;
   align-items: flex-start;
@@ -7790,6 +7838,7 @@ html:has(.home-apple-keynote) {
   background: #f3f6fa;
   font-size: 11px;
   line-height: 1.3;
+  transition: background .2s ease, border-color .2s ease;
 }
 .ha-exam__opt i {
   width: 12px;
@@ -7800,93 +7849,181 @@ html:has(.home-apple-keynote) {
   flex-shrink: 0;
   background: #fff;
 }
-.ha-demo__pick {
-  animation: ha-demo-pick 14s var(--ease-out) infinite;
+.ha-exam__opt.is-picked {
+  background: #e8eef6;
+  border-color: #07192f;
 }
-.ha-demo__pick i {
-  animation: ha-demo-radio 14s var(--ease-out) infinite;
-}
-
-/* Timeline (14s): approach → click chip → swap → pick answer → hold → reset */
-@keyframes ha-demo-hub {
-  0%, 22% { opacity: 1; transform: scale(1); }
-  28%, 88% { opacity: 0; transform: scale(.98); }
-  94%, 100% { opacity: 1; transform: scale(1); }
-}
-@keyframes ha-demo-exam {
-  0%, 24% { opacity: 0; transform: translateY(8px) scale(.98); }
-  30%, 86% { opacity: 1; transform: none; }
-  92%, 100% { opacity: 0; transform: translateY(6px); }
-}
-@keyframes ha-demo-target {
-  0%, 14% { transform: scale(1); box-shadow: none; }
-  16%, 20% { transform: scale(.97); box-shadow: 0 0 0 2px rgba(241, 211, 138, .55); }
-  22%, 100% { transform: scale(1); box-shadow: none; }
-}
-@keyframes ha-demo-cursor {
-  0% { opacity: 0; transform: translate(78%, 72%) scale(1); }
-  6% { opacity: 1; transform: translate(78%, 72%) scale(1); }
-  14% { opacity: 1; transform: translate(18%, 28%) scale(1); }
-  16% { opacity: 1; transform: translate(18%, 28%) scale(.88); }
-  18% { opacity: 1; transform: translate(18%, 28%) scale(1); }
-  24% { opacity: 0; transform: translate(18%, 28%) scale(1); }
-  30% { opacity: 0; transform: translate(62%, 78%) scale(1); }
-  36% { opacity: 1; transform: translate(62%, 78%) scale(1); }
-  48% { opacity: 1; transform: translate(42%, 68%) scale(1); }
-  52% { opacity: 1; transform: translate(42%, 68%) scale(.88); }
-  56% { opacity: 1; transform: translate(42%, 68%) scale(1); }
-  70% { opacity: 1; transform: translate(42%, 68%) scale(1); }
-  78% { opacity: 0; transform: translate(42%, 68%) scale(1); }
-  100% { opacity: 0; transform: translate(78%, 72%) scale(1); }
-}
-@keyframes ha-demo-ripple {
-  0%, 15% { opacity: 0; transform: translate(18%, 28%) scale(.4); }
-  16% { opacity: .9; transform: translate(18%, 28%) scale(.5); }
-  22% { opacity: 0; transform: translate(18%, 28%) scale(1.6); }
-  50%, 51% { opacity: 0; transform: translate(42%, 68%) scale(.4); }
-  52% { opacity: .85; transform: translate(42%, 68%) scale(.5); }
-  58% { opacity: 0; transform: translate(42%, 68%) scale(1.5); }
-  100% { opacity: 0; }
-}
-@keyframes ha-demo-pick {
-  0%, 50% { background: #f3f6fa; border-color: transparent; }
-  54%, 86% { background: #e8eef6; border-color: #07192f; }
-  92%, 100% { background: #f3f6fa; border-color: transparent; }
-}
-@keyframes ha-demo-radio {
-  0%, 50% { background: #fff; border-color: #7a8798; box-shadow: none; }
-  54%, 86% {
-    background: #07192f;
-    border-color: #07192f;
-    box-shadow: inset 0 0 0 2px #fff;
-  }
-  92%, 100% { background: #fff; border-color: #7a8798; box-shadow: none; }
-}
-@keyframes ha-demo-qpulse {
-  0%, 30% { transform: scale(1); }
-  34% { transform: scale(1.08); }
-  40%, 100% { transform: scale(1); }
+.ha-exam__opt.is-picked i {
+  background: #07192f;
+  border-color: #07192f;
+  box-shadow: inset 0 0 0 2px #fff;
 }
 
-.home-apple-keynote .ha-screen--demo { min-height: 340px; }
+.ha-daily {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f5f5f7;
+}
+.ha-daily__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 12px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, .06);
+}
+.ha-daily__top b { font-size: 13px; font-weight: 700; }
+.ha-daily__top em { font-style: normal; font-size: 11px; color: #e8913a; font-weight: 700; }
+.ha-daily__card {
+  margin: 12px;
+  padding: 16px 14px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, .06);
+  flex: 1;
+}
+.ha-daily__word {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: #1d1d1f;
+}
+.ha-daily__phon {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6e6e73;
+}
+.ha-daily__opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+.ha-daily__opts button {
+  border: 1px solid rgba(0, 0, 0, .08);
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 11px;
+  color: #1d1d1f;
+  transition: border-color .2s ease, background .2s ease;
+}
+.ha-daily__opts button.is-picked {
+  border-color: #e8913a;
+  background: #fff6ec;
+}
+.ha-daily__ok {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a7f4b;
+}
+.ha-daily__acts {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.ha-daily__acts span {
+  flex: 1;
+  text-align: center;
+  padding: 9px 8px;
+  border-radius: 980px;
+  font-size: 11px;
+  font-weight: 650;
+  border: 1px solid rgba(0, 0, 0, .1);
+  background: #fff;
+  color: #1d1d1f;
+}
+.ha-daily__acts .is-primary {
+  background: #e8913a;
+  border-color: #e8913a;
+  color: #fff;
+}
+.ha-daily__card[hidden] { display: none !important; }
+
+.ha-demo__caption {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  z-index: 6;
+  max-width: 86%;
+  padding: 6px 10px;
+  border-radius: 980px;
+  background: rgba(7, 25, 47, .88);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition: opacity .3s var(--ease), transform .3s var(--ease);
+  pointer-events: none;
+}
+.ha-demo__caption.is-on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.ha-demo__cursor {
+  position: absolute;
+  top: 70%;
+  left: 70%;
+  width: 16px;
+  height: 22px;
+  z-index: 7;
+  background: #e8913a;
+  clip-path: polygon(0 0, 0 100%, 35% 70%, 55% 100%, 68% 92%, 45% 62%, 100% 58%);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .28));
+  opacity: 0;
+  transition: left .7s var(--ease-out), top .7s var(--ease-out), opacity .25s ease, transform .12s ease;
+  will-change: left, top;
+  pointer-events: none;
+}
+.ha-demo.is-ready .ha-demo__cursor { opacity: 1; }
+.ha-demo.is-clicking .ha-demo__cursor {
+  transform: scale(.86);
+}
+.ha-demo__ripple {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  border: 2px solid rgba(232, 145, 58, .75);
+  opacity: 0;
+  z-index: 6;
+  pointer-events: none;
+  transform: scale(.4);
+}
+.ha-demo.is-ripping .ha-demo__ripple {
+  left: var(--rx, 0);
+  top: var(--ry, 0);
+  animation: ha-tour-rip .45s var(--ease-out) forwards;
+}
+@keyframes ha-tour-rip {
+  from { opacity: .9; transform: scale(.45); }
+  to { opacity: 0; transform: scale(1.55); }
+}
 
 @media (max-width: 960px) {
   .home-apple-keynote .ha-screen--demo { min-height: 220px; }
+  .ha-menu__item b { font-size: 11px; }
   .ha-exam__q p { font-size: 11px; }
-  .ha-exam__opt { font-size: 10px; padding: 5px 6px; }
+  .ha-daily__word { font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ha-demo__scene--hub { opacity: 1 !important; animation: none !important; transform: none !important; }
-  .ha-demo__scene--exam,
+  .ha-demo__scene { transition: none; }
+  .ha-demo__scene[data-scene="hub"] { opacity: 1 !important; transform: none !important; }
+  .ha-demo__scene:not([data-scene="hub"]) { opacity: 0 !important; }
   .ha-demo__cursor,
-  .ha-demo__ripple,
-  .ha-demo__target,
-  .ha-demo__pick,
-  .ha-demo__pick i,
-  .ha-exam__nums i.is-now {
-    animation: none !important;
-  }
-  .ha-demo__scene--exam,
-  .ha-demo__cursor,
-  .ha-demo__ripple { opacity: 0 !important; }
+  .ha-demo__caption,
+  .ha-demo__ripple { display: none !important; }
 }
