@@ -115,7 +115,11 @@
           ipa: String(w.ipa || "").trim(),
           acceptCN: Array.isArray(w.acceptCN) ? w.acceptCN : [],
           example: String(w.example || "").trim(),
-          phrases: String(w.phrases || "").trim(),
+          phrases: String(w.phrases || w.collocations || "").trim(),
+          collocations: String(w.collocations || w.phrases || "").trim(),
+          mnemonic: String(w.mnemonic || "").trim(),
+          derivatives: String(w.derivatives || "").trim(),
+          distinguish: String(w.distinguish || "").trim(),
           pos: String(w.pos || "").trim()
         };
       }).filter(Boolean);
@@ -193,7 +197,8 @@
   }
 
   function tryCollocation(ex, pool) {
-    var pairs = shuffle(parsePhrasePairs(ex.word.phrases));
+    var raw = ex.word.collocations || ex.word.phrases;
+    var pairs = shuffle(parsePhrasePairs(raw));
     for (var i = 0; i < pairs.length; i++) {
       var blank = blankWord(pairs[i].en, ex.word.word);
       if (blank) return attachCloze(ex, blank, pairs[i].zh, pool);
@@ -205,6 +210,15 @@
     var blank = blankWord(englishOnly(ex.word.example), ex.word.word);
     if (!blank) return null;
     return attachCloze(ex, blank, "", pool);
+  }
+
+  /** 记/派/辨：展示提示文本，选出对应单词 */
+  function tryHintPick(ex, pool, field) {
+    var hint = String(ex.word[field] || "").trim();
+    if (!hint || hint.length < 4) return null;
+    ex.hintZh = hint;
+    ex.options = wordChoiceOptions(ex.word, pool);
+    return ex;
   }
 
   function speak(word) {
@@ -231,7 +245,10 @@
   }
 
   function buildExercises(words, allPool, retry) {
-    var types = ["meaning_to_word", "collocation", "listen_meaning", "example_cloze", "scramble"];
+    var types = [
+      "meaning_to_word", "collocation", "listen_meaning", "example_cloze",
+      "scramble", "mnemonic_pick", "derivative_pick", "distinguish_pick"
+    ];
     var queue = [];
     words.forEach(function (w, i) {
       var type = retry
@@ -298,6 +315,18 @@
       if (tryExampleCloze(ex, pool)) return ex;
       return makeExercise("meaning_to_word", word, pool, retry);
     }
+    if (type === "mnemonic_pick") {
+      if (tryHintPick(ex, pool, "mnemonic")) return ex;
+      return makeExercise("meaning_to_word", word, pool, retry);
+    }
+    if (type === "derivative_pick") {
+      if (tryHintPick(ex, pool, "derivatives")) return ex;
+      return makeExercise("collocation", word, pool, retry);
+    }
+    if (type === "distinguish_pick") {
+      if (tryHintPick(ex, pool, "distinguish")) return ex;
+      return makeExercise("example_cloze", word, pool, retry);
+    }
     if (type === "meaning_to_word" || type === "listen_meaning") {
       ex.options = wordChoiceOptions(word, pool);
     } else if (type === "word_to_meaning") {
@@ -324,6 +353,9 @@
     if (ex.type === "listen_meaning") return "听音，选出正确的单词";
     if (ex.type === "collocation") return "补全常见搭配";
     if (ex.type === "example_cloze") return "根据例句选出挖空的单词";
+    if (ex.type === "mnemonic_pick") return "根据记忆提示选出单词";
+    if (ex.type === "derivative_pick") return "根据派生词选出原词";
+    if (ex.type === "distinguish_pick") return "根据辨析说明选出单词";
     if (ex.type === "scramble") return "把字母排成正确的单词";
     if (ex.type === "type_spell") return "听音，写出英文拼写";
     return "选择正确答案";
@@ -685,12 +717,18 @@
     var badge = ex.retry
       ? '<span class="vl-badge vl-badge--retry">错题重练</span>'
       : (ex.type === "collocation"
-        ? '<span class="vl-badge">搭配</span>'
+        ? '<span class="vl-badge">考</span>'
         : (ex.type === "example_cloze"
-          ? '<span class="vl-badge">语境</span>'
-          : (ex.type.indexOf("listen") === 0 || ex.type === "type_spell"
-            ? '<span class="vl-badge">听力</span>'
-            : '<span class="vl-badge">新练</span>')));
+          ? '<span class="vl-badge">例</span>'
+          : (ex.type === "mnemonic_pick"
+            ? '<span class="vl-badge">记</span>'
+            : (ex.type === "derivative_pick"
+              ? '<span class="vl-badge">派</span>'
+              : (ex.type === "distinguish_pick"
+                ? '<span class="vl-badge">辨</span>'
+                : (ex.type.indexOf("listen") === 0 || ex.type === "type_spell"
+                  ? '<span class="vl-badge">听力</span>'
+                  : '<span class="vl-badge">新练</span>'))))));
 
     var body = "";
     if (ex.type === "meaning_to_word") {
@@ -702,6 +740,8 @@
     } else if (ex.type === "listen_meaning") {
       body = '<button type="button" class="vl-play" id="vl-play" aria-label="播放发音">▶</button>' +
         '<p class="vl-hint">点击播放，再选单词</p>' + optionsHTML(ex);
+    } else if (ex.type === "mnemonic_pick" || ex.type === "derivative_pick" || ex.type === "distinguish_pick") {
+      body = '<p class="vl-prompt-cn">' + esc(ex.hintZh || "") + "</p>" + optionsHTML(ex);
     } else if (ex.type === "collocation" || ex.type === "example_cloze") {
       body = '<p class="vl-cloze">' + esc(ex.blank || "____") + "</p>" +
         (ex.hintZh ? '<p class="vl-hint">' + esc(ex.hintZh) + "</p>" : "") +

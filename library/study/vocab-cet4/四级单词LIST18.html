@@ -1,456 +1,1371 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>四级单词 LIST 18 - 语速0.8 · 宽松评判</title>
-    <style>
-        :root {
-            --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
-            --accent: #c8963e; --accent-light: #e8c97a; --text: #2d2d2d; --text-light: #5a5a5a;
-            --text-muted: #888; --border: #e0dcd5; --shadow: 0 2px 12px rgba(0,0,0,0.06);
-            --shadow-hover: 0 6px 24px rgba(0,0,0,0.1); --shadow-card: 0 1px 4px rgba(0,0,0,0.04);
-            --radius: 12px; --radius-sm: 8px; --radius-xs: 6px; --transition: 0.22s ease;
-            --font-heading: 'Georgia', serif; --font-body: 'Inter', 'PingFang SC', sans-serif;
-            --font-ipa: 'Gentium Plus', serif; --success: #3a7d5a; --success-bg: #eaf5ee;
-            --error: #c0392b; --error-bg: #fdf0ee; --warning: #b8860b; --warning-bg: #fef9ee;
-            --tag-bg: #f0ede6; --history-bg: #f9f8f5;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh; line-height:1.6; -webkit-font-smoothing:antialiased; }
-        .header { background:var(--card-bg); border-bottom:1px solid var(--border); padding:0 24px; position:sticky; top:0; z-index:100; box-shadow:0 1px 3px rgba(0,0,0,0.04); backdrop-filter:blur(8px); }
-        .header-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:60px; gap:16px; }
-        .logo { display:flex; align-items:center; gap:10px; font-family:var(--font-heading); font-size:1.35rem; font-weight:700; color:var(--primary); }
-        .logo-icon { width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.1rem; }
-        .nav-tabs { display:flex; gap:4px; background:#f5f3ef; border-radius:28px; padding:3px; }
-        .nav-tab { padding:9px 20px; border-radius:26px; border:none; cursor:pointer; font-size:0.9rem; font-weight:600; transition:var(--transition); background:transparent; color:var(--text-light); font-family:var(--font-body); }
-        .nav-tab.active { background:#fff; color:var(--primary); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
-        .nav-tab:hover:not(.active) { color:var(--primary); background:rgba(255,255,255,0.5); }
-        .word-count-badge { font-size:0.8rem; color:var(--text-muted); background:var(--tag-bg); padding:5px 12px; border-radius:20px; font-weight:500; }
-        .main-container { max-width:1200px; margin:0 auto; padding:24px 20px 40px; }
-        .learn-section, .test-section { display:none; }
-        .learn-section.active, .test-section.active { display:block; }
-        .learn-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:14px; }
-        .word-card { background:var(--card-bg); border-radius:var(--radius); padding:16px 18px; cursor:pointer; transition:var(--transition); border:1.5px solid transparent; box-shadow:var(--shadow-card); display:flex; flex-direction:column; gap:6px; user-select:none; }
-        .word-card:hover { box-shadow:var(--shadow-hover); border-color:#d5cec4; transform:translateY(-2px); }
-        .word-card.expanded { border-color:var(--primary-light); box-shadow:var(--shadow-hover); grid-column:1/-1; cursor:default; z-index:10; background:#fefefd; }
-        .word-card-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        .word-headword { font-family:var(--font-heading); font-size:1.25rem; font-weight:700; color:var(--primary); }
-        .word-ipa { font-family:var(--font-ipa); font-size:0.85rem; color:var(--text-muted); }
-        .btn-play { width:34px; height:34px; border-radius:50%; border:none; cursor:pointer; background:#f0ede6; color:var(--primary); font-size:0.85rem; transition:var(--transition); display:flex; align-items:center; justify-content:center; }
-        .btn-play:hover { background:var(--primary); color:#fff; }
-        .btn-play.playing { background:var(--accent); color:#fff; animation:pulse-play 0.8s infinite; }
-        @keyframes pulse-play { 0%,100%{ box-shadow:0 0 0 0 rgba(200,150,62,0.5); } 50%{ box-shadow:0 0 0 14px rgba(200,150,62,0); } }
-        .word-pos { display:inline-block; font-size:0.75rem; font-weight:600; color:var(--accent); background:#fdf8f0; padding:3px 8px; border-radius:4px; }
-        .word-meaning { font-size:0.9rem; color:var(--text); font-weight:500; }
-        .word-detail { display:none; margin-top:8px; padding-top:10px; border-top:1px dashed var(--border); animation:fadeIn 0.25s ease; }
-        .word-card.expanded .word-detail { display:block; }
-        @keyframes fadeIn { from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:translateY(0); } }
-        .word-detail-row { font-size:0.85rem; margin-bottom:6px; color:var(--text-light); line-height:1.5; }
-        .word-detail-row strong { color:var(--primary); font-weight:600; }
-        .word-detail-example { background:#fafaf7; padding:8px 12px; border-radius:var(--radius-xs); color:#555; border-left:3px solid var(--accent-light); margin-top:4px; font-size:0.85rem; }
-        .card-collapse-hint { font-size:0.7rem; color:var(--text-muted); text-align:center; margin-top:4px; display:none; }
-        .word-card.expanded .card-collapse-hint { display:block; }
-        .test-setup { background:var(--card-bg); border-radius:var(--radius); padding:28px 24px; text-align:center; box-shadow:var(--shadow); max-width:520px; margin:0 auto; }
-        .test-setup h3 { font-family:var(--font-heading); font-size:1.3rem; color:var(--primary); margin-bottom:8px; }
-        .test-setup p { color:var(--text-light); margin-bottom:20px; font-size:0.9rem; }
-        .btn-start-test { padding:12px 36px; border-radius:26px; border:none; cursor:pointer; font-size:1rem; font-weight:700; background:var(--primary); color:#fff; transition:var(--transition); font-family:var(--font-body); }
-        .btn-start-test:hover { background:var(--primary-light); box-shadow:0 4px 16px rgba(44,62,107,0.3); transform:translateY(-1px); }
-        .test-active-area, .test-results { display:none; max-width:600px; margin:0 auto; background:var(--card-bg); border-radius:var(--radius); padding:28px 24px; box-shadow:var(--shadow); text-align:center; }
-        .test-active-area.visible, .test-results.visible { display:block; }
-        .test-progress { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; font-size:0.85rem; color:var(--text-muted); font-weight:500; }
-        .progress-bar-wrap { flex:1; height:6px; background:#e8e4dc; border-radius:3px; margin:0 12px; overflow:hidden; }
-        .progress-bar-fill { height:100%; background:var(--primary); border-radius:3px; transition:width 0.35s ease; }
-        .test-play-area { margin:20px 0; }
-        .btn-play-large { width:70px; height:70px; border-radius:50%; border:none; cursor:pointer; background:var(--primary); color:#fff; font-size:1.6rem; transition:var(--transition); box-shadow:0 4px 16px rgba(44,62,107,0.25); }
-        .btn-play-large:hover { background:var(--primary-light); transform:scale(1.05); }
-        .btn-play-large.playing { background:var(--accent); animation:pulse-play-large 0.8s infinite; }
-        @keyframes pulse-play-large { 0%,100%{ box-shadow:0 0 0 0 rgba(200,150,62,0.6); } 50%{ box-shadow:0 0 0 22px rgba(200,150,62,0); } }
-        .test-inputs { display:flex; flex-direction:column; gap:12px; margin:20px 0; text-align:left; }
-        .test-input-group label { display:block; font-size:0.85rem; font-weight:600; margin-bottom:4px; }
-        .test-input-group input { width:100%; padding:12px 14px; border-radius:var(--radius-sm); border:2px solid var(--border); font-size:1rem; transition:var(--transition); background:#fafaf8; }
-        .test-input-group input:focus { outline:none; border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(61,90,153,0.08); }
-        .correct-input { border-color:var(--success)!important; background:var(--success-bg)!important; }
-        .wrong-input { border-color:var(--error)!important; background:var(--error-bg)!important; }
-        .btn-submit { padding:12px 32px; border-radius:26px; border:none; cursor:pointer; font-size:1rem; font-weight:700; background:var(--primary); color:#fff; }
-        .btn-submit:disabled { opacity:0.5; cursor:not-allowed; }
-        .test-feedback { margin-top:16px; padding:14px 16px; border-radius:var(--radius-sm); font-size:0.9rem; display:none; animation:fadeIn 0.3s ease; text-align:left; line-height:1.7; }
-        .test-feedback.visible { display:block; }
-        .test-feedback.correct-all { background:var(--success-bg); border:1px solid #c3e0cd; color:#2d5a3d; }
-        .test-feedback.partial { background:var(--warning-bg); border:1px solid #f0d78c; color:#6b4f1a; }
-        .test-feedback.wrong-all { background:var(--error-bg); border:1px solid #f5c6cb; color:#6b2020; }
-        .btn-next { margin-top:12px; padding:10px 24px; border-radius:22px; border:2px solid var(--primary); cursor:pointer; font-size:0.9rem; font-weight:600; background:#fff; color:var(--primary); display:none; }
-        .btn-next.visible { display:inline-block; }
-        .btn-next:hover { background:var(--primary); color:#fff; }
-        .results-score { font-family:var(--font-heading); font-size:3.5rem; font-weight:700; color:var(--primary); }
-        .results-detail { font-size:0.9rem; color:var(--text-light); margin:8px 0 20px; }
-        .results-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:0.85rem; text-align:left; }
-        .results-table th, .results-table td { padding:8px 10px; border-bottom:1px solid var(--border); }
-        .results-table th { background:#fafaf7; color:var(--primary); }
-        .row-correct { background:#f9fdf9; } .row-wrong { background:#fefbfb; }
-        .btn-retry { margin-top:16px; padding:12px 28px; border-radius:26px; border:none; cursor:pointer; font-weight:700; background:var(--accent); color:#fff; }
-        .btn-back-setup { margin-left:10px; background:#fff; color:var(--primary); border:2px solid var(--primary); }
-        .history-section { margin-top:32px; background:var(--history-bg); border-radius:var(--radius); padding:20px; max-width:520px; margin-left:auto; margin-right:auto; text-align:left; box-shadow:var(--shadow-card); }
-        .history-title { font-family:var(--font-heading); font-size:1.1rem; color:var(--primary); margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
-        .history-list { list-style:none; max-height:240px; overflow-y:auto; padding-right:4px; }
-        .history-list li { padding:10px 12px; background:#fff; border-radius:var(--radius-sm); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border:1px solid var(--border); }
-        .history-time { color:var(--text-muted); font-size:0.75rem; }
-        .history-score { font-weight:700; color:var(--primary); }
-        .history-empty { color:var(--text-muted); text-align:center; padding:16px; font-size:0.85rem; }
-        .btn-clear-history { background:none; border:none; color:#c0392b; font-size:0.75rem; cursor:pointer; text-decoration:underline; }
-        .lenient-hint { font-size:0.8rem; color:#3a7d5a; font-weight:400; }
-        @media (max-width:768px) {
-            .learn-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
-            .word-card { padding:12px 14px; }
-            .word-headword { font-size:1.1rem; }
-            .word-count-badge { display:none; }
-            .btn-play-large { width:56px; height:56px; font-size:1.3rem; }
-            .results-score { font-size:2.5rem; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="exam:title" content="四级词汇 单元 18">
+<meta name="exam:duration" content="0">
+<meta name="exam:description" content="频段 mid · 66 词 · 边学边测">
+<meta name="exam:band" content="mid">
+<title>四级词汇 单元 18 · 语速0.8 · 宽松评判</title>
+<style>
+:root {
+  --bg:#f5f3f0; --card:#fff; --primary:#2c3e6b; --primary-light:#3d5a99;
+  --accent:#2f6f4e; --text:#2d2d2d; --muted:#888; --border:#e0dcd5;
+  --shadow:0 1px 4px rgba(0,0,0,.04); --radius:12px; --ok:#3a7d5a; --bad:#c0392b;
+}
+* { box-sizing:border-box; margin:0; padding:0 }
+body { font-family:"PingFang SC","Inter",sans-serif; background:var(--bg); color:var(--text); line-height:1.55 }
+.header { background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10 }
+.header-inner { max-width:1100px; margin:0 auto; height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; gap:12px }
+.logo { font-weight:700; color:var(--primary); display:flex; align-items:center; gap:8px }
+.nav-tabs { display:flex; gap:4px; background:#f0ebe4; border-radius:999px; padding:3px }
+.nav-tab { border:0; background:transparent; padding:8px 16px; border-radius:999px; cursor:pointer; font-weight:600; color:#666 }
+.nav-tab.active { background:#fff; color:var(--primary); box-shadow:var(--shadow) }
+.badge { font-size:.8rem; color:var(--muted); background:#f0ebe4; padding:4px 10px; border-radius:999px }
+.main { max-width:1100px; margin:0 auto; padding:20px 16px 40px }
+.learn-section,.test-section { display:none }
+.learn-section.active,.test-section.active { display:block }
+.learn-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px }
+.word-card { background:var(--card); border:1px solid transparent; border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); cursor:pointer }
+.word-card:hover { border-color:#d5cec4 }
+.word-card.expanded { border-color:var(--primary); grid-column:1/-1 }
+.word-head { display:flex; justify-content:space-between; gap:8px; align-items:flex-start }
+.word-headword { font-size:1.2rem; font-weight:700; color:var(--primary) }
+.word-ipa { color:#666; font-size:.92rem }
+.btn-play { border:0; background:#eef2fb; color:var(--primary); width:34px; height:34px; border-radius:50%; cursor:pointer }
+.btn-play.playing { background:var(--primary); color:#fff }
+.word-pos { color:var(--accent); font-weight:600; margin-right:6px }
+.word-blocks { display:none; margin-top:10px; border-top:1px dashed var(--border); padding-top:10px }
+.word-card.expanded .word-blocks { display:block }
+.block { margin:8px 0; font-size:.92rem }
+.block b { display:inline-block; min-width:2em; color:var(--accent); margin-right:4px }
+.hint { color:var(--muted); font-size:.8rem; margin-top:6px; display:none }
+.word-card.expanded .hint { display:block }
+.test-setup,.test-active-area,.test-results { background:var(--card); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow) }
+.test-active-area,.test-results { display:none }
+.test-active-area.visible,.test-results.visible { display:block }
+.btn-start-test,.btn-submit,.btn-next,.btn-retry { border:0; border-radius:10px; padding:12px 18px; font-weight:700; cursor:pointer; background:var(--primary); color:#fff; margin-top:12px }
+.btn-next { display:none } .btn-next.visible { display:inline-block }
+.test-input-group { margin:12px 0 }
+.test-input-group input { width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:1rem }
+.test-feedback { margin-top:12px; padding:12px; border-radius:8px; display:none }
+.test-feedback.visible { display:block }
+.test-feedback.correct-all { background:#eaf5ee; color:var(--ok) }
+.test-feedback.partial { background:#fef9ee; color:#b8860b }
+.test-feedback.wrong-all { background:#fdf0ee; color:var(--bad) }
+.progress-bar-wrap { flex:1; height:8px; background:#eee; border-radius:999px; overflow:hidden; margin:0 10px }
+.progress-bar-fill { height:100%; background:var(--primary); width:0 }
+.test-progress { display:flex; align-items:center; margin-bottom:16px; font-size:.9rem }
+.history-title { margin-top:20px; font-weight:700 }
+.btn-clear-history { margin-left:8px; border:0; background:#eee; padding:4px 8px; border-radius:6px; cursor:pointer }
+</style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-inner">
-            <div class="logo"><div class="logo-icon">📖</div><span>CET-4 LIST 18</span></div>
-            <nav class="nav-tabs" id="navTabs">
-                <button class="nav-tab active" data-mode="learn">📚 学习模式</button>
-                <button class="nav-tab" data-mode="test">✅ 单词检测</button>
-            </nav>
-            <span class="word-count-badge">共 50 词</span>
-        </div>
-    </header>
-    <div class="main-container">
-        <section class="learn-section active" id="learnSection"><div class="learn-grid" id="learnGrid"></div></section>
-        <section class="test-section" id="testSection">
-            <div class="test-setup" id="testSetup">
-                <h3>📝 CET-4 LIST 18 单词检测</h3>
-                <p>点击开始检测全部<strong>50个单词</strong>。<br>播放读音后填写拼写和含义。<br><span class="lenient-hint">✨ 宽松评判：标点不扣分，关键字/近义即对</span></p>
-                <button class="btn-start-test" id="btnStartTest">🎯 开始检测 (50题)</button>
-                <div class="history-section"><div class="history-title">📋 历史记录 <button class="btn-clear-history" id="btnClearHistory">清除记录</button></div><div id="historyContent"></div></div>
-            </div>
-            <div class="test-active-area" id="testActiveArea">
-                <div class="test-progress"><span id="testProgressLabel">第 1 / 50 题</span><div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBarFill" style="width:0%;"></div></div><span id="testScoreLabel">得分: 0</span></div>
-                <div class="test-play-area"><button class="btn-play-large" id="btnPlayTest">▶</button><p class="play-hint">点击按钮听单词读音</p></div>
-                <div class="test-inputs">
-                    <div class="test-input-group"><label>🔤 英文拼写</label><input type="text" id="inputSpelling" placeholder="请输入英文拼写..." autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-                    <div class="test-input-group"><label>🈶 中文含义 <span class="lenient-hint">（标点/空格忽略）</span></label><input type="text" id="inputMeaning" placeholder="请输入中文含义..." autocomplete="off"></div>
-                </div>
-                <button class="btn-submit" id="btnSubmit">✓ 提交答案</button>
-                <div class="test-feedback" id="testFeedback"></div>
-                <button class="btn-next" id="btnNext">下一题 →</button>
-            </div>
-            <div class="test-results" id="testResults">
-                <h3 style="font-family:var(--font-heading);color:var(--primary);">🏆 检测完成！</h3>
-                <div class="results-score" id="resultsScore">0</div><div class="results-detail" id="resultsDetail"></div>
-                <div style="overflow-x:auto;"><table class="results-table"><thead><tr><th>#</th><th>单词</th><th>你的拼写</th><th>你的含义</th><th>结果</th></tr></thead><tbody id="resultsTableBody"></tbody></table></div>
-                <button class="btn-retry" id="btnRetry">🔄 重新检测</button>
-                <button class="btn-retry btn-back-setup" id="btnBackToSetup">📋 返回</button>
-            </div>
-        </section>
+<header class="header"><div class="header-inner">
+  <div class="logo"><span>📖</span><span>四级词汇 单元 18</span></div>
+  <nav class="nav-tabs" id="navTabs">
+    <button class="nav-tab active" data-mode="learn">词汇总览</button>
+    <button class="nav-tab" data-mode="test">单词检测</button>
+  </nav>
+  <span class="badge">共 66 词</span>
+</div></header>
+<div class="main">
+  <section class="learn-section active" id="learnSection"><div class="learn-grid" id="learnGrid"></div></section>
+  <section class="test-section" id="testSection">
+    <div class="test-setup" id="testSetup">
+      <h3>四级词汇 单元 18 · 单词检测</h3>
+      <p>听读音后填写拼写与中文含义（宽松评判）。</p>
+      <button class="btn-start-test" id="btnStartTest">开始检测（66 题）</button>
+      <div class="history-title">历史记录 <button class="btn-clear-history" id="btnClearHistory">清除</button></div>
+      <div id="historyContent"></div>
     </div>
-    <script>
-        (function() {
-            // ==================== CET-4 LIST 18 单词数据 ====================
-            const wordData = [
-                { id: 851, word: 'per', ipa: '/pɜːr/', pos: 'prep.', meaning: '每；每一；按照', phrases: 'per day（每天）, per person（每人）, as per instructions（按照指示）', example: 'The speed limit is 50 miles per hour.（限速是每小时50英里。）', acceptCN: ['每', '每一', '按照'] },
-                { id: 852, word: 'plural', ipa: '/ˈplʊə.rəl/', pos: 'n. / adj.', meaning: '复数；复数的', phrases: 'plural form（复数形式）, plural noun（复数名词）, plural society（多元社会）', example: 'The plural of "child" is "children".（"child"的复数是"children"。）', acceptCN: ['复数', '复数的'] },
-                { id: 853, word: 'tedious', ipa: '/ˈtiː.di.əs/', pos: 'adj.', meaning: '冗长的；单调乏味的', phrases: 'tedious task（单调乏味的任务）, tedious journey（枯燥的旅程）', example: 'The lecture was long and tedious.（讲座又长又乏味。）', acceptCN: ['冗长', '乏味', '单调', '枯燥'] },
-                { id: 854, word: 'teenager', ipa: '/ˈtiːn.eɪ.dʒər/', pos: 'n.', meaning: '青少年（13-19岁）', phrases: 'teenager problems（青少年问题）, rebellious teenager（叛逆的青少年）', example: 'The magazine is aimed at teenagers.（这本杂志面向青少年。）', acceptCN: ['青少年'] },
-                { id: 855, word: 'amuse', ipa: '/əˈmjuːz/', pos: 'v.', meaning: '逗乐；使发笑；娱乐', phrases: 'amuse oneself（自娱自乐）, keep someone amused（让某人保持开心）', example: 'The clown amused the children with funny tricks.（小丑用滑稽的戏法逗乐了孩子们。）', acceptCN: ['逗乐', '使发笑', '娱乐'] },
-                { id: 856, word: 'decay', ipa: '/dɪˈkeɪ/', pos: 'v. / n.', meaning: '腐烂；衰退；衰败', phrases: 'tooth decay（蛀牙）, urban decay（城市衰落）, fall into decay（衰败）', example: 'Sugar can cause tooth decay.（糖会导致蛀牙。）', acceptCN: ['腐烂', '衰退', '衰败'] },
-                { id: 857, word: 'current', ipa: '/ˈkʌr.ənt/', pos: 'adj. / n.', meaning: '当前的；流通的；水流；电流', phrases: 'current affairs（时事）, electric current（电流）, ocean current（洋流）', example: 'What is your current job?（你现在做什么工作？）', acceptCN: ['当前', '水流', '电流', '现行'] },
-                { id: 858, word: 'extensive', ipa: '/ɪkˈsten.sɪv/', pos: 'adj.', meaning: '广泛的；大量的；广阔的', phrases: 'extensive experience（丰富的经验）, extensive damage（大面积损坏）, extensive research（广泛研究）', example: 'The fire caused extensive damage to the building.（火灾对建筑造成了大面积损坏。）', acceptCN: ['广泛', '大量', '广阔'] },
-                { id: 859, word: 'hospitalize', ipa: '/ˈhɒs.pɪ.təl.aɪz/', pos: 'v.', meaning: '送…住院治疗', phrases: 'be hospitalized for（因…住院）, hospitalized patient（住院病人）', example: 'He was hospitalized for a week after the accident.（事故后他住院一周。）', acceptCN: ['送医院', '住院'] },
-                { id: 860, word: 'mask', ipa: '/mɑːsk/', pos: 'n. / v.', meaning: '面具；口罩；掩盖', phrases: 'wear a mask（戴口罩）, gas mask（防毒面具）, mask one\'s feelings（掩饰感情）', example: 'Everyone must wear a mask in the hospital.（在医院里每个人都必须戴口罩。）', acceptCN: ['面具', '口罩', '掩盖'] },
-                { id: 861, word: 'telescope', ipa: '/ˈtel.ɪ.skəʊp/', pos: 'n.', meaning: '望远镜', phrases: 'look through a telescope（用望远镜看）, space telescope（太空望远镜）', example: 'He observed the stars through his telescope.（他用望远镜观察星星。）', acceptCN: ['望远镜'] },
-                { id: 862, word: 'temper', ipa: '/ˈtem.pər/', pos: 'n.', meaning: '脾气；情绪；怒气', phrases: 'lose one\'s temper（发脾气）, bad temper（坏脾气）, keep one\'s temper（控制脾气）', example: 'He has a quick temper and gets angry easily.（他脾气急躁，容易生气。）', acceptCN: ['脾气', '情绪', '怒气'] },
-                { id: 863, word: 'temple', ipa: '/ˈtem.pəl/', pos: 'n.', meaning: '寺庙；神殿；太阳穴', phrases: 'Buddhist temple（佛教寺庙）, temple of learning（知识的殿堂）, rub one\'s temples（揉太阳穴）', example: 'We visited an ancient temple in Kyoto.（我们参观了京都的一座古寺。）', acceptCN: ['寺庙', '神殿', '太阳穴'] },
-                { id: 864, word: 'accordance', ipa: '/əˈkɔː.dəns/', pos: 'n.', meaning: '一致；符合；按照', phrases: 'in accordance with（根据；依照）, accordance with law（依法）', example: 'The project was carried out in accordance with the plan.（项目按照计划进行。）', acceptCN: ['一致', '符合', '按照'] },
-                { id: 865, word: 'conductor', ipa: '/kənˈdʌk.tər/', pos: 'n.', meaning: '指挥；售票员；导体', phrases: 'orchestra conductor（乐队指挥）, bus conductor（公交车售票员）, good conductor of heat（热良导体）', example: 'The conductor raised his baton and the music began.（指挥举起指挥棒，音乐响起。）', acceptCN: ['指挥', '售票员', '导体'] },
-                { id: 866, word: 'clay', ipa: '/kleɪ/', pos: 'n.', meaning: '黏土；泥土', phrases: 'clay pot（陶罐）, clay court（红土网球场）, modelling clay（塑造用黏土）', example: 'The statue was made of clay.（这座雕像是用黏土做的。）', acceptCN: ['黏土', '泥土'] },
-                { id: 867, word: 'feedback', ipa: '/ˈfiːd.bæk/', pos: 'n.', meaning: '反馈；反应；回馈', phrases: 'get feedback（获得反馈）, provide feedback（提供反馈）, positive feedback（正面反馈）', example: 'We welcome any feedback from our customers.（我们欢迎顾客的任何反馈。）', acceptCN: ['反馈', '反应', '回馈'] },
-                { id: 868, word: 'garlic', ipa: '/ˈɡɑː.lɪk/', pos: 'n.', meaning: '大蒜', phrases: 'clove of garlic（一瓣蒜）, garlic bread（蒜蓉面包）, garlic press（压蒜器）', example: 'Add some chopped garlic to the pan.（往锅里加一些蒜末。）', acceptCN: ['大蒜'] },
-                { id: 869, word: 'intelligent', ipa: '/ɪnˈtel.ɪ.dʒənt/', pos: 'adj.', meaning: '聪明的；有才智的；智能的', phrases: 'intelligent person（聪明的人）, intelligent machine（智能机器）, highly intelligent（非常聪明）', example: 'She is one of the most intelligent students in the class.（她是班上最聪明的学生之一。）', acceptCN: ['聪明', '智能', '有才智'] },
-                { id: 870, word: 'musician', ipa: '/mjuːˈzɪʃ.ən/', pos: 'n.', meaning: '音乐家；乐师', phrases: 'professional musician（职业音乐家）, jazz musician（爵士乐音乐家）, talented musician（有才华的音乐家）', example: 'He is a talented musician who plays several instruments.（他是一位才华横溢的音乐家，会演奏多种乐器。）', acceptCN: ['音乐家', '乐师'] },
-                { id: 871, word: 'perceive', ipa: '/pəˈsiːv/', pos: 'v.', meaning: '察觉；感知；理解', phrases: 'perceive as（视为）, perceive a threat（察觉威胁）, perceive the difference（察觉差异）', example: 'She was perceived as a threat by her rivals.（她被对手视为威胁。）', acceptCN: ['察觉', '感知', '理解'] },
-                { id: 872, word: 'scarcely', ipa: '/ˈskeəs.li/', pos: 'adv.', meaning: '几乎不；刚刚；决不', phrases: 'scarcely any（几乎没有）, scarcely ever（几乎从不）, scarcely had... when（刚…就）', example: 'I had scarcely finished speaking when he interrupted.（我刚说完他就打断了。）', acceptCN: ['几乎不', '刚刚', '勉强'] },
-                { id: 873, word: 'absolute', ipa: '/ˈæb.sə.luːt/', pos: 'adj.', meaning: '绝对的；完全的；十足的', phrases: 'absolute truth（绝对真理）, absolute majority（绝对多数）, absolute power（绝对权力）', example: 'You have my absolute trust.（我完全信任你。）', acceptCN: ['绝对', '完全', '十足'] },
-                { id: 874, word: 'disguise', ipa: '/dɪsˈɡaɪz/', pos: 'v. / n.', meaning: '伪装；假扮；掩饰', phrases: 'in disguise（伪装的）, disguise oneself as（伪装成）, a blessing in disguise（因祸得福）', example: 'He disguised himself as a police officer.（他假扮成警察。）', acceptCN: ['伪装', '假扮', '掩饰'] },
-                { id: 875, word: 'frank', ipa: '/fræŋk/', pos: 'adj.', meaning: '坦白的；直率的；真诚的', phrases: 'to be frank（坦率地说）, frank discussion（坦诚的讨论）, frank opinion（坦率的意见）', example: 'To be frank, I don\'t agree with you.（坦率地说，我不同意你。）', acceptCN: ['坦白', '直率', '真诚', '坦率'] },
-                { id: 876, word: 'hip', ipa: '/hɪp/', pos: 'n.', meaning: '臀部；髋部；时髦的', phrases: 'hip joint（髋关节）, break one\'s hip（摔断髋骨）, be hip to（了解；赶时髦）', example: 'She fell and injured her hip.（她摔倒了，伤了髋部。）', acceptCN: ['臀部', '髋部', '时髦'] },
-                { id: 877, word: 'polish', ipa: '/ˈpɒl.ɪʃ/', pos: 'v. / n.', meaning: '擦亮；磨光；完善；上光剂', phrases: 'polish shoes（擦鞋）, nail polish（指甲油）, polish up（改善；擦亮）', example: 'He polished his shoes until they shone.（他把鞋擦得发亮。）', acceptCN: ['擦亮', '磨光', '完善', '上光剂'] },
-                { id: 878, word: 'puzzle', ipa: '/ˈpʌz.əl/', pos: 'n. / v.', meaning: '谜；拼图；使困惑', phrases: 'jigsaw puzzle（拼图）, crossword puzzle（填字游戏）, puzzle over（苦苦思索）', example: 'His behaviour puzzled me.（他的行为让我困惑。）', acceptCN: ['谜', '拼图', '困惑'] },
-                { id: 879, word: 'recognize', ipa: '/ˈrek.əɡ.naɪz/', pos: 'v.', meaning: '认出；承认；认可', phrases: 'recognize someone（认出某人）, recognize the importance（认识到重要性）, officially recognized（官方认可的）', example: 'I didn\'t recognize you with your new haircut.（你换了新发型，我都没认出你。）', acceptCN: ['认出', '承认', '认可'] },
-                { id: 880, word: 'temporary', ipa: '/ˈtem.pər.ər.i/', pos: 'adj.', meaning: '暂时的；临时的', phrases: 'temporary job（临时工作）, temporary solution（暂时的解决方案）, temporary worker（临时工）', example: 'This is only a temporary arrangement.（这只是暂时的安排。）', acceptCN: ['暂时', '临时', '短期'] },
-                { id: 881, word: 'temptation', ipa: '/tempˈteɪ.ʃən/', pos: 'n.', meaning: '诱惑；引诱；诱惑物', phrases: 'resist temptation（抵制诱惑）, give in to temptation（屈服于诱惑）, fall into temptation（陷入诱惑）', example: 'He couldn\'t resist the temptation to eat the cake.（他抵挡不住蛋糕的诱惑。）', acceptCN: ['诱惑', '引诱'] },
-                { id: 882, word: 'ancient', ipa: '/ˈeɪn.ʃənt/', pos: 'adj.', meaning: '古代的；古老的；年老的', phrases: 'ancient civilization（古代文明）, ancient ruins（古代遗迹）, in ancient times（在古代）', example: 'The Great Wall is an ancient wonder.（长城是古代奇迹。）', acceptCN: ['古代', '古老', '远古'] },
-                { id: 883, word: 'channel', ipa: '/ˈtʃæn.əl/', pos: 'n. / v.', meaning: '频道；海峡；渠道；引导', phrases: 'TV channel（电视频道）, English Channel（英吉利海峡）, channel energy into（把精力投入到）', example: 'Which channel is the game on?（比赛在哪个频道播？）', acceptCN: ['频道', '海峡', '渠道', '引导'] },
-                { id: 884, word: 'effective', ipa: '/ɪˈfek.tɪv/', pos: 'adj.', meaning: '有效的；生效的；实际的', phrases: 'effective method（有效的方法）, become effective（生效）, highly effective（非常有效）', example: 'This medicine is very effective against colds.（这种药对感冒非常有效。）', acceptCN: ['有效', '生效', '实际'] },
-                { id: 885, word: 'glue', ipa: '/ɡluː/', pos: 'n. / v.', meaning: '胶水；粘合；紧盯', phrases: 'stick with glue（用胶水粘）, glue factory（胶水厂）, glued to the screen（盯着屏幕）', example: 'He glued the broken pieces together.（他把碎片粘在一起。）', acceptCN: ['胶水', '粘合', '紧盯'] },
-                { id: 886, word: 'solemn', ipa: '/ˈsɒl.əm/', pos: 'adj.', meaning: '庄严的；严肃的；郑重的', phrases: 'solemn promise（庄严承诺）, solemn occasion（庄严的场合）, solemn expression（严肃的表情）', example: 'They made a solemn vow to love each other forever.（他们庄严宣誓永远相爱。）', acceptCN: ['庄严', '严肃', '郑重'] },
-                { id: 887, word: 'strive', ipa: '/straɪv/', pos: 'v.', meaning: '努力；奋斗；力争', phrases: 'strive for（为…奋斗）, strive to do（努力做）, strive against（与…抗争）', example: 'We must strive for excellence in everything we do.（我们必须在所做的一切中力求卓越。）', acceptCN: ['努力', '奋斗', '力争'] },
-                { id: 888, word: 'tangible', ipa: '/ˈtæn.dʒə.bəl/', pos: 'adj.', meaning: '有形的；可触摸的；实际的', phrases: 'tangible assets（有形资产）, tangible results（实际成果）, tangible proof（确凿证据）', example: 'We need tangible evidence to support the claim.（我们需要确凿的证据来支持该主张。）', acceptCN: ['有形', '可触摸', '实际', '切实'] },
-                { id: 889, word: 'tend', ipa: '/tend/', pos: 'v.', meaning: '倾向于；照顾；照料', phrases: 'tend to do（倾向于做）, tend to someone（照料某人）, tend a garden（照料花园）', example: 'People tend to eat more in winter.（人们在冬天往往吃得更多。）', acceptCN: ['倾向于', '照顾', '照料', '趋向'] },
-                { id: 890, word: 'authentic', ipa: '/ɔːˈθen.tɪk/', pos: 'adj.', meaning: '真正的；真实的；可靠的', phrases: 'authentic document（真实文件）, authentic Italian food（正宗意大利菜）, authentic experience（真实体验）', example: 'This restaurant serves authentic Chinese cuisine.（这家餐厅供应正宗的中国菜。）', acceptCN: ['真正', '真实', '可靠', '正宗'] },
-                { id: 891, word: 'banknote', ipa: '/ˈbæŋk.nəʊt/', pos: 'n.', meaning: '钞票；纸币', phrases: 'counterfeit banknote（假钞）, a stack of banknotes（一沓钞票）', example: 'He paid with a fifty-pound banknote.（他用一张五十英镑的钞票付款。）', acceptCN: ['钞票', '纸币'] },
-                { id: 892, word: 'cucumber', ipa: '/ˈkjuː.kʌm.bər/', pos: 'n.', meaning: '黄瓜', phrases: 'cucumber salad（黄瓜沙拉）, cool as a cucumber（镇定自若）', example: 'She sliced a cucumber for the salad.（她切了一根黄瓜做沙拉。）', acceptCN: ['黄瓜'] },
-                { id: 893, word: 'dent', ipa: '/dent/', pos: 'n. / v.', meaning: '凹痕；凹陷；削弱', phrases: 'make a dent in（削弱；减少）, dent the car（使车产生凹痕）', example: 'The accident left a dent in the car door.（事故在车门上留下了一个凹痕。）', acceptCN: ['凹痕', '凹陷', '削弱'] },
-                { id: 894, word: 'exile', ipa: '/ˈek.saɪl/', pos: 'n. / v.', meaning: '流放；放逐；流亡者', phrases: 'in exile（流亡中）, exile someone to（把某人流放到）', example: 'He spent many years in exile after the war.（战后他流亡多年。）', acceptCN: ['流放', '放逐', '流亡'] },
-                { id: 895, word: 'fake', ipa: '/feɪk/', pos: 'adj. / n. / v.', meaning: '假的；冒充者；伪造', phrases: 'fake news（假新闻）, fake ID（假身份证）, fake a smile（假装微笑）', example: 'The painting turned out to be a fake.（那幅画结果是一件赝品。）', acceptCN: ['假', '伪造', '冒充', '赝品'] },
-                { id: 896, word: 'forestry', ipa: '/ˈfɒr.ɪ.stri/', pos: 'n.', meaning: '林业；森林学', phrases: 'forestry industry（林业）, sustainable forestry（可持续林业）', example: 'He works in the forestry department.（他在林业部门工作。）', acceptCN: ['林业', '森林学'] },
-                { id: 897, word: 'irony', ipa: '/ˈaɪ.rə.ni/', pos: 'n.', meaning: '讽刺；反语；具有讽刺意味的事', phrases: 'sense of irony（讽刺感）, tragic irony（悲剧性的讽刺）', example: 'It is an irony that the fire station burned down.（消防站被火烧毁了，真是讽刺。）', acceptCN: ['讽刺', '反语', '讽刺之事'] },
-                { id: 898, word: 'melon', ipa: '/ˈmel.ən/', pos: 'n.', meaning: '瓜；甜瓜', phrases: 'watermelon（西瓜）, melon seeds（瓜子）, winter melon（冬瓜）', example: 'We enjoyed slices of cold melon in the summer heat.（我们在夏日里享用了几片冰凉的甜瓜。）', acceptCN: ['瓜', '甜瓜'] },
-                { id: 899, word: 'undermine', ipa: '/ˌʌn.dəˈmaɪn/', pos: 'v.', meaning: '逐渐削弱；暗中破坏；挖…的墙角', phrases: 'undermine confidence（削弱信心）, undermine authority（破坏权威）', example: 'Constant criticism can undermine a child\'s confidence.（不断的批评会削弱孩子的信心。）', acceptCN: ['削弱', '破坏', '损害'] },
-                { id: 900, word: 'visa', ipa: '/ˈviː.zə/', pos: 'n.', meaning: '签证', phrases: 'apply for a visa（申请签证）, tourist visa（旅游签证）, work visa（工作签证）', example: 'You need a visa to enter the country.（你需要签证才能入境。）', acceptCN: ['签证'] }
-            ];
+    <div class="test-active-area" id="testActiveArea">
+      <div class="test-progress"><span id="testProgressLabel">第 1 / 66 题</span><div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBarFill"></div></div><span id="testScoreLabel">得分: 0</span></div>
+      <button class="btn-play" id="btnPlayTest" style="width:64px;height:64px;font-size:1.4rem">▶</button>
+      <div class="test-inputs">
+        <div class="test-input-group"><label>英文拼写</label><input id="inputSpelling" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+        <div class="test-input-group"><label>中文含义</label><input id="inputMeaning" autocomplete="off"></div>
+      </div>
+      <button class="btn-submit" id="btnSubmit">提交答案</button>
+      <div class="test-feedback" id="testFeedback"></div>
+      <button class="btn-next" id="btnNext">下一题</button>
+    </div>
+    <div class="test-results" id="testResults">
+      <h3>检测完成</h3>
+      <div id="resultsScore" style="font-size:2rem;font-weight:700;color:var(--primary)"></div>
+      <div id="resultsDetail"></div>
+      <table style="width:100%;margin-top:12px;border-collapse:collapse;font-size:.9rem"><thead><tr><th>#</th><th>单词</th><th>拼写</th><th>含义</th><th>结果</th></tr></thead><tbody id="resultsTableBody"></tbody></table>
+      <button class="btn-retry" id="btnRetry">重新检测</button>
+      <button class="btn-retry" id="btnBackToSetup" style="background:#666">返回</button>
+    </div>
+  </section>
+</div>
+<script>
+  // var (not let/const): vocab-bridge reads these as iframe globals
+  var wordData = [
+{
+  id: 1,
+  word: "permit",
+  ipa: "/pəˈmɪt/",
+  pos: "vt.",
+  meaning: "许可，准许；默许，放任；允许，容许",
+  mnemonic: "联想：结合词形与释义记住「许可」",
+  collocations: "permit skills（许可相关能力）, use permit（使用/运用该词）",
+  phrases: "permit skills（许可相关能力）, use permit（使用/运用该词）",
+  example: "It is useful to understand the meaning of permit in this sentence.（理解这句话中 permit 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of permit in this sentence.",
+  exampleCN: "理解这句话中 permit 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["许可", "准许", "默许", "放任", "允许", "容许"]
+},
+{
+  id: 2,
+  word: "retain",
+  ipa: "/rɪˈteɪn/",
+  pos: "vt.",
+  meaning: "保持；留在心中，记住；雇用；付定金保留",
+  mnemonic: "联想：结合词形与释义记住「保持」",
+  collocations: "retain skills（保持相关能力）, use retain（使用/运用该词）",
+  phrases: "retain skills（保持相关能力）, use retain（使用/运用该词）",
+  example: "It is useful to understand the meaning of retain in this sentence.（理解这句话中 retain 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of retain in this sentence.",
+  exampleCN: "理解这句话中 retain 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["保持", "留在心中", "记住", "雇用", "付定金保留"]
+},
+{
+  id: 3,
+  word: "runway",
+  ipa: "",
+  pos: "n.",
+  meaning: "（待校对）runway",
+  mnemonic: "联想：结合词形与释义记住「（待校对）runway」",
+  collocations: "runway skills（（待校对）runwa相关能力）, use runway（使用/运用该词）",
+  phrases: "runway skills（（待校对）runwa相关能力）, use runway（使用/运用该词）",
+  example: "Students should learn how to use \"runway\" in real contexts.（学生应学会在真实语境中使用 “runway”。）",
+  exampleEN: "Students should learn how to use \"runway\" in real contexts.",
+  exampleCN: "学生应学会在真实语境中使用 “runway”。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["（待校对）run"]
+},
+{
+  id: 4,
+  word: "absolute",
+  ipa: "/ˈæbsəlu:t/",
+  pos: "adj.",
+  meaning: "绝对的，完全的；不受任何限制[约束]的；无条件的；有无上权力或权威的",
+  mnemonic: "联想：结合词形与释义记住「绝对的」",
+  collocations: "absolute skills（绝对的相关能力）, use absolute（使用/运用该词）",
+  phrases: "absolute skills（绝对的相关能力）, use absolute（使用/运用该词）",
+  example: "It is useful to understand the meaning of absolute in this sentence.（理解这句话中 absolute 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of absolute in this sentence.",
+  exampleCN: "理解这句话中 absolute 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["绝对的", "完全的", "不受任何限制[约束]的", "无条件的", "有无上权力或权威的"]
+},
+{
+  id: 5,
+  word: "somehow",
+  ipa: "/ˈsʌmhaʊ/",
+  pos: "adv.",
+  meaning: "以某种方式，用某种方法；不知怎么地，不知道怎样，不晓得什么缘故；设法，想办法，想个方法；莫明其妙地",
+  mnemonic: "联想：结合词形与释义记住「以某种方式」",
+  collocations: "somehow skills（以某种方式相关能力）, use somehow（使用/运用该词）",
+  phrases: "somehow skills（以某种方式相关能力）, use somehow（使用/运用该词）",
+  example: "It is useful to understand the meaning of somehow in this sentence.（理解这句话中 somehow 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of somehow in this sentence.",
+  exampleCN: "理解这句话中 somehow 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["以某种方式", "用某种方法", "不知怎么地", "不知道怎样", "不晓得什么缘故", "设法"]
+},
+{
+  id: 6,
+  word: "evil",
+  ipa: "/ˈi:vl/",
+  pos: "adj.",
+  meaning: "邪恶的，罪恶的；有害的；不幸的，不吉的；品行坏的",
+  mnemonic: "联想：结合词形与释义记住「邪恶的」",
+  collocations: "evil skills（邪恶的相关能力）, use evil（使用/运用该词）",
+  phrases: "evil skills（邪恶的相关能力）, use evil（使用/运用该词）",
+  example: "It is useful to understand the meaning of evil in this sentence.（理解这句话中 evil 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of evil in this sentence.",
+  exampleCN: "理解这句话中 evil 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["邪恶的", "罪恶的", "有害的", "不幸的", "不吉的", "品行坏的"]
+},
+{
+  id: 7,
+  word: "violate",
+  ipa: "",
+  pos: "n.",
+  meaning: "（待校对）violate",
+  mnemonic: "联想：结合词形与释义记住「（待校对）violate」",
+  collocations: "violate skills（（待校对）viola相关能力）, use violate（使用/运用该词）",
+  phrases: "violate skills（（待校对）viola相关能力）, use violate（使用/运用该词）",
+  example: "Students should learn how to use \"violate\" in real contexts.（学生应学会在真实语境中使用 “violate”。）",
+  exampleEN: "Students should learn how to use \"violate\" in real contexts.",
+  exampleCN: "学生应学会在真实语境中使用 “violate”。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["（待校对）vio"]
+},
+{
+  id: 8,
+  word: "bureau",
+  ipa: "/ˈbjʊərəʊ/",
+  pos: "n.",
+  meaning: "局；（提供某方面信息的）办事处；（美国政府部门）局；（附抽屉及活动写字台的）书桌",
+  mnemonic: "联想：结合词形与释义记住「局」",
+  collocations: "bureau skills（局相关能力）, use bureau（使用/运用该词）",
+  phrases: "bureau skills（局相关能力）, use bureau（使用/运用该词）",
+  example: "It is useful to understand the meaning of bureau in this sentence.（理解这句话中 bureau 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of bureau in this sentence.",
+  exampleCN: "理解这句话中 bureau 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["局", "办事处", "书桌"]
+},
+{
+  id: 9,
+  word: "handful",
+  ipa: "/ˈhændfʊl/",
+  pos: "n.",
+  meaning: "少数，少量；一把（的量）；难以控制的人（或动物）；棘手事",
+  mnemonic: "联想：结合词形与释义记住「少数」",
+  collocations: "handful skills（少数相关能力）, use handful（使用/运用该词）",
+  phrases: "handful skills（少数相关能力）, use handful（使用/运用该词）",
+  example: "It is useful to understand the meaning of handful in this sentence.（理解这句话中 handful 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of handful in this sentence.",
+  exampleCN: "理解这句话中 handful 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["少数", "少量", "一把", "难以控制的人", "棘手事"]
+},
+{
+  id: 10,
+  word: "slogan",
+  ipa: "/ˈsləʊgən/",
+  pos: "n.",
+  meaning: "标语，口号；呐喊声；（商业广告上用的）短语",
+  mnemonic: "联想：结合词形与释义记住「标语」",
+  collocations: "slogan skills（标语相关能力）, use slogan（使用/运用该词）",
+  phrases: "slogan skills（标语相关能力）, use slogan（使用/运用该词）",
+  example: "It is useful to understand the meaning of slogan in this sentence.（理解这句话中 slogan 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of slogan in this sentence.",
+  exampleCN: "理解这句话中 slogan 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["标语", "口号", "呐喊声", "短语"]
+},
+{
+  id: 11,
+  word: "casual",
+  ipa: "/ˈkæʒuəl/",
+  pos: "adj.",
+  meaning: "偶然的；临时的；随便的；非正式的",
+  mnemonic: "联想：结合词形与释义记住「偶然的」",
+  collocations: "casual skills（偶然的相关能力）, use casual（使用/运用该词）",
+  phrases: "casual skills（偶然的相关能力）, use casual（使用/运用该词）",
+  example: "It is useful to understand the meaning of casual in this sentence.（理解这句话中 casual 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of casual in this sentence.",
+  exampleCN: "理解这句话中 casual 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["偶然的", "临时的", "随便的", "非正式的"]
+},
+{
+  id: 12,
+  word: "impression",
+  ipa: "/ɪmˈpreʃn/",
+  pos: "n.",
+  meaning: "印象，感觉；影响，效果；盖印，印记",
+  mnemonic: "联想：结合词形与释义记住「印象」",
+  collocations: "impression skills（印象相关能力）, use impression（使用/运用该词）",
+  phrases: "impression skills（印象相关能力）, use impression（使用/运用该词）",
+  example: "It is useful to understand the meaning of impression in this sentence.（理解这句话中 impression 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of impression in this sentence.",
+  exampleCN: "理解这句话中 impression 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["印象", "感觉", "影响", "效果", "盖印", "印记"]
+},
+{
+  id: 13,
+  word: "dispose",
+  ipa: "/dɪˈspəʊz/",
+  pos: "vt.& vi.",
+  meaning: "处理，处置；安排",
+  mnemonic: "联想：结合词形与释义记住「处理」",
+  collocations: "dispose skills（处理相关能力）, use dispose（使用/运用该词）",
+  phrases: "dispose skills（处理相关能力）, use dispose（使用/运用该词）",
+  example: "It is useful to understand the meaning of dispose in this sentence.（理解这句话中 dispose 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of dispose in this sentence.",
+  exampleCN: "理解这句话中 dispose 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["处理", "处置", "安排"]
+},
+{
+  id: 14,
+  word: "suicide",
+  ipa: "",
+  pos: "n.",
+  meaning: "（待校对）suicide",
+  mnemonic: "联想：结合词形与释义记住「（待校对）suicide」",
+  collocations: "suicide skills（（待校对）suici相关能力）, use suicide（使用/运用该词）",
+  phrases: "suicide skills（（待校对）suici相关能力）, use suicide（使用/运用该词）",
+  example: "Students should learn how to use \"suicide\" in real contexts.（学生应学会在真实语境中使用 “suicide”。）",
+  exampleEN: "Students should learn how to use \"suicide\" in real contexts.",
+  exampleCN: "学生应学会在真实语境中使用 “suicide”。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["（待校对）sui"]
+},
+{
+  id: 15,
+  word: "appliance",
+  ipa: "/əˈplaɪəns/",
+  pos: "n.",
+  meaning: "器具，器械，装置；家用电器",
+  mnemonic: "联想：结合词形与释义记住「器具」",
+  collocations: "appliance skills（器具相关能力）, use appliance（使用/运用该词）",
+  phrases: "appliance skills（器具相关能力）, use appliance（使用/运用该词）",
+  example: "It is useful to understand the meaning of appliance in this sentence.（理解这句话中 appliance 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of appliance in this sentence.",
+  exampleCN: "理解这句话中 appliance 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["器具", "器械", "装置", "家用电器"]
+},
+{
+  id: 16,
+  word: "gravity",
+  ipa: "/ˈgrævəti/",
+  pos: "n.",
+  meaning: "重力；万有引力，地心引力；重要性，严重性；严肃，庄重",
+  mnemonic: "联想：结合词形与释义记住「重力」",
+  collocations: "gravity skills（重力相关能力）, use gravity（使用/运用该词）",
+  phrases: "gravity skills（重力相关能力）, use gravity（使用/运用该词）",
+  example: "It is useful to understand the meaning of gravity in this sentence.（理解这句话中 gravity 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of gravity in this sentence.",
+  exampleCN: "理解这句话中 gravity 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["重力", "万有引力", "地心引力", "重要性", "严重性", "严肃"]
+},
+{
+  id: 17,
+  word: "illegal",
+  ipa: "/ɪˈli:gl/",
+  pos: "adj.",
+  meaning: "不合法的，违法的；违反规则的",
+  mnemonic: "联想：结合词形与释义记住「不合法的」",
+  collocations: "illegal skills（不合法的相关能力）, use illegal（使用/运用该词）",
+  phrases: "illegal skills（不合法的相关能力）, use illegal（使用/运用该词）",
+  example: "It is useful to understand the meaning of illegal in this sentence.（理解这句话中 illegal 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of illegal in this sentence.",
+  exampleCN: "理解这句话中 illegal 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["不合法的", "违法的", "违反规则的"]
+},
+{
+  id: 18,
+  word: "steady",
+  ipa: "/ˈstedi/",
+  pos: "adj.",
+  meaning: "稳定的，不变的；镇定的，沉着的；坚定的",
+  mnemonic: "联想：结合词形与释义记住「稳定的」",
+  collocations: "steady skills（稳定的相关能力）, use steady（使用/运用该词）",
+  phrases: "steady skills（稳定的相关能力）, use steady（使用/运用该词）",
+  example: "It is useful to understand the meaning of steady in this sentence.（理解这句话中 steady 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of steady in this sentence.",
+  exampleCN: "理解这句话中 steady 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["稳定的", "不变的", "镇定的", "沉着的", "坚定的"]
+},
+{
+  id: 19,
+  word: "troop",
+  ipa: "/tru:p/",
+  pos: "n.",
+  meaning: "军队；一群；[军]骑兵连",
+  mnemonic: "联想：结合词形与释义记住「军队」",
+  collocations: "troop skills（军队相关能力）, use troop（使用/运用该词）",
+  phrases: "troop skills（军队相关能力）, use troop（使用/运用该词）",
+  example: "It is useful to understand the meaning of troop in this sentence.（理解这句话中 troop 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of troop in this sentence.",
+  exampleCN: "理解这句话中 troop 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["军队", "一群", "[军]骑兵连"]
+},
+{
+  id: 20,
+  word: "reference",
+  ipa: "/ˈrefrəns/",
+  pos: "n.",
+  meaning: "参考；参考书；提及，涉及；证明人，介绍人",
+  mnemonic: "联想：结合词形与释义记住「参考」",
+  collocations: "reference skills（参考相关能力）, use reference（使用/运用该词）",
+  phrases: "reference skills（参考相关能力）, use reference（使用/运用该词）",
+  example: "It is useful to understand the meaning of reference in this sentence.（理解这句话中 reference 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of reference in this sentence.",
+  exampleCN: "理解这句话中 reference 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["参考", "参考书", "提及", "涉及", "证明人", "介绍人"]
+},
+{
+  id: 21,
+  word: "keyboard",
+  ipa: "/ˈki:bɔ:d/",
+  pos: "n.",
+  meaning: "键盘；琴键；电子琴",
+  mnemonic: "联想：结合词形与释义记住「键盘」",
+  collocations: "keyboard skills（键盘相关能力）, use keyboard（使用/运用该词）",
+  phrases: "keyboard skills（键盘相关能力）, use keyboard（使用/运用该词）",
+  example: "It is useful to understand the meaning of keyboard in this sentence.（理解这句话中 keyboard 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of keyboard in this sentence.",
+  exampleCN: "理解这句话中 keyboard 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["键盘", "琴键", "电子琴"]
+},
+{
+  id: 22,
+  word: "melt",
+  ipa: "/melt/",
+  pos: "vi.",
+  meaning: "熔化，溶解；逐渐融合；逐渐消失；感动，软化，感情上变得温和",
+  mnemonic: "联想：结合词形与释义记住「熔化」",
+  collocations: "melt skills（熔化相关能力）, use melt（使用/运用该词）",
+  phrases: "melt skills（熔化相关能力）, use melt（使用/运用该词）",
+  example: "It is useful to understand the meaning of melt in this sentence.（理解这句话中 melt 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of melt in this sentence.",
+  exampleCN: "理解这句话中 melt 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["熔化", "溶解", "逐渐融合", "逐渐消失", "感动", "软化"]
+},
+{
+  id: 23,
+  word: "accurate",
+  ipa: "/ˈækjərət/",
+  pos: "adj.",
+  meaning: "精确的，准确的；正确无误的",
+  mnemonic: "联想：结合词形与释义记住「精确的」",
+  collocations: "accurate skills（精确的相关能力）, use accurate（使用/运用该词）",
+  phrases: "accurate skills（精确的相关能力）, use accurate（使用/运用该词）",
+  example: "It is useful to understand the meaning of accurate in this sentence.（理解这句话中 accurate 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of accurate in this sentence.",
+  exampleCN: "理解这句话中 accurate 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["精确的", "准确的", "正确无误的"]
+},
+{
+  id: 24,
+  word: "frequent",
+  ipa: "/ˈfri:kwənt/",
+  pos: "adj.",
+  meaning: "频繁的，时常发生的，常见的；（脉搏等）急促的，快的",
+  mnemonic: "联想：结合词形与释义记住「频繁的」",
+  collocations: "frequent skills（频繁的相关能力）, use frequent（使用/运用该词）",
+  phrases: "frequent skills（频繁的相关能力）, use frequent（使用/运用该词）",
+  example: "It is useful to understand the meaning of frequent in this sentence.（理解这句话中 frequent 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of frequent in this sentence.",
+  exampleCN: "理解这句话中 frequent 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["频繁的", "时常发生的", "常见的", "急促的", "快的"]
+},
+{
+  id: 25,
+  word: "semester",
+  ipa: "/sɪˈmestə(r)/",
+  pos: "n.",
+  meaning: "（尤指美国的大专院校的）学期；半学年",
+  mnemonic: "联想：结合词形与释义记住「（尤指美国的大专院校的）」",
+  collocations: "semester skills（（尤指美国的大专院校相关能力）, use semester（使用/运用该词）",
+  phrases: "semester skills（（尤指美国的大专院校相关能力）, use semester（使用/运用该词）",
+  example: "It is useful to understand the meaning of semester in this sentence.（理解这句话中 semester 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of semester in this sentence.",
+  exampleCN: "理解这句话中 semester 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["学期", "半学年"]
+},
+{
+  id: 26,
+  word: "flee",
+  ipa: "/fli:/",
+  pos: "vi.",
+  meaning: "逃走，逃掉；消失",
+  mnemonic: "联想：结合词形与释义记住「逃走」",
+  collocations: "flee skills（逃走相关能力）, use flee（使用/运用该词）",
+  phrases: "flee skills（逃走相关能力）, use flee（使用/运用该词）",
+  example: "It is useful to understand the meaning of flee in this sentence.（理解这句话中 flee 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of flee in this sentence.",
+  exampleCN: "理解这句话中 flee 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["逃走", "逃掉", "消失"]
+},
+{
+  id: 27,
+  word: "entrepreneur",
+  ipa: "",
+  pos: "n.",
+  meaning: "（待校对）entrepreneur",
+  mnemonic: "联想：结合词形与释义记住「（待校对）entrepr」",
+  collocations: "entrepreneur skills（（待校对）entre相关能力）, use entrepreneur（使用/运用该词）",
+  phrases: "entrepreneur skills（（待校对）entre相关能力）, use entrepreneur（使用/运用该词）",
+  example: "Students should learn how to use \"entrepreneur\" in real contexts.（学生应学会在真实语境中使用 “entrepreneur”。）",
+  exampleEN: "Students should learn how to use \"entrepreneur\" in real contexts.",
+  exampleCN: "学生应学会在真实语境中使用 “entrepreneur”。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["（待校对）ent"]
+},
+{
+  id: 28,
+  word: "spark",
+  ipa: "/spɑ:k/",
+  pos: "n.",
+  meaning: "燃烧的颗粒；火星，火花，余火；（金属的）发光的颗粒；电火花",
+  mnemonic: "联想：结合词形与释义记住「燃烧的颗粒」",
+  collocations: "spark skills（燃烧的颗粒相关能力）, use spark（使用/运用该词）",
+  phrases: "spark skills（燃烧的颗粒相关能力）, use spark（使用/运用该词）",
+  example: "It is useful to understand the meaning of spark in this sentence.（理解这句话中 spark 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of spark in this sentence.",
+  exampleCN: "理解这句话中 spark 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["燃烧的颗粒", "火星", "火花", "余火", "发光的颗粒", "电火花"]
+},
+{
+  id: 29,
+  word: "headline",
+  ipa: "/ˈhedlaɪn/",
+  pos: "n.",
+  meaning: "大字标题；新闻提要；头条新闻",
+  mnemonic: "联想：结合词形与释义记住「大字标题」",
+  collocations: "headline skills（大字标题相关能力）, use headline（使用/运用该词）",
+  phrases: "headline skills（大字标题相关能力）, use headline（使用/运用该词）",
+  example: "It is useful to understand the meaning of headline in this sentence.（理解这句话中 headline 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of headline in this sentence.",
+  exampleCN: "理解这句话中 headline 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["大字标题", "新闻提要", "头条新闻"]
+},
+{
+  id: 30,
+  word: "vanish",
+  ipa: "/ˈvænɪʃ/",
+  pos: "vi.",
+  meaning: "消失；突然不见；消亡，消灭；[数]化为零",
+  mnemonic: "联想：结合词形与释义记住「消失」",
+  collocations: "vanish skills（消失相关能力）, use vanish（使用/运用该词）",
+  phrases: "vanish skills（消失相关能力）, use vanish（使用/运用该词）",
+  example: "It is useful to understand the meaning of vanish in this sentence.（理解这句话中 vanish 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of vanish in this sentence.",
+  exampleCN: "理解这句话中 vanish 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["消失", "突然不见", "消亡", "消灭", "[数]化为零"]
+},
+{
+  id: 31,
+  word: "accompany",
+  ipa: "/əˈkʌmpəni/",
+  pos: "vt.",
+  meaning: "陪伴，陪同；附加，补充；与…共存；为…伴奏",
+  mnemonic: "联想：结合词形与释义记住「陪伴」",
+  collocations: "accompany skills（陪伴相关能力）, use accompany（使用/运用该词）",
+  phrases: "accompany skills（陪伴相关能力）, use accompany（使用/运用该词）",
+  example: "It is useful to understand the meaning of accompany in this sentence.（理解这句话中 accompany 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of accompany in this sentence.",
+  exampleCN: "理解这句话中 accompany 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["陪伴", "陪同", "附加", "补充", "与…共存", "为…伴奏"]
+},
+{
+  id: 32,
+  word: "quiz",
+  ipa: "/kwɪz/",
+  pos: "n.",
+  meaning: "提问，询问；小型考试；简单的小测验；恶作剧",
+  mnemonic: "联想：结合词形与释义记住「提问」",
+  collocations: "quiz skills（提问相关能力）, use quiz（使用/运用该词）",
+  phrases: "quiz skills（提问相关能力）, use quiz（使用/运用该词）",
+  example: "It is useful to understand the meaning of quiz in this sentence.（理解这句话中 quiz 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of quiz in this sentence.",
+  exampleCN: "理解这句话中 quiz 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["提问", "询问", "小型考试", "简单的小测验", "恶作剧"]
+},
+{
+  id: 33,
+  word: "contrary",
+  ipa: "/ˈkɒntrəri/",
+  pos: "adj.",
+  meaning: "相反的；违反的，反对的；对立的；顽固的，任性的",
+  mnemonic: "联想：结合词形与释义记住「相反的」",
+  collocations: "contrary skills（相反的相关能力）, use contrary（使用/运用该词）",
+  phrases: "contrary skills（相反的相关能力）, use contrary（使用/运用该词）",
+  example: "It is useful to understand the meaning of contrary in this sentence.（理解这句话中 contrary 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of contrary in this sentence.",
+  exampleCN: "理解这句话中 contrary 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["相反的", "违反的", "反对的", "对立的", "顽固的", "任性的"]
+},
+{
+  id: 34,
+  word: "faith",
+  ipa: "/feɪθ/",
+  pos: "n.",
+  meaning: "信任,信仰,信心；宗教信仰",
+  mnemonic: "联想：结合词形与释义记住「信任,信仰,信心」",
+  collocations: "faith skills（信任,信仰,信心相关能力）, use faith（使用/运用该词）",
+  phrases: "faith skills（信任,信仰,信心相关能力）, use faith（使用/运用该词）",
+  example: "It is useful to understand the meaning of faith in this sentence.（理解这句话中 faith 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of faith in this sentence.",
+  exampleCN: "理解这句话中 faith 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["信任", "信仰", "信心", "宗教信仰"]
+},
+{
+  id: 35,
+  word: "clue",
+  ipa: "/klu:/",
+  pos: "n.",
+  meaning: "线索；提示；（帮助警方破案的）线索；（纵横填字谜、游戏或问题的）提示词语",
+  mnemonic: "联想：结合词形与释义记住「线索」",
+  collocations: "clue skills（线索相关能力）, use clue（使用/运用该词）",
+  phrases: "clue skills（线索相关能力）, use clue（使用/运用该词）",
+  example: "It is useful to understand the meaning of clue in this sentence.（理解这句话中 clue 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of clue in this sentence.",
+  exampleCN: "理解这句话中 clue 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["线索", "提示", "（纵横填字谜", "游戏或问题的）提示词语"]
+},
+{
+  id: 36,
+  word: "undergo",
+  ipa: "/ˌʌndəˈgəʊ/",
+  pos: "vt.",
+  meaning: "经历，经验；遭受，承受",
+  mnemonic: "联想：结合词形与释义记住「经历」",
+  collocations: "undergo skills（经历相关能力）, use undergo（使用/运用该词）",
+  phrases: "undergo skills（经历相关能力）, use undergo（使用/运用该词）",
+  example: "It is useful to understand the meaning of undergo in this sentence.（理解这句话中 undergo 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of undergo in this sentence.",
+  exampleCN: "理解这句话中 undergo 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["经历", "经验", "遭受", "承受"]
+},
+{
+  id: 37,
+  word: "disposal",
+  ipa: "/dɪˈspəʊzl/",
+  pos: "n.",
+  meaning: "（事情的）处置；（自由）处置权；清理；排列",
+  mnemonic: "联想：结合词形与释义记住「（事情的）处置」",
+  collocations: "disposal skills（（事情的）处置相关能力）, use disposal（使用/运用该词）",
+  phrases: "disposal skills（（事情的）处置相关能力）, use disposal（使用/运用该词）",
+  example: "It is useful to understand the meaning of disposal in this sentence.（理解这句话中 disposal 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of disposal in this sentence.",
+  exampleCN: "理解这句话中 disposal 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["处置", "处置权", "清理", "排列"]
+},
+{
+  id: 38,
+  word: "grab",
+  ipa: "",
+  pos: "n.",
+  meaning: "（待校对）grab",
+  mnemonic: "联想：结合词形与释义记住「（待校对）grab」",
+  collocations: "grab skills（（待校对）grab相关能力）, use grab（使用/运用该词）",
+  phrases: "grab skills（（待校对）grab相关能力）, use grab（使用/运用该词）",
+  example: "Students should learn how to use \"grab\" in real contexts.（学生应学会在真实语境中使用 “grab”。）",
+  exampleEN: "Students should learn how to use \"grab\" in real contexts.",
+  exampleCN: "学生应学会在真实语境中使用 “grab”。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["（待校对）gra"]
+},
+{
+  id: 39,
+  word: "swallow",
+  ipa: "/ˈswɒləʊ/",
+  pos: "vt.& vi.",
+  meaning: "吞，咽；忍耐，忍受",
+  mnemonic: "联想：结合词形与释义记住「吞」",
+  collocations: "swallow skills（吞相关能力）, use swallow（使用/运用该词）",
+  phrases: "swallow skills（吞相关能力）, use swallow（使用/运用该词）",
+  example: "It is useful to understand the meaning of swallow in this sentence.（理解这句话中 swallow 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of swallow in this sentence.",
+  exampleCN: "理解这句话中 swallow 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["吞", "咽", "忍耐", "忍受"]
+},
+{
+  id: 40,
+  word: "license",
+  ipa: "/ˈlaɪsns/",
+  pos: "n.",
+  meaning: "许可证，执照；特许",
+  mnemonic: "联想：结合词形与释义记住「许可证」",
+  collocations: "license skills（许可证相关能力）, use license（使用/运用该词）",
+  phrases: "license skills（许可证相关能力）, use license（使用/运用该词）",
+  example: "It is useful to understand the meaning of license in this sentence.（理解这句话中 license 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of license in this sentence.",
+  exampleCN: "理解这句话中 license 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["许可证", "执照", "特许"]
+},
+{
+  id: 41,
+  word: "dip",
+  ipa: "/dɪp/",
+  pos: "vt.",
+  meaning: "浸；（把烛芯浸在融蜡里）制造（蜡烛）；把（汽车前灯）的远光调为近光；洗药水浴",
+  mnemonic: "联想：结合词形与释义记住「浸」",
+  collocations: "dip skills（浸相关能力）, use dip（使用/运用该词）",
+  phrases: "dip skills（浸相关能力）, use dip（使用/运用该词）",
+  example: "It is useful to understand the meaning of dip in this sentence.（理解这句话中 dip 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of dip in this sentence.",
+  exampleCN: "理解这句话中 dip 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["浸", "制造", "把的远光调为近光", "洗药水浴"]
+},
+{
+  id: 42,
+  word: "brave",
+  ipa: "/breɪv/",
+  pos: "adj.",
+  meaning: "勇敢的；需要勇气的；华丽的；漂亮的",
+  mnemonic: "联想：结合词形与释义记住「勇敢的」",
+  collocations: "brave skills（勇敢的相关能力）, use brave（使用/运用该词）",
+  phrases: "brave skills（勇敢的相关能力）, use brave（使用/运用该词）",
+  example: "It is useful to understand the meaning of brave in this sentence.（理解这句话中 brave 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of brave in this sentence.",
+  exampleCN: "理解这句话中 brave 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["勇敢的", "需要勇气的", "华丽的", "漂亮的"]
+},
+{
+  id: 43,
+  word: "curse",
+  ipa: "/kɜ:s/",
+  pos: "vt.& vi.",
+  meaning: "诅咒；咒骂；使苦恼，使困苦；把（某人）逐出教门",
+  mnemonic: "联想：结合词形与释义记住「诅咒」",
+  collocations: "curse skills（诅咒相关能力）, use curse（使用/运用该词）",
+  phrases: "curse skills（诅咒相关能力）, use curse（使用/运用该词）",
+  example: "It is useful to understand the meaning of curse in this sentence.（理解这句话中 curse 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of curse in this sentence.",
+  exampleCN: "理解这句话中 curse 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["诅咒", "咒骂", "使苦恼", "使困苦", "把逐出教门"]
+},
+{
+  id: 44,
+  word: "globe",
+  ipa: "/gləʊb/",
+  pos: "n.",
+  meaning: "球，球状物；地球，世界；天体；地球仪",
+  mnemonic: "联想：结合词形与释义记住「球」",
+  collocations: "globe skills（球相关能力）, use globe（使用/运用该词）",
+  phrases: "globe skills（球相关能力）, use globe（使用/运用该词）",
+  example: "It is useful to understand the meaning of globe in this sentence.（理解这句话中 globe 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of globe in this sentence.",
+  exampleCN: "理解这句话中 globe 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["球", "球状物", "地球", "世界", "天体", "地球仪"]
+},
+{
+  id: 45,
+  word: "justify",
+  ipa: "/ˈdʒʌstɪfaɪ/",
+  pos: "vt.",
+  meaning: "证明…有理；为…辩护；对…作出解释",
+  mnemonic: "联想：结合词形与释义记住「证明…有理」",
+  collocations: "justify skills（证明…有理相关能力）, use justify（使用/运用该词）",
+  phrases: "justify skills（证明…有理相关能力）, use justify（使用/运用该词）",
+  example: "It is useful to understand the meaning of justify in this sentence.（理解这句话中 justify 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of justify in this sentence.",
+  exampleCN: "理解这句话中 justify 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["证明…有理", "为…辩护", "对…作出解释"]
+},
+{
+  id: 46,
+  word: "calculate",
+  ipa: "/ˈkælkjuleɪt/",
+  pos: "vt.& vi.",
+  meaning: "计算；估计；打算，计划；旨在",
+  mnemonic: "联想：结合词形与释义记住「计算」",
+  collocations: "calculate skills（计算相关能力）, use calculate（使用/运用该词）",
+  phrases: "calculate skills（计算相关能力）, use calculate（使用/运用该词）",
+  example: "It is useful to understand the meaning of calculate in this sentence.（理解这句话中 calculate 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of calculate in this sentence.",
+  exampleCN: "理解这句话中 calculate 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["计算", "估计", "打算", "计划", "旨在"]
+},
+{
+  id: 47,
+  word: "signature",
+  ipa: "/ˈsɪgnətʃə(r)/",
+  pos: "n.",
+  meaning: "签名；署名；识别标志，鲜明特征；[医]药的用法说明",
+  mnemonic: "联想：结合词形与释义记住「签名」",
+  collocations: "signature skills（签名相关能力）, use signature（使用/运用该词）",
+  phrases: "signature skills（签名相关能力）, use signature（使用/运用该词）",
+  example: "It is useful to understand the meaning of signature in this sentence.（理解这句话中 signature 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of signature in this sentence.",
+  exampleCN: "理解这句话中 signature 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["签名", "署名", "识别标志", "鲜明特征", "[医]药的用法说明"]
+},
+{
+  id: 48,
+  word: "awful",
+  ipa: "/ˈɔ:fl/",
+  pos: "adj.",
+  meaning: "糟糕的；可怕的；非常的；极坏的",
+  mnemonic: "联想：结合词形与释义记住「糟糕的」",
+  collocations: "awful skills（糟糕的相关能力）, use awful（使用/运用该词）",
+  phrases: "awful skills（糟糕的相关能力）, use awful（使用/运用该词）",
+  example: "It is useful to understand the meaning of awful in this sentence.（理解这句话中 awful 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of awful in this sentence.",
+  exampleCN: "理解这句话中 awful 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["糟糕的", "可怕的", "非常的", "极坏的"]
+},
+{
+  id: 49,
+  word: "carrier",
+  ipa: "/ˈkæriə(r)/",
+  pos: "n.",
+  meaning: "搬运人；运输公司；搬运器；[医学]带菌者",
+  mnemonic: "联想：结合词形与释义记住「搬运人」",
+  collocations: "carrier skills（搬运人相关能力）, use carrier（使用/运用该词）",
+  phrases: "carrier skills（搬运人相关能力）, use carrier（使用/运用该词）",
+  example: "It is useful to understand the meaning of carrier in this sentence.（理解这句话中 carrier 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of carrier in this sentence.",
+  exampleCN: "理解这句话中 carrier 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["搬运人", "运输公司", "搬运器", "[医学]带菌者"]
+},
+{
+  id: 50,
+  word: "steep",
+  ipa: "/sti:p/",
+  pos: "adj.",
+  meaning: "陡峭的，险峻的；过分的，夸张的；极高的；急剧升降的",
+  mnemonic: "联想：结合词形与释义记住「陡峭的」",
+  collocations: "steep skills（陡峭的相关能力）, use steep（使用/运用该词）",
+  phrases: "steep skills（陡峭的相关能力）, use steep（使用/运用该词）",
+  example: "It is useful to understand the meaning of steep in this sentence.（理解这句话中 steep 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of steep in this sentence.",
+  exampleCN: "理解这句话中 steep 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["陡峭的", "险峻的", "过分的", "夸张的", "极高的", "急剧升降的"]
+},
+{
+  id: 51,
+  word: "verify",
+  ipa: "/ˈverɪfaɪ/",
+  pos: "vt.",
+  meaning: "核实；证明；判定",
+  mnemonic: "联想：结合词形与释义记住「核实」",
+  collocations: "verify skills（核实相关能力）, use verify（使用/运用该词）",
+  phrases: "verify skills（核实相关能力）, use verify（使用/运用该词）",
+  example: "It is useful to understand the meaning of verify in this sentence.（理解这句话中 verify 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of verify in this sentence.",
+  exampleCN: "理解这句话中 verify 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["核实", "证明", "判定"]
+},
+{
+  id: 52,
+  word: "slice",
+  ipa: "/slaɪs/",
+  pos: "vt.",
+  meaning: "切成片；切下；划分",
+  mnemonic: "联想：结合词形与释义记住「切成片」",
+  collocations: "slice skills（切成片相关能力）, use slice（使用/运用该词）",
+  phrases: "slice skills（切成片相关能力）, use slice（使用/运用该词）",
+  example: "It is useful to understand the meaning of slice in this sentence.（理解这句话中 slice 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of slice in this sentence.",
+  exampleCN: "理解这句话中 slice 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["切成片", "切下", "划分"]
+},
+{
+  id: 53,
+  word: "racial",
+  ipa: "/ˈreɪʃl/",
+  pos: "adj.",
+  meaning: "种族的；人种的；存在或发生于种族之间的",
+  mnemonic: "联想：结合词形与释义记住「种族的」",
+  collocations: "racial skills（种族的相关能力）, use racial（使用/运用该词）",
+  phrases: "racial skills（种族的相关能力）, use racial（使用/运用该词）",
+  example: "It is useful to understand the meaning of racial in this sentence.（理解这句话中 racial 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of racial in this sentence.",
+  exampleCN: "理解这句话中 racial 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["种族的", "人种的", "存在或发生于种族之间的"]
+},
+{
+  id: 54,
+  word: "cart",
+  ipa: "/kɑ:t/",
+  pos: "n.",
+  meaning: "运货马车，手推车；一车之量",
+  mnemonic: "联想：结合词形与释义记住「运货马车」",
+  collocations: "cart skills（运货马车相关能力）, use cart（使用/运用该词）",
+  phrases: "cart skills（运货马车相关能力）, use cart（使用/运用该词）",
+  example: "It is useful to understand the meaning of cart in this sentence.（理解这句话中 cart 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of cart in this sentence.",
+  exampleCN: "理解这句话中 cart 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["运货马车", "手推车", "一车之量"]
+},
+{
+  id: 55,
+  word: "arrange",
+  ipa: "/əˈreɪndʒ/",
+  pos: "vt.",
+  meaning: "把…（系统地）分类；整理；改编（剧本等）；达成…的协议",
+  mnemonic: "联想：结合词形与释义记住「把…（系统地）分类」",
+  collocations: "arrange skills（把…（系统地）分类相关能力）, use arrange（使用/运用该词）",
+  phrases: "arrange skills（把…（系统地）分类相关能力）, use arrange（使用/运用该词）",
+  example: "It is useful to understand the meaning of arrange in this sentence.（理解这句话中 arrange 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of arrange in this sentence.",
+  exampleCN: "理解这句话中 arrange 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["把…分类", "整理", "改编", "达成…的协议"]
+},
+{
+  id: 56,
+  word: "technician",
+  ipa: "/tekˈnɪʃn/",
+  pos: "n.",
+  meaning: "技术人员；技师；技巧纯熟的人",
+  mnemonic: "联想：结合词形与释义记住「技术人员」",
+  collocations: "technician skills（技术人员相关能力）, use technician（使用/运用该词）",
+  phrases: "technician skills（技术人员相关能力）, use technician（使用/运用该词）",
+  example: "It is useful to understand the meaning of technician in this sentence.（理解这句话中 technician 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of technician in this sentence.",
+  exampleCN: "理解这句话中 technician 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["技术人员", "技师", "技巧纯熟的人"]
+},
+{
+  id: 57,
+  word: "tune",
+  ipa: "/tju:n/",
+  pos: "n.",
+  meaning: "曲调，曲子；和谐，调谐；语调；心情",
+  mnemonic: "联想：结合词形与释义记住「曲调」",
+  collocations: "tune skills（曲调相关能力）, use tune（使用/运用该词）",
+  phrases: "tune skills（曲调相关能力）, use tune（使用/运用该词）",
+  example: "It is useful to understand the meaning of tune in this sentence.（理解这句话中 tune 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of tune in this sentence.",
+  exampleCN: "理解这句话中 tune 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["曲调", "曲子", "和谐", "调谐", "语调", "心情"]
+},
+{
+  id: 58,
+  word: "tremendous",
+  ipa: "/trəˈmendəs/",
+  pos: "adj.",
+  meaning: "极大的，巨大的；可怕的，惊人的；极好的",
+  mnemonic: "联想：结合词形与释义记住「极大的」",
+  collocations: "tremendous skills（极大的相关能力）, use tremendous（使用/运用该词）",
+  phrases: "tremendous skills（极大的相关能力）, use tremendous（使用/运用该词）",
+  example: "It is useful to understand the meaning of tremendous in this sentence.（理解这句话中 tremendous 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of tremendous in this sentence.",
+  exampleCN: "理解这句话中 tremendous 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["极大的", "巨大的", "可怕的", "惊人的", "极好的"]
+},
+{
+  id: 59,
+  word: "origin",
+  ipa: "/ˈɒrɪdʒɪn/",
+  pos: "n.",
+  meaning: "起源，根源；出身；[数]原点，起点；[解]（筋，神经的）起端",
+  mnemonic: "联想：结合词形与释义记住「起源」",
+  collocations: "origin skills（起源相关能力）, use origin（使用/运用该词）",
+  phrases: "origin skills（起源相关能力）, use origin（使用/运用该词）",
+  example: "It is useful to understand the meaning of origin in this sentence.（理解这句话中 origin 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of origin in this sentence.",
+  exampleCN: "理解这句话中 origin 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["起源", "根源", "出身", "[数]原点", "起点", "[解]（筋"]
+},
+{
+  id: 60,
+  word: "halt",
+  ipa: "/hɔ:lt/",
+  pos: "n.",
+  meaning: "停止，中止；暂停；小火车站",
+  mnemonic: "联想：结合词形与释义记住「停止」",
+  collocations: "halt skills（停止相关能力）, use halt（使用/运用该词）",
+  phrases: "halt skills（停止相关能力）, use halt（使用/运用该词）",
+  example: "It is useful to understand the meaning of halt in this sentence.（理解这句话中 halt 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of halt in this sentence.",
+  exampleCN: "理解这句话中 halt 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["停止", "中止", "暂停", "小火车站"]
+},
+{
+  id: 61,
+  word: "assure",
+  ipa: "/əˈʃʊə(r)/",
+  pos: "vt.",
+  meaning: "向…保证；使…确信；给…保险",
+  mnemonic: "联想：结合词形与释义记住「向…保证」",
+  collocations: "assure skills（向…保证相关能力）, use assure（使用/运用该词）",
+  phrases: "assure skills（向…保证相关能力）, use assure（使用/运用该词）",
+  example: "It is useful to understand the meaning of assure in this sentence.（理解这句话中 assure 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of assure in this sentence.",
+  exampleCN: "理解这句话中 assure 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["向…保证", "使…确信", "给…保险"]
+},
+{
+  id: 62,
+  word: "tunnel",
+  ipa: "/ˈtʌnl/",
+  pos: "n.",
+  meaning: "隧道；地道；烟道；（动物栖息的）穴",
+  mnemonic: "联想：结合词形与释义记住「隧道」",
+  collocations: "tunnel skills（隧道相关能力）, use tunnel（使用/运用该词）",
+  phrases: "tunnel skills（隧道相关能力）, use tunnel（使用/运用该词）",
+  example: "It is useful to understand the meaning of tunnel in this sentence.（理解这句话中 tunnel 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of tunnel in this sentence.",
+  exampleCN: "理解这句话中 tunnel 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["隧道", "地道", "烟道", "穴"]
+},
+{
+  id: 63,
+  word: "bargain",
+  ipa: "/ˈbɑ:gən/",
+  pos: "n.",
+  meaning: "契约，协定；交易；特价商品；便宜货",
+  mnemonic: "联想：结合词形与释义记住「契约」",
+  collocations: "bargain skills（契约相关能力）, use bargain（使用/运用该词）",
+  phrases: "bargain skills（契约相关能力）, use bargain（使用/运用该词）",
+  example: "It is useful to understand the meaning of bargain in this sentence.（理解这句话中 bargain 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of bargain in this sentence.",
+  exampleCN: "理解这句话中 bargain 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["契约", "协定", "交易", "特价商品", "便宜货"]
+},
+{
+  id: 64,
+  word: "fine",
+  ipa: "/faɪn/",
+  pos: "adj.",
+  meaning: "好的，上等的；纤细的，精致的；健康的；晴朗的",
+  mnemonic: "联想：结合词形与释义记住「好的」",
+  collocations: "fine skills（好的相关能力）, use fine（使用/运用该词）",
+  phrases: "fine skills（好的相关能力）, use fine（使用/运用该词）",
+  example: "It is useful to understand the meaning of fine in this sentence.（理解这句话中 fine 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of fine in this sentence.",
+  exampleCN: "理解这句话中 fine 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["好的", "上等的", "纤细的", "精致的", "健康的", "晴朗的"]
+},
+{
+  id: 65,
+  word: "proceed",
+  ipa: "/prəˈsi:d/",
+  pos: "vi.",
+  meaning: "进行；前进；（沿特定路线）行进；（尤指打断后）继续说",
+  mnemonic: "联想：结合词形与释义记住「进行」",
+  collocations: "proceed skills（进行相关能力）, use proceed（使用/运用该词）",
+  phrases: "proceed skills（进行相关能力）, use proceed（使用/运用该词）",
+  example: "It is useful to understand the meaning of proceed in this sentence.（理解这句话中 proceed 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of proceed in this sentence.",
+  exampleCN: "理解这句话中 proceed 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["进行", "前进", "行进", "继续说"]
+},
+{
+  id: 66,
+  word: "occupation",
+  ipa: "/ˌɒkjuˈpeɪʃn/",
+  pos: "n.",
+  meaning: "职业，工作；占有，占领；（土地、房屋、建筑等的）使用",
+  mnemonic: "联想：结合词形与释义记住「职业」",
+  collocations: "occupation skills（职业相关能力）, use occupation（使用/运用该词）",
+  phrases: "occupation skills（职业相关能力）, use occupation（使用/运用该词）",
+  example: "It is useful to understand the meaning of occupation in this sentence.（理解这句话中 occupation 的含义很有帮助。）",
+  exampleEN: "It is useful to understand the meaning of occupation in this sentence.",
+  exampleCN: "理解这句话中 occupation 的含义很有帮助。",
+  derivatives: "",
+  distinguish: "",
+  acceptCN: ["职业", "工作", "占有", "占领", "（土地", "房屋"]
+}
+  ];
+  var TOTAL_QUESTIONS = 66;
+  var testResultsData = [];
+(function(){
+  const HISTORY_KEY = 'cet4_vocab_history_list18';
 
-            const TOTAL_QUESTIONS = 50;
-            const HISTORY_KEY = 'cet4_vocab_history_list18';
+  function esc(s){
+    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+  function block(label, text){
+    if(!text) return '';
+    return '<div class="block"><b>'+label+'</b>'+esc(text)+'</div>';
+  }
 
-            // ==================== DOM ====================
-            const navTabs = document.getElementById('navTabs');
-            const learnSection = document.getElementById('learnSection');
-            const testSection = document.getElementById('testSection');
-            const learnGrid = document.getElementById('learnGrid');
-            const testSetup = document.getElementById('testSetup');
-            const testActiveArea = document.getElementById('testActiveArea');
-            const testResults = document.getElementById('testResults');
-            const btnStartTest = document.getElementById('btnStartTest');
-            const btnPlayTest = document.getElementById('btnPlayTest');
-            const btnSubmit = document.getElementById('btnSubmit');
-            const btnNext = document.getElementById('btnNext');
-            const btnRetry = document.getElementById('btnRetry');
-            const btnBackToSetup = document.getElementById('btnBackToSetup');
-            const btnClearHistory = document.getElementById('btnClearHistory');
-            const inputSpelling = document.getElementById('inputSpelling');
-            const inputMeaning = document.getElementById('inputMeaning');
-            const testFeedback = document.getElementById('testFeedback');
-            const testProgressLabel = document.getElementById('testProgressLabel');
-            const testScoreLabel = document.getElementById('testScoreLabel');
-            const progressBarFill = document.getElementById('progressBarFill');
-            const resultsScore = document.getElementById('resultsScore');
-            const resultsDetail = document.getElementById('resultsDetail');
-            const resultsTableBody = document.getElementById('resultsTableBody');
-            const historyContent = document.getElementById('historyContent');
+  let synth = window.speechSynthesis, voice = null;
+  function loadVoices(){
+    if(!synth) return;
+    const pick = () => {
+      const vs = synth.getVoices();
+      voice = vs.find(v => v.lang.startsWith('en-GB')) || vs.find(v => v.lang.startsWith('en')) || vs[0];
+    };
+    pick();
+    if(synth.onvoiceschanged !== undefined) synth.onvoiceschanged = pick;
+  }
+  function speakWord(word, cb){
+    if(!synth){ if(cb) cb(); return; }
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    if(voice) u.voice = voice;
+    u.lang = 'en-GB'; u.rate = 0.8;
+    if(cb){ u.onend = cb; u.onerror = () => cb(); }
+    synth.speak(u);
+  }
+  loadVoices();
 
-            // ==================== 语音合成（0.8语速） ====================
-            let synth = window.speechSynthesis;
-            let britishFemaleVoice = null;
-            async function loadVoices() {
-                if (!synth) return;
-                const getBestVoice = () => {
-                    const voices = synth.getVoices();
-                    const preferred = ['Google UK English Female','Microsoft Susan','Microsoft Hazel','Samantha','Fiona'];
-                    for (const name of preferred) {
-                        const found = voices.find(v => v.name === name && v.lang.startsWith('en'));
-                        if (found) return found;
-                    }
-                    let voice = voices.find(v => v.lang.startsWith('en-GB') && (v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('woman')));
-                    if (voice) return voice;
-                    voice = voices.find(v => v.lang.startsWith('en-GB')) || voices.find(v => v.lang.startsWith('en-UK')) || voices.find(v => v.lang.startsWith('en'));
-                    return voice || voices[0];
-                };
-                if (synth.getVoices().length > 0) { britishFemaleVoice = getBestVoice(); } else {
-                    await new Promise(resolve => {
-                        const handler = () => { britishFemaleVoice = getBestVoice(); synth.removeEventListener('voiceschanged', handler); resolve(); };
-                        synth.addEventListener('voiceschanged', handler);
-                        setTimeout(() => { if (!britishFemaleVoice) britishFemaleVoice = getBestVoice(); synth.removeEventListener('voiceschanged', handler); resolve(); }, 2000);
-                    });
-                }
-            }
-            function speakWord(word, callback) {
-                if (!synth) { if(callback) callback(); return; }
-                synth.cancel();
-                const utterance = new SpeechSynthesisUtterance(word);
-                if (britishFemaleVoice) utterance.voice = britishFemaleVoice;
-                utterance.lang = 'en-GB';
-                utterance.rate = 0.8;
-                utterance.pitch = 1.0;
-                utterance.volume = 1.0;
-                if (callback) { utterance.onend = callback; utterance.onerror = () => callback(); }
-                synth.speak(utterance);
-            }
-            loadVoices();
+  const learnGrid = document.getElementById('learnGrid');
+  wordData.forEach(w => {
+    const card = document.createElement('div');
+    card.className = 'word-card';
+    card.innerHTML =
+      '<div class="word-head"><div><span class="word-headword">'+esc(w.word)+'</span> <span class="word-ipa">'+esc(w.ipa)+'</span></div>'+
+      '<button class="btn-play btn-play-card" data-word="'+esc(w.word)+'">▶</button></div>'+
+      '<div><span class="word-pos">'+esc(w.pos)+'</span><span>'+esc(w.meaning)+'</span></div>'+
+      '<div class="word-blocks">'+
+        block('记', w.mnemonic)+
+        block('考', w.collocations || w.phrases)+
+        block('例', w.example)+
+        block('派', w.derivatives)+
+        block('辨', w.distinguish)+
+      '</div><div class="hint">点击收起</div>';
+    card.addEventListener('click', e => {
+      if(e.target.closest('.btn-play-card')) return;
+      const open = card.classList.contains('expanded');
+      document.querySelectorAll('.word-card.expanded').forEach(c => c.classList.remove('expanded'));
+      if(!open) card.classList.add('expanded');
+    });
+    card.querySelector('.btn-play-card').addEventListener('click', function(e){
+      e.stopPropagation();
+      document.querySelectorAll('.btn-play.playing').forEach(b => b.classList.remove('playing'));
+      this.classList.add('playing');
+      speakWord(w.word, () => this.classList.remove('playing'));
+    });
+    learnGrid.appendChild(card);
+  });
 
-            // ==================== 历史记录 ====================
-            function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch(e) { return []; } }
-            function saveHistory(record) { const h = getHistory(); h.unshift(record); if(h.length>50) h.length=50; localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
-            function clearHistory() { if(confirm('确定要清除所有历史记录吗？')) { localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
-            function renderHistory() {
-                const history = getHistory();
-                if(!history.length) { historyContent.innerHTML='<div class="history-empty">暂无检测记录</div>'; return; }
-                const list = document.createElement('ul'); list.className='history-list';
-                history.forEach(r => {
-                    const li = document.createElement('li');
-                    const t = new Date(r.timestamp);
-                    const ts = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
-                    li.innerHTML = `<div><span class="history-score">${r.score} / ${r.total}</span><span style="margin-left:8px;color:${r.percent>=80?'#3a7d5a':r.percent>=60?'#b8860b':'#c0392b'};">${r.percent}%</span></div><div class="history-time">${ts}</div>`;
-                    list.appendChild(li);
-                });
-                historyContent.innerHTML=''; historyContent.appendChild(list);
-            }
+  const navTabs = document.getElementById('navTabs');
+  const learnSection = document.getElementById('learnSection');
+  const testSection = document.getElementById('testSection');
+  let currentMode = 'learn';
+  navTabs.addEventListener('click', e => {
+    const tab = e.target.closest('.nav-tab'); if(!tab) return;
+    const mode = tab.dataset.mode; if(mode === currentMode) return;
+    currentMode = mode;
+    navTabs.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t === tab));
+    learnSection.classList.toggle('active', mode === 'learn');
+    testSection.classList.toggle('active', mode === 'test');
+    if(mode === 'test'){ showTestSetup(); renderHistory(); }
+    if(synth) synth.cancel();
+  });
 
-            // ==================== 导航 ====================
-            let currentMode = 'learn';
-            navTabs.addEventListener('click', e => {
-                const tab = e.target.closest('.nav-tab'); if(!tab) return;
-                const mode = tab.dataset.mode; if(mode===currentMode) return;
-                currentMode = mode;
-                navTabs.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-                tab.classList.add('active');
-                if(mode==='learn'){ learnSection.classList.add('active'); testSection.classList.remove('active'); resetTestState(); }
-                else { learnSection.classList.remove('active'); testSection.classList.add('active'); showTestSetup(); renderHistory(); }
-                if(synth) synth.cancel();
-                document.querySelectorAll('.playing').forEach(el=>el.classList.remove('playing'));
-            });
-            function resetTestState(){
-                testSetup.style.display=''; testActiveArea.classList.remove('visible'); testResults.classList.remove('visible');
-                testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
-                btnNext.classList.remove('visible'); inputSpelling.value=''; inputMeaning.value='';
-                inputSpelling.className=''; inputMeaning.className=''; btnSubmit.disabled=false; btnSubmit.style.display='';
-                btnPlayTest.classList.remove('playing');
-            }
-            function showTestSetup(){ resetTestState(); testSetup.style.display=''; testActiveArea.classList.remove('visible'); testResults.classList.remove('visible'); }
+  const testSetup = document.getElementById('testSetup');
+  const testActiveArea = document.getElementById('testActiveArea');
+  const testResults = document.getElementById('testResults');
+  const btnStartTest = document.getElementById('btnStartTest');
+  const btnPlayTest = document.getElementById('btnPlayTest');
+  const btnSubmit = document.getElementById('btnSubmit');
+  const btnNext = document.getElementById('btnNext');
+  const btnRetry = document.getElementById('btnRetry');
+  const btnBackToSetup = document.getElementById('btnBackToSetup');
+  const btnClearHistory = document.getElementById('btnClearHistory');
+  const inputSpelling = document.getElementById('inputSpelling');
+  const inputMeaning = document.getElementById('inputMeaning');
+  const testFeedback = document.getElementById('testFeedback');
+  const testProgressLabel = document.getElementById('testProgressLabel');
+  const testScoreLabel = document.getElementById('testScoreLabel');
+  const progressBarFill = document.getElementById('progressBarFill');
+  const resultsScore = document.getElementById('resultsScore');
+  const resultsDetail = document.getElementById('resultsDetail');
+  const resultsTableBody = document.getElementById('resultsTableBody');
+  const historyContent = document.getElementById('historyContent');
 
-            // ==================== 学习模式构建 ====================
-            function buildLearnCards(){
-                learnGrid.innerHTML='';
-                wordData.forEach(w => {
-                    const card = document.createElement('div'); card.className='word-card';
-                    card.innerHTML = `
-                        <div class="word-card-top"><div><span class="word-headword">${w.word}</span><span class="word-ipa"> ${w.ipa}</span></div><button class="btn-play btn-play-card" data-word="${w.word}">▶</button></div>
-                        <div><span class="word-pos">${w.pos}</span> <span class="word-meaning">${w.meaning}</span></div>
-                        <div class="word-detail"><div class="word-detail-row"><strong>📎 常见词组/句型：</strong>${w.phrases}</div><div class="word-detail-example">📖 ${w.example}</div></div>
-                        <div class="card-collapse-hint">点击卡片收起详情 ▲</div>`;
-                    card.addEventListener('click', function(e){
-                        if(e.target.closest('.btn-play-card')) return;
-                        const wasExpanded = card.classList.contains('expanded');
-                        document.querySelectorAll('.word-card.expanded').forEach(c=>c.classList.remove('expanded'));
-                        if(!wasExpanded){ card.classList.add('expanded'); card.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-                    });
-                    card.querySelector('.btn-play-card').addEventListener('click', function(e){
-                        e.stopPropagation();
-                        document.querySelectorAll('.btn-play.playing').forEach(b=>b.classList.remove('playing'));
-                        this.classList.add('playing');
-                        speakWord(w.word, ()=>this.classList.remove('playing'));
-                    });
-                    learnGrid.appendChild(card);
-                });
-            }
-            buildLearnCards();
-            document.addEventListener('click', function(e){
-                if(currentMode!=='learn') return;
-                if(!e.target.closest('.word-card')) document.querySelectorAll('.word-card.expanded').forEach(c=>c.classList.remove('expanded'));
-            });
+  function getHistory(){ try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch(e){ return []; } }
+  function saveHistory(r){ const h = getHistory(); h.unshift(r); if(h.length>50) h.length=50; localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+  function renderHistory(){
+    const h = getHistory();
+    if(!h.length){ historyContent.innerHTML = '<div style="color:#888;margin-top:8px">暂无记录</div>'; return; }
+    historyContent.innerHTML = '<ul style="margin-top:8px;padding-left:18px">'+h.map(r => {
+      const t = new Date(r.timestamp);
+      return '<li>'+r.score+'/'+r.total+'（'+r.percent+'%） · '+t.toLocaleString()+'</li>';
+    }).join('')+'</ul>';
+  }
+  btnClearHistory.addEventListener('click', () => { if(confirm('清除历史？')){ localStorage.removeItem(HISTORY_KEY); renderHistory(); } });
 
-            // ==================== 检测模式（宽松评判） ====================
-            let testWords=[], testCurrentIndex=0, testScore=0, testResultsData=[], testSubmitted=false;
-            function shuffleArray(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-            btnStartTest.addEventListener('click', ()=>{
-                testWords = shuffleArray(wordData).slice(0, TOTAL_QUESTIONS);
-                testCurrentIndex=0; testScore=0; testResultsData=[]; testSubmitted=false;
-                testSetup.style.display='none'; testActiveArea.classList.add('visible'); testResults.classList.remove('visible');
-                testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
-                btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
-                inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
-                btnPlayTest.classList.remove('playing'); updateTestProgress(); setTimeout(()=>playCurrentWord(),400);
-            });
-            function updateTestProgress(){
-                testProgressLabel.textContent = `第 ${testCurrentIndex+1} / ${TOTAL_QUESTIONS} 题`;
-                testScoreLabel.textContent = `得分: ${testScore}`;
-                progressBarFill.style.width = Math.round((testCurrentIndex/TOTAL_QUESTIONS)*100)+'%';
-            }
-            function playCurrentWord(){ if(testCurrentIndex>=testWords.length) return; btnPlayTest.classList.add('playing'); speakWord(testWords[testCurrentIndex].word, ()=>btnPlayTest.classList.remove('playing')); }
-            btnPlayTest.addEventListener('click', ()=>{ if(!testSubmitted) playCurrentWord(); });
+  let testWords=[], testCurrentIndex=0, testScore=0, testSubmitted=false;
+  function shuffle(a){ const x=[...a]; for(let i=x.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [x[i],x[j]]=[x[j],x[i]]; } return x; }
+  function resetTestState(){
+    testSetup.style.display=''; testActiveArea.classList.remove('visible'); testResults.classList.remove('visible');
+    testFeedback.className='test-feedback'; testFeedback.textContent=''; btnNext.classList.remove('visible');
+    inputSpelling.value=''; inputMeaning.value=''; btnSubmit.disabled=false; btnSubmit.style.display='';
+  }
+  function showTestSetup(){ resetTestState(); }
+  btnStartTest.addEventListener('click', () => {
+    testWords = shuffle(wordData).slice(0, TOTAL_QUESTIONS);
+    testCurrentIndex=0; testScore=0; testResultsData=[]; testSubmitted=false;
+    // keep bridge-visible global in sync
+    window.testResultsData = testResultsData;
+    testSetup.style.display='none'; testActiveArea.classList.add('visible'); testResults.classList.remove('visible');
+    updateProgress(); setTimeout(playCurrent, 300);
+  });
+  function updateProgress(){
+    testProgressLabel.textContent = '第 '+(testCurrentIndex+1)+' / '+TOTAL_QUESTIONS+' 题';
+    testScoreLabel.textContent = '得分: '+testScore;
+    progressBarFill.style.width = Math.round((testCurrentIndex/TOTAL_QUESTIONS)*100)+'%';
+  }
+  function playCurrent(){ if(testCurrentIndex>=testWords.length) return; btnPlayTest.classList.add('playing'); speakWord(testWords[testCurrentIndex].word, ()=>btnPlayTest.classList.remove('playing')); }
+  btnPlayTest.addEventListener('click', () => { if(!testSubmitted) playCurrent(); });
 
-            function submitAnswer(){
-                if(testSubmitted || testCurrentIndex>=testWords.length) return;
-                testSubmitted=true; btnSubmit.disabled=true;
-                const w = testWords[testCurrentIndex];
-                const userSpelling = inputSpelling.value.trim();
-                const userMeaningRaw = inputMeaning.value.trim();
-                const userMeaningClean = userMeaningRaw.replace(/[，,、。；;：:！!？?（）()【】\[\]""''、\s]/g, '');
-                const spellingCorrect = userSpelling.toLowerCase() === w.word.toLowerCase();
-                let meaningCorrect = false;
-                if(userMeaningClean.length>0){
-                    for(const accept of w.acceptCN){
-                        const acceptClean = accept.replace(/[，,、。；;：:！!？?（）()【】\[\]""''、\s]/g, '');
-                        if(userMeaningClean.includes(acceptClean) || acceptClean.includes(userMeaningClean)){ meaningCorrect=true; break; }
-                    }
-                    if(!meaningCorrect){
-                        const meaningClean = w.meaning.replace(/[；;，,、\s]/g, '');
-                        if(userMeaningClean.includes(meaningClean.substring(0,Math.min(3,meaningClean.length)))||meaningClean.includes(userMeaningClean)) meaningCorrect=true;
-                    }
-                }
-                inputSpelling.className = spellingCorrect ? 'correct-input' : 'wrong-input';
-                inputMeaning.className = meaningCorrect ? 'correct-input' : 'wrong-input';
-                const earned = (spellingCorrect&&meaningCorrect)?1:0;
-                if(earned) testScore++;
-                testFeedback.classList.add('visible');
-                if(spellingCorrect&&meaningCorrect){
-                    testFeedback.classList.add('correct-all'); testFeedback.classList.remove('partial','wrong-all');
-                    testFeedback.innerHTML = `✅ <strong>完全正确！</strong><br>${w.word} — ${w.meaning}`;
-                } else if(!spellingCorrect && !meaningCorrect){
-                    testFeedback.classList.add('wrong-all'); testFeedback.classList.remove('correct-all','partial');
-                    testFeedback.innerHTML = `❌ <strong>拼写和含义均不正确</strong><br>📝 正确拼写：<strong>${w.word}</strong>（你的：${userSpelling||'未填'}）<br>🈶 正确含义：<strong>${w.meaning}</strong>（你的：${userMeaningRaw||'未填'}）`;
-                } else if(!spellingCorrect){
-                    testFeedback.classList.add('partial'); testFeedback.classList.remove('correct-all','wrong-all');
-                    testFeedback.innerHTML = `⚠️ <strong>含义正确，拼写有误</strong><br>📝 正确拼写：<strong>${w.word}</strong>（你的：${userSpelling||'未填'}）<br>🈶 含义：${w.meaning} ✅`;
-                } else {
-                    testFeedback.classList.add('partial'); testFeedback.classList.remove('correct-all','wrong-all');
-                    testFeedback.innerHTML = `⚠️ <strong>拼写正确，含义有误</strong><br>📝 ${w.word} ✅<br>🈶 正确含义：<strong>${w.meaning}</strong>（你的：${userMeaningRaw||'未填'}）`;
-                }
-                testResultsData.push({ word:w.word, ipa:w.ipa, meaning:w.meaning, userSpelling, userMeaning:userMeaningRaw, spellingCorrect, meaningCorrect, earned });
-                updateTestProgress();
-                btnNext.classList.add('visible'); btnSubmit.style.display='none';
-                testFeedback.scrollIntoView({behavior:'smooth',block:'nearest'});
-            }
-            btnSubmit.addEventListener('click', submitAnswer);
-            inputMeaning.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!testSubmitted) submitAnswer(); });
-            inputSpelling.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!testSubmitted) inputMeaning.focus(); });
-            btnNext.addEventListener('click', ()=>{
-                testCurrentIndex++; testSubmitted=false;
-                if(testCurrentIndex>=testWords.length){ showFinalResults(); return; }
-                inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
-                testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
-                btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
-                updateTestProgress(); setTimeout(()=>playCurrentWord(),300); inputSpelling.focus();
-            });
-            function showFinalResults(){
-                testActiveArea.classList.remove('visible'); testResults.classList.add('visible');
-                const earnedTotal = testResultsData.reduce((s,r)=>s+r.earned,0);
-                const percent = Math.round((earnedTotal/TOTAL_QUESTIONS)*100);
-                resultsScore.textContent = `${earnedTotal} / ${TOTAL_QUESTIONS}`;
-                resultsDetail.textContent = `正确率 ${percent}% — ${percent>=80?'🎉 非常棒！':percent>=60?'👍 不错，继续加油！':'💪 需要更多练习，加油！'}`;
-                resultsTableBody.innerHTML='';
-                testResultsData.forEach((r,i)=>{
-                    const tr = document.createElement('tr'); tr.className = r.earned ? 'row-correct' : 'row-wrong';
-                    const icon = r.earned ? '✅' : (r.spellingCorrect||r.meaningCorrect?'⚠️':'❌');
-                    tr.innerHTML = `<td>${i+1}</td><td><strong>${r.word}</strong> <span style="color:#888;font-size:0.8rem;">${r.ipa}</span><br><span style="font-size:0.8rem;">${r.meaning}</span></td><td style="color:${r.spellingCorrect?'#3a7d5a':'#c0392b'}">${r.userSpelling||'—'}</td><td style="color:${r.meaningCorrect?'#3a7d5a':'#c0392b'}">${r.userMeaning||'—'}</td><td>${icon}</td>`;
-                    resultsTableBody.appendChild(tr);
-                });
-                saveHistory({ timestamp:Date.now(), score:earnedTotal, total:TOTAL_QUESTIONS, percent });
-                testResults.scrollIntoView({behavior:'smooth',block:'start'});
-            }
-            btnRetry.addEventListener('click', ()=>{
-                testResults.classList.remove('visible'); testActiveArea.classList.add('visible');
-                testWords = shuffleArray([...wordData]); testCurrentIndex=0; testScore=0; testResultsData=[]; testSubmitted=false;
-                inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
-                testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
-                btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
-                btnPlayTest.classList.remove('playing'); updateTestProgress(); setTimeout(()=>playCurrentWord(),400);
-            });
-            btnBackToSetup.addEventListener('click', ()=>{ showTestSetup(); testResults.classList.remove('visible'); renderHistory(); });
-            btnClearHistory.addEventListener('click', clearHistory);
-            document.addEventListener('keydown', function(e){
-                if(currentMode!=='test'||testResults.classList.contains('visible')) return;
-                if(testActiveArea.classList.contains('visible') && !testSubmitted){
-                    if(e.key===' ' && document.activeElement!==inputSpelling && document.activeElement!==inputMeaning){ e.preventDefault(); playCurrentWord(); }
-                }
-            });
-            renderHistory();
-        })();
-    </script>
+  function cleanCN(s){ return String(s||'').replace(/[，,、。；;：:！!？?（）()【】\[\]""''\s]/g,''); }
+  function submitAnswer(){
+    if(testSubmitted || testCurrentIndex>=testWords.length) return;
+    testSubmitted = true; btnSubmit.disabled = true;
+    const w = testWords[testCurrentIndex];
+    const userSpelling = inputSpelling.value.trim();
+    const userMeaningClean = cleanCN(inputMeaning.value);
+    const spellingOk = userSpelling.toLowerCase() === w.word.toLowerCase();
+    let meaningOk = false;
+    if(userMeaningClean){
+      for(const a of (w.acceptCN||[])){
+        const ac = cleanCN(a);
+        if(ac && (userMeaningClean.includes(ac) || ac.includes(userMeaningClean))){ meaningOk = true; break; }
+      }
+      if(!meaningOk){
+        const m = cleanCN(w.meaning);
+        if(m && (userMeaningClean.includes(m) || m.includes(userMeaningClean))) meaningOk = true;
+      }
+    }
+    const both = spellingOk && meaningOk;
+    const earned = both ? 1 : ((spellingOk || meaningOk) ? 0.5 : 0);
+    testScore += earned;
+    testFeedback.className = 'test-feedback visible '+(both?'correct-all':(spellingOk||meaningOk?'partial':'wrong-all'));
+    testFeedback.innerHTML = (both?'全对':(spellingOk||meaningOk?'部分正确':'再看看'))+
+      '<div style="margin-top:6px;font-size:.9rem">答案：'+esc(w.word)+' · '+esc(w.meaning)+'</div>';
+    testResultsData.push({
+      word: w.word, ipa: w.ipa || '', meaning: w.meaning,
+      userSpelling: userSpelling, userMeaning: inputMeaning.value.trim(),
+      spellingCorrect: spellingOk, meaningCorrect: meaningOk, earned: earned
+    });
+    btnNext.classList.add('visible');
+  }
+  btnSubmit.addEventListener('click', submitAnswer);
+  inputMeaning.addEventListener('keydown', e => { if(e.key==='Enter') submitAnswer(); });
+  inputSpelling.addEventListener('keydown', e => { if(e.key==='Enter') inputMeaning.focus(); });
+
+  function nextQ(){
+    testCurrentIndex++; testSubmitted=false; btnSubmit.disabled=false; btnNext.classList.remove('visible');
+    testFeedback.className='test-feedback'; inputSpelling.value=''; inputMeaning.value='';
+    if(testCurrentIndex >= TOTAL_QUESTIONS){ finish(); return; }
+    updateProgress(); setTimeout(playCurrent, 250); inputSpelling.focus();
+  }
+  btnNext.addEventListener('click', nextQ);
+
+  function finish(){
+    testActiveArea.classList.remove('visible'); testResults.classList.add('visible');
+    const percent = Math.round((testScore/TOTAL_QUESTIONS)*100);
+    resultsScore.textContent = testScore + ' / ' + TOTAL_QUESTIONS;
+    resultsDetail.textContent = '正确率 '+percent+'%';
+    resultsTableBody.innerHTML = testResultsData.map((r,i) => {
+      const ok = r.earned === 1;
+      const cls = ok ? 'row-ok' : 'row-wrong';
+      return '<tr class="'+cls+'"><td>'+(i+1)+'</td><td><strong>'+esc(r.word)+'</strong></td><td style="color:'+(r.spellingCorrect?'#3a7d5a':'#c0392b')+'">'+esc(r.userSpelling||'—')+'</td><td style="color:'+(r.meaningCorrect?'#3a7d5a':'#c0392b')+'">'+esc(r.userMeaning||'—')+'</td><td>'+(ok?'✓':(r.earned? '△':'✗'))+'</td></tr>';
+    }).join('');
+    saveHistory({ score:testScore, total:TOTAL_QUESTIONS, percent, timestamp:Date.now() });
+  }
+  btnRetry.addEventListener('click', () => btnStartTest.click());
+  btnBackToSetup.addEventListener('click', showTestSetup);
+
+  // URL mode from parent
+  try {
+    const m = new URLSearchParams(location.search).get('vocabMode') ||
+      (parent !== window ? new URLSearchParams(parent.location.search).get('vocabMode') : null);
+    if(m === 'test'){
+      const tab = navTabs.querySelector('[data-mode="test"]');
+      if(tab) tab.click();
+    }
+  } catch(e){}
+})();
+</script>
 </body>
 </html>

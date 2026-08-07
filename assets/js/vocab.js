@@ -70,7 +70,7 @@
       '<div class="meta bento-panel__desc">' + Y.esc(sub) + ' · ' + Y.esc(progLine) + '</div>' +
       '<label class="vocab-search">搜索单元' +
       '<input type="search" id="vocab-q" placeholder="如：' +
-      Y.esc(book.key === "cet4" ? "四级词汇单元1" : (book.key === "special" ? "听力词汇单元1" : "高中词汇单元1")) +
+      Y.esc(book.key === "cet4" ? "单元 1" : (book.key === "special" ? "听力词汇单元1" : "高中词汇单元1")) +
       '" autocomplete="off"></label>' +
       actions +
       '</div></div>';
@@ -137,6 +137,21 @@
 
   function buildTabs(stats) {
     if (bookKey === "special") return specialTabs(stats.lists);
+    // ponytail: cet4 uses frequency-band tabs; empty bands stay visible as soon boxes
+    if (bookKey === "cet4" && stats.book.bands && stats.book.bands.length) {
+      return stats.book.bands.map(function (b) {
+        var items = stats.lists.filter(function (it) {
+          var n = Y.vocabListNo(it);
+          return n >= b.start && n <= b.end;
+        });
+        return {
+          id: b.id,
+          label: b.label,
+          empty: !items.length,
+          items: items
+        };
+      });
+    }
     return Y.vocabListRanges(stats.lists, stats.book.chunk || 10).map(function (t) {
       return {
         id: t.id,
@@ -168,7 +183,7 @@
 
     var panels = tabs.map(function (t) {
       var body = t.empty
-        ? '<div class="soon-box">该板块即将上线，敬请期待。</div>'
+        ? '<div class="soon-box">该频段单元制作中，完成后会在此开放。</div>'
         : '<div class="vocab-list-grid">' + t.items.map(listRowHTML).join("") + '</div>';
       return '<div class="vocab-range-panel' + (t.id === activeId ? " is-active" : "") +
         '" data-range="' + Y.esc(t.id) + '">' + body + '</div>';

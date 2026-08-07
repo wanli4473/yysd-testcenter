@@ -349,7 +349,16 @@ window.YYSD = (function () {
   // ---- Vocabulary book grouping (单词区单词 → vocab.html?book=…) ----
   var VOCAB_BOOKS = {
     gaozhong: { key: "gaozhong", label: "高中词汇", subject: "vocab", tag: "雅思基础", chunk: 10 },
-    cet4:     { key: "cet4",     label: "四级词汇", subject: "vocab-cet4", tag: "CET-4", chunk: 10 },
+    cet4: {
+      key: "cet4", label: "四级词汇", subject: "vocab-cet4", tag: "CET-4", chunk: 10,
+      // ponytail: frequency bands replace 10-unit chunks for cet4 hub tabs
+      bands: [
+        { id: "high", label: "高频", start: 1, end: 10 },
+        { id: "mid", label: "中频", start: 11, end: 20 },
+        { id: "low", label: "低频", start: 21, end: 28 },
+        { id: "zero", label: "零频", start: 29, end: 35 }
+      ]
+    },
     special:  {
       key: "special", label: "雅思专项词汇", tag: "专题",
       subjects: ["vocab-special-listening", "vocab-special-reading", "vocab-special-writing"]
@@ -393,7 +402,7 @@ window.YYSD = (function () {
     var s = (item && item.subject) || "";
     if (!n) return (item && item.title) || "";
     if (s === "vocab") return "高中词汇单元" + n;
-    if (s === "vocab-cet4") return "四级词汇单元" + n;
+    if (s === "vocab-cet4") return "单元 " + n;
     if (s === "vocab-special-listening") return "听力词汇单元" + n;
     if (s === "vocab-special-reading") return "阅读词汇单元" + n;
     if (s === "vocab-special-writing") return "写作词汇单元" + n;
