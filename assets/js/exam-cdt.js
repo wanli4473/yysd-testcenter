@@ -701,6 +701,33 @@
     }
   }
 
+  function pinReadingDocScroll(doc) {
+    // ponytail: scrollIntoView leaks onto documentElement → Part 2/3 looks blank
+    if (!doc) return;
+    if (doc.documentElement) doc.documentElement.scrollTop = 0;
+    if (doc.body) doc.body.scrollTop = 0;
+    try {
+      var win = doc.defaultView;
+      if (win && win.scrollTo) win.scrollTo(0, 0);
+    } catch (e) { /* ignore */ }
+  }
+
+  function scrollHostInPane(host) {
+    if (!host) return;
+    var pane = host.closest(".qcol, .passage-pane");
+    if (!pane) {
+      try { host.scrollIntoView({ block: "nearest" }); } catch (e) { /* ignore */ }
+      return;
+    }
+    // reset first — leftover scrollTop + stale rects overshoot past the target
+    pane.scrollTop = 0;
+    var delta =
+      host.getBoundingClientRect().top -
+      pane.getBoundingClientRect().top -
+      Math.max(24, pane.clientHeight * 0.25);
+    if (delta > 0) pane.scrollTop = delta;
+  }
+
   function syncReadingPartView(qNo) {
     if (!isReading(state.item)) return;
     try {
@@ -744,6 +771,7 @@
           first.style.display = "flex";
         }
       }
+      pinReadingDocScroll(doc);
     } catch (e) { /* ignore */ }
   }
 
@@ -770,7 +798,8 @@
     var badges = doc.querySelectorAll(".qnum-badge");
     for (var i = 0; i < badges.length; i++) {
       if (String(badges[i].textContent || "").trim() !== String(n)) continue;
-      var root = badges[i].closest(".mcq, .match-q, td, tr, .fill-row, .qgroup, div");
+      // ponytail: no bare `div` — .qtext wins over .mcq and misses radios
+      var root = badges[i].closest(".mcq, .match-q, td, tr, .fill-row, .qgroup");
       if (!root) continue;
       var text = root.querySelector("input[type='text'], select");
       if (text) return text;
@@ -799,7 +828,7 @@
     var m = id.match(/^[LQ](\d+)$/i);
     if (m) return Number(m[1]);
     var badge = null;
-    var root = el.closest(".mcq, .match-q, td, .qgroup, div");
+    var root = el.closest(".mcq, .match-q, td, .qgroup");
     if (root) badge = root.querySelector(".qnum-badge");
     if (badge) {
       var n = parseInt(String(badge.textContent || "").trim(), 10);
@@ -1070,12 +1099,16 @@
         el = inputs[idx];
       }
       if (el) {
-        if (el.type === "radio") {
-          var host = el.closest(".mcq, .match-q") || el;
-          host.scrollIntoView({ block: "center", behavior: "smooth" });
+        var host = el.type === "radio" ? (el.closest(".mcq, .match-q") || el) : el;
+        if (isReading(state.item)) {
+          pinReadingDocScroll(doc);
+          scrollHostInPane(host);
+          pinReadingDocScroll(doc);
         } else {
-          el.scrollIntoView({ block: "center", behavior: "smooth" });
-          el.focus();
+          try { host.scrollIntoView({ block: "nearest" }); } catch (eS) { /* ignore */ }
+        }
+        if (el.type !== "radio") {
+          try { el.focus({ preventScroll: true }); } catch (eF) { try { el.focus(); } catch (eF2) {} }
         }
       }
     } catch (e) { /* ponytail: iframe not ready */ }

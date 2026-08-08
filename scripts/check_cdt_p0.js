@@ -17,4 +17,7 @@ assert(/function isJunkCdtOverwrite/.test(server), "server has junk CDT guard");
 assert(/junk-cdt-overwrite/.test(server), "PUT skips junk overwrite");
 assert(/if \(body\.cdt\) out\.cdt = true/.test(server), "sanitizeScore keeps cdt flag");
 assert(/getScore:/.test(server), "server has getScore stmt");
+assert(/function pinReadingDocScroll/.test(cdt) && /scrollHostInPane/.test(cdt), "reading part scroll pinned");
+assert(/preventScroll:\s*true/.test(cdt), "reading focus preventScroll");
+assert(/no bare `div`/.test(cdt) || !/\.qgroup, div\)/.test(cdt), "controlForQuestion skips bare div");
 console.log("ok: cdt p0 guards");

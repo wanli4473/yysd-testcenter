@@ -311,6 +311,266 @@
     }
   }
 
+  /* —— Vocab Mac: CSS-only word list scroll —— */
+  var vroot = document.getElementById("ha-vocab-tour");
+  if (vroot) {
+    var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) vroot.classList.remove("is-scrolling");
+  }
+
+  /* —— Task calendar Mac demo —— */
+  var cal = document.getElementById("ha-cal-tour");
+  if (cal && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    var days = cal.querySelectorAll("[data-cal-day]");
+    var card = cal.querySelector(".ha-cal-pop");
+    var pickIdx = 3;
+    var calRunning = false;
+    var calGen = 0;
+
+    function calWait(ms) {
+      return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    }
+
+    function calReset() {
+      days.forEach(function (d) { d.classList.remove("is-scan", "is-pick"); });
+      if (card) card.classList.remove("is-on");
+    }
+
+    function calOnce(token) {
+      calReset();
+      var chain = Promise.resolve().then(function () {
+        if (token !== calGen) return;
+        return calWait(600);
+      });
+      days.forEach(function (day) {
+        chain = chain.then(function () {
+          if (token !== calGen) return;
+          days.forEach(function (d) { d.classList.remove("is-scan"); });
+          day.classList.add("is-scan");
+          return calWait(520);
+        });
+      });
+      return chain.then(function () {
+        if (token !== calGen) return;
+        days.forEach(function (d) { d.classList.remove("is-scan"); });
+        if (days[pickIdx]) days[pickIdx].classList.add("is-pick");
+        return calWait(900);
+      }).then(function () {
+        if (token !== calGen) return;
+        if (card) card.classList.add("is-on");
+        return calWait(5200);
+      }).then(function () {
+        if (token !== calGen) return;
+        if (card) card.classList.remove("is-on");
+        return calWait(700);
+      }).then(function () {
+        if (token !== calGen) return;
+        days.forEach(function (d) { d.classList.remove("is-pick"); });
+        return calWait(1100);
+      });
+    }
+
+    function calLoop() {
+      if (!calRunning) return;
+      var token = ++calGen;
+      calOnce(token).then(function () {
+        if (calRunning && token === calGen) calLoop();
+      });
+    }
+
+    function calStart() {
+      if (calRunning) return;
+      calRunning = true;
+      calLoop();
+    }
+
+    function calStop() {
+      calRunning = false;
+      calGen++;
+      calReset();
+    }
+
+    if ("IntersectionObserver" in window) {
+      var cio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting && e.intersectionRatio > 0.35) calStart();
+          else calStop();
+        });
+      }, { threshold: [0, 0.35, 0.6] });
+      cio.observe(cal);
+    } else {
+      calStart();
+    }
+  } else if (cal) {
+    var c = cal.querySelector(".ha-cal-pop");
+    var d = cal.querySelector('[data-cal-day="3"]');
+    if (c) c.classList.add("is-on");
+    if (d) d.classList.add("is-pick");
+  }
+
+  /* —— Teacher folder + page flip —— */
+  var tflow = document.getElementById("ha-teacher-flow");
+  if (tflow) {
+    var folder = tflow.querySelector(".ha-folder");
+    var tabs = Array.prototype.slice.call(tflow.querySelectorAll("[data-tflow]"));
+    var panels = Array.prototype.slice.call(tflow.querySelectorAll("[data-tflow-panel]"));
+    var ids = tabs.map(function (t) { return t.getAttribute("data-tflow"); });
+    var idx = 0;
+    var timer = null;
+    var dwell = 5800;
+    var flipMs = 980;
+    var openMs = 1250;
+    var opened = false;
+    var opening = false;
+    var flipping = false;
+    var flipTimer = null;
+    var flipGen = 0;
+    var tReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function clearLeaving() {
+      panels.forEach(function (panel) {
+        panel.classList.remove("is-leaving", "is-back", "is-under");
+      });
+      flipping = false;
+    }
+
+    function finishFlip(from, to, gen) {
+      if (gen !== flipGen) return;
+      if (from && from !== to) {
+        from.classList.remove("is-on", "is-leaving", "is-back", "is-under");
+      }
+      if (to) to.classList.remove("is-under");
+      flipping = false;
+      flipTimer = null;
+    }
+
+    function showTeacher(id, opts) {
+      opts = opts || {};
+      var n = ids.indexOf(id);
+      if (n < 0) return;
+      if (n === idx && !opts.force) return;
+
+      var dir = opts.dir != null ? opts.dir : (n > idx ? 1 : -1);
+      var from = panels[idx];
+      var to = panels[n];
+      idx = n;
+
+      tabs.forEach(function (tab) {
+        var on = tab.getAttribute("data-tflow") === id;
+        tab.classList.toggle("is-on", on);
+        tab.setAttribute("aria-selected", on ? "true" : "false");
+      });
+
+      if (tReduced || !opened || !from || from === to) {
+        if (flipTimer) clearTimeout(flipTimer);
+        flipGen += 1;
+        clearLeaving();
+        panels.forEach(function (panel) {
+          panel.classList.toggle("is-on", panel === to);
+          panel.classList.remove("is-leaving", "is-back", "is-under");
+        });
+        return;
+      }
+
+      if (flipTimer) clearTimeout(flipTimer);
+      flipGen += 1;
+      var gen = flipGen;
+      flipping = true;
+
+      /* Reset mid-flight pages so the next flip starts clean */
+      panels.forEach(function (panel) {
+        if (panel !== from && panel !== to) {
+          panel.classList.remove("is-on", "is-leaving", "is-back", "is-under");
+        }
+      });
+      from.classList.add("is-on");
+      from.classList.remove("is-leaving", "is-back", "is-under");
+      to.classList.add("is-on", "is-under");
+      to.classList.remove("is-leaving", "is-back");
+
+      /* Double rAF: paint resting pose, then start turn (avoids skipped transitions) */
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          if (gen !== flipGen) return;
+          from.classList.add("is-leaving");
+          from.classList.toggle("is-back", dir < 0);
+
+          var done = function () {
+            from.removeEventListener("transitionend", onEnd);
+            finishFlip(from, to, gen);
+          };
+          var onEnd = function (e) {
+            if (e.target !== from || e.propertyName !== "transform") return;
+            done();
+          };
+          from.addEventListener("transitionend", onEnd);
+          flipTimer = setTimeout(done, flipMs);
+        });
+      });
+    }
+
+    function nextTeacher() {
+      if (flipping) return;
+      showTeacher(ids[(idx + 1) % ids.length], { dir: 1 });
+    }
+
+    function startTeacher() {
+      if (tReduced || timer || !opened) return;
+      timer = setInterval(nextTeacher, dwell);
+    }
+
+    function stopTeacher() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    function openFolder() {
+      if (!folder || opened || opening) return;
+      opening = true;
+      folder.classList.add("is-open");
+      if (tReduced) {
+        opened = true;
+        opening = false;
+        showTeacher(ids[0], { force: true });
+        return;
+      }
+      setTimeout(function () {
+        opened = true;
+        opening = false;
+        startTeacher();
+      }, openMs);
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        var id = tab.getAttribute("data-tflow");
+        var n = ids.indexOf(id);
+        showTeacher(id, { dir: n >= idx ? 1 : -1 });
+        stopTeacher();
+        if (opened) startTeacher();
+      });
+    });
+
+    if (tReduced) {
+      openFolder();
+    } else if ("IntersectionObserver" in window) {
+      var tio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting && e.intersectionRatio > 0.28) {
+            openFolder();
+            if (opened) startTeacher();
+          } else {
+            stopTeacher();
+          }
+        });
+      }, { threshold: [0, 0.28, 0.55] });
+      tio.observe(tflow);
+    } else {
+      openFolder();
+      startTeacher();
+    }
+  }
+
   var A = window.YYSD_AUTH;
   if (!A || !A.getToken || !A.getToken()) return;
   if (A.isTeacher && A.isTeacher()) return;

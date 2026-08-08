@@ -21,7 +21,7 @@ window.YYSD_AUTH = (function () {
   var ICP_URL = "https://beian.miit.gov.cn/";
   var PUBLIC_PAGES = {
     "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
-    "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
+    "agreement.html": 1, "privacy.html": 1, "report.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
     "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1
   };
   var ORG_KEY = "yysd:org";
@@ -106,8 +106,8 @@ window.YYSD_AUTH = (function () {
       if (!p) continue;
       var tag = p.tagName;
       if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT") continue;
-      if (p.getAttribute && p.getAttribute("data-icp") != null) continue;
-      if (p.closest && p.closest("[data-icp]")) continue;
+      if (p.getAttribute && (p.getAttribute("data-icp") != null || p.getAttribute("data-report") != null)) continue;
+      if (p.closest && (p.closest("[data-icp]") || p.closest("[data-report]"))) continue;
       var t = node.nodeValue;
       if (!t || (t.indexOf("优益思达") < 0 && t.indexOf("YYSD") < 0 && t.indexOf("Yysd") < 0)) continue;
       var next = t;
@@ -127,7 +127,9 @@ window.YYSD_AUTH = (function () {
       var year = el.querySelector("#year");
       var yearText = year ? year.textContent : String(new Date().getFullYear());
       var icp = el.querySelector("[data-icp]");
+      var report = el.querySelector("[data-report]");
       el.innerHTML = "© <span id=\"year\">" + yearText + "</span> ";
+      if (report) el.appendChild(report);
       if (icp) el.appendChild(icp);
       else {
         var span = document.createElement("span");
@@ -648,6 +650,21 @@ window.YYSD_AUTH = (function () {
     });
   }
 
+  // ponytail: footer 公示投诉渠道，满足公安备案安全评估勾选
+  function bindReport() {
+    document.querySelectorAll(".minimal-footer__copy").forEach(function (el) {
+      if (el.querySelector("[data-report], a[href$='report.html']")) return;
+      var a = document.createElement("a");
+      a.href = "report.html";
+      a.className = "site-report";
+      a.setAttribute("data-report", "");
+      a.textContent = "投诉举报";
+      var icp = el.querySelector("[data-icp]");
+      if (icp) el.insertBefore(a, icp);
+      else el.appendChild(a);
+    });
+  }
+
   function requireLogin() {
     if (!getToken()) {
       (window.YYSD_GO || function (h) { location.href = h; })("login.html?next=" + encodeURIComponent(location.pathname + location.search), "scene");
@@ -820,6 +837,7 @@ window.YYSD_AUTH = (function () {
         if (!guardIeltsArea()) return;
         bindNav();
         bindIcp();
+        bindReport();
         if (getToken() && !isPublicPage() && !isTeacher()) syncScoresFromCloud();
       });
     });
@@ -876,7 +894,7 @@ window.YYSD_AUTH = (function () {
   "use strict";
   var PUBLIC = {
     "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
-    "agreement.html": 1, "privacy.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
+    "agreement.html": 1, "privacy.html": 1, "report.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
     "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1
   };
   var name = location.pathname.split("/").filter(Boolean).pop() || "index.html";
