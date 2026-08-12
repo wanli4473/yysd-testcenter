@@ -24,16 +24,17 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  function speak(word) {
+  function speak(word, accent) {
+    var WA = window.YysdWordAudio;
+    if (WA && WA.speak) {
+      WA.speak(word, accent || WA.UK);
+      return;
+    }
     if (!window.speechSynthesis || !word) return;
     window.speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(word);
-    u.lang = "en-GB";
+    u.lang = accent === 2 ? "en-US" : "en-GB";
     u.rate = 0.9;
-    var voices = window.speechSynthesis.getVoices() || [];
-    var v = voices.find(function (x) { return /en-GB/i.test(x.lang); })
-      || voices.find(function (x) { return /^en/i.test(x.lang); });
-    if (v) u.voice = v;
     window.speechSynthesis.speak(u);
   }
 
@@ -98,8 +99,11 @@
         '<td class="col-ipa"><span class="w-ipa">' + esc(w.ipa || "") + "</span></td>" +
         '<td class="col-pos"><span class="w-pos">' + esc(w.pos || "") + "</span></td>" +
         '<td><span class="w-meaning' + (blur ? " blurred" : "") + '">' + esc(w.meaning) + "</span></td>" +
-        '<td><button type="button" class="vl-btn btn-speak-row" data-w="' + esc(w.word) +
-          '" style="padding:6px 10px;font-size:12px">🔊</button></td>' +
+        '<td class="col-speak">' +
+          '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(w.word) +
+            '" data-accent="1" style="padding:6px 8px;font-size:12px" title="英音">英</button> ' +
+          '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(w.word) +
+            '" data-accent="2" style="padding:6px 8px;font-size:12px" title="美音">美</button></td>' +
         "</tr>";
     }).join("");
     document.getElementById("panel").innerHTML =
@@ -111,7 +115,7 @@
       '<div style="overflow-x:auto">' +
         '<table class="vl-word-table">' +
           "<thead><tr><th>#</th><th>单词</th><th class=\"col-ipa\">音标</th>" +
-          "<th class=\"col-pos\">词性</th><th>释义</th><th></th></tr></thead>" +
+          "<th class=\"col-pos\">词性</th><th>释义</th><th>发音</th></tr></thead>" +
           "<tbody>" + rows + "</tbody></table></div>";
     bindLearnChrome();
     app.querySelectorAll(".word-row").forEach(function (tr) {
@@ -127,7 +131,7 @@
     app.querySelectorAll(".btn-speak-row").forEach(function (b) {
       b.onclick = function (e) {
         e.stopPropagation();
-        speak(b.getAttribute("data-w"));
+        speak(b.getAttribute("data-w"), Number(b.getAttribute("data-accent")) || 1);
       };
     });
   }
@@ -186,7 +190,8 @@
         learnViewToggleHtml() +
         '<button type="button" class="vl-btn" id="btnBlurAll">' +
           (state.blurAllOff ? "恢复默认模糊" : "本课全部明文") + "</button>" +
-        '<button type="button" class="vl-btn" id="btnSpeak">🔊 发音</button>' +
+        '<button type="button" class="vl-btn" id="btnSpeakUk">🔊 英音</button>' +
+        '<button type="button" class="vl-btn" id="btnSpeakUs">🔊 美音</button>' +
       "</div>" +
       '<div class="vl-word">' + esc(w.word) + "</div>" +
       '<div class="vl-ipa">' + esc(w.ipa || "") + "</div>" +
@@ -201,7 +206,8 @@
       "</div>";
 
     bindLearnChrome();
-    document.getElementById("btnSpeak").onclick = function () { speak(w.word); };
+    document.getElementById("btnSpeakUk").onclick = function () { speak(w.word, 1); };
+    document.getElementById("btnSpeakUs").onclick = function () { speak(w.word, 2); };
     document.getElementById("meaning").onclick = function () {
       if (state.blurAllOff) return;
       state.blurOne = !state.blurOne;

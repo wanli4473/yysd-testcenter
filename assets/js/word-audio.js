@@ -1,16 +1,24 @@
 /* =========================================================================
-   word-audio.js — dictionary human audio for vocab words (Youdao UK)
-   speak(text, onEnd) / cancel() / installSpeechPatch()
+   word-audio.js — Youdao dictionary audio (UK type=1 / US type=2)
+   speak(text, onEndOrOpts, accent?) / cancel() / installSpeechPatch()
    ponytail: Youdao CDN; self-host if blocked — swap URL only here
    ========================================================================= */
 (function (global) {
   "use strict";
   var audio = null;
   var fallingBack = false;
+  // 1 = UK, 2 = US
+  var defaultAccent = 1;
 
-  function youdaoUrl(text) {
+  function normalizeAccent(accent) {
+    if (accent === 2 || accent === "2" || accent === "us" || accent === "US" || accent === "en-US") return 2;
+    if (accent === 1 || accent === "1" || accent === "uk" || accent === "UK" || accent === "en-GB") return 1;
+    return defaultAccent;
+  }
+
+  function youdaoUrl(text, accent) {
     return "https://dict.youdao.com/dictvoice?audio=" +
-      encodeURIComponent(text) + "&type=1";
+      encodeURIComponent(text) + "&type=" + normalizeAccent(accent);
   }
 
   function stopAudio() {
@@ -25,7 +33,7 @@
     audio = null;
   }
 
-  function ttsSpeak(text, onEnd) {
+  function ttsSpeak(text, onEnd, accent) {
     if (!global.speechSynthesis) {
       if (onEnd) onEnd();
       return;
@@ -34,7 +42,7 @@
       fallingBack = true;
       global.speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-GB";
+      u.lang = normalizeAccent(accent) === 2 ? "en-US" : "en-GB";
       u.rate = 0.9;
       u.onend = function () { fallingBack = false; if (onEnd) onEnd(); };
       u.onerror = function () { fallingBack = false; if (onEnd) onEnd(); };
@@ -52,40 +60,60 @@
     }
   }
 
-  function speak(text, onEnd) {
+  /**
+   * speak(text, onEnd)
+   * speak(text, accent, onEnd)
+   * speak(text, { accent, onEnd })
+   */
+  function speak(text, a, b) {
     text = String(text || "").trim();
+    var onEnd = null;
+    var accent = defaultAccent;
+    if (a && typeof a === "object") {
+      accent = a.accent != null ? a.accent : defaultAccent;
+      onEnd = a.onEnd || null;
+    } else if (typeof a === "function") {
+      onEnd = a;
+      if (b != null && typeof b !== "function") accent = b;
+    } else if (a != null) {
+      accent = a;
+      onEnd = typeof b === "function" ? b : null;
+    }
     if (!text) { if (onEnd) onEnd(); return; }
     cancel();
-    // Chinese → system TTS (no Youdao English clip)
     if (/[\u4e00-\u9fff]/.test(text)) {
-      ttsSpeak(text, onEnd);
+      ttsSpeak(text, onEnd, accent);
       return;
     }
-    var a = new Audio(youdaoUrl(text));
-    audio = a;
+    var aEl = new Audio(youdaoUrl(text, accent));
+    audio = aEl;
     var done = false;
     function finish() {
       if (done) return;
       done = true;
-      if (audio === a) audio = null;
+      if (audio === aEl) audio = null;
       if (onEnd) onEnd();
     }
-    a.onended = finish;
-    a.onerror = function () {
-      if (audio === a) audio = null;
-      ttsSpeak(text, onEnd);
+    aEl.onended = finish;
+    aEl.onerror = function () {
+      if (audio === aEl) audio = null;
+      ttsSpeak(text, onEnd, accent);
     };
-    var p = a.play();
+    var p = aEl.play();
     if (p && p.catch) {
       p.catch(function () {
         if (done) return;
-        if (audio === a) audio = null;
-        ttsSpeak(text, onEnd);
+        if (audio === aEl) audio = null;
+        ttsSpeak(text, onEnd, accent);
       });
     }
   }
 
-  /** Route iframe LIST speakWord (via speechSynthesis) through Youdao. */
+  function speakUk(text, onEnd) { speak(text, 1, onEnd); }
+  function speakUs(text, onEnd) { speak(text, 2, onEnd); }
+
+  /** Route iframe LIST speakWord (via speechSynthesis) through Youdao.
+   *  utterance.lang en-US → US; else UK. */
   function installSpeechPatch() {
     var synth = global.speechSynthesis;
     if (!synth || synth.__yysdWordAudioPatched) return;
@@ -107,10 +135,11 @@
         origSpeak(utterance);
         return;
       }
+      var accent = /en-US/i.test((utterance && utterance.lang) || "") ? 2 : 1;
       stopAudio();
       origCancel();
-      var a = new Audio(youdaoUrl(text));
-      audio = a;
+      var aEl = new Audio(youdaoUrl(text, accent));
+      audio = aEl;
       var settled = false;
       function fire(handler) {
         try {
@@ -120,7 +149,7 @@
       function fallback() {
         if (settled) return;
         settled = true;
-        if (audio === a) audio = null;
+        if (audio === aEl) audio = null;
         fallingBack = true;
         try {
           origSpeak(utterance);
@@ -128,14 +157,14 @@
           setTimeout(function () { fallingBack = false; }, 0);
         }
       }
-      a.onended = function () {
+      aEl.onended = function () {
         if (settled) return;
         settled = true;
-        if (audio === a) audio = null;
+        if (audio === aEl) audio = null;
         fire(utterance.onend);
       };
-      a.onerror = fallback;
-      var p = a.play();
+      aEl.onerror = fallback;
+      var p = aEl.play();
       if (p && p.catch) p.catch(fallback);
     };
 
@@ -144,7 +173,11 @@
 
   global.YysdWordAudio = {
     speak: speak,
+    speakUk: speakUk,
+    speakUs: speakUs,
     cancel: cancel,
-    installSpeechPatch: installSpeechPatch
+    installSpeechPatch: installSpeechPatch,
+    UK: 1,
+    US: 2
   };
 })(typeof window !== "undefined" ? window : this);

@@ -41,11 +41,21 @@
     return true;
   }
 
+  // ponytail: quiz defaults to Youdao US (type=2)
   function speak(word) {
+    var WA = window.YysdWordAudio;
+    if (WA && WA.speakUs) {
+      WA.speakUs(word);
+      return;
+    }
+    if (WA && WA.speak) {
+      WA.speak(word, 2);
+      return;
+    }
     if (!window.speechSynthesis || !word) return;
     window.speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(word);
-    u.lang = "en-GB";
+    u.lang = "en-US";
     u.rate = 0.9;
     window.speechSynthesis.speak(u);
   }
