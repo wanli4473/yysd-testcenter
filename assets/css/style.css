@@ -7015,60 +7015,72 @@ body.is-vocab-hub .catalog-toolbar {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.15fr);
+  /* Slightly narrower copy rail — paper stays the hero */
+  grid-template-columns: minmax(260px, 0.88fr) minmax(0, 1.22fr);
   gap: 0;
   background: #d9e1ec;
 }
 .ha-cdt-app__copy {
-  padding: clamp(28px, 4vw, 48px) clamp(28px, 4vw, 52px) clamp(28px, 4vw, 48px) clamp(48px, 7vw, 96px);
+  /* Optical upper-middle: more bottom air than top */
+  padding:
+    clamp(48px, 9vh, 88px)
+    clamp(28px, 3.8vw, 48px)
+    clamp(72px, 14vh, 120px);
   border-right: 1px solid #c8d2e0;
   background: linear-gradient(180deg, #eef3f8 0%, #e4ebf3 100%);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: center;
   box-sizing: border-box;
 }
-.ha-cdt-app__copy > * {
-  max-width: 28rem;
-  margin-inline: auto 0;
-  width: 100%;
+/* Centered measure, left-aligned type — Apple editorial pattern */
+.ha-cdt-app__stack {
+  width: min(100%, 22rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
 }
 .ha-cdt-app__eyebrow {
-  margin: 0 0 14px;
-  font-size: 12px;
+  margin: 0 0 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .12em;
   text-transform: uppercase;
   color: #4a9ed9;
   font-family: var(--cdt-font);
 }
 .ha-cdt-app__copy h2 {
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   font-family: var(--cdt-serif);
-  font-size: clamp(1.85rem, 3.6vw, 2.75rem);
+  font-size: clamp(1.7rem, 2.8vw, 2.45rem);
   font-weight: 700;
-  line-height: 1.22;
-  letter-spacing: .02em;
+  line-height: 1.28;
+  letter-spacing: .01em;
   color: #0b1f3a;
 }
 .ha-cdt-app__copy h2 .ha-line { display: block; }
+.ha-cdt-app__copy h2 .ha-line + .ha-line { margin-top: 0.06em; }
 .ha-cdt-app__copy h2 .ha-line:nth-child(even) {
   color: #1e5a8a;
 }
 .ha-cdt-app__lead {
-  margin: 0 0 22px;
+  margin: 0 0 26px;
   max-width: 28em;
   font-size: 15px;
   line-height: 1.65;
   color: #3d4f66;
   font-family: var(--cdt-font);
+  text-wrap: pretty;
 }
 .ha-cdt-app__link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   width: fit-content;
+  margin-top: 2px;
   padding: 10px 16px;
   border-radius: 3px;
   font-size: 14px;
@@ -7197,7 +7209,13 @@ body.is-vocab-hub .catalog-toolbar {
   .ha-cdt-app__copy {
     border-right: 0;
     border-bottom: 1px solid #c8d2e0;
-    text-align: left;
+    padding:
+      clamp(28px, 5vh, 40px)
+      clamp(20px, 5vw, 32px)
+      clamp(36px, 6vh, 48px);
+  }
+  .ha-cdt-app__stack {
+    width: min(100%, 26rem);
   }
 }
 .home-apple-keynote .ha-feature--cdt {

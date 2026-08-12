@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高中词汇 · 优益思达</title>
+  <script>
+    (function () {
+      var p = new URLSearchParams(location.search);
+      var mode = p.get("mode") || "unit";
+      if (mode === "wrong") location.replace("wrong-words.html");
+      else if (p.get("panel") === "quiz" || mode === "custom") location.replace("vocab-quiz.html?book=gaozhong");
+      else location.replace("vocab-shelf.html?book=gaozhong");
+    })();
+  </script>
+</head>
+<body>
+  <p><a href="vocab-shelf.html?book=gaozhong">正在跳转到词库书架…</a></p>
+</body>
+</html>

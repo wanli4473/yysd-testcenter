@@ -128,9 +128,7 @@
         "推荐词库";
 
       var actions = isPlacement
-        ? '<a class="btn btn--primary" href="vocab.html?book=' +
-          encodeURIComponent(bookKey) +
-          '">进入推荐词库 · ' +
+        ? '<a class="btn btn--primary" href="vocab-shelf.html?view=catalog">进入词库书架 · ' +
           esc(bookLabel) +
           "</a>" +
           '<a class="btn btn--ghost" href="diagnostic-mistakes.html">查看诊断错题</a>' +

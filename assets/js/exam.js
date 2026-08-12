@@ -178,9 +178,7 @@
     }
     if (deltaLine) sub = deltaLine + (sub ? " · " + sub : "");
 
-    var primaryHref = wrongN
-      ? "wrong-words.html?book=" + encodeURIComponent(payload.book || "gaozhong")
-      : "results.html";
+    var primaryHref = wrongN ? "wrong-words.html" : "results.html";
     var primaryLabel = wrongN ? "看错题 →" : "我的成绩 →";
 
     if (reveal) {
@@ -220,7 +218,7 @@
           '<span class="score-toast__sub">' + Y.esc(sub) + '</span>' +
         '</div>' +
         (wrongN
-          ? '<a class="score-toast__link" href="wrong-words.html?book=' + encodeURIComponent(payload.book || "gaozhong") + '">错题本 →</a>'
+          ? '<a class="score-toast__link" href="wrong-words.html">错题本 →</a>'
           : '<a class="score-toast__link" href="results.html">我的成绩 →</a>') +
         '<button type="button" class="score-toast__close" aria-label="关闭">×</button>' +
       '</div>';
@@ -468,12 +466,13 @@
     }
 
     backBtn.textContent = isStudy ? "← 返回单词" : "← 退出考场";
-    if (isStudy && Y.isVocabListSubject(item.subject)) {
-      backBtn.href = "vocab.html?book=" + (item.subject === "vocab" ? "gaozhong" : "cet4");
-    } else if (isStudy && Y.isVocabSpecial(item.subject)) {
-      backBtn.href = "vocab.html?book=special";
+    if (isStudy && (Y.isVocabListSubject(item.subject) || Y.isVocabSpecial(item.subject))) {
+      var backBook = item.subject === "vocab" ? "gaozhong"
+        : (item.subject === "vocab-cet4" ? "cet4" : "special");
+      backBtn.href = "vocab-shelf.html?book=" + encodeURIComponent(backBook);
+      backBtn.textContent = "← 返回词库";
     } else if (isStudy) {
-      backBtn.href = "zone.html?zone=study";
+      backBtn.href = "zone.html?zone=study&s=vocab";
       backBtn.textContent = "← 返回单词区";
     } else if (item.zone === "mock") {
       var mockS = "mock";

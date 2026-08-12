@@ -415,9 +415,13 @@
     if (path === "dashboard.html" || path === "calendar.html") { activate("tasks"); return; }
     if (path === "alevel.html" || path.indexOf("alevel") === 0) { activate("intl"); return; }
     if (path === "zone.html" && zone === "study") { activate("words"); return; }
-    if (path === "vocab.html" || path === "wrong-words.html" || path === "saved-words.html") { activate("words"); return; }
-    if (path === "word-realm.html") { activate("words"); return; }
-    if (path === "vocab-lesson.html") { activate("words"); return; }
+    if (path === "vocab.html" || path === "wrong-words.html" || path === "saved-words.html" ||
+        path === "vocab-shelf.html" || path === "vocab-learn.html" || path === "vocab-quiz.html" ||
+        path === "vocab-themes.html" || path === "hs-vocab.html" || path === "word-realm.html" ||
+        path === "vocab-lesson.html") {
+      activate("words");
+      return;
+    }
     if (path === "speaking.html" || path === "speaking-select.html" || path === "speaking-session.html") { activate("ielts"); return; }
     if (path === "ai-tutor.html" || path === "jingting-player.html") { activate("ielts"); return; }
     if (path === "cambridge.html" || (path === "zone.html" && zone === "mock") || (path === "zone.html" && subject === "ielts")) {

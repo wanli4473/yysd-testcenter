@@ -140,7 +140,10 @@
     var q = new URLSearchParams(location.search);
     if (examPage) return { page: "exam", zone: examZone, subject: examSubject, title: examTitle };
     if (p.indexOf("zone.html") >= 0) return { page: "zone", zone: q.get("zone") || "mock" };
-    if (p.indexOf("vocab.html") >= 0) return { page: "vocab", book: q.get("book") || "gaozhong" };
+    if (p.indexOf("vocab-shelf.html") >= 0 || p.indexOf("vocab-learn.html") >= 0 ||
+        p.indexOf("vocab-quiz.html") >= 0 || p.indexOf("vocab.html") >= 0) {
+      return { page: "vocab", book: q.get("book") || "gaozhong" };
+    }
     if (p.indexOf("results.html") >= 0) return { page: "results" };
     if (p.indexOf("index.html") >= 0 || p.endsWith("/") || p === "") return { page: "home" };
     return { page: "other" };

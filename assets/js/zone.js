@@ -279,89 +279,42 @@
   }
   function unitOf(subject) { return Y.isCambridge(subject) ? " 册" : " 份"; }
 
-  // Vocab hub — 作业模式（老师布置 / 系统学习）；游戏见 word-realm.html
+  // Vocab hub — 词库 / 检测 / 错题本；每日单词独立保留
   function vocabBentoHTML(vbooks) {
-    var total = 0;
-    var done = 0;
-    var nextItem = null;
-    var nextBook = null;
-    var entryTint = { gaozhong: "navy", cet4: "gold", special: "teal" };
-    var picks = [];
-
-    vbooks.forEach(function (s) {
-      var prog = Y.vocabProgress(s.lists);
-      total += s.total;
-      done += prog.done || 0;
-      if (!nextItem && prog.next) {
-        nextItem = prog.next;
-        nextBook = s.book;
-      }
-      if (prog.next) {
-        picks.push({ item: prog.next, book: s.book, done: prog.done, total: s.total });
-      }
-    });
-
-    var pct = total ? Math.round((done / total) * 100) : 0;
     var wrongN = ["gaozhong", "cet4", "special"].reduce(function (n, k) {
       return n + (Y.wrongWordCount(k) || 0);
     }, 0);
     var savedN = Y.savedWordCount ? Y.savedWordCount() : 0;
 
-    var entries = vbooks.slice(0, 3).map(function (s) {
-      var prog = Y.vocabProgress(s.lists);
-      var hint = prog.done
-        ? ("已学 " + prog.done + "/" + s.total)
-        : (s.total + " 个单元");
-      var tint = entryTint[s.book.key] || "navy";
-      return '<a class="vocab-entry vocab-entry--' + tint + '" href="vocab.html?book=' +
-        encodeURIComponent(s.book.key) + '">' +
-        '<span class="vocab-entry__kicker">词书 · 作业</span>' +
-        '<p class="vocab-entry__title">' + Y.esc(s.book.label) + "</p>" +
-        '<p class="vocab-entry__desc">' + Y.esc(hint) + "</p>" +
-        '<span class="vocab-entry__go">进入 ›</span></a>';
-    }).join("");
+    // ponytail: three primary modules replace per-book hubs
+    var entries =
+      '<a class="vocab-entry vocab-entry--navy" href="vocab-shelf.html">' +
+        '<span class="vocab-entry__kicker">主模块</span>' +
+        '<p class="vocab-entry__title">词库</p>' +
+        '<p class="vocab-entry__desc">加书架 · 按 List 学习</p>' +
+        '<span class="vocab-entry__go">进入 ›</span></a>' +
+      '<a class="vocab-entry vocab-entry--teal" href="vocab-quiz.html">' +
+        '<span class="vocab-entry__kicker">主模块</span>' +
+        '<p class="vocab-entry__title">单词检测</p>' +
+        '<p class="vocab-entry__desc">多选 List · 合并检测</p>' +
+        '<span class="vocab-entry__go">进入 ›</span></a>' +
+      '<a class="vocab-entry vocab-entry--wrong" href="wrong-words.html">' +
+        '<span class="vocab-entry__kicker">主模块</span>' +
+        '<p class="vocab-entry__title">错题本</p>' +
+        '<p class="vocab-entry__desc">' +
+          (wrongN ? wrongN + " 个错词待复习" : "检测错词按场次收录") +
+        "</p>" +
+        '<span class="vocab-entry__go">复习 ›</span></a>' +
+      '<a class="vocab-entry vocab-entry--gold" href="diagnostic.html">' +
+        '<span class="vocab-entry__kicker">测评</span>' +
+        '<p class="vocab-entry__title">能力诊断</p>' +
+        '<p class="vocab-entry__desc">硬门槛进阶 · 推荐起始词库</p>' +
+        '<span class="vocab-entry__go">开始 ›</span></a>';
 
-    // ponytail: browse-only lexicon hub for now
-    entries += '<a class="vocab-entry vocab-entry--gold" href="vocab-themes.html">' +
-      '<span class="vocab-entry__kicker">词书 · 分类</span>' +
-      '<p class="vocab-entry__title">分类词库</p>' +
-      '<p class="vocab-entry__desc">按话题浏览 · 暂不测试</p>' +
-      '<span class="vocab-entry__go">浏览 ›</span></a>';
-
-    entries += '<a class="vocab-entry vocab-entry--wrong" href="wrong-words.html">' +
-      '<span class="vocab-entry__kicker">复习</span>' +
-      '<p class="vocab-entry__title">错题本</p>' +
-      '<p class="vocab-entry__desc">' +
-        (wrongN ? wrongN + " 个错词待复习" : "测试错词自动收录") +
-      "</p>" +
-      '<span class="vocab-entry__go">复习 ›</span></a>';
-
-    entries += '<a class="vocab-entry vocab-entry--navy" href="diagnostic.html">' +
-      '<span class="vocab-entry__kicker">测评</span>' +
-      '<p class="vocab-entry__title">能力诊断</p>' +
-      '<p class="vocab-entry__desc">硬门槛进阶 · 推荐起始词库</p>' +
-      '<span class="vocab-entry__go">开始 ›</span></a>';
-
-    var lessonOf = function (item) {
-      return (Y.vocabLessonHref ? Y.vocabLessonHref(item, "") : Y.fileHref(item, ""));
-    };
-
-    var picksHTML;
-    if (!picks.length) {
-      picksHTML = '<p class="bento-panel__desc">词书都学完了，去错题本巩固，或换一本继续。</p>';
-    } else {
-      picksHTML = '<ul class="vocab-bento__picks">' + picks.slice(0, 4).map(function (p) {
-        return '<li><a href="' + lessonOf(p.item) + '">' +
-          '<span>' + Y.esc(Y.displayTitle(p.item)) + "</span>" +
-          '<em>' + Y.esc(p.book.label) + "</em></a></li>";
-      }).join("") + "</ul>";
-    }
-
-    var ctaHref = nextItem ? lessonOf(nextItem) : "vocab.html?book=gaozhong";
-    var ctaTitle = nextItem ? ("继续小课 · " + Y.displayTitle(nextItem)) : "开始背单词";
-    var ctaDesc = nextBook
-      ? (nextBook.label + (done ? " · 已学 " + done + "/" + total : " · 适合老师布置作业"))
-      : "选择词书，边学边测";
+    var picksHTML = '<p class="bento-panel__desc">先把词书加入书架，再按 List 学习；检测与错题在另外两个入口。</p>';
+    var ctaHref = "vocab-shelf.html";
+    var ctaTitle = "打开词库书架";
+    var ctaDesc = "添加词书 · 卡片 / 列表学习";
 
     var aiWord = (window.YYSD_AI_WORD && window.YYSD_AI_WORD.shellHTML)
       ? window.YYSD_AI_WORD.shellHTML() : "";
@@ -551,31 +504,24 @@
       '<div class="vocab-bento__body bento-grid bento-grid--main-side">' +
       '<div class="vocab-bento__main">' +
         '<div class="bento-panel bento-panel--md vocab-bento__progress">' +
-          '<p class="bento-panel__title">作业进度</p>' +
-          '<p class="bento-panel__desc">词书单元完成情况（老师布置走这里）</p>' +
+          '<p class="bento-panel__title">怎么学</p>' +
+          '<p class="bento-panel__desc">词库加书架 → List 学习 → 单词检测 → 错题本复习</p>' +
           '<div class="vocab-bento__stat-row">' +
-            '<div class="bento-stat">' +
-              '<span class="bento-stat__label">已学单元</span>' +
-              '<span class="bento-stat__value">' + done + '<small>/' + total + '</small></span>' +
-              '<span class="bento-stat__hint">' + pct + '% 完成</span>' +
-            '</div>' +
             '<div class="bento-stat">' +
               '<span class="bento-stat__label">错词 / 生词</span>' +
               '<span class="bento-stat__value">' + wrongN + '<small>/' + savedN + '</small></span>' +
               '<span class="bento-stat__hint">待复习收藏</span>' +
             '</div>' +
           '</div>' +
-          '<div class="bento-progress" aria-hidden="true"><div class="bento-progress__bar" style="width:' + pct + '%"></div></div>' +
         '</div>' +
         '<div class="bento-panel bento-panel--md">' +
-          '<p class="bento-panel__title">今日精选</p>' +
-          '<p class="bento-panel__desc">各词书下一站，点开即学</p>' +
+          '<p class="bento-panel__title">学习提示</p>' +
           picksHTML +
         '</div>' +
       '</div>' +
       '<aside class="vocab-bento__side">' +
         '<a class="bento-cta bento-cta--orange" href="' + ctaHref + '">' +
-          '<span class="bento-cta__badge">作业任务</span>' +
+          '<span class="bento-cta__badge">词库</span>' +
           '<div><p class="bento-cta__title">' + Y.esc(ctaTitle) + '</p>' +
           '<p class="bento-cta__desc">' + Y.esc(ctaDesc) + '</p></div>' +
           '<span class="vocab-bento__cta-go">开始 ›</span></a>' +

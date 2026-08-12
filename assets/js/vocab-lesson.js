@@ -620,7 +620,7 @@
         ? ("word-realm.html?view=map&region=" + encodeURIComponent(r))
         : "word-realm.html?view=hub";
     }
-    if (state.book) return "vocab.html?book=" + encodeURIComponent(state.book);
+    if (state.book) return "vocab-shelf.html?book=" + encodeURIComponent(state.book);
     return "zone.html?zone=study&s=vocab";
   }
 

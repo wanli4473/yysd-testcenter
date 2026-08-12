@@ -68,7 +68,7 @@ window.YYSD = (function () {
           { label: "阅读专项词汇", subject: "vocab-special-reading" },
           { label: "写作专项词汇", subject: "vocab-special-writing" }
         ] },
-        { label: "分类词库", subject: "vocab-themes", href: "vocab-themes.html" }
+        { label: "分类词库", subject: "vocab-themes", href: "vocab-shelf.html?view=catalog" }
       ] }
     ],
     practice: [
@@ -246,31 +246,24 @@ window.YYSD = (function () {
       "</div></div>";
   }
 
-  function wrongWordsStripHTML(prefix, activeKey) {
+  function wrongWordsStripHTML(prefix) {
     var p = prefix || "";
-    var books = [
-      { key: "gaozhong", label: "高中词汇错题本" },
-      { key: "cet4", label: "四级词汇错题本" },
-      { key: "special", label: "雅思专项词汇错题本" }
-    ];
-    var cards = books.map(function (b) {
-      var n = wrongWordCount(b.key);
-      var isOn = activeKey && activeKey === b.key;
-      return '<a class="wrong-notebook-card' + (n ? " has-items" : "") +
-        (isOn ? " is-active" : "") + '" href="' + p +
-        'wrong-words.html?book=' + encodeURIComponent(b.key) + '">' +
-        '<span class="wrong-notebook-card__ico" aria-hidden="true">📕</span>' +
-        '<span class="wrong-notebook-card__body">' +
-          '<b>' + esc(b.label) + '</b>' +
-          '<span>' + (n ? n + " 个错词待复习" : "暂无错词，做完测试会自动收录") + "</span>" +
-        "</span>" +
-        (n ? '<span class="wrong-notebook-card__badge">' + n + "</span>" : '<span class="wrong-notebook-card__go">进入 ›</span>') +
-      "</a>";
-    }).join("");
+    var n = ["gaozhong", "cet4", "special"].reduce(function (sum, k) {
+      return sum + (wrongWordCount(k) || 0);
+    }, 0);
     return '<div class="wrong-notebook-strip" aria-label="单词错题本">' +
       '<div class="wrong-notebook-strip__head"><h3>单词错题本</h3>' +
-      '<span class="wrong-notebook-strip__hint">测试中拼写和释义未全对的单词会自动收录</span></div>' +
-      '<div class="wrong-notebook-strip__grid">' + cards + "</div></div>";
+      '<span class="wrong-notebook-strip__hint">检测错词按场次收录 · 日期 + 词书 + List</span></div>' +
+      '<div class="wrong-notebook-strip__grid">' +
+        '<a class="wrong-notebook-card' + (n ? " has-items" : "") + '" href="' + p + 'wrong-words.html">' +
+          '<span class="wrong-notebook-card__ico" aria-hidden="true">📕</span>' +
+          '<span class="wrong-notebook-card__body">' +
+            "<b>统一错题本</b>" +
+            "<span>" + (n ? n + " 个本机旧错词待同步/复习" : "完成单词检测后自动收录") + "</span>" +
+          "</span>" +
+          (n ? '<span class="wrong-notebook-card__badge">' + n + "</span>" : '<span class="wrong-notebook-card__go">进入 ›</span>') +
+        "</a>" +
+      "</div></div>";
   }
 
   // Resolve the manifest path relative to the current page (root or /admin etc.)
@@ -346,7 +339,7 @@ window.YYSD = (function () {
       '</a>';
   }
 
-  // ---- Vocabulary book grouping (单词区单词 → vocab.html?book=…) ----
+  // ---- Vocabulary book grouping (单词区 → vocab-shelf.html?book=…) ----
   var VOCAB_BOOKS = {
     gaozhong: { key: "gaozhong", label: "高中词汇", subject: "vocab", tag: "雅思基础", chunk: 10 },
     cet4: {
@@ -363,7 +356,7 @@ window.YYSD = (function () {
       key: "special", label: "雅思专项词汇", tag: "专题",
       subjects: ["vocab-special-listening", "vocab-special-reading", "vocab-special-writing"]
     }
-    // ponytail: themes = browse hub only (vocab-themes.html), not a lesson book yet
+    // ponytail: themes live in shelf catalog (vocab-shelf.html?view=catalog)
   };
 
   function isVocabListSubject(subject) {
@@ -588,7 +581,7 @@ window.YYSD = (function () {
       '<path class="vol-card__book-r" d="M19.5 5.5c-2.6 0-4.8.5-6.5 1.6v11.4c1.7-1.1 3.9-1.6 6.5-1.6V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
       '<path d="M12 7.1v11.4" stroke="currentColor" stroke-width="2"/></svg>';
     return '' +
-      '<a class="vol-card vol-card--vocab vol-card--tier-' + tagTier + '" href="' + (prefix || "") + 'vocab.html?book=' + encodeURIComponent(book.key) + '">' +
+      '<a class="vol-card vol-card--vocab vol-card--tier-' + tagTier + '" href="' + (prefix || "") + 'vocab-shelf.html?book=' + encodeURIComponent(book.key) + '">' +
         '<div class="vol-card__main">' +
         '<div class="vol-card__top">' +
           '<span class="vol-card__vol">' + shieldIcon + ' ' + esc(shortLabel) + '</span>' +

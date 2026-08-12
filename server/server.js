@@ -13,6 +13,8 @@ const { SendSmsRequest } = Dysmsapi20170525;
 const OpenApi = require("@alicloud/openapi-client");
 const tenant = require("./tenant");
 const diagnostic = require("./diagnostic");
+const hsVocab = require("./hs-vocab");
+const vocabShelf = require("./vocab-shelf");
 
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -3960,6 +3962,19 @@ diagnostic.mountRoutes(app, {
   listStudentsByOrg: function (orgId) {
     return orgStmts.listStudentsByOrg.all(orgId);
   },
+  repoRoot: path.join(__dirname, "..")
+});
+
+// High-school vocab dual-mode (unit / custom / mistakes)
+hsVocab.mountRoutes(app, {
+  db: db,
+  authMiddleware: authMiddleware
+});
+
+// Unified vocab catalog + bookshelf (learn/quiz later phases)
+vocabShelf.mountRoutes(app, {
+  db: db,
+  authMiddleware: authMiddleware,
   repoRoot: path.join(__dirname, "..")
 });
 

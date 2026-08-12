@@ -163,7 +163,9 @@ assert(realmHtml.includes("word-realm-core.js") && realmHtml.includes("word-real
 
 const zone = fs.readFileSync(path.join(root, "assets/js/zone.js"), "utf8");
 assert(zone.includes("高中") || zone.includes("vocab-entry"), "homework bento");
-assert(zone.includes("vocab.html?book=") && zone.includes("word-realm.html"), "dual entry intact");
+// ponytail: zone primary entry is shelf; realm remains a standalone page
+assert(zone.includes("vocab-shelf.html"), "zone → shelf");
+assert(fs.existsSync(path.join(root, "word-realm.html")), "realm page still shipped");
 
 const css = fs.readFileSync(path.join(root, "assets/css/word-realm.css"), "utf8");
 assert(css.includes("wr-map-board--ash") && css.includes("wr-map-board--throne") && css.includes("wr-saga"), "map tones + saga css");
