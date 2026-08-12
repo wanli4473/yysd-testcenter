@@ -421,6 +421,12 @@ function mountRoutes(app, opts) {
     listProgress: db.prepare(
       "SELECT list_id, word_idx, done, updated_at FROM vocab_learn_progress WHERE student_id = ? AND book_id = ?"
     ),
+    listAllProgress: db.prepare(
+      "SELECT book_id, list_id, word_idx, done, updated_at FROM vocab_learn_progress WHERE student_id = ?"
+    ),
+    countShelf: db.prepare(
+      "SELECT COUNT(*) AS n FROM vocab_bookshelf WHERE student_id = ?"
+    ),
     upsertProgress: db.prepare(
       "INSERT INTO vocab_learn_progress (student_id, book_id, list_id, word_idx, done, updated_at) " +
       "VALUES (?, ?, ?, ?, ?, ?) " +
@@ -609,6 +615,112 @@ function mountRoutes(app, opts) {
           doneLists: doneLists
         };
       })
+    });
+  });
+
+  // ponytail: one round-trip for vocab hub desk; today/week words = sum(word_idx) on lists touched in range (index proxy, not event log)
+  function weekStartDate() {
+    var d = new Date();
+    var day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    var m = d.getMonth() + 1;
+    var dayN = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (dayN < 10 ? "0" : "") + dayN;
+  }
+
+  function datePrefix(iso) {
+    return String(iso || "").slice(0, 10);
+  }
+
+  app.get("/api/vocab-shelf/desk", authMiddleware, function (req, res) {
+    migrateHsMistakes(req.user.sub);
+    var cat = loadCatalog();
+    var today = todayDate();
+    var weekStart = weekStartDate();
+    var shelfBooks = (stmts.countShelf.get(req.user.sub) || {}).n || 0;
+    var progress = stmts.listAllProgress.all(req.user.sub);
+    var activeLists = 0;
+    var todayWords = 0;
+    var weekWords = 0;
+    var continueLearn = null;
+    var continueTs = "";
+    progress.forEach(function (r) {
+      var touched = datePrefix(r.updated_at);
+      var idx = Math.max(0, Math.floor(Number(r.word_idx) || 0));
+      if (!r.done && idx > 0) activeLists += 1;
+      if (touched === today) todayWords += idx;
+      if (touched >= weekStart) weekWords += idx;
+      if (!r.done && r.updated_at && (!continueTs || r.updated_at > continueTs)) {
+        continueTs = r.updated_at;
+        var book = cat.byId[r.book_id];
+        var listLabel = r.list_id;
+        if (book && book.lists) {
+          for (var i = 0; i < book.lists.length; i++) {
+            if (book.lists[i].id === r.list_id) {
+              listLabel = book.lists[i].label || r.list_id;
+              break;
+            }
+          }
+        }
+        continueLearn = {
+          bookId: r.book_id,
+          bookLabel: bookLabelOf(cat, r.book_id),
+          listId: r.list_id,
+          listLabel: listLabel,
+          wordIdx: idx,
+          href: "vocab-learn.html?book=" + encodeURIComponent(r.book_id) +
+            "&list=" + encodeURIComponent(r.list_id)
+        };
+      }
+    });
+
+    var sessions = stmts.listSessions.all(req.user.sub);
+    var weekQuizzes = 0;
+    var lastAccuracy = null;
+    var continueQuiz = null;
+    var pendingSessions = 0;
+    var mistakeWords = 0;
+    var continueWrong = null;
+    sessions.forEach(function (row, i) {
+      var n = stmts.countSessionMistakes.get(row.id).n;
+      mistakeWords += n;
+      if (n > 0) {
+        pendingSessions += 1;
+        if (!continueWrong) {
+          var s = serializeSession(row, cat, n);
+          continueWrong = {
+            id: s.id,
+            title: s.title,
+            wrongCount: n,
+            href: "wrong-words.html?id=" + encodeURIComponent(String(s.id))
+          };
+        }
+      }
+      if (row.quiz_date >= weekStart) weekQuizzes += 1;
+      if (i === 0 && row.total > 0) {
+        lastAccuracy = Math.round((row.correct / row.total) * 100);
+        continueQuiz = {
+          bookId: row.book_id,
+          bookLabel: bookLabelOf(cat, row.book_id),
+          href: "vocab-quiz.html?book=" + encodeURIComponent(row.book_id),
+          label: bookLabelOf(cat, row.book_id)
+        };
+      }
+    });
+
+    res.json({
+      ok: true,
+      shelfBooks: shelfBooks,
+      activeLists: activeLists,
+      todayWords: todayWords,
+      weekWords: weekWords,
+      continueLearn: continueLearn,
+      weekQuizzes: weekQuizzes,
+      lastAccuracy: lastAccuracy,
+      continueQuiz: continueQuiz,
+      pendingSessions: pendingSessions,
+      mistakeWords: mistakeWords,
+      continueWrong: continueWrong
     });
   });
 
