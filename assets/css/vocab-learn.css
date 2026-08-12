@@ -191,14 +191,6 @@
 .vl-lives .heart.lost { opacity: 0.12; transform: scale(0.5); }
 .vl-timer .num.warning { color: #c0392b; font-weight: 700; }
 .vl-listen-hint { font-size: 14px; color: #4d625b; margin: 8px 0; }
-.vl-spell-row { display: flex; gap: 8px; margin: 12px 0; }
-.vl-spell-row input {
-  flex: 1;
-  border: 2px solid #eef3f1;
-  border-radius: 16px;
-  padding: 10px 14px;
-  font-size: 16px;
-}
 .vl-opts { display: grid; gap: 8px; margin-top: 10px; }
 .vl-opt {
   text-align: left;
@@ -208,11 +200,53 @@
   padding: 10px 12px;
   font-size: 14px;
   cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 .vl-opt .label { font-weight: 700; margin-right: 6px; color: #6b7e78; }
+.vl-opt.selected {
+  border-color: #1f3d5c;
+  background: #eef4fa;
+}
 .vl-opt.correct { border-color: #2d6b4f; background: #eaf5ef; }
 .vl-opt.wrong { border-color: #c0392b; background: #fdecea; }
 .vl-opt.disabled { pointer-events: none; opacity: 0.85; }
+.vl-spell-row {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition: max-height 0.28s ease, opacity 0.22s ease, margin 0.22s ease, transform 0.22s ease;
+}
+.vl-spell-row.is-open {
+  margin: 14px 0 4px;
+  max-height: 64px;
+  opacity: 1;
+  transform: none;
+  overflow: visible;
+}
+.vl-spell-row[hidden] { display: none !important; }
+.vl-spell-row.is-open[hidden] { display: flex !important; }
+.vl-spell-row input {
+  flex: 1;
+  border: 2px solid #eef3f1;
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-size: 16px;
+}
+.vl-spell-row input.spell-ok {
+  border-color: #2d6b4f;
+  background: #eaf5ef;
+}
+.vl-spell-row input.spell-bad {
+  border-color: #c0392b;
+  background: #fdecea;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vl-spell-row { transition: none; }
+}
 .vl-feedback {
   display: none;
   margin-top: 12px;

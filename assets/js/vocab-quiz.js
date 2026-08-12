@@ -281,6 +281,54 @@
     }, 1000);
   }
 
+  function softPrompt(msg) {
+    var fb = document.getElementById("fb");
+    if (!fb) return;
+    fb.className = "vl-feedback show fail";
+    fb.textContent = msg;
+  }
+
+  function revealSpellRow(focus) {
+    var row = document.getElementById("spellRow");
+    if (!row) return;
+    if (!row.classList.contains("is-open")) {
+      row.hidden = false;
+      // ponytail: reflow so fade/slide CSS transition runs
+      void row.offsetWidth;
+      row.classList.add("is-open");
+    }
+    var submit = document.getElementById("submit");
+    if (submit) submit.disabled = false;
+    if (focus) {
+      var spell = document.getElementById("spell");
+      if (spell && !spell.disabled) spell.focus();
+    }
+  }
+
+  function lockQuizControls() {
+    var spell = document.getElementById("spell");
+    var submit = document.getElementById("submit");
+    if (spell) spell.disabled = true;
+    if (submit) submit.disabled = true;
+    root.querySelectorAll(".vl-opt").forEach(function (b) { b.classList.add("disabled"); });
+  }
+
+  function paintMeaningResult(meaningOk) {
+    var w = currentWord();
+    root.querySelectorAll(".vl-opt").forEach(function (b) {
+      b.classList.remove("selected");
+      if (b.getAttribute("data-v") === w.meaning) b.classList.add("correct");
+      else if (b.getAttribute("data-v") === state.selectedMeaning && !meaningOk) b.classList.add("wrong");
+    });
+  }
+
+  function paintSpellResult(spellOk) {
+    var spell = document.getElementById("spell");
+    if (!spell) return;
+    spell.classList.remove("spell-ok", "spell-bad");
+    spell.classList.add(spellOk ? "spell-ok" : "spell-bad");
+  }
+
   function renderQuizActive() {
     var w = currentWord();
     var opts = meaningOptions(w.meaning, 4);
@@ -289,17 +337,17 @@
     state.waiting = false;
     state.selectedMeaning = null;
     shell(
-      '<p class="vl-listen-hint">听发音，选择正确中文，再拼写英文</p>' +
+      '<p class="vl-listen-hint">听发音，先选中文含义，再拼写英文</p>' +
       '<button type="button" class="vl-btn" id="listen">🔊 播放发音</button>' +
-      '<div class="vl-spell-row">' +
-        '<input type="text" id="spell" placeholder="拼写英文..." autocomplete="off" />' +
-        '<button type="button" class="vl-btn vl-btn-primary" id="submit" disabled>提交</button>' +
-      "</div>" +
       '<div class="vl-opts" id="opts">' +
         opts.map(function (o, i) {
           return '<button type="button" class="vl-opt" data-v="' + esc(o) + '"><span class="label">' +
             labels[i] + ".</span> " + esc(o) + "</button>";
         }).join("") +
+      "</div>" +
+      '<div class="vl-spell-row" id="spellRow" hidden>' +
+        '<input type="text" id="spell" placeholder="拼写英文..." autocomplete="off" autocapitalize="off" spellcheck="false" />' +
+        '<button type="button" class="vl-btn vl-btn-primary" id="submit" disabled>提交</button>' +
       "</div>" +
       '<div class="vl-feedback" id="fb"></div>' +
       '<div class="vl-nav-row"><button type="button" class="vl-btn vl-btn-primary" id="qnext" disabled>下一题 →</button></div>',
@@ -317,11 +365,15 @@
     document.getElementById("opts").onclick = function (e) {
       var b = e.target.closest(".vl-opt");
       if (!b || state.answered) return;
-      root.querySelectorAll(".vl-opt").forEach(function (x) { x.classList.remove("correct"); });
-      b.classList.add("correct");
+      root.querySelectorAll(".vl-opt").forEach(function (x) { x.classList.remove("selected"); });
+      b.classList.add("selected");
       state.selectedMeaning = b.getAttribute("data-v");
-      document.getElementById("submit").disabled = false;
-      document.getElementById("spell").focus();
+      var fb = document.getElementById("fb");
+      if (fb && !state.answered) {
+        fb.className = "vl-feedback";
+        fb.textContent = "";
+      }
+      revealSpellRow(true);
     };
     document.getElementById("submit").onclick = submitQuiz;
     document.getElementById("spell").onkeydown = function (e) {
@@ -332,27 +384,28 @@
   }
 
   function submitQuiz() {
-    if (state.answered || state.gameOver || !state.selectedMeaning) return;
-    var spell = document.getElementById("spell").value.trim().toLowerCase();
+    if (state.answered || state.gameOver) return;
+    if (!state.selectedMeaning) {
+      softPrompt("请先选择中文含义");
+      return;
+    }
+    revealSpellRow(false);
+    var spellEl = document.getElementById("spell");
+    var spell = spellEl ? spellEl.value.trim().toLowerCase() : "";
     if (!spell) {
-      var fb0 = document.getElementById("fb");
-      fb0.className = "vl-feedback show fail";
-      fb0.textContent = "请拼写英文单词";
+      softPrompt("请先拼写英文");
+      if (spellEl) spellEl.focus();
       return;
     }
     state.answered = true;
     clearInterval(state.timer);
-    document.getElementById("spell").disabled = true;
-    document.getElementById("submit").disabled = true;
-    root.querySelectorAll(".vl-opt").forEach(function (b) { b.classList.add("disabled"); });
+    lockQuizControls();
     var w = currentWord();
     var meaningOk = state.selectedMeaning === w.meaning;
     var spellOk = spell === w.word.toLowerCase();
     var ok = meaningOk && spellOk;
-    root.querySelectorAll(".vl-opt").forEach(function (b) {
-      if (b.getAttribute("data-v") === w.meaning) b.classList.add("correct");
-      else if (b.getAttribute("data-v") === state.selectedMeaning && !meaningOk) b.classList.add("wrong");
-    });
+    paintMeaningResult(meaningOk);
+    paintSpellResult(spellOk);
     var fb = document.getElementById("fb");
     if (ok) {
       fb.className = "vl-feedback show ok";
@@ -370,22 +423,33 @@
   }
 
   function onTimeout() {
+    if (state.answered || state.gameOver) return;
     state.answered = true;
     state.waiting = true;
     var w = currentWord();
-    pushMistake(w, "(timeout)");
-    state.lives--;
-    state.wrong++;
-    updateLives();
+    var spellEl = document.getElementById("spell");
+    var spellRaw = spellEl ? spellEl.value.trim() : "";
+    var spell = spellRaw.toLowerCase();
+    var meaningOk = !!(state.selectedMeaning && state.selectedMeaning === w.meaning);
+    var spellOk = !!(spell && spell === w.word.toLowerCase());
+    var ok = meaningOk && spellOk;
+    revealSpellRow(false);
+    lockQuizControls();
+    paintMeaningResult(meaningOk);
+    paintSpellResult(spellOk);
     var fb = document.getElementById("fb");
-    fb.className = "vl-feedback show timeout";
-    fb.textContent = "⏰ 时间到！答案：" + w.word + "（" + w.meaning + "）";
-    document.getElementById("spell").disabled = true;
-    document.getElementById("submit").disabled = true;
-    root.querySelectorAll(".vl-opt").forEach(function (b) {
-      b.classList.add("disabled");
-      if (b.getAttribute("data-v") === w.meaning) b.classList.add("correct");
-    });
+    if (ok) {
+      fb.className = "vl-feedback show ok";
+      fb.textContent = "✅ 时间到，但作答正确！";
+      state.correct++;
+    } else {
+      pushMistake(w, spellRaw || "(timeout)");
+      state.lives--;
+      state.wrong++;
+      updateLives();
+      fb.className = "vl-feedback show timeout";
+      fb.textContent = "⏰ 时间到！答案：" + w.word + "（" + w.meaning + "）";
+    }
     afterAnswer();
   }
 
