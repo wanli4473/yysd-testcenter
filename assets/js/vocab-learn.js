@@ -44,13 +44,14 @@
   function saveProgress(done) {
     if (!A || !A.api || !bookId || !listId) return Promise.resolve();
     var wordIdx = state.learnIdx;
-    var isDone = done || wordIdx >= Math.max(0, words.length - 1);
+    // shelf progress may mark done at last card; assignment only on explicit finish
+    var isDone = !!done || wordIdx >= Math.max(0, words.length - 1);
     var body = { bookId: bookId, listId: listId, wordIdx: wordIdx, done: isDone };
-    if (isDone && assignEventId) body.assignmentEventId = assignEventId;
+    if (done && assignEventId) body.assignmentEventId = assignEventId;
     return A.api("/api/vocab-shelf/progress", {
       method: "POST",
       body: body
-    }).catch(function () {});
+    });
   }
 
   function learnViewToggleHtml() {
@@ -255,13 +256,17 @@
     document.getElementById("next").onclick = function () {
       if (atEnd) {
         saveProgress(true).then(function () {
-          location.href = "vocab-shelf.html?book=" + encodeURIComponent(bookId);
+          location.href = assignEventId
+            ? "dashboard.html"
+            : ("vocab-shelf.html?book=" + encodeURIComponent(bookId));
+        }).catch(function (e) {
+          alert((e && e.message) || "保存失败，请重试");
         });
         return;
       }
       state.learnIdx++;
       state.blurOne = true;
-      saveProgress(false);
+      saveProgress(false).catch(function () {});
       renderLearn();
     };
   }
@@ -288,8 +293,13 @@
       return;
     }
     app.innerHTML = '<div class="vl-state">正在加载…</div>';
-    A.api("/api/vocab-shelf/lesson?bookId=" + encodeURIComponent(bookId) +
-      "&listId=" + encodeURIComponent(listId))
+    // ponytail: same as quiz — homework deep-link must not require prior shelf add
+    A.api("/api/vocab-shelf/add", { method: "POST", body: { bookId: bookId } })
+      .catch(function () {})
+      .then(function () {
+        return A.api("/api/vocab-shelf/lesson?bookId=" + encodeURIComponent(bookId) +
+          "&listId=" + encodeURIComponent(listId));
+      })
       .then(function (d) {
         if (!d.words || !d.words.length) {
           fail("该 List 没有单词", "vocab-shelf.html?book=" + encodeURIComponent(bookId));
@@ -307,10 +317,7 @@
         renderLearn();
       })
       .catch(function (e) {
-        var msg = (e && e.message) || "加载失败";
-        var href = "vocab-shelf.html";
-        if (/书架/.test(msg)) href = "vocab-shelf.html";
-        fail(msg, href);
+        fail((e && e.message) || "加载失败", "vocab-shelf.html");
       });
   }
 

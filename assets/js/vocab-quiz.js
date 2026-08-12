@@ -565,74 +565,98 @@
             assignmentEventId: meta.assignmentEventId || assignEventId || 0
           }
         });
-    finishReq.catch(function () {});
-
     var ov = document.getElementById("overlay");
     var box = document.getElementById("resultBox");
     var isRetest = !!meta.sessionId;
     var isAssign = !!(meta.assignmentEventId || assignEventId);
-    var title;
-    var sub;
-    if (isRetest) {
-      title = "重测结束";
-      sub = "本场错词列表已更新为仍错的 " + state.mistakes.length + " 个（记录保留，可手动删除）。";
-    } else if (passed) {
-      title = isAssign ? "检测通过 · 作业已完成" : "闯关成功！";
-      sub = isAssign
-        ? "成绩已提交给老师。错词已写入错题本。"
-        : "已通关。错词已写入错题本。";
-    } else {
-      title = isAssign ? "未通过 · 作业未完成" : "闯关失败";
-      sub = isAssign
-        ? "错误已达 5 题，须立即重测；未通过不算完成作业。"
-        : "生命耗尽，可重试。错词已收录。";
-    }
-    var acts;
-    if (isAssign && !passed) {
-      // ponytail: fail → force retest path; exit leaves homework PENDING
-      acts =
-        '<button type="button" class="vl-btn vl-btn-primary" id="retry">立即重测</button>' +
-        '<a class="vl-btn" href="dashboard.html">退出（作业未完成）</a>';
-    } else if (isAssign && passed) {
-      acts =
-        '<a class="vl-btn vl-btn-primary" href="dashboard.html">返回待办</a>' +
-        '<a class="vl-btn" href="wrong-words.html">错题本</a>';
-    } else {
-      acts =
-        '<button type="button" class="vl-btn vl-btn-primary" id="retry">' +
-          (isRetest ? "再测错词" : "重新检测") + "</button>" +
-        '<a class="vl-btn" href="wrong-words.html' +
-          (isRetest ? ("?session=" + meta.sessionId) : "") +
-          '">错题本</a>' +
-        (isRetest
-          ? '<a class="vl-btn" href="dashboard.html">返回待办</a>'
-          : '<button type="button" class="vl-btn" id="backSetup">重选 List</button>');
-    }
-    box.innerHTML =
-      '<div style="font-size:40px">' + (passed ? "🎉" : "💪") + "</div>" +
-      "<h2>" + title + "</h2>" +
-      '<div style="color:#4d625b;font-size:14px;margin-top:6px">' + sub + "</div>" +
-      '<div class="vl-score">' + state.correct + "<span> / " + state.quizOrder.length + "</span></div>" +
-      '<div style="color:#4d625b;font-size:14px">错误 ' + state.wrong +
-        " · 剩余生命 " + Math.max(0, state.lives) + "</div>" +
-      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px">' +
-        acts + "</div>";
+    box.innerHTML = '<div class="vl-state">正在提交结果…</div>';
     ov.classList.add("show");
-    var retry = document.getElementById("retry");
-    if (retry) {
-      retry.onclick = function () {
-        ov.classList.remove("show");
-        if (meta.sessionId) startRetest(meta.sessionId);
-        else startQuiz(meta.bookId, meta.listIds);
-      };
-    }
-    var back = document.getElementById("backSetup");
-    if (back) {
-      back.onclick = function () {
-        ov.classList.remove("show");
-        boot();
-      };
-    }
+
+    finishReq.then(function (d) {
+      var assignOk = !isAssign || !passed || (d && d.assignment && d.assignment.ok);
+      var title;
+      var sub;
+      if (isRetest) {
+        title = "重测结束";
+        sub = "本场错词列表已更新为仍错的 " + state.mistakes.length + " 个（记录保留，可手动删除）。";
+      } else if (passed && assignOk) {
+        title = isAssign ? "检测通过 · 作业已完成" : "闯关成功！";
+        sub = isAssign
+          ? "成绩已提交给老师。错词已写入错题本。"
+          : "已通关。错词已写入错题本。";
+      } else if (passed && !assignOk) {
+        title = "检测通过 · 作业未同步";
+        sub = "闯关已通过，但作业状态提交失败，请重试或稍后在待办查看。";
+      } else {
+        title = isAssign ? "未通过 · 作业未完成" : "闯关失败";
+        sub = isAssign
+          ? "错误已达 5 题，须立即重测；未通过不算完成作业。"
+          : "生命耗尽，可重试。错词已收录。";
+      }
+      var acts;
+      if (isAssign && !passed) {
+        acts =
+          '<button type="button" class="vl-btn vl-btn-primary" id="retry">立即重测</button>' +
+          '<a class="vl-btn" href="dashboard.html">退出（作业未完成）</a>';
+      } else if (isAssign && passed && !assignOk) {
+        acts =
+          '<button type="button" class="vl-btn vl-btn-primary" id="retry">重新提交</button>' +
+          '<a class="vl-btn" href="dashboard.html">返回待办</a>';
+      } else if (isAssign && passed) {
+        acts =
+          '<a class="vl-btn vl-btn-primary" href="dashboard.html">返回待办</a>' +
+          '<a class="vl-btn" href="wrong-words.html">错题本</a>';
+      } else {
+        acts =
+          '<button type="button" class="vl-btn vl-btn-primary" id="retry">' +
+            (isRetest ? "再测错词" : "重新检测") + "</button>" +
+          '<a class="vl-btn" href="wrong-words.html' +
+            (isRetest ? ("?session=" + meta.sessionId) : "") +
+            '">错题本</a>' +
+          (isRetest
+            ? '<a class="vl-btn" href="dashboard.html">返回待办</a>'
+            : '<button type="button" class="vl-btn" id="backSetup">重选 List</button>');
+      }
+      box.innerHTML =
+        '<div style="font-size:40px">' + (passed ? "🎉" : "💪") + "</div>" +
+        "<h2>" + title + "</h2>" +
+        '<div style="color:#4d625b;font-size:14px;margin-top:6px">' + sub + "</div>" +
+        '<div class="vl-score">' + state.correct + "<span> / " + state.quizOrder.length + "</span></div>" +
+        '<div style="color:#4d625b;font-size:14px">错误 ' + state.wrong +
+          " · 剩余生命 " + Math.max(0, state.lives) + "</div>" +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px">' +
+          acts + "</div>";
+      var retry = document.getElementById("retry");
+      if (retry) {
+        retry.onclick = function () {
+          ov.classList.remove("show");
+          if (meta.sessionId) startRetest(meta.sessionId);
+          else startQuiz(meta.bookId, meta.listIds);
+        };
+      }
+      var back = document.getElementById("backSetup");
+      if (back) {
+        back.onclick = function () {
+          ov.classList.remove("show");
+          boot();
+        };
+      }
+    }).catch(function (e) {
+      box.innerHTML =
+        "<h2>结果提交失败</h2>" +
+        '<div style="color:#4d625b;font-size:14px;margin-top:6px">' +
+          esc((e && e.message) || "网络异常") + "。请重试，勿直接关闭。</div>" +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px">' +
+          '<button type="button" class="vl-btn vl-btn-primary" id="retry">重试提交</button>' +
+          '<a class="vl-btn" href="dashboard.html">返回待办</a></div>';
+      var retry = document.getElementById("retry");
+      if (retry) {
+        retry.onclick = function () {
+          ov.classList.remove("show");
+          endQuiz(finishedAll);
+        };
+      }
+    });
   }
 
   function boot() {

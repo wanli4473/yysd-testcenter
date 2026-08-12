@@ -45,8 +45,30 @@
 
   function esc(s) { return Y.esc(s); }
 
-  function catalogTitle(xid, uploadName) {
+  var VOCAB_BOOK_LABEL = {
+    gaozhong: "高中词汇",
+    cet4: "四级词汇",
+    special: "雅思专项词汇"
+  };
+
+  function vocabLinkedTitle(xid) {
+    var s = String(xid || "");
+    var i = s.indexOf("||");
+    if (i <= 0) return "";
+    var book = s.slice(0, i);
+    var list = s.slice(i + 2);
+    var bookLabel = VOCAB_BOOK_LABEL[book] ||
+      (book.indexOf("theme:") === 0 ? book.slice(6) : book);
+    return bookLabel + " · " + list;
+  }
+
+  function catalogTitle(xid, uploadName, pack) {
     if (String(xid).indexOf("upload-") === 0) return uploadName || "老师上传的练习";
+    var p = String(pack || "").toLowerCase();
+    if (p === "vocab-quiz" || p === "vocab-learn" || String(xid).indexOf("||") > 0) {
+      var vt = vocabLinkedTitle(xid);
+      if (vt) return vt;
+    }
     var it = catalogById[xid] || (Y.resolveItem ? Y.resolveItem(catalogItems, xid) : null);
     return it ? Y.displayTitle(it) : xid;
   }
@@ -343,9 +365,11 @@
     var doneSet = {};
     (ev.doneExerciseIds || []).forEach(function (xid) { doneSet[xid] = 1; });
     var linkedIds = ev.linkedExerciseIds || [];
+    var pack = String(ev.cdtPack || "").toLowerCase();
+    var isVocab = pack === "vocab-quiz" || pack === "vocab-learn";
     var exList = linkedIds.map(function (xid) {
-      var title = catalogTitle(xid, ev.attachmentName);
-      var done = !!doneSet[xid];
+      var title = catalogTitle(xid, ev.attachmentName, pack);
+      var done = isVocab ? ev.status === "COMPLETED" : !!doneSet[xid];
       var href = examHref(xid, ev.id, linkedIds, ev.cdtPack);
       return '<li class="cal-ex-row' + (done ? " is-done" : "") + '">' +
         "<span><b>" + esc(title) + "</b>" +
@@ -353,12 +377,22 @@
         "</span>" +
         (done
           ? '<a class="btn btn--ghost btn--sm" href="' + href + '">再看一次</a>'
-          : '<a class="btn btn--primary btn--sm" href="' + href + '">立即去做</a>') +
+          : '<a class="btn btn--primary btn--sm" href="' + href + '">' +
+              (pack === "vocab-quiz" ? "开始检测" : (pack === "vocab-learn" ? "开始学习" : "立即去做")) +
+            "</a>") +
         "</li>";
     }).join("");
 
     var totalN = ev.exerciseTotal != null ? ev.exerciseTotal : (ev.linkedExerciseIds || []).length;
     var doneN = ev.exerciseDone || 0;
+    var progHint = "";
+    if (ev.status !== "COMPLETED" && totalN) {
+      progHint = isVocab
+        ? (pack === "vocab-quiz"
+          ? '<p class="profile-hint">闯关通过后，任务将自动标记为已完成。</p>'
+          : '<p class="profile-hint">学完本 List 后，任务将自动标记为已完成。</p>')
+        : '<p class="profile-hint">完成全部 ' + totalN + " 份练习后，任务将自动标记为已完成。</p>";
+    }
     detailBody.innerHTML =
       '<p><span class="cal-tag ' + typeClass(ev.eventType) + '">' +
         esc(TYPE_LABEL[ev.eventType] || "") + "</span> " +
@@ -369,10 +403,7 @@
         " · 截止：" + esc(fmtDate(ev.dueTime)) +
         (totalN ? " · 练习进度 " + doneN + "/" + totalN : "") + "</p>" +
       (exList
-        ? "<h3>关联练习</h3><ul class=\"cal-ex-list\">" + exList + "</ul>" +
-          (ev.status !== "COMPLETED" && totalN
-            ? '<p class="profile-hint">完成全部 ' + totalN + " 份练习后，任务将自动标记为已完成。</p>"
-            : "")
+        ? "<h3>关联练习</h3><ul class=\"cal-ex-list\">" + exList + "</ul>" + progHint
         : (ev.eventType === "ASSIGNMENT"
           ? "<p class=\"profile-hint\">未关联具体练习，可按说明完成并手动勾选。</p>"
           : ""));

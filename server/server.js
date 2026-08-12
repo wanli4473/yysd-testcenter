@@ -216,6 +216,10 @@ const stmts = {
     "SELECT * FROM calendar_events WHERE created_by = ? ORDER BY COALESCE(due_time, start_time, created_at) DESC"
   ),
   deleteCalendarEvent: db.prepare("DELETE FROM calendar_events WHERE id = ? AND created_by = ?"),
+  // ponytail: quiz+learn twins share created_at + linked ids at assign time
+  findVocabTwinEvent: db.prepare(
+    "SELECT id FROM calendar_events WHERE created_by = ? AND cdt_pack = ? AND linked_exercise_ids = ? AND created_at = ? AND id != ? LIMIT 1"
+  ),
   insertTaskStatus: db.prepare(
     "INSERT OR IGNORE INTO student_task_status (event_id, student_id, status, completed_at) VALUES (?, ?, 'PENDING', NULL)"
   ),
@@ -2100,7 +2104,8 @@ app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
   if (!row || row.created_by !== req.user.sub) return res.status(404).json({ error: "任务不存在" });
   var exerciseIds = [];
   try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
-  var isVocabQuiz = String(row.cdt_pack || "").toLowerCase() === "vocab-quiz";
+  var pack = String(row.cdt_pack || "").toLowerCase();
+  var isVocabPack = pack === "vocab-quiz" || pack === "vocab-learn";
   var statuses = stmts.listStatusesForEvent.all(id).map(function (s) {
     var stu = stmts.findUserById.get(s.student_id);
     var scored = {};
@@ -2108,7 +2113,7 @@ app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
     var doneIds = exerciseIds.filter(function (xid) { return scored[xid]; });
     var quizResult = null;
     // ponytail: only surface quiz score after pass (result_json written on complete)
-    if (isVocabQuiz && s.status === "COMPLETED" && s.result_json) {
+    if (pack === "vocab-quiz" && s.status === "COMPLETED" && s.result_json) {
       try { quizResult = JSON.parse(s.result_json); } catch (e) { quizResult = null; }
     }
     return {
@@ -2118,8 +2123,8 @@ app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
       status: effectiveTaskStatus(s.status, row.due_time),
       completedAt: s.completed_at || null,
       doneExerciseIds: doneIds,
-      exerciseDone: isVocabQuiz ? (s.status === "COMPLETED" ? 1 : 0) : doneIds.length,
-      exerciseTotal: isVocabQuiz ? 1 : exerciseIds.length,
+      exerciseDone: isVocabPack ? (s.status === "COMPLETED" ? 1 : 0) : doneIds.length,
+      exerciseTotal: isVocabPack ? 1 : exerciseIds.length,
       quizResult: quizResult
     };
   });
@@ -2134,13 +2139,29 @@ app.delete("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res
   if (!id) return res.status(400).json({ error: "无效 ID" });
   var row = stmts.getCalendarEvent.get(id);
   if (!row || row.created_by !== req.user.sub) return res.status(404).json({ error: "任务不存在" });
-  db.prepare("DELETE FROM student_task_status WHERE event_id = ?").run(id);
-  stmts.deleteCalendarEvent.run(id, req.user.sub);
-  try {
-    var hp = assignmentHtmlPath(id);
-    if (fs.existsSync(hp)) fs.unlinkSync(hp);
-  } catch (e) {}
-  res.json({ ok: true });
+  var pack = String(row.cdt_pack || "").toLowerCase();
+  var twinIds = [];
+  if (pack === "vocab-quiz" || pack === "vocab-learn") {
+    var twinPack = pack === "vocab-quiz" ? "vocab-learn" : "vocab-quiz";
+    var twin = stmts.findVocabTwinEvent.get(
+      row.created_by, twinPack, row.linked_exercise_ids, row.created_at, id
+    );
+    if (twin && twin.id) twinIds.push(twin.id);
+  }
+  var removeIds = [id].concat(twinIds);
+  db.transaction(function () {
+    removeIds.forEach(function (eid) {
+      db.prepare("DELETE FROM student_task_status WHERE event_id = ?").run(eid);
+      stmts.deleteCalendarEvent.run(eid, req.user.sub);
+    });
+  })();
+  removeIds.forEach(function (eid) {
+    try {
+      var hp = assignmentHtmlPath(eid);
+      if (fs.existsSync(hp)) fs.unlinkSync(hp);
+    } catch (e) {}
+  });
+  res.json({ ok: true, deletedIds: removeIds });
 });
 
 app.get("/api/calendar/events/:id/html", teacherAuthMiddleware, function (req, res) {
@@ -2269,13 +2290,19 @@ app.get("/api/student/calendar", authMiddleware, function (req, res) {
   var events = rows.map(function (row) {
     var exerciseIds = [];
     try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
+    var pack = String(row.cdt_pack || "").toLowerCase();
+    var isVocabPack = pack === "vocab-quiz" || pack === "vocab-learn";
     var doneIds = exerciseIds.filter(function (xid) { return scored[xid]; });
+    var doneN = isVocabPack ? (row.task_status === "COMPLETED" ? 1 : 0) : doneIds.length;
+    var totalN = isVocabPack ? 1 : exerciseIds.length;
     return eventFromRow(row, {
       status: effectiveTaskStatus(row.task_status, row.due_time),
       completedAt: row.completed_at || null,
-      doneExerciseIds: doneIds,
-      exerciseDone: doneIds.length,
-      exerciseTotal: exerciseIds.length
+      doneExerciseIds: isVocabPack
+        ? (row.task_status === "COMPLETED" ? exerciseIds.slice() : [])
+        : doneIds,
+      exerciseDone: doneN,
+      exerciseTotal: totalN
     });
   });
   res.json({ ok: true, events: events });
@@ -2296,7 +2323,10 @@ app.patch("/api/student/calendar/:eventId/status", authMiddleware, function (req
 
   var exerciseIds = [];
   try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
-  if (row.event_type === "ASSIGNMENT" && exerciseIds.length && status === "COMPLETED") {
+  // ponytail: vocab-learn also auto-completes via progress; keep manual as fallback
+  var pack = String(row.cdt_pack || "").toLowerCase();
+  if (row.event_type === "ASSIGNMENT" && exerciseIds.length && status === "COMPLETED" &&
+      pack !== "vocab-learn") {
     return res.status(400).json({ error: "请完成关联练习后自动标记完成" });
   }
 
