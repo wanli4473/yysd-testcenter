@@ -15,6 +15,7 @@
     learnIdx: 0,
     blurAllOff: false,
     blurOne: true,
+    blurWordList: false, // list view: blur English headwords for recall
     saving: false
   };
 
@@ -75,6 +76,14 @@
         renderLearn();
       };
     }
+    var blurWordBtn = document.getElementById("btnBlurWord");
+    if (blurWordBtn) {
+      blurWordBtn.onclick = function () {
+        state.blurWordList = !state.blurWordList;
+        if (state.blurWordList) state.blurAllOff = false;
+        renderLearn();
+      };
+    }
   }
 
   function shell(inner) {
@@ -88,17 +97,19 @@
   }
 
   function renderLearnList() {
-    var blur = !state.blurAllOff;
+    var blurMeaning = !state.blurAllOff;
+    var blurWord = !state.blurAllOff && state.blurWordList;
     shell("");
     document.getElementById("counter").innerHTML =
       esc(meta.title || "") + " · 列表总览 <strong>" + words.length + "</strong> 词 · 点击一行进入卡片";
     var rows = words.map(function (w, i) {
       return '<tr class="word-row" data-i="' + i + '">' +
         '<td class="w-no">' + (i + 1) + "</td>" +
-        '<td><div class="w-en">' + esc(w.word) + "</div></td>" +
+        '<td><div class="w-en' + (blurWord ? " blurred" : "") + '" title="' +
+          (blurWord ? "点击暂时显示单词" : "") + '">' + esc(w.word) + "</div></td>" +
         '<td class="col-ipa"><span class="w-ipa">' + esc(w.ipa || "") + "</span></td>" +
         '<td class="col-pos"><span class="w-pos">' + esc(w.pos || "") + "</span></td>" +
-        '<td><span class="w-meaning' + (blur ? " blurred" : "") + '">' + esc(w.meaning) + "</span></td>" +
+        '<td><span class="w-meaning' + (blurMeaning ? " blurred" : "") + '">' + esc(w.meaning) + "</span></td>" +
         '<td class="col-speak">' +
           '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(w.word) +
             '" data-accent="1" style="padding:6px 8px;font-size:12px" title="英音">英</button> ' +
@@ -109,6 +120,8 @@
     document.getElementById("panel").innerHTML =
       '<div class="vl-toolbar">' +
         learnViewToggleHtml() +
+        '<button type="button" class="vl-btn" id="btnBlurWord">' +
+          (state.blurWordList ? "显示单词" : "模糊单词") + "</button>" +
         '<button type="button" class="vl-btn" id="btnBlurAll">' +
           (state.blurAllOff ? "恢复默认模糊" : "本课全部明文") + "</button>" +
       "</div>" +
@@ -121,6 +134,13 @@
     app.querySelectorAll(".word-row").forEach(function (tr) {
       tr.onclick = function (e) {
         if (e.target.closest(".btn-speak-row")) return;
+        // peek one blurred headword without leaving list
+        var en = e.target.closest(".w-en.blurred");
+        if (en) {
+          e.stopPropagation();
+          en.classList.remove("blurred");
+          return;
+        }
         state.learnIdx = Number(tr.getAttribute("data-i")) || 0;
         state.learnView = "card";
         state.blurOne = true;
