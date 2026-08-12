@@ -102,9 +102,49 @@
     return { ev: open[0], reason: "pending" };
   }
 
+  function parseVocabLinked(ids) {
+    var bookId = "";
+    var listIds = [];
+    (ids || []).forEach(function (raw) {
+      var s = String(raw || "");
+      var i = s.indexOf("||");
+      if (i <= 0) return;
+      var b = s.slice(0, i);
+      var lid = s.slice(i + 2);
+      if (!b || !lid) return;
+      if (!bookId) bookId = b;
+      if (b === bookId) listIds.push(lid);
+    });
+    if (bookId) return { bookId: bookId, listIds: listIds };
+    var id0 = String((ids && ids[0]) || "");
+    var legacyBook = "gaozhong";
+    if (/cet4|四级/i.test(id0)) legacyBook = "cet4";
+    else if (/listening|reading|writing|special|专项/i.test(id0)) legacyBook = "special";
+    return { bookId: legacyBook, listIds: (ids || []).slice() };
+  }
+
   function focusCta(ev) {
     var ids = ev.linkedExerciseIds || [];
     if (ev.status !== "COMPLETED" && ids.length) {
+      var pack = String(ev.cdtPack || "").toLowerCase();
+      if (pack === "vocab-quiz") {
+        var parsed = parseVocabLinked(ids);
+        return {
+          href: "vocab-quiz.html?book=" + encodeURIComponent(parsed.bookId) +
+            "&lists=" + parsed.listIds.map(encodeURIComponent).join(",") +
+            "&event=" + encodeURIComponent(ev.id),
+          label: "开始单词检测"
+        };
+      }
+      if (pack === "vocab-learn") {
+        var learn = parseVocabLinked(ids);
+        return {
+          href: "vocab-learn.html?book=" + encodeURIComponent(learn.bookId) +
+            "&list=" + encodeURIComponent(learn.listIds[0] || "") +
+            "&event=" + encodeURIComponent(ev.id),
+          label: "开始列表学习"
+        };
+      }
       var listen = null;
       for (var i = 0; i < ids.length; i++) {
         if (/^cambridge-\d+-test-\d+$/.test(ids[i])) { listen = ids[i]; break; }

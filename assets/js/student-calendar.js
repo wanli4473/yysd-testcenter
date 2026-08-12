@@ -51,7 +51,56 @@
     return it ? Y.displayTitle(it) : xid;
   }
 
+  function parseVocabLinked(linkedIds) {
+    var bookId = "";
+    var listIds = [];
+    (linkedIds || []).forEach(function (raw) {
+      var s = String(raw || "");
+      var i = s.indexOf("||");
+      if (i <= 0) return;
+      var b = s.slice(0, i);
+      var lid = s.slice(i + 2);
+      if (!b || !lid) return;
+      if (!bookId) bookId = b;
+      if (b === bookId) listIds.push(lid);
+    });
+    if (bookId) return { bookId: bookId, listIds: listIds };
+    // legacy: old catalog item ids
+    var id0 = String((linkedIds && linkedIds[0]) || "");
+    var it = catalogById[id0] || (Y.resolveItem ? Y.resolveItem(catalogItems, id0) : null);
+    var legacyBook = "gaozhong";
+    if (it && Y.vocabBookOfSubject) legacyBook = Y.vocabBookOfSubject(it.subject) || "gaozhong";
+    else if (/cet4|四级/i.test(id0)) legacyBook = "cet4";
+    else if (/listening|reading|writing|special|专项/i.test(id0)) legacyBook = "special";
+    return { bookId: legacyBook, listIds: (linkedIds || []).slice() };
+  }
+
+  function vocabQuizHref(eventId, linkedIds) {
+    var parsed = parseVocabLinked(linkedIds || []);
+    var qs = "book=" + encodeURIComponent(parsed.bookId) +
+      "&event=" + encodeURIComponent(eventId);
+    if (parsed.listIds.length) {
+      qs += "&lists=" + parsed.listIds.map(encodeURIComponent).join(",");
+    }
+    return "vocab-quiz.html?" + qs;
+  }
+
+  function vocabLearnHref(eventId, linkedIds) {
+    var parsed = parseVocabLinked(linkedIds || []);
+    var list = parsed.listIds[0] || "";
+    return "vocab-learn.html?book=" + encodeURIComponent(parsed.bookId) +
+      "&list=" + encodeURIComponent(list) +
+      "&event=" + encodeURIComponent(eventId);
+  }
+
   function examHref(itemId, eventId, linkedIds, cdtPack) {
+    var pack = String(cdtPack || "").toLowerCase();
+    if (pack === "vocab-quiz") {
+      return vocabQuizHref(eventId, linkedIds || [itemId]);
+    }
+    if (pack === "vocab-learn") {
+      return vocabLearnHref(eventId, linkedIds || [itemId]);
+    }
     var href = "exam.html?id=" + encodeURIComponent(itemId) +
       "&event=" + encodeURIComponent(eventId);
     // ponytail: any Cambridge assign → CDT; cdtPack from teacher (skill mock = exam)
@@ -228,8 +277,11 @@
         : "";
       var cta = ev.status === "COMPLETED"
         ? '<button type="button" class="btn btn--ghost btn--sm" data-open="' + ev.id + '">查看</button>'
-        : (ids.length === 1
-          ? '<a class="btn btn--primary btn--sm" href="' + examHref(ids[0], ev.id, ids, ev.cdtPack) + '">去做</a>'
+        : (ids.length === 1 ||
+            ((ev.cdtPack === "vocab-quiz" || ev.cdtPack === "vocab-learn") && ids.length)
+          ? '<a class="btn btn--primary btn--sm" href="' + examHref(ids[0], ev.id, ids, ev.cdtPack) + '">' +
+              (ev.cdtPack === "vocab-quiz" ? "开始检测"
+                : (ev.cdtPack === "vocab-learn" ? "开始学习" : "去做")) + "</a>"
           : '<button type="button" class="btn btn--primary btn--sm" data-open="' + ev.id + '">去做</button>');
       return '<article class="cal-todo-row ' + statusClass(ev.status) + '">' +
         '<div class="cal-todo-row__main">' +
@@ -260,7 +312,10 @@
 
   function canManualComplete(ev) {
     if (!ev || ev.status === "COMPLETED") return false;
-    if (ev.eventType === "ASSIGNMENT" && (ev.linkedExerciseIds || []).length) return false;
+    if (ev.eventType === "ASSIGNMENT" && (ev.linkedExerciseIds || []).length) {
+      // ponytail: 列表学习无自动交卷，允许学生手动勾完成
+      return String(ev.cdtPack || "").toLowerCase() === "vocab-learn";
+    }
     return true;
   }
 

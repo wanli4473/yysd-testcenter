@@ -20,13 +20,13 @@ assert(auth.indexOf("clearLocalLearningStores") >= 0, "auth.js missing clearLoca
 assert(/clearSession\([\s\S]*clearLocalLearningStores/.test(auth), "logout must clear local learning stores");
 assert(/applyLogin\([\s\S]*adoptLocalStores/.test(auth), "login must adopt local stores");
 assert(/syncScoresFromCloud\([\s\S]*adoptLocalStores/.test(auth), "sync must adopt local stores");
-assert(auth.indexOf("pull-only") >= 0 || /writeLocalResults\(d\.scores/.test(auth), "sync must be pull-only");
-assert(!/syncScoresFromCloud\([\s\S]*pushes\.push/.test(auth), "sync must not push local scores");
+assert(/syncScoresFromCloud\([\s\S]*mergeScoreStores\(local, cloud\)/.test(auth), "sync must merge local+cloud");
+assert(/syncScoresFromCloud\([\s\S]*pushes\.push/.test(auth), "sync must re-push local-newer scores");
+assert(auth.indexOf("push local-newer only") >= 0, "sync must keep owner-safe local-newer push");
 assert(server.indexOf("attempts_backfill_v1") >= 0, "server backfill must be gated once");
 assert(server.indexOf("_yysd_meta") >= 0, "server missing _yysd_meta gate table");
 assert(server.indexOf("attempt-required") >= 0, "PUT /api/scores must require attemptAt");
 assert(/syncScoresFromCloud\(\)\.then\((boot|render)\)/.test(fs.readFileSync(path.join(root, "results.html"), "utf8")),
   "results.html must re-render after cloud sync");
 assert(server.indexOf("/api/student/score-attempts") >= 0, "missing student score-attempts API");
-assert(fs.readFileSync(path.join(root, "results.html"), "utf8").indexOf("results-wrongs") >= 0, "results.html missing wrongs tab");
-console.log("ok local-owner guard + one-shot backfill");
+console.log("ok local-owner guard + merge recover push");

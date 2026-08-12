@@ -127,9 +127,13 @@ window.YYSD_TEACHER = (function () {
       headers: authHeaders(),
       body: opts.body ? JSON.stringify(opts.body) : undefined
     }).then(function (r) {
-      return r.json().then(function (d) {
-        if (!r.ok) throw new Error((d && d.error) || "请求失败");
-        return d;
+      return r.text().then(function (raw) {
+        var d = null;
+        try { d = raw ? JSON.parse(raw) : null; } catch (e) { d = null; }
+        if (!r.ok) {
+          throw new Error((d && d.error) || (r.status === 502 ? "服务暂不可用，请重试" : "请求失败"));
+        }
+        return d || {};
       });
     });
   }

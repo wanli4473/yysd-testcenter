@@ -6,10 +6,15 @@
   var root = document.getElementById("vq-root");
   var params = new URLSearchParams(location.search);
   var retestSessionId = Number(params.get("session") || 0);
+  var assignEventId = Number(params.get("event") || 0) || 0;
+  var preListIds = String(params.get("lists") || "")
+    .split(",")
+    .map(function (s) { return s.trim(); })
+    .filter(Boolean);
 
   var MAX_LIVES = 5;
   var TIME_SEC = 20;
-  var meta = { bookId: "", bookLabel: "", listIds: [], listLabels: [], sessionId: 0 };
+  var meta = { bookId: "", bookLabel: "", listIds: [], listLabels: [], sessionId: 0, assignmentEventId: 0 };
   var words = [];
   var state = {
     phase: "setup", // setup | quiz | done
@@ -198,16 +203,31 @@
     renderQuizActive();
   }
 
+  function ensureBookOnShelf(bookId) {
+    return A.api("/api/vocab-shelf/add", {
+      method: "POST",
+      body: { bookId: bookId }
+    }).catch(function () { /* already on shelf or ignored */ });
+  }
+
   function startQuiz(bookId, listIds) {
     root.innerHTML = '<div class="vl-state">正在组卷…</div>';
-    A.api("/api/vocab-shelf/quiz-pool?bookId=" + encodeURIComponent(bookId) +
-      "&listIds=" + encodeURIComponent(listIds.join(",")))
+    ensureBookOnShelf(bookId)
+      .then(function () {
+        return A.api("/api/vocab-shelf/quiz-pool?bookId=" + encodeURIComponent(bookId) +
+          "&listIds=" + encodeURIComponent(listIds.join(",")));
+      })
       .then(function (d) {
         beginWithWords(d, {});
       })
       .catch(function (e) {
         alert((e && e.message) || "组卷失败");
-        boot();
+        if (assignEventId && preListIds.length) {
+          root.innerHTML = '<div class="state"><p>' + esc((e && e.message) || "组卷失败") +
+            '</p><p><a href="dashboard.html">返回待办</a></p></div>';
+        } else {
+          boot();
+        }
       });
   }
 
@@ -541,7 +561,8 @@
             correct: state.correct,
             wrong: state.wrong,
             passed: passed,
-            mistakes: state.mistakes
+            mistakes: state.mistakes,
+            assignmentEventId: meta.assignmentEventId || assignEventId || 0
           }
         });
     finishReq.catch(function () {});
@@ -549,33 +570,62 @@
     var ov = document.getElementById("overlay");
     var box = document.getElementById("resultBox");
     var isRetest = !!meta.sessionId;
-    box.innerHTML =
-      '<div style="font-size:40px">' + (passed ? "🎉" : "💪") + "</div>" +
-      "<h2>" + (isRetest ? "重测结束" : (passed ? "闯关成功！" : "闯关失败")) + "</h2>" +
-      '<div style="color:#4d625b;font-size:14px;margin-top:6px">' +
-        (isRetest
-          ? ("本场错词列表已更新为仍错的 " + state.mistakes.length + " 个（记录保留，可手动删除）。")
-          : (passed ? "已通关。错词已写入错题本。" : "生命耗尽，可重试。错词已收录。")) +
-      "</div>" +
-      '<div class="vl-score">' + state.correct + "<span> / " + state.quizOrder.length + "</span></div>" +
-      '<div style="color:#4d625b;font-size:14px">错误 ' + state.wrong +
-        " · 剩余生命 " + Math.max(0, state.lives) + "</div>" +
-      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px">' +
+    var isAssign = !!(meta.assignmentEventId || assignEventId);
+    var title;
+    var sub;
+    if (isRetest) {
+      title = "重测结束";
+      sub = "本场错词列表已更新为仍错的 " + state.mistakes.length + " 个（记录保留，可手动删除）。";
+    } else if (passed) {
+      title = isAssign ? "检测通过 · 作业已完成" : "闯关成功！";
+      sub = isAssign
+        ? "成绩已提交给老师。错词已写入错题本。"
+        : "已通关。错词已写入错题本。";
+    } else {
+      title = isAssign ? "未通过 · 作业未完成" : "闯关失败";
+      sub = isAssign
+        ? "错误已达 5 题，须立即重测；未通过不算完成作业。"
+        : "生命耗尽，可重试。错词已收录。";
+    }
+    var acts;
+    if (isAssign && !passed) {
+      // ponytail: fail → force retest path; exit leaves homework PENDING
+      acts =
+        '<button type="button" class="vl-btn vl-btn-primary" id="retry">立即重测</button>' +
+        '<a class="vl-btn" href="dashboard.html">退出（作业未完成）</a>';
+    } else if (isAssign && passed) {
+      acts =
+        '<a class="vl-btn vl-btn-primary" href="dashboard.html">返回待办</a>' +
+        '<a class="vl-btn" href="wrong-words.html">错题本</a>';
+    } else {
+      acts =
         '<button type="button" class="vl-btn vl-btn-primary" id="retry">' +
           (isRetest ? "再测错词" : "重新检测") + "</button>" +
         '<a class="vl-btn" href="wrong-words.html' +
           (isRetest ? ("?session=" + meta.sessionId) : "") +
           '">错题本</a>' +
         (isRetest
-          ? ""
-          : '<button type="button" class="vl-btn" id="backSetup">重选 List</button>') +
-      "</div>";
+          ? '<a class="vl-btn" href="dashboard.html">返回待办</a>'
+          : '<button type="button" class="vl-btn" id="backSetup">重选 List</button>');
+    }
+    box.innerHTML =
+      '<div style="font-size:40px">' + (passed ? "🎉" : "💪") + "</div>" +
+      "<h2>" + title + "</h2>" +
+      '<div style="color:#4d625b;font-size:14px;margin-top:6px">' + sub + "</div>" +
+      '<div class="vl-score">' + state.correct + "<span> / " + state.quizOrder.length + "</span></div>" +
+      '<div style="color:#4d625b;font-size:14px">错误 ' + state.wrong +
+        " · 剩余生命 " + Math.max(0, state.lives) + "</div>" +
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px">' +
+        acts + "</div>";
     ov.classList.add("show");
-    document.getElementById("retry").onclick = function () {
-      ov.classList.remove("show");
-      if (meta.sessionId) startRetest(meta.sessionId);
-      else startQuiz(meta.bookId, meta.listIds);
-    };
+    var retry = document.getElementById("retry");
+    if (retry) {
+      retry.onclick = function () {
+        ov.classList.remove("show");
+        if (meta.sessionId) startRetest(meta.sessionId);
+        else startQuiz(meta.bookId, meta.listIds);
+      };
+    }
     var back = document.getElementById("backSetup");
     if (back) {
       back.onclick = function () {
@@ -594,6 +644,13 @@
     }
     var preBook = (params.get("book") || "").trim();
     meta.bookId = preBook;
+    meta.assignmentEventId = assignEventId;
+    // Teacher assignment deep-link: skip setup, go straight to quiz
+    if (assignEventId && preBook && preListIds.length) {
+      meta.listIds = preListIds.slice();
+      startQuiz(preBook, preListIds);
+      return;
+    }
     A.api("/api/vocab-shelf/bookshelf")
       .then(function (shelf) {
         if (!shelf.books || !shelf.books.length) {

@@ -5,6 +5,7 @@
   var params = new URLSearchParams(location.search);
   var bookId = (params.get("book") || "").trim();
   var listId = (params.get("list") || "").trim();
+  var assignEventId = Number(params.get("event") || 0) || 0;
   var app = document.getElementById("vl-app");
   var backEl = document.getElementById("vl-back");
 
@@ -13,9 +14,10 @@
   var state = {
     learnView: "card",
     learnIdx: 0,
-    blurAllOff: false,
-    blurOne: true,
-    blurWordList: false, // list view: blur English headwords for recall
+    blurAllOff: false, // card view only
+    blurOne: true, // card view: meaning blur per word
+    blurWordList: false,
+    blurMeaningList: true,
     saving: false
   };
 
@@ -43,9 +45,11 @@
     if (!A || !A.api || !bookId || !listId) return Promise.resolve();
     var wordIdx = state.learnIdx;
     var isDone = done || wordIdx >= Math.max(0, words.length - 1);
+    var body = { bookId: bookId, listId: listId, wordIdx: wordIdx, done: isDone };
+    if (isDone && assignEventId) body.assignmentEventId = assignEventId;
     return A.api("/api/vocab-shelf/progress", {
       method: "POST",
-      body: { bookId: bookId, listId: listId, wordIdx: wordIdx, done: isDone }
+      body: body
     }).catch(function () {});
   }
 
@@ -80,7 +84,13 @@
     if (blurWordBtn) {
       blurWordBtn.onclick = function () {
         state.blurWordList = !state.blurWordList;
-        if (state.blurWordList) state.blurAllOff = false;
+        renderLearn();
+      };
+    }
+    var blurMeaningBtn = document.getElementById("btnBlurMeaning");
+    if (blurMeaningBtn) {
+      blurMeaningBtn.onclick = function () {
+        state.blurMeaningList = !state.blurMeaningList;
         renderLearn();
       };
     }
@@ -97,8 +107,8 @@
   }
 
   function renderLearnList() {
-    var blurMeaning = !state.blurAllOff;
-    var blurWord = !state.blurAllOff && state.blurWordList;
+    var blurWord = state.blurWordList;
+    var blurMeaning = state.blurMeaningList;
     shell("");
     document.getElementById("counter").innerHTML =
       esc(meta.title || "") + " · 列表总览 <strong>" + words.length + "</strong> 词 · 点击一行进入卡片";
@@ -109,7 +119,8 @@
           (blurWord ? "点击暂时显示单词" : "") + '">' + esc(w.word) + "</div></td>" +
         '<td class="col-ipa"><span class="w-ipa">' + esc(w.ipa || "") + "</span></td>" +
         '<td class="col-pos"><span class="w-pos">' + esc(w.pos || "") + "</span></td>" +
-        '<td><span class="w-meaning' + (blurMeaning ? " blurred" : "") + '">' + esc(w.meaning) + "</span></td>" +
+        '<td><span class="w-meaning' + (blurMeaning ? " blurred" : "") + '" title="' +
+          (blurMeaning ? "点击暂时显示释义" : "") + '">' + esc(w.meaning) + "</span></td>" +
         '<td class="col-speak">' +
           '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(w.word) +
             '" data-accent="1" style="padding:6px 8px;font-size:12px" title="英音">英</button> ' +
@@ -120,10 +131,10 @@
     document.getElementById("panel").innerHTML =
       '<div class="vl-toolbar">' +
         learnViewToggleHtml() +
-        '<button type="button" class="vl-btn" id="btnBlurWord">' +
-          (state.blurWordList ? "显示单词" : "模糊单词") + "</button>" +
-        '<button type="button" class="vl-btn" id="btnBlurAll">' +
-          (state.blurAllOff ? "恢复默认模糊" : "本课全部明文") + "</button>" +
+        '<button type="button" class="vl-btn' + (blurWord ? " is-on" : "") + '" id="btnBlurWord">' +
+          (blurWord ? "显示单词" : "模糊单词") + "</button>" +
+        '<button type="button" class="vl-btn' + (blurMeaning ? " is-on" : "") + '" id="btnBlurMeaning">' +
+          (blurMeaning ? "显示释义" : "模糊释义") + "</button>" +
       "</div>" +
       '<div style="overflow-x:auto">' +
         '<table class="vl-word-table">' +
@@ -134,11 +145,11 @@
     app.querySelectorAll(".word-row").forEach(function (tr) {
       tr.onclick = function (e) {
         if (e.target.closest(".btn-speak-row")) return;
-        // peek one blurred headword without leaving list
-        var en = e.target.closest(".w-en.blurred");
-        if (en) {
+        // peek one blurred cell without leaving list
+        var peek = e.target.closest(".w-en.blurred, .w-meaning.blurred");
+        if (peek) {
           e.stopPropagation();
-          en.classList.remove("blurred");
+          peek.classList.remove("blurred");
           return;
         }
         state.learnIdx = Number(tr.getAttribute("data-i")) || 0;

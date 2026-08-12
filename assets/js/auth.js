@@ -465,11 +465,18 @@ window.YYSD_AUTH = (function () {
     return fetch(API_BASE + path, {
       method: opts.method || "GET",
       headers: authHeaders(),
-      body: opts.body ? JSON.stringify(opts.body) : undefined
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      cache: "no-store"
     }).then(function (r) {
       return r.text().then(function (text) {
         var d = null;
-        try { d = text ? JSON.parse(text) : {}; } catch (e) {
+        // ponytail: 304/empty used to parse as {} and wipe yysd:results on sync
+        if (!text) {
+          throw new Error(r.status === 304
+            ? "成绩同步失败，请强刷后重试"
+            : "服务器返回空响应（" + r.status + "）");
+        }
+        try { d = JSON.parse(text); } catch (e) {
           throw new Error(r.status === 502 || r.status === 504
             ? "服务器暂时不可用，请稍后重试"
             : "服务器返回异常（" + r.status + "），请确认已部署最新版本");
@@ -541,10 +548,23 @@ window.YYSD_AUTH = (function () {
     if (!getToken() || isTeacher()) return Promise.resolve();
     var phone = (getUser().phone || "").trim();
     if (phone) adoptLocalStores(phone);
+    var local = readLocalResults();
     return api("/api/scores").then(function (d) {
-      // ponytail: pull-only — login push re-uploaded shared-PC leftovers (刘雨茜←谢超然)
-      // real submits already call pushScoreRecord
-      writeLocalResults(d.scores || {});
+      var cloud = d.scores || {};
+      // ponytail: merge not overwrite — pull-only wiped local recovery after Aug12 DB restore
+      writeLocalResults(mergeScoreStores(local, cloud));
+      // ponytail: push local-newer only (owner-guarded); full login push polluted shared PCs
+      var pushes = [];
+      Object.keys(local).forEach(function (id) {
+        var L = local[id];
+        var C = cloud[id];
+        if (!L || !L.date) return;
+        if (C && String(C.date || "") >= String(L.date || "")) return;
+        var attemptAt = L.attemptAt || L.date;
+        if (!attemptAt || !isFinite(Date.parse(attemptAt))) return;
+        pushes.push(pushScoreRecord(Object.assign({}, L, { id: id, attemptAt: attemptAt })));
+      });
+      return Promise.all(pushes);
     }).catch(function () {});
   }
 

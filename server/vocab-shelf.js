@@ -179,41 +179,47 @@ function buildCatalog(repoRoot) {
   return { books: books, byId: byId };
 }
 
-// ponytail: prod layout is /opt/yysd/server + /opt/yysd/web/library (not ../library)
+// ponytail: prefer /opt/yysd/web — symlink /opt/yysd/library breaks mid-rsync
 function resolveContentRoot(explicit) {
-  var candidates = [];
-  if (explicit) candidates.push(explicit);
-  candidates.push(
-    path.join(__dirname, ".."),
+  var candidates = [
     path.join(__dirname, "..", "web"),
-    path.join(__dirname, "..", "repo"),
     process.env.YYSD_WEB_ROOT || "",
+    explicit || "",
+    path.join(__dirname, ".."),
+    path.join(__dirname, "..", "repo"),
     process.env.REPO_ROOT || ""
-  );
+  ];
   for (var i = 0; i < candidates.length; i++) {
     var root = candidates[i];
     if (!root) continue;
     if (fs.existsSync(path.join(root, "library", "manifest.json"))) return root;
   }
-  return explicit || path.join(__dirname, "..");
+  return path.join(__dirname, "..", "web");
 }
 
-function createCatalogLoader(repoRoot) {
-  var cache = { sig: "", data: null };
-  function sig() {
-    var m = path.join(repoRoot, "library", "manifest.json");
-    var t = path.join(repoRoot, "library", "study", "vocab-themes", "themes.json");
+function createCatalogLoader(initialRoot) {
+  var cache = { sig: "", data: null, root: initialRoot };
+  function sig(root) {
+    var m = path.join(root, "library", "manifest.json");
+    var t = path.join(root, "library", "study", "vocab-themes", "themes.json");
     var ms = fs.statSync(m).mtimeMs;
-    var ts = fs.statSync(t).mtimeMs;
+    var ts = fs.existsSync(t) ? fs.statSync(t).mtimeMs : 0;
     return ms + ":" + ts;
   }
   return function load() {
-    var s = sig();
-    if (!cache.data || cache.sig !== s) {
-      cache.data = buildCatalog(repoRoot);
-      cache.sig = s;
+    var root = resolveContentRoot(cache.root);
+    try {
+      var s = sig(root);
+      if (!cache.data || cache.sig !== s || cache.root !== root) {
+        cache.data = buildCatalog(root);
+        cache.sig = s;
+        cache.root = root;
+      }
+      return cache.data;
+    } catch (e) {
+      if (cache.data) return cache.data; // ponytail: survive mid-deploy ENOENT
+      throw e;
     }
-    return cache.data;
   };
 }
 
@@ -399,6 +405,8 @@ function mountRoutes(app, opts) {
   var db = opts.db;
   var authMiddleware = opts.authMiddleware;
   var repoRoot = resolveContentRoot(opts.repoRoot);
+  var completeVocabQuizAssignment = opts.completeVocabQuizAssignment || null;
+  var completeVocabLearnAssignment = opts.completeVocabLearnAssignment || null;
   ensureSchema(db);
   var loadCatalog = createCatalogLoader(repoRoot);
 
@@ -580,22 +588,27 @@ function mountRoutes(app, opts) {
   }
 
   app.get("/api/vocab-shelf/catalog", authMiddleware, function (req, res) {
-    var cat = loadCatalog();
-    res.json({
-      ok: true,
-      themeChunk: THEME_CHUNK,
-      books: cat.books.map(function (b) {
-        return {
-          id: b.id,
-          label: b.label,
-          tag: b.tag,
-          kind: b.kind,
-          wordCount: b.wordCount,
-          listCount: b.listCount,
-          lists: b.lists
-        };
-      })
-    });
+    try {
+      var cat = loadCatalog();
+      res.json({
+        ok: true,
+        themeChunk: THEME_CHUNK,
+        books: cat.books.map(function (b) {
+          return {
+            id: b.id,
+            label: b.label,
+            tag: b.tag,
+            kind: b.kind,
+            wordCount: b.wordCount,
+            listCount: b.listCount,
+            lists: b.lists
+          };
+        })
+      });
+    } catch (e) {
+      console.error("[vocab-shelf/catalog]", e && e.message);
+      res.status(503).json({ error: "词库目录暂时不可用，请稍后重试" });
+    }
   });
 
   app.get("/api/vocab-shelf/bookshelf", authMiddleware, function (req, res) {
@@ -809,6 +822,7 @@ function mountRoutes(app, opts) {
     var listId = String(body.listId || "").trim();
     var wordIdx = Math.max(0, Math.floor(Number(body.wordIdx) || 0));
     var done = body.done ? 1 : 0;
+    var assignmentEventId = Number(body.assignmentEventId || body.eventId || 0) || 0;
     if (!bookId || !listId) return res.status(400).json({ error: "缺少 bookId 或 listId" });
     if (!stmts.findShelf.get(req.user.sub, bookId)) {
       return res.status(403).json({ error: "请先将词书加入书架" });
@@ -823,7 +837,18 @@ function mountRoutes(app, opts) {
     if (!found) return res.status(404).json({ error: "List 不存在" });
     var now = new Date().toISOString();
     stmts.upsertProgress.run(req.user.sub, bookId, listId, wordIdx, done, now);
-    res.json({ ok: true, bookId: bookId, listId: listId, wordIdx: wordIdx, done: !!done });
+    var assignment = null;
+    if (done && assignmentEventId && typeof completeVocabLearnAssignment === "function") {
+      assignment = completeVocabLearnAssignment(req.user.sub, assignmentEventId);
+    }
+    res.json({
+      ok: true,
+      bookId: bookId,
+      listId: listId,
+      wordIdx: wordIdx,
+      done: !!done,
+      assignment: assignment
+    });
   });
 
   function parseListIds(raw) {
@@ -935,11 +960,24 @@ function mountRoutes(app, opts) {
       });
     });
     tx();
+    var assignmentEventId = Number(body.assignmentEventId || body.eventId || 0) || 0;
+    var assignment = null;
+    if (assignmentEventId && typeof completeVocabQuizAssignment === "function") {
+      // ponytail: fail → needRetest, no COMPLETED; pass → store score for teacher
+      assignment = completeVocabQuizAssignment(req.user.sub, assignmentEventId, {
+        passed: !!passed,
+        sessionId: sid,
+        total: total,
+        correct: correct,
+        wrong: wrongCount
+      });
+    }
     res.json({
       ok: true,
       sessionId: sid,
       quizDate: date,
-      mistakeCount: mistakes.filter(function (m) { return m && m.word; }).length
+      mistakeCount: mistakes.filter(function (m) { return m && m.word; }).length,
+      assignment: assignment
     });
   });
 

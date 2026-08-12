@@ -72,7 +72,7 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260716nav"></script>
-  <script src="assets/js/auth.js?v=20260806report"></script>
+  <script src="assets/js/auth.js?v=20260812scores304"></script>
   <script src="assets/js/nav.js?v=20260723hub"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
@@ -146,7 +146,12 @@
     });
 
     document.getElementById("year").textContent = new Date().getFullYear();
-    render();
+    function boot() { render(); }
+    if (window.YYSD_AUTH && YYSD_AUTH.syncScoresFromCloud) {
+      YYSD_AUTH.syncScoresFromCloud().then(boot);
+    } else {
+      boot();
+    }
   })();
   </script>
   <script src="assets/js/mascot.js?v=20260709a"></script>
