@@ -288,6 +288,50 @@
     fb.textContent = msg;
   }
 
+  // ponytail: browsers can't force OS IME; latin inputmode + strip CJK is the real fix
+  function asciiSpell(s) {
+    return String(s || "").replace(/[^a-zA-Z'-]/g, "");
+  }
+
+  function bindEnglishSpellInput(el) {
+    if (!el || el.__yysdEnSpell) return;
+    el.__yysdEnSpell = true;
+    el.setAttribute("lang", "en");
+    el.setAttribute("inputmode", "latin");
+    el.setAttribute("autocomplete", "off");
+    el.setAttribute("autocorrect", "off");
+    el.setAttribute("autocapitalize", "off");
+    el.setAttribute("spellcheck", "false");
+    try { el.style.imeMode = "disabled"; } catch (e) { /* ignore */ }
+    var composing = false;
+    el.addEventListener("compositionstart", function () { composing = true; });
+    el.addEventListener("compositionend", function () {
+      composing = false;
+      var next = asciiSpell(el.value);
+      if (next !== el.value) {
+        el.value = next;
+        if (!state.answered) softPrompt("请切换到英文输入法后再拼写");
+      }
+    });
+    el.addEventListener("beforeinput", function (e) {
+      if (state.answered || composing) return;
+      if (e.inputType && e.inputType.indexOf("delete") === 0) return;
+      var data = e.data;
+      if (data == null) return;
+      if (/[^a-zA-Z'-]/.test(data)) {
+        e.preventDefault();
+        if (/[\u4e00-\u9fff]/.test(data) && !state.answered) {
+          softPrompt("请切换到英文输入法后再拼写");
+        }
+      }
+    });
+    el.addEventListener("input", function () {
+      if (composing) return;
+      var next = asciiSpell(el.value);
+      if (next !== el.value) el.value = next;
+    });
+  }
+
   function revealSpellRow(focus) {
     var row = document.getElementById("spellRow");
     if (!row) return;
@@ -299,10 +343,9 @@
     }
     var submit = document.getElementById("submit");
     if (submit) submit.disabled = false;
-    if (focus) {
-      var spell = document.getElementById("spell");
-      if (spell && !spell.disabled) spell.focus();
-    }
+    var spell = document.getElementById("spell");
+    bindEnglishSpellInput(spell);
+    if (focus && spell && !spell.disabled) spell.focus();
   }
 
   function lockQuizControls() {
@@ -346,7 +389,8 @@
         }).join("") +
       "</div>" +
       '<div class="vl-spell-row" id="spellRow" hidden>' +
-        '<input type="text" id="spell" placeholder="拼写英文..." autocomplete="off" autocapitalize="off" spellcheck="false" />' +
+        '<input type="text" id="spell" lang="en" inputmode="latin" placeholder="拼写英文..." ' +
+          'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />' +
         '<button type="button" class="vl-btn vl-btn-primary" id="submit" disabled>提交</button>' +
       "</div>" +
       '<div class="vl-feedback" id="fb"></div>' +
@@ -376,6 +420,7 @@
       revealSpellRow(true);
     };
     document.getElementById("submit").onclick = submitQuiz;
+    bindEnglishSpellInput(document.getElementById("spell"));
     document.getElementById("spell").onkeydown = function (e) {
       if (e.key === "Enter") submitQuiz();
     };
