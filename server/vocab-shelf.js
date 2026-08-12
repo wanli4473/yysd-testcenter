@@ -179,6 +179,25 @@ function buildCatalog(repoRoot) {
   return { books: books, byId: byId };
 }
 
+// ponytail: prod layout is /opt/yysd/server + /opt/yysd/web/library (not ../library)
+function resolveContentRoot(explicit) {
+  var candidates = [];
+  if (explicit) candidates.push(explicit);
+  candidates.push(
+    path.join(__dirname, ".."),
+    path.join(__dirname, "..", "web"),
+    path.join(__dirname, "..", "repo"),
+    process.env.YYSD_WEB_ROOT || "",
+    process.env.REPO_ROOT || ""
+  );
+  for (var i = 0; i < candidates.length; i++) {
+    var root = candidates[i];
+    if (!root) continue;
+    if (fs.existsSync(path.join(root, "library", "manifest.json"))) return root;
+  }
+  return explicit || path.join(__dirname, "..");
+}
+
 function createCatalogLoader(repoRoot) {
   var cache = { sig: "", data: null };
   function sig() {
@@ -379,7 +398,7 @@ function resolveLesson(repoRoot, book, listId) {
 function mountRoutes(app, opts) {
   var db = opts.db;
   var authMiddleware = opts.authMiddleware;
-  var repoRoot = opts.repoRoot || path.join(__dirname, "..");
+  var repoRoot = resolveContentRoot(opts.repoRoot);
   ensureSchema(db);
   var loadCatalog = createCatalogLoader(repoRoot);
 
@@ -1028,7 +1047,7 @@ module.exports = {
 
 if (require.main === module) {
   selfCheck();
-  var root = path.join(__dirname, "..");
+  var root = resolveContentRoot();
   var cat = buildCatalog(root);
   if (cat.books.length < 4) throw new Error("catalog too small");
   if (!cat.byId.gaozhong || cat.byId.gaozhong.listCount < 1) throw new Error("gaozhong lists");
