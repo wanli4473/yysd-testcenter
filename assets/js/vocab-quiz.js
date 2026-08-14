@@ -7,6 +7,10 @@
   var params = new URLSearchParams(location.search);
   var retestSessionId = Number(params.get("session") || 0);
   var assignEventId = Number(params.get("event") || 0) || 0;
+  var preRefs = String(params.get("refs") || "")
+    .split(",")
+    .map(function (s) { return decodeURIComponent(s.trim()); })
+    .filter(function (s) { return s.indexOf("||") > 0; });
   var preListIds = String(params.get("lists") || "")
     .split(",")
     .map(function (s) { return s.trim(); })
@@ -14,7 +18,10 @@
 
   var MAX_LIVES = 5;
   var TIME_SEC = 20;
-  var meta = { bookId: "", bookLabel: "", listIds: [], listLabels: [], sessionId: 0, assignmentEventId: 0 };
+  var meta = {
+    bookId: "", bookLabel: "", listIds: [], listLabels: [], sessionId: 0,
+    assignmentEventId: 0, assignRefs: [], assignProgress: null
+  };
   var words = [];
   var state = {
     phase: "setup", // setup | quiz | done
@@ -74,9 +81,16 @@
     return a;
   }
 
-  function meaningOptions(correct, n) {
+  function quizMeaning(w) {
+    var cn = w && w.acceptCN;
+    if (Array.isArray(cn) && cn.length) return cn.filter(Boolean).join(" / ");
+    return String((w && w.meaning) || "");
+  }
+
+  function meaningOptions(w, n) {
     n = n || 4;
-    var pool = words.map(function (w) { return w.meaning; }).filter(function (m) { return m !== correct; });
+    var correct = quizMeaning(w);
+    var pool = words.map(quizMeaning).filter(function (m) { return m && m !== correct; });
     pool = shuffle(pool).slice(0, n - 1);
     while (pool.length < n - 1) pool.push("（干扰项）" + (pool.length + 1));
     return shuffle([correct].concat(pool));
@@ -179,6 +193,70 @@
     refreshStart();
   }
 
+  function listLabelOfRef(ref) {
+    var i = String(ref || "").indexOf("||");
+    if (i <= 0) return String(ref || "");
+    return String(ref).slice(i + 2);
+  }
+
+  function bookIdOfRef(ref) {
+    var i = String(ref || "").indexOf("||");
+    return i > 0 ? String(ref).slice(0, i) : "";
+  }
+
+  function passedMap() {
+    var p = meta.assignProgress && meta.assignProgress.passedLists;
+    return p && typeof p === "object" ? p : {};
+  }
+
+  function renderAssignPicker() {
+    state.phase = "setup";
+    var refs = meta.assignRefs || [];
+    var done = passedMap();
+    var passedN = refs.filter(function (r) { return !!done[r]; }).length;
+    var rows = refs.map(function (ref) {
+      var ok = !!done[ref];
+      return '<div class="vq-check" style="display:flex;align-items:center;justify-content:space-between;gap:12px">' +
+        "<span><b>" + esc(listLabelOfRef(ref)) + "</b>" +
+          (bookIdOfRef(ref) ? '<span style="color:#6a7c74"> · ' + esc(bookIdOfRef(ref)) + "</span>" : "") +
+        "</span>" +
+        (ok
+          ? '<span style="color:#1f7a4d;font-weight:600">已通过</span>'
+          : '<button type="button" class="btn btn--primary btn--sm" data-vq-ref="' + esc(ref) + '">开始检测</button>') +
+      "</div>";
+    }).join("");
+    root.innerHTML =
+      '<div class="vs-hero bento-panel">' +
+        '<h1 class="bento-panel__title">作业 · 单词检测</h1>' +
+        '<p class="bento-panel__desc">共 ' + refs.length + " 个 List，请逐个闯关（" +
+          passedN + "/" + refs.length + " 已通过）。全部通过后作业才算完成。</p>" +
+        '<div class="vs-actions"><a class="btn btn--ghost btn--sm" href="dashboard.html">← 返回待办</a></div>' +
+      "</div>" +
+      '<div class="bento-panel vq-setup">' +
+        '<div class="vq-lists">' + (rows || '<p class="vs-empty">无 List</p>') + "</div>" +
+      "</div>";
+    root.querySelectorAll("[data-vq-ref]").forEach(function (btn) {
+      btn.onclick = function () {
+        var ref = btn.getAttribute("data-vq-ref");
+        if (!ref) return;
+        startQuiz("", [ref]);
+      };
+    });
+  }
+
+  function loadAssignProgress() {
+    if (!assignEventId) return Promise.resolve(null);
+    return A.api("/api/student/assignments/" + assignEventId + "/meta")
+      .then(function (d) {
+        meta.assignProgress = d.quizProgress || null;
+        return meta.assignProgress;
+      })
+      .catch(function () {
+        meta.assignProgress = null;
+        return null;
+      });
+  }
+
   function beginWithWords(d, opts) {
     opts = opts || {};
     words = d.words || [];
@@ -212,17 +290,23 @@
 
   function startQuiz(bookId, listIds) {
     root.innerHTML = '<div class="vl-state">正在组卷…</div>';
-    ensureBookOnShelf(bookId)
-      .then(function () {
-        return A.api("/api/vocab-shelf/quiz-pool?bookId=" + encodeURIComponent(bookId) +
-          "&listIds=" + encodeURIComponent(listIds.join(",")));
-      })
+    var ids = listIds || [];
+    var asRefs = ids.length && ids.every(function (id) { return String(id).indexOf("||") > 0; });
+    var url = asRefs
+      ? ("/api/vocab-shelf/quiz-pool?refs=" + encodeURIComponent(ids.join(",")))
+      : ("/api/vocab-shelf/quiz-pool?bookId=" + encodeURIComponent(bookId) +
+        "&listIds=" + encodeURIComponent(ids.join(",")));
+    var prep = asRefs
+      ? Promise.resolve()
+      : ensureBookOnShelf(bookId);
+    prep
+      .then(function () { return A.api(url); })
       .then(function (d) {
         beginWithWords(d, {});
       })
       .catch(function (e) {
         alert((e && e.message) || "组卷失败");
-        if (assignEventId && preListIds.length) {
+        if (assignEventId && (preRefs.length || preListIds.length)) {
           root.innerHTML = '<div class="state"><p>' + esc((e && e.message) || "组卷失败") +
             '</p><p><a href="dashboard.html">返回待办</a></p></div>';
         } else {
@@ -380,7 +464,7 @@
     var w = currentWord();
     root.querySelectorAll(".vl-opt").forEach(function (b) {
       b.classList.remove("selected");
-      if (b.getAttribute("data-v") === w.meaning) b.classList.add("correct");
+      if (b.getAttribute("data-v") === quizMeaning(w)) b.classList.add("correct");
       else if (b.getAttribute("data-v") === state.selectedMeaning && !meaningOk) b.classList.add("wrong");
     });
   }
@@ -394,7 +478,7 @@
 
   function renderQuizActive() {
     var w = currentWord();
-    var opts = meaningOptions(w.meaning, 4);
+    var opts = meaningOptions(w, 4);
     var labels = ["A", "B", "C", "D"];
     state.answered = false;
     state.waiting = false;
@@ -466,7 +550,7 @@
     clearInterval(state.timer);
     lockQuizControls();
     var w = currentWord();
-    var meaningOk = state.selectedMeaning === w.meaning;
+    var meaningOk = state.selectedMeaning === quizMeaning(w);
     var spellOk = spell === w.word.toLowerCase();
     var ok = meaningOk && spellOk;
     paintMeaningResult(meaningOk);
@@ -481,7 +565,7 @@
       state.wrong++;
       pushMistake(w, spell);
       fb.className = "vl-feedback show fail";
-      fb.textContent = "❌ 正确答案：" + w.word + "（" + w.meaning + "）";
+      fb.textContent = "❌ 正确答案：" + w.word + "（" + quizMeaning(w) + "）";
       updateLives();
     }
     afterAnswer();
@@ -495,7 +579,7 @@
     var spellEl = document.getElementById("spell");
     var spellRaw = spellEl ? spellEl.value.trim() : "";
     var spell = spellRaw.toLowerCase();
-    var meaningOk = !!(state.selectedMeaning && state.selectedMeaning === w.meaning);
+    var meaningOk = !!(state.selectedMeaning && state.selectedMeaning === quizMeaning(w));
     var spellOk = !!(spell && spell === w.word.toLowerCase());
     var ok = meaningOk && spellOk;
     revealSpellRow(false);
@@ -513,7 +597,7 @@
       state.wrong++;
       updateLives();
       fb.className = "vl-feedback show timeout";
-      fb.textContent = "⏰ 时间到！答案：" + w.word + "（" + w.meaning + "）";
+      fb.textContent = "⏰ 时间到！答案：" + w.word + "（" + quizMeaning(w) + "）";
     }
     afterAnswer();
   }
@@ -573,12 +657,19 @@
     ov.classList.add("show");
 
     finishReq.then(function (d) {
-      var assignOk = !isAssign || !passed || (d && d.assignment && d.assignment.ok);
+      var assign = d && d.assignment;
+      var assignOk = !isAssign || !passed || (assign && assign.ok);
+      var assignPartial = !!(assign && assign.partial);
       var title;
       var sub;
       if (isRetest) {
         title = "重测结束";
         sub = "本场错词列表已更新为仍错的 " + state.mistakes.length + " 个（记录保留，可手动删除）。";
+      } else if (passed && assignPartial) {
+        title = "本 List 通过";
+        sub = "已过 " + (assign.passedCount || 0) + "/" + (assign.totalLists || 0) +
+          " 个 List。请继续完成剩余 List，全部通过后作业才算完成。错词已写入错题本。";
+        if (assign.quizResult) meta.assignProgress = assign.quizResult;
       } else if (passed && assignOk) {
         title = isAssign ? "检测通过 · 作业已完成" : "闯关成功！";
         sub = isAssign
@@ -598,6 +689,10 @@
         acts =
           '<button type="button" class="vl-btn vl-btn-primary" id="retry">立即重测</button>' +
           '<a class="vl-btn" href="dashboard.html">退出（作业未完成）</a>';
+      } else if (isAssign && passed && assignPartial) {
+        acts =
+          '<button type="button" class="vl-btn vl-btn-primary" id="nextList">继续下一 List</button>' +
+          '<a class="vl-btn" href="dashboard.html">稍后再做</a>';
       } else if (isAssign && passed && !assignOk) {
         acts =
           '<button type="button" class="vl-btn vl-btn-primary" id="retry">重新提交</button>' +
@@ -632,6 +727,13 @@
           ov.classList.remove("show");
           if (meta.sessionId) startRetest(meta.sessionId);
           else startQuiz(meta.bookId, meta.listIds);
+        };
+      }
+      var nextList = document.getElementById("nextList");
+      if (nextList) {
+        nextList.onclick = function () {
+          ov.classList.remove("show");
+          renderAssignPicker();
         };
       }
       var back = document.getElementById("backSetup");
@@ -669,10 +771,25 @@
     var preBook = (params.get("book") || "").trim();
     meta.bookId = preBook;
     meta.assignmentEventId = assignEventId;
-    // Teacher assignment deep-link: skip setup, go straight to quiz
+    // Teacher assignment: one List at a time (never merge into one mega-quiz)
+    if (assignEventId && preRefs.length) {
+      meta.assignRefs = preRefs.slice();
+      if (preRefs.length === 1) {
+        meta.listIds = preRefs.slice();
+        startQuiz("", preRefs);
+        return;
+      }
+      loadAssignProgress().then(function () { renderAssignPicker(); });
+      return;
+    }
     if (assignEventId && preBook && preListIds.length) {
-      meta.listIds = preListIds.slice();
-      startQuiz(preBook, preListIds);
+      meta.assignRefs = preListIds.map(function (lid) { return preBook + "||" + lid; });
+      if (preListIds.length === 1) {
+        meta.listIds = preListIds.slice();
+        startQuiz(preBook, preListIds);
+        return;
+      }
+      loadAssignProgress().then(function () { renderAssignPicker(); });
       return;
     }
     A.api("/api/vocab-shelf/bookshelf")

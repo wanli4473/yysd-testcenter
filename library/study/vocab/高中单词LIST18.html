@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>高中单词 LIST 18 (1-55) - 英式女声</title>
+    <style>
+        :root {
+            --bg: #f5f3f0; --card-bg: #ffffff; --primary: #2c3e6b; --primary-light: #3d5a99;
+            --accent: #c8963e; --accent-light: #e8c97a; --text: #2d2d2d; --text-light: #5a5a5a;
+            --text-muted: #888; --border: #e0dcd5; --shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --shadow-hover: 0 6px 24px rgba(0,0,0,0.1); --shadow-card: 0 1px 4px rgba(0,0,0,0.04);
+            --radius: 12px; --radius-sm: 8px; --radius-xs: 6px; --transition: 0.22s ease;
+            --font-heading: 'Georgia', serif; --font-body: 'Inter', 'PingFang SC', sans-serif;
+            --font-ipa: 'Gentium Plus', serif; --success: #3a7d5a; --success-bg: #eaf5ee;
+            --error: #c0392b; --error-bg: #fdf0ee; --warning: #b8860b; --warning-bg: #fef9ee;
+            --tag-bg: #f0ede6; --history-bg: #f9f8f5;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh; line-height:1.6; -webkit-font-smoothing:antialiased; }
+        .header { background:var(--card-bg); border-bottom:1px solid var(--border); padding:0 24px; position:sticky; top:0; z-index:100; box-shadow:0 1px 3px rgba(0,0,0,0.04); backdrop-filter:blur(8px); }
+        .header-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:60px; gap:16px; }
+        .logo { display:flex; align-items:center; gap:10px; font-family:var(--font-heading); font-size:1.35rem; font-weight:700; color:var(--primary); }
+        .logo-icon { width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.1rem; }
+        .nav-tabs { display:flex; gap:4px; background:#f5f3ef; border-radius:28px; padding:3px; }
+        .nav-tab { padding:9px 20px; border-radius:26px; border:none; cursor:pointer; font-size:0.9rem; font-weight:600; transition:var(--transition); background:transparent; color:var(--text-light); font-family:var(--font-body); }
+        .nav-tab.active { background:#fff; color:var(--primary); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+        .nav-tab:hover:not(.active) { color:var(--primary); background:rgba(255,255,255,0.5); }
+        .word-count-badge { font-size:0.8rem; color:var(--text-muted); background:var(--tag-bg); padding:5px 12px; border-radius:20px; font-weight:500; }
+        .main-container { max-width:1200px; margin:0 auto; padding:24px 20px 40px; }
+        .learn-section, .test-section { display:none; }
+        .learn-section.active, .test-section.active { display:block; }
+        .learn-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:14px; }
+        .word-card { background:var(--card-bg); border-radius:var(--radius); padding:16px 18px; cursor:pointer; transition:var(--transition); border:1.5px solid transparent; box-shadow:var(--shadow-card); display:flex; flex-direction:column; gap:6px; user-select:none; }
+        .word-card:hover { box-shadow:var(--shadow-hover); border-color:#d5cec4; transform:translateY(-2px); }
+        .word-card.expanded { border-color:var(--primary-light); box-shadow:var(--shadow-hover); grid-column:1/-1; cursor:default; z-index:10; background:#fefefd; }
+        .word-card-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .word-headword { font-family:var(--font-heading); font-size:1.25rem; font-weight:700; color:var(--primary); }
+        .word-ipa { font-family:var(--font-ipa); font-size:0.85rem; color:var(--text-muted); }
+        .btn-play { width:34px; height:34px; border-radius:50%; border:none; cursor:pointer; background:#f0ede6; color:var(--primary); font-size:0.85rem; transition:var(--transition); display:flex; align-items:center; justify-content:center; }
+        .btn-play:hover { background:var(--primary); color:#fff; }
+        .btn-play.playing { background:var(--accent); color:#fff; animation:pulse-play 0.8s infinite; }
+        @keyframes pulse-play { 0%,100%{ box-shadow:0 0 0 0 rgba(200,150,62,0.5); } 50%{ box-shadow:0 0 0 14px rgba(200,150,62,0); } }
+        .word-pos { display:inline-block; font-size:0.75rem; font-weight:600; color:var(--accent); background:#fdf8f0; padding:3px 8px; border-radius:4px; }
+        .word-meaning { font-size:0.9rem; color:var(--text); font-weight:500; }
+        .word-detail { display:none; margin-top:8px; padding-top:10px; border-top:1px dashed var(--border); animation:fadeIn 0.25s ease; }
+        .word-card.expanded .word-detail { display:block; }
+        @keyframes fadeIn { from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:translateY(0); } }
+        .word-detail-row { font-size:0.85rem; margin-bottom:6px; color:var(--text-light); line-height:1.5; }
+        .word-detail-row strong { color:var(--primary); font-weight:600; }
+        .word-detail-example { background:#fafaf7; padding:8px 12px; border-radius:var(--radius-xs); color:#555; border-left:3px solid var(--accent-light); margin-top:4px; font-size:0.85rem; }
+        .card-collapse-hint { font-size:0.7rem; color:var(--text-muted); text-align:center; margin-top:4px; display:none; }
+        .word-card.expanded .card-collapse-hint { display:block; }
+        .test-setup { background:var(--card-bg); border-radius:var(--radius); padding:28px 24px; text-align:center; box-shadow:var(--shadow); max-width:520px; margin:0 auto; }
+        .test-setup h3 { font-family:var(--font-heading); font-size:1.3rem; color:var(--primary); margin-bottom:8px; }
+        .test-setup p { color:var(--text-light); margin-bottom:20px; font-size:0.9rem; }
+        .btn-start-test { padding:12px 36px; border-radius:26px; border:none; cursor:pointer; font-size:1rem; font-weight:700; background:var(--primary); color:#fff; transition:var(--transition); font-family:var(--font-body); }
+        .btn-start-test:hover { background:var(--primary-light); box-shadow:0 4px 16px rgba(44,62,107,0.3); transform:translateY(-1px); }
+        .test-active-area, .test-results { display:none; max-width:600px; margin:0 auto; background:var(--card-bg); border-radius:var(--radius); padding:28px 24px; box-shadow:var(--shadow); text-align:center; }
+        .test-active-area.visible, .test-results.visible { display:block; }
+        .test-progress { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; font-size:0.85rem; color:var(--text-muted); font-weight:500; }
+        .progress-bar-wrap { flex:1; height:6px; background:#e8e4dc; border-radius:3px; margin:0 12px; overflow:hidden; }
+        .progress-bar-fill { height:100%; background:var(--primary); border-radius:3px; transition:width 0.35s ease; }
+        .test-play-area { margin:20px 0; }
+        .btn-play-large { width:70px; height:70px; border-radius:50%; border:none; cursor:pointer; background:var(--primary); color:#fff; font-size:1.6rem; transition:var(--transition); box-shadow:0 4px 16px rgba(44,62,107,0.25); }
+        .btn-play-large:hover { background:var(--primary-light); transform:scale(1.05); }
+        .btn-play-large.playing { background:var(--accent); animation:pulse-play-large 0.8s infinite; }
+        @keyframes pulse-play-large { 0%,100%{ box-shadow:0 0 0 0 rgba(200,150,62,0.6); } 50%{ box-shadow:0 0 0 22px rgba(200,150,62,0); } }
+        .test-inputs { display:flex; flex-direction:column; gap:12px; margin:20px 0; text-align:left; }
+        .test-input-group label { display:block; font-size:0.85rem; font-weight:600; margin-bottom:4px; }
+        .test-input-group input { width:100%; padding:12px 14px; border-radius:var(--radius-sm); border:2px solid var(--border); font-size:1rem; transition:var(--transition); background:#fafaf8; }
+        .test-input-group input:focus { outline:none; border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(61,90,153,0.08); }
+        .correct-input { border-color:var(--success)!important; background:var(--success-bg)!important; }
+        .wrong-input { border-color:var(--error)!important; background:var(--error-bg)!important; }
+        .btn-submit { padding:12px 32px; border-radius:26px; border:none; cursor:pointer; font-size:1rem; font-weight:700; background:var(--primary); color:#fff; }
+        .btn-submit:disabled { opacity:0.5; cursor:not-allowed; }
+        .test-feedback { margin-top:16px; padding:14px 16px; border-radius:var(--radius-sm); font-size:0.9rem; display:none; animation:fadeIn 0.3s ease; text-align:left; line-height:1.7; }
+        .test-feedback.visible { display:block; }
+        .test-feedback.correct-all { background:var(--success-bg); border:1px solid #c3e0cd; color:#2d5a3d; }
+        .test-feedback.partial { background:var(--warning-bg); border:1px solid #f0d78c; color:#6b4f1a; }
+        .test-feedback.wrong-all { background:var(--error-bg); border:1px solid #f5c6cb; color:#6b2020; }
+        .btn-next { margin-top:12px; padding:10px 24px; border-radius:22px; border:2px solid var(--primary); cursor:pointer; font-size:0.9rem; font-weight:600; background:#fff; color:var(--primary); display:none; }
+        .btn-next.visible { display:inline-block; }
+        .btn-next:hover { background:var(--primary); color:#fff; }
+        .results-score { font-family:var(--font-heading); font-size:3.5rem; font-weight:700; color:var(--primary); }
+        .results-detail { font-size:0.9rem; color:var(--text-light); margin:8px 0 20px; }
+        .results-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:0.85rem; text-align:left; }
+        .results-table th, .results-table td { padding:8px 10px; border-bottom:1px solid var(--border); }
+        .results-table th { background:#fafaf7; color:var(--primary); }
+        .row-correct { background:#f9fdf9; } .row-wrong { background:#fefbfb; }
+        .btn-retry { margin-top:16px; padding:12px 28px; border-radius:26px; border:none; cursor:pointer; font-weight:700; background:var(--accent); color:#fff; }
+        .btn-back-setup { margin-left:10px; background:#fff; color:var(--primary); border:2px solid var(--primary); }
+        .history-section { margin-top:32px; background:var(--history-bg); border-radius:var(--radius); padding:20px; max-width:520px; margin-left:auto; margin-right:auto; text-align:left; box-shadow:var(--shadow-card); }
+        .history-title { font-family:var(--font-heading); font-size:1.1rem; color:var(--primary); margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+        .history-list { list-style:none; max-height:240px; overflow-y:auto; padding-right:4px; }
+        .history-list li { padding:10px 12px; background:#fff; border-radius:var(--radius-sm); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border:1px solid var(--border); }
+        .history-time { color:var(--text-muted); font-size:0.75rem; }
+        .history-score { font-weight:700; color:var(--primary); }
+        .history-empty { color:var(--text-muted); text-align:center; padding:16px; font-size:0.85rem; }
+        .btn-clear-history { background:none; border:none; color:#c0392b; font-size:0.75rem; cursor:pointer; text-decoration:underline; }
+        @media (max-width:768px) {
+            .learn-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+            .word-card { padding:12px 14px; }
+            .word-headword { font-size:1.1rem; }
+            .word-count-badge { display:none; }
+            .btn-play-large { width:56px; height:56px; font-size:1.3rem; }
+            .results-score { font-size:2.5rem; }
+        }
+    </style>
+<!-- yysd:hide-legacy-test --><style id="yysd-hide-legacy-test">.nav-tab[data-mode="test"],#testSection,.test-section,[data-mode="test"]{display:none!important}</style>
+</head>
+<body>
+<header class="header">
+    <div class="header-inner">
+        <div class="logo"><div class="logo-icon">📖</div><span>高中 LIST 18</span></div>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" data-mode="learn">📚 学习模式</button>
+            <button class="nav-tab" data-mode="test">✅ 单词检测</button>
+        </nav>
+        <span class="word-count-badge">共 55 词</span>
+    </div>
+</header>
+<div class="main-container">
+    <section class="learn-section active" id="learnSection"><div class="learn-grid" id="learnGrid"></div></section>
+    <section class="test-section" id="testSection">
+        <div class="test-setup" id="testSetup">
+            <h3>📝 LIST 18 单词检测</h3>
+            <p>点击开始检测全部<strong>55个单词</strong>。<br>播放读音后填写拼写和含义。</p>
+            <button class="btn-start-test" id="btnStartTest">🎯 开始检测 (55题)</button>
+            <div class="history-section"><div class="history-title">📋 历史记录 <button class="btn-clear-history" id="btnClearHistory">清除记录</button></div><div id="historyContent"></div></div>
+        </div>
+        <div class="test-active-area" id="testActiveArea">
+            <div class="test-progress"><span id="testProgressLabel">第 1 / 55 题</span><div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBarFill" style="width:0%;"></div></div><span id="testScoreLabel">得分: 0</span></div>
+            <div class="test-play-area"><button class="btn-play-large" id="btnPlayTest">▶</button><p class="play-hint">点击按钮听单词读音</p></div>
+            <div class="test-inputs">
+                <div class="test-input-group"><label>🔤 英文拼写</label><input type="text" id="inputSpelling" placeholder="请输入英文拼写..." autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+                <div class="test-input-group"><label>🈶 中文含义</label><input type="text" id="inputMeaning" placeholder="请输入中文含义..." autocomplete="off"></div>
+            </div>
+            <button class="btn-submit" id="btnSubmit">✓ 提交答案</button>
+            <div class="test-feedback" id="testFeedback"></div>
+            <button class="btn-next" id="btnNext">下一题 →</button>
+        </div>
+        <div class="test-results" id="testResults">
+            <h3 style="font-family:var(--font-heading);color:var(--primary);">🏆 检测完成！</h3>
+            <div class="results-score" id="resultsScore">0</div><div class="results-detail" id="resultsDetail"></div>
+            <div style="overflow-x:auto;"><table class="results-table"><thead><tr><th>#</th><th>单词</th><th>你的拼写</th><th>你的含义</th><th>结果</th></tr></thead><tbody id="resultsTableBody"></tbody></table></div>
+            <button class="btn-retry" id="btnRetry">🔄 重新检测</button>
+            <button class="btn-retry btn-back-setup" id="btnBackToSetup">📋 返回</button>
+        </div>
+    </section>
+</div>
+<script>
+(function() {
+// ==================== LIST 18 单词数据 ====================
+const wordData = [{"id":1,"word":"choose","ipa":"/tʃuːz/","pos":"v.","meaning":"v. 选择，挑选（choose sb / sth；choose to do 情愿做；choose from 从…中选）。不规则：choose–chose–chosen。名词 choice。cannot choose but do 只好。高考 choose to do 表主观选择。There is nothing to choose between them. 不相上下。与 select / pick 近义，choose 最通用。choose from among 从中间挑选。过去分词 chosen。choice 为名词。不可 choose sb to 表“选择让”。","phrases":"choose to do（选择做）, choose from（从…中选择）, have no choice but to（只好）","example":"She chose to stay at home rather than go out.（她选择待在家里而不是出去。）","acceptCN":["选择","挑选"],"collocations":[{"phrase":"choose to do","meaning":"选择做"},{"phrase":"choose from","meaning":"从…中选择"},{"phrase":"have no choice but to","meaning":"只好"}],"root":"choose–chose–chosen；名词 choice","synonyms":["select","pick"],"antonyms":["reject"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"选择","topic":"日常"},"exampleEn":"She chose to stay at home rather than go out.","exampleZh":"她选择待在家里而不是出去。"},{"id":2,"word":"awake","ipa":"/əˈweɪk/","pos":"adj. / v.","meaning":"adj. 醒着的（表语：be / stay / lie awake；wide awake 完全清醒）。v. 唤醒，觉醒（awake–awoke–awoken；较文）。wake (up) 更常用作动词。awake to 意识到。高考形容词用法为主，不说 an awake boy，而说 a waking child 亦少，用 a boy who is awake。反义 asleep。","phrases":"stay awake（保持清醒）, wide awake（完全清醒）, awake to（意识到）","example":"I lay awake for hours thinking about the exam.（我躺了好几个小时睡不着，想着考试。）","acceptCN":["醒着的","唤醒","觉醒"],"collocations":[{"phrase":"stay awake","meaning":"保持清醒"},{"phrase":"wide awake","meaning":"完全清醒"},{"phrase":"awake to","meaning":"意识到"}],"root":"表语形容词；动词常用 wake up；反义 asleep","synonyms":["conscious","alert"],"antonyms":["asleep"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"醒着的","topic":"生活"},"exampleEn":"I lay awake for hours thinking about the exam.","exampleZh":"我躺了好几个小时睡不着，想着考试。"},{"id":3,"word":"splendid","ipa":"/ˈsplendɪd/","pos":"adj.","meaning":"adj. 极好的，壮丽的，辉煌的（a splendid view / palace / idea）。副词 splendidly。英式口语可表赞叹 That’s splendid! 比 good 更强，带“华丽、出色”色彩。文学、景点描写及旧式英式口语常见。与 magnificent / glorious 近义。","phrases":"a splendid view（壮丽景色）, that's splendid（太好了）, splendidly（极好地）","example":"We had a splendid view of the lake from the hill.（从山上望去，湖景十分壮丽。）","acceptCN":["极好的","壮丽的","辉煌的"],"collocations":[{"phrase":"a splendid view","meaning":"壮丽景色"},{"phrase":"that's splendid","meaning":"太好了"},{"phrase":"splendidly","meaning":"极好地"}],"root":"书面+口语赞叹；近义 magnificent","synonyms":["magnificent","glorious"],"antonyms":["poor","dull"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"壮丽的","topic":"描写"},"exampleEn":"We had a splendid view of the lake from the hill.","exampleZh":"从山上望去，湖景十分壮丽。"},{"id":4,"word":"brand","ipa":"/brænd/","pos":"n. / v.","meaning":"n. ①品牌（a famous brand；brand name）；②类型（a brand of humour）。v. 打烙印；丑化（brand sb as 给某人扣上…帽子）。brand-new 崭新的。商业、消费话题高频。brand image 品牌形象。高考 brand-new 为合成形容词。brand image 品牌形象。own brand 自有品牌。branded goods 名牌商品。brand-new 崭新。","phrases":"a famous brand（名牌）, brand-new（崭新的）, brand sb as（把某人称作）","example":"She bought a brand-new bicycle with her savings.（她用积蓄买了一辆崭新的自行车。）","acceptCN":["品牌","商标","烙印"],"collocations":[{"phrase":"a famous brand","meaning":"名牌"},{"phrase":"brand-new","meaning":"崭新的"},{"phrase":"brand sb as","meaning":"把某人称作"}],"root":"brand-new 崭新；brand sb as 扣帽子","synonyms":["make","label"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"品牌","topic":"生活"},"exampleEn":"She bought a brand-new bicycle with her savings.","exampleZh":"她用积蓄买了一辆崭新的自行车。"},{"id":5,"word":"assumption","ipa":"/əˈsʌmpʃn/","pos":"n.","meaning":"n. 假定，假设（make an assumption；on the assumption that 假定）。动词 assume 假定、承担。Don’t make assumptions. 不要想当然。阅读议论文高频：挑战某一 assumption。assumption of power 掌权。高考 on the assumption that 引导条件。assume office 就职。assuming that 假定。Don't assume. 不要想当然，议论文常用。","phrases":"make an assumption（作出假设）, on the assumption that（假定）, assume（假定；承担）","example":"Your assumption that he is lazy is unfair.（你假定他懒惰，这不公平。）","acceptCN":["假定","假设","设想"],"collocations":[{"phrase":"make an assumption","meaning":"作出假设"},{"phrase":"on the assumption that","meaning":"假定"},{"phrase":"assume","meaning":"假定；承担"}],"root":"assume + -tion；on the assumption that 假定","synonyms":["supposition","hypothesis"],"antonyms":["fact"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"假设","topic":"教育"},"exampleEn":"Your assumption that he is lazy is unfair.","exampleZh":"你假定他懒惰，这不公平。"},{"id":6,"word":"due","ipa":"/djuː/ · /duː/","pos":"adj.","meaning":"adj. ①到期的（The homework is due tomorrow.）；②预定的（the train is due at 9）；③应得的（with due respect）。due to 由于（多作表语，书面亦作状语）。be due to do 预定将。give sb his due 公平对待。高考 due to 与 because of 近义。in due course 在适当的时候。with due respect 恕我直言。dues 可指会费、税。","phrases":"due to（由于）, be due to do（预定将）, the work is due（作业到期）","example":"The delay was due to the heavy snow.（延误是由于大雪造成的。）","acceptCN":["到期的","预定的","由于"],"collocations":[{"phrase":"due to","meaning":"由于"},{"phrase":"be due to do","meaning":"预定将"},{"phrase":"the work is due","meaning":"作业到期"}],"root":"due to 由于；作业/账单到期 the work is due","synonyms":["owed","expected"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"由于","topic":"语法"},"exampleEn":"The delay was due to the heavy snow.","exampleZh":"延误是由于大雪造成的。"},{"id":7,"word":"turkey","ipa":"/ˈtɜːki/ · /ˈtɜːrki/","pos":"n.","meaning":"n. ①火鸡（roast turkey；Thanksgiving turkey 感恩节火鸡）；②土耳其（Turkey 专有名词，首都 Ankara）。talk turkey（美）谈正经事。文化话题：西方节日饮食。小写 turkey 动物，大写 Turkey 国家。高考地理与节日阅读均可能出现。","phrases":"roast turkey（烤火鸡）, Thanksgiving turkey（感恩节火鸡）, Turkey（土耳其）","example":"They had roast turkey at Christmas dinner.（圣诞晚餐他们吃了烤火鸡。）","acceptCN":["火鸡","土耳其"],"collocations":[{"phrase":"roast turkey","meaning":"烤火鸡"},{"phrase":"Thanksgiving turkey","meaning":"感恩节火鸡"},{"phrase":"Turkey","meaning":"土耳其"}],"root":"小写火鸡 / 大写 Turkey 国家","synonyms":[],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"火鸡","topic":"文化"},"exampleEn":"They had roast turkey at Christmas dinner.","exampleZh":"圣诞晚餐他们吃了烤火鸡。"},{"id":8,"word":"spiritual","ipa":"/ˈspɪrɪtʃuəl/","pos":"adj.","meaning":"adj. 精神的，心灵的，宗教的（spiritual life / values；spiritual leader）。名词 spirit 精神、灵魂、烈酒。反义 material / physical。文化、宗教、心理健康阅读常见。spiritual home 精神家园。高考对比物质与精神财富。副词 spiritually。","phrases":"spiritual life（精神生活）, spiritual values（精神价值）, spiritually（在精神上）","example":"Music is an important part of her spiritual life.（音乐是她精神生活的重要部分。）","acceptCN":["精神的","心灵的","宗教的"],"collocations":[{"phrase":"spiritual life","meaning":"精神生活"},{"phrase":"spiritual values","meaning":"精神价值"},{"phrase":"spiritually","meaning":"在精神上"}],"root":"spirit + -ual；反义 material / physical","synonyms":["inner","religious"],"antonyms":["material","physical"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"精神的","topic":"文化"},"exampleEn":"Music is an important part of her spiritual life.","exampleZh":"音乐是她精神生活的重要部分。"},{"id":9,"word":"measure","ipa":"/ˈmeʒə/ · /ˈmeʒər/","pos":"v. / n.","meaning":"v. ①测量（measure the length）；②有…尺寸（The room measures 20 metres. 无被动）；③衡量。n. 措施（take measures to do 高考必考）；度量；程度（in some measure）。made to measure 量身定做。measurement 测量数据。beyond measure 非常、极其。in large measure 在很大程度上。tape measure 卷尺。","phrases":"take measures to（采取措施）, measure … metres（长度为…米）, made to measure（量身定做）","example":"The government took measures to reduce pollution.（政府采取措施减少污染。）","acceptCN":["测量","措施","衡量"],"collocations":[{"phrase":"take measures to","meaning":"采取措施"},{"phrase":"measure … metres","meaning":"长度为…米"},{"phrase":"made to measure","meaning":"量身定做"}],"root":"take measures to do 采取措施；measure 作“尺寸为”无被动","synonyms":["gauge","step"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"措施","topic":"社会"},"exampleEn":"The government took measures to reduce pollution.","exampleZh":"政府采取措施减少污染。"},{"id":10,"word":"punishment","ipa":"/ˈpʌnɪʃmənt/","pos":"n.","meaning":"n. 惩罚，处罚（a severe punishment；capital punishment 死刑）。动词 punish sb for。as a punishment 作为惩罚。reward 为反义“奖赏”。校园纪律、法律阅读常见。punitive adj. 惩罚性的。高考 for / as a punishment 介词搭配。corporal punishment 体罚。punishable 应受处罚的。punitive measures 惩罚性措施。","phrases":"as a punishment（作为惩罚）, capital punishment（死刑）, punish sb for（因…惩罚某人）","example":"He was given extra homework as a punishment.（作为惩罚，他被罚做额外作业。）","acceptCN":["惩罚","处罚"],"collocations":[{"phrase":"as a punishment","meaning":"作为惩罚"},{"phrase":"capital punishment","meaning":"死刑"},{"phrase":"punish sb for","meaning":"因…惩罚某人"}],"root":"punish + -ment；反义 reward","synonyms":["penalty","discipline"],"antonyms":["reward"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"惩罚","topic":"社会"},"exampleEn":"He was given extra homework as a punishment.","exampleZh":"作为惩罚，他被罚做额外作业。"},{"id":11,"word":"roll","ipa":"/rəʊl/ · /roʊl/","pos":"v. / n.","meaning":"v. 滚动，卷起（roll up one’s sleeves 卷起袖子准备干；roll in 大量涌来）。n. 卷，名册（call the roll 点名）；小圆面包。rock and roll 摇滚。roll over 翻滚。同音 role（角色）易混。体育、课堂、生活场景均见。","phrases":"roll up one's sleeves（卷起袖子）, call the roll（点名）, roll in（大量涌来）","example":"The teacher called the roll at the beginning of class.（老师在上课开始时点名。）","acceptCN":["滚动","卷起","名册"],"collocations":[{"phrase":"roll up one's sleeves","meaning":"卷起袖子"},{"phrase":"call the roll","meaning":"点名"},{"phrase":"roll in","meaning":"大量涌来"}],"root":"同音 role；call the roll 点名；roll up 卷起","synonyms":["turn","list"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"滚动","topic":"日常"},"exampleEn":"The teacher called the roll at the beginning of class.","exampleZh":"老师在上课开始时点名。"},{"id":12,"word":"touch","ipa":"/tʌtʃ/","pos":"v. / n.","meaning":"v. 触摸；触动（be touched by）；涉及。n. 接触；润色（a finishing touch）；才能（a touch of）。keep / stay in touch (with) 保持联系；get in touch 取得联系；lose touch 失去联系。touch down 着陆。高考 in touch 短语群必考。don’t touch 警示。touch on 稍稍提及。lose one's touch 技艺生疏。a touch of irony 一丝讽刺。","phrases":"keep in touch with（与…保持联系）, get in touch（取得联系）, be touched by（被…感动）","example":"Please keep in touch after you go abroad.（你出国后请保持联系。）","acceptCN":["触摸","联系","触动"],"collocations":[{"phrase":"keep in touch with","meaning":"与…保持联系"},{"phrase":"get in touch","meaning":"取得联系"},{"phrase":"be touched by","meaning":"被…感动"}],"root":"in touch 短语群：keep / get / lose touch","synonyms":["contact","move"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"联系","topic":"日常"},"exampleEn":"Please keep in touch after you go abroad.","exampleZh":"你出国后请保持联系。"},{"id":13,"word":"since","ipa":"/sɪns/","pos":"prep. / conj. / adv.","meaning":"prep. / conj. ①自从（与完成时连用：have done … since）；②既然（Since you are here, … 表原因，较 because 弱）。adv. 此后（ever since）。It is / has been + 时间 + since 从句（过去时）。高考时态与“既然”两义均考。与 for + 时段辨析。","phrases":"ever since（从那以后）, it is … since（自…以来已有）, since then（从那时起）","example":"We have lived here since 2018.（我们从2018年起就住在这里。）","acceptCN":["自从","既然","此后"],"collocations":[{"phrase":"ever since","meaning":"从那以后"},{"phrase":"it is … since","meaning":"自…以来已有"},{"phrase":"since then","meaning":"从那时起"}],"root":"since 时间状语多用现在完成时；亦可表“既然”","synonyms":["from","because"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"自从","topic":"语法"},"exampleEn":"We have lived here since 2018.","exampleZh":"我们从2018年起就住在这里。"},{"id":14,"word":"procedure","ipa":"/prəˈsiːdʒə/ · /prəˈsiːdʒər/","pos":"n.","meaning":"n. 程序，步骤，手续（follow the procedure；safety procedure；legal procedure）。动词 proceed 继续进行。说明文、实验、办事流程阅读高频。procedure for doing …的步骤。比 process 更强调规定好的步骤顺序。高考“按程序操作”。","phrases":"follow the procedure（按程序）, safety procedure（安全步骤）, procedure for（…的手续）","example":"Please follow the procedure when you do the experiment.（做实验时请按步骤进行。）","acceptCN":["程序","步骤","手续"],"collocations":[{"phrase":"follow the procedure","meaning":"按程序"},{"phrase":"safety procedure","meaning":"安全步骤"},{"phrase":"procedure for","meaning":"…的手续"}],"root":"proceed(进行) 相关；强调规定步骤","synonyms":["process","steps"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"程序","topic":"教育"},"exampleEn":"Please follow the procedure when you do the experiment.","exampleZh":"做实验时请按步骤进行。"},{"id":15,"word":"win","ipa":"/wɪn/","pos":"v. / n.","meaning":"v. 赢得，获胜（win a game / prize / support；win sb over 把某人争取过来）。不规则：win–won–won。n. 胜利。区别 beat / defeat（后接对手），win 后接比赛、奖品、尊重。winner 获胜者。高考 win / beat 宾语辨析必考。","phrases":"win a prize（获奖）, win sb over（说服某人）, win the game（赢得比赛）","example":"Our team won the match 3–1.（我们队以3比1赢得了比赛。）","acceptCN":["赢得","获胜"],"collocations":[{"phrase":"win a prize","meaning":"获奖"},{"phrase":"win sb over","meaning":"说服某人"},{"phrase":"win the game","meaning":"赢得比赛"}],"root":"win–won–won；win 接赛事/奖，beat 接对手","synonyms":["gain","triumph"],"antonyms":["lose"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"赢得","topic":"体育"},"exampleEn":"Our team won the match 3–1.","exampleZh":"我们队以3比1赢得了比赛。"},{"id":16,"word":"confidential","ipa":"/ˌkɒnfɪˈdenʃl/ · /ˌkɑːnfɪˈdenʃl/","pos":"adj.","meaning":"adj. 机密的，保密的（confidential information / documents；keep sth confidential）。名词 confidence 信心、信任、知心话；in confidence 私下地。副词 confidentially。商务、信件、隐私阅读常见。与 confident（自信的）词根相近易混。","phrases":"confidential information（机密信息）, keep sth confidential（对某事保密）, in confidence（私下地）","example":"Please keep this report confidential.（请对这份报告保密。）","acceptCN":["机密的","保密的"],"collocations":[{"phrase":"confidential information","meaning":"机密信息"},{"phrase":"keep sth confidential","meaning":"对某事保密"},{"phrase":"in confidence","meaning":"私下地"}],"root":"易混 confident（自信的）；in confidence 私下","synonyms":["secret","private"],"antonyms":["public","open"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"机密的","topic":"社会"},"exampleEn":"Please keep this report confidential.","exampleZh":"请对这份报告保密。"},{"id":17,"word":"transport","ipa":"/ˈtrænspɔːt/ · /ˈtrænspɔːrt/","pos":"n. / v.","meaning":"n. 交通，运输（public transport 英；transportation 美更常用）。v. /trænˈspɔːt/ 运输，运送。means of transport 交通方式。环保话题：green transport。高考英式 public transport。名词重音在前，动词重音在后。transporter 运输工具。","phrases":"public transport（公共交通）, means of transport（交通方式）, transport goods（运送货物）","example":"I go to school by public transport.（我乘公共交通上学。）","acceptCN":["交通","运输","运送"],"collocations":[{"phrase":"public transport","meaning":"公共交通"},{"phrase":"means of transport","meaning":"交通方式"},{"phrase":"transport goods","meaning":"运送货物"}],"root":"英 public transport；名动词重音不同","synonyms":["carry","traffic"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"交通","topic":"生活"},"exampleEn":"I go to school by public transport.","exampleZh":"我乘公共交通上学。"},{"id":18,"word":"explode","ipa":"/ɪkˈspləʊd/ · /ɪkˈsploʊd/","pos":"v.","meaning":"v. ①爆炸（a bomb exploded）；②激增（the population exploded）；③爆发（explode with anger）。名词 explosion；形容词 explosive。新闻、科技、情绪描写常见。explode into laughter 突然大笑。高考 explosion 拼写及 explode with 情绪义。explosive news 爆炸性新闻。population explosion 人口激增。unexploded bomb 未爆炸弹。","phrases":"explode with anger（勃然大怒）, an explosion（爆炸；激增）, explosive（爆炸性的）","example":"The fireworks exploded in the night sky.（烟花在夜空中炸开。）","acceptCN":["爆炸","激增","爆发"],"collocations":[{"phrase":"explode with anger","meaning":"勃然大怒"},{"phrase":"an explosion","meaning":"爆炸；激增"},{"phrase":"explosive","meaning":"爆炸性的"}],"root":"ex-(出) + plode(爆)；explosion 名词","synonyms":["burst","blow up"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"爆炸","topic":"通用"},"exampleEn":"The fireworks exploded in the night sky.","exampleZh":"烟花在夜空中炸开。"},{"id":19,"word":"remote","ipa":"/rɪˈməʊt/ · /rɪˈmoʊt/","pos":"adj.","meaning":"adj. ①遥远的，偏僻的（a remote village / area）；②远程的（remote control 遥控器；remote learning）；③渺茫的（a remote chance）。remotely adv. 丝毫（not remotely interested）。地理、科技阅读高频。remote from 远离。not remotely interested 毫无兴趣。remote area 偏远地区。遥控器称作 remote control。","phrases":"a remote village（偏僻村庄）, remote control（遥控器）, a remote chance（渺茫的机会）","example":"They grew up in a remote mountain village.（他们在一个偏僻的山村长大。）","acceptCN":["遥远的","偏僻的","远程的"],"collocations":[{"phrase":"a remote village","meaning":"偏僻村庄"},{"phrase":"remote control","meaning":"遥控器"},{"phrase":"a remote chance","meaning":"渺茫的机会"}],"root":"re-(回) + mote(移动) → 远离的；遥控器 remote control","synonyms":["distant","isolated"],"antonyms":["nearby","central"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"偏僻的","topic":"地理"},"exampleEn":"They grew up in a remote mountain village.","exampleZh":"他们在一个偏僻的山村长大。"},{"id":20,"word":"peaceful","ipa":"/ˈpiːsfl/","pos":"adj.","meaning":"adj. 和平的，安宁的，平静的（a peaceful world / evening；peaceful protest 和平抗议）。副词 peacefully；名词 peace。比 quiet 更强调“无冲突、安详”。die peacefully 安详去世。高考写作“世界和平、内心平静”常用。反义 violent / noisy。","phrases":"a peaceful life（平静的生活）, peacefully（和平地；安详地）, peaceful protest（和平抗议）","example":"We spent a peaceful afternoon by the lake.（我们在湖边度过了一个宁静的下午。）","acceptCN":["和平的","安宁的","平静的"],"collocations":[{"phrase":"a peaceful life","meaning":"平静的生活"},{"phrase":"peacefully","meaning":"和平地；安详地"},{"phrase":"peaceful protest","meaning":"和平抗议"}],"root":"peace + -ful；副词 peacefully","synonyms":["calm","tranquil"],"antonyms":["violent","noisy"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"和平的","topic":"描写"},"exampleEn":"We spent a peaceful afternoon by the lake.","exampleZh":"我们在湖边度过了一个宁静的下午。"},{"id":21,"word":"close","ipa":"/kləʊs/ · /kləʊz/","pos":"adj. / adv. / v. / n.","meaning":"adj. / adv. /kləʊs/ 近的；亲密的（close to；a close friend；close to doing 差一点）。v. /kləʊz/ 关闭；结束。n. 结束。closely 仔细地、密切地（修饰动词多用 closely 而非 close）。高考发音与 close to / closely 辨析。bring to a close 结束。close down 关闭停业。a close call 侥幸脱险。closeness 亲密程度。close-up 特写。","phrases":"close to（靠近；差一点）, a close friend（密友）, closely（密切地；仔细地）","example":"The school is close to my house.（学校离我家很近。）","acceptCN":["关闭","近的","亲密的"],"collocations":[{"phrase":"close to","meaning":"靠近；差一点"},{"phrase":"a close friend","meaning":"密友"},{"phrase":"closely","meaning":"密切地；仔细地"}],"root":"adj. /kləʊs/ 近；v. /kləʊz/ 关；closely 修饰动词","synonyms":["near","shut"],"antonyms":["far","open"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"关闭","topic":"语法"},"exampleEn":"The school is close to my house.","exampleZh":"学校离我家很近。"},{"id":22,"word":"perhaps","ipa":"/pəˈhæps/","pos":"adv.","meaning":"adv. 也许，可能（Perhaps he is ill.）。与 maybe 近义，perhaps 稍正式，位置灵活（句首最常见）。Perhaps so / not. 也许是/不是。表推测，语气弱于 probably。高考与 maybe / possibly / probably 语气梯度：probably > perhaps / maybe > possibly。Perhaps not. 也许不是。可置于句首或句中。可能性弱于 probably，略强于 possibly。","phrases":"perhaps so（也许是这样）, perhaps not（也许不是）","example":"Perhaps we should wait until tomorrow.（也许我们该等到明天。）","acceptCN":["也许","可能"],"collocations":[{"phrase":"perhaps so","meaning":"也许是这样"},{"phrase":"perhaps not","meaning":"也许不是"}],"root":"比 maybe 稍正式；可能性低于 probably","synonyms":["maybe","possibly"],"antonyms":["definitely"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"也许","topic":"语法"},"exampleEn":"Perhaps we should wait until tomorrow.","exampleZh":"也许我们该等到明天。"},{"id":23,"word":"tune","ipa":"/tjuːn/ · /tuːn/","pos":"n. / v.","meaning":"n. 曲调，曲子（a familiar tune；in / out of tune 合调/走调）。v. 调音；调试（tune a piano；tune in to 收听）。change one’s tune 改变口气。music 话题、听力“调频道”可见。in tune with 与…协调。高考 in tune / out of tune 比喻“一致/不合”。fine-tune 微调。to the tune of 金额高达。stay in tune with 与…保持一致。","phrases":"in tune（合调；一致）, out of tune（走调）, tune in to（收听）","example":"She hummed a familiar tune while cooking.（她做饭时哼着一支熟悉的曲子。）","acceptCN":["曲调","调音","收听"],"collocations":[{"phrase":"in tune","meaning":"合调；一致"},{"phrase":"out of tune","meaning":"走调"},{"phrase":"tune in to","meaning":"收听"}],"root":"in tune with 协调；tune in 收听","synonyms":["melody","adjust"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"曲调","topic":"文化"},"exampleEn":"She hummed a familiar tune while cooking.","exampleZh":"她做饭时哼着一支熟悉的曲子。"},{"id":24,"word":"solid","ipa":"/ˈsɒlɪd/ · /ˈsɑːlɪd/","pos":"adj. / n.","meaning":"adj. ①固体的（solid ice）；②结实的，可靠的（solid evidence / support）；③实心的（a solid ball）。n. 固体。三态：solid / liquid / gas。副词 solidly。科学说明文与“坚实证据”议论文均高频。solid food 固体食物（相对流食）。","phrases":"solid evidence（确凿证据）, solid food（固体食物）, liquid and gas（液体与气体）","example":"Water becomes solid when it freezes.（水结冰后变成固体。）","acceptCN":["固体的","结实的","可靠的"],"collocations":[{"phrase":"solid evidence","meaning":"确凿证据"},{"phrase":"solid food","meaning":"固体食物"},{"phrase":"liquid and gas","meaning":"液体与气体"}],"root":"物质三态之一；引申“坚实可靠”","synonyms":["firm","reliable"],"antonyms":["liquid","hollow"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"固体的","topic":"科学"},"exampleEn":"Water becomes solid when it freezes.","exampleZh":"水结冰后变成固体。"},{"id":25,"word":"energetic","ipa":"/ˌenəˈdʒetɪk/","pos":"adj.","meaning":"adj. 精力充沛的，积极的（an energetic child / performance）。名词 energy；副词 energetically。be energetic in doing。人物描写、健康话题高频。比 active 更强调“精力旺盛”。反义 lazy / lethargic。高考写作评价志愿者、运动员常用。","phrases":"an energetic person（精力充沛的人）, energetically（精力充沛地）, full of energy（充满活力）","example":"Grandpa is still energetic at the age of seventy.（爷爷七十岁了仍然精力充沛。）","acceptCN":["精力充沛的","积极的"],"collocations":[{"phrase":"an energetic person","meaning":"精力充沛的人"},{"phrase":"energetically","meaning":"精力充沛地"},{"phrase":"full of energy","meaning":"充满活力"}],"root":"energy + -etic；人物描写高频","synonyms":["lively","active"],"antonyms":["lazy","tired"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"精力充沛的","topic":"描写"},"exampleEn":"Grandpa is still energetic at the age of seventy.","exampleZh":"爷爷七十岁了仍然精力充沛。"},{"id":26,"word":"altitude","ipa":"/ˈæltɪtjuːd/ · /ˈæltɪtuːd/","pos":"n.","meaning":"n. 海拔，高度（at an altitude of 3,000 metres；high altitude）。地理、航空、高原反应阅读高频。与 attitude（态度）仅一字母之差，高考拼写陷阱。high-altitude training 高原训练。at altitude 在高空。attitude / aptitude 均须辨。","phrases":"at an altitude of（在海拔…处）, high altitude（高海拔）, altitude sickness（高原反应）","example":"The plane was flying at an altitude of 10,000 metres.（飞机在一万米高空飞行。）","acceptCN":["海拔","高度"],"collocations":[{"phrase":"at an altitude of","meaning":"在海拔…处"},{"phrase":"high altitude","meaning":"高海拔"},{"phrase":"altitude sickness","meaning":"高原反应"}],"root":"易混 attitude（态度）；at an altitude of 海拔","synonyms":["height","elevation"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"海拔","topic":"地理"},"exampleEn":"The plane was flying at an altitude of 10,000 metres.","exampleZh":"飞机在一万米高空飞行。"},{"id":27,"word":"folk","ipa":"/fəʊk/ · /foʊk/","pos":"n. / adj.","meaning":"n. 人们（folks 口语：家里人、各位）；民间。adj. 民间的（folk music / tale / custom）。folk art 民间艺术。文化阅读高频。folks 作称呼 Hi, folks! 可数 folk/folks 表“人们”较口语。区别 people（更通用）。高考 folk tale 民间故事。","phrases":"folk music（民间音乐）, folk tale（民间故事）, folks（家里人；各位）","example":"She is interested in Chinese folk music.（她对中国民间音乐很感兴趣。）","acceptCN":["人们","民间的","家属"],"collocations":[{"phrase":"folk music","meaning":"民间音乐"},{"phrase":"folk tale","meaning":"民间故事"},{"phrase":"folks","meaning":"家里人；各位"}],"root":"folk 民间的；folks 口语“人们/家人”","synonyms":["people","traditional"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"民间的","topic":"文化"},"exampleEn":"She is interested in Chinese folk music.","exampleZh":"她对中国民间音乐很感兴趣。"},{"id":28,"word":"break","ipa":"/breɪk/","pos":"v. / n.","meaning":"v. 打破；违反（break the law / a promise）；中断；打破（纪录）。不规则：break–broke–broken。n. 休息（have a break）；裂缝。break out 爆发；break down 出故障、崩溃；break up 结束、分解；break in 闯入。高考短语动词群必考。break through 突破。break away from 脱离。broken English 拙劣英语。break in 打断、闯入。","phrases":"break out（爆发）, break down（出故障；崩溃）, have a break（休息一下）","example":"The computer broke down just before the deadline.（电脑在截止日期前出了故障。）","acceptCN":["打破","违反","休息"],"collocations":[{"phrase":"break out","meaning":"爆发"},{"phrase":"break down","meaning":"出故障；崩溃"},{"phrase":"have a break","meaning":"休息一下"}],"root":"break–broke–broken；break out / down / up 短语群","synonyms":["smash","pause"],"antonyms":["repair","keep"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"打破","topic":"日常"},"exampleEn":"The computer broke down just before the deadline.","exampleZh":"电脑在截止日期前出了故障。"},{"id":29,"word":"spirit","ipa":"/ˈspɪrɪt/","pos":"n.","meaning":"n. ①精神，心灵（team spirit 团队精神；in high / low spirits 情绪高/低）；②灵魂；③烈酒（spirits 常用复数）。spirit of 精神。lose spirit 气馁。高考 in high spirits 情绪高涨。与 spiritual 形容词对应。文化、体育、人物描写常见。","phrases":"team spirit（团队精神）, in high spirits（情绪高涨）, the spirit of（…精神）","example":"The players showed great team spirit.（队员们表现出了高度的团队精神。）","acceptCN":["精神","心灵","情绪"],"collocations":[{"phrase":"team spirit","meaning":"团队精神"},{"phrase":"in high spirits","meaning":"情绪高涨"},{"phrase":"the spirit of","meaning":"…精神"}],"root":"in high / low spirits 情绪；team spirit 团队精神","synonyms":["soul","mood"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"精神","topic":"情感"},"exampleEn":"The players showed great team spirit.","exampleZh":"队员们表现出了高度的团队精神。"},{"id":30,"word":"nobody","ipa":"/ˈnəʊbədi/ · /ˈnoʊbɑːdi/","pos":"pron. / n.","meaning":"pron. 没有人（= no one；谓语用单数）。n. 无名之辈（a nobody）。Nobody but Tom knows. 只有汤姆知道（就近/意义一致须注意）。与 anybody / somebody 系列。高考否定代词 + 单数谓语。nobody else 没有别人。口语亦作 no-one 英式分写。","phrases":"nobody else（没有别人）, a nobody（无名小卒）, nobody but（只有）","example":"Nobody knows the answer to that question.（没有人知道那个问题的答案。）","acceptCN":["没有人","无名之辈"],"collocations":[{"phrase":"nobody else","meaning":"没有别人"},{"phrase":"a nobody","meaning":"无名小卒"},{"phrase":"nobody but","meaning":"只有"}],"root":"不定代词，谓语单数；= no one","synonyms":["no one"],"antonyms":["everybody","somebody"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"没有人","topic":"语法"},"exampleEn":"Nobody knows the answer to that question.","exampleZh":"没有人知道那个问题的答案。"},{"id":31,"word":"passport","ipa":"/ˈpɑːspɔːt/ · /ˈpæspɔːrt/","pos":"n.","meaning":"n. 护照（apply for / renew a passport；passport control 护照检查）。a passport to 通往…的途径（比喻：Education is a passport to a better job.）。旅游、出国话题听力高频。passport photo 护照照片。与 visa（签证）辨析：护照身份证明，签证入境许可。","phrases":"apply for a passport（申请护照）, passport control（护照检查）, a passport to（通往…的途径）","example":"Don't forget to take your passport to the airport.（去机场别忘了带护照。）","acceptCN":["护照","途径"],"collocations":[{"phrase":"apply for a passport","meaning":"申请护照"},{"phrase":"passport control","meaning":"护照检查"},{"phrase":"a passport to","meaning":"通往…的途径"}],"root":"pass + port（口岸）；比喻 a passport to 途径","synonyms":["ID","travel document"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"护照","topic":"旅游"},"exampleEn":"Don't forget to take your passport to the airport.","exampleZh":"去机场别忘了带护照。"},{"id":32,"word":"important","ipa":"/ɪmˈpɔːtnt/ · /ɪmˈpɔːrtnt/","pos":"adj.","meaning":"adj. 重要的（It is important that sb (should) do / to do；be important to sb）。名词 importance；副词 importantly。more importantly 更重要的是。高考虚拟 It is important that… (should) do。play an important role / part in。反义 unimportant。写作万能评价词，宜搭配具体说明。of great importance 相当于 very important。More importantly 更重要的是，写作衔接。","phrases":"be important to（对…重要）, It is important that（…是重要的）, play an important role（起重要作用）","example":"It is important that we (should) protect the environment.（保护环境很重要。）","acceptCN":["重要的","重大的"],"collocations":[{"phrase":"be important to","meaning":"对…重要"},{"phrase":"It is important that","meaning":"…是重要的"},{"phrase":"play an important role","meaning":"起重要作用"}],"root":"It is important that + (should) do；名词 importance","synonyms":["significant","vital"],"antonyms":["unimportant","trivial"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"重要的","topic":"通用"},"exampleEn":"It is important that we (should) protect the environment.","exampleZh":"保护环境很重要。"},{"id":33,"word":"medical","ipa":"/ˈmedɪkl/","pos":"adj. / n.","meaning":"adj. 医学的，医疗的（medical care / school / examination）。n. 体检（a medical）。medicine 医学、药。medical treatment 治疗。健康、职业、保险阅读高频。medical staff 医务人员。高考 medical care 医疗护理。副词 medically。medical insurance 医疗保险。medicine 指药或医学。medically necessary 医学上必要的。","phrases":"medical care（医疗护理）, medical examination（体检）, medical school（医学院）","example":"She received excellent medical care in the hospital.（她在医院得到了很好的医疗护理。）","acceptCN":["医学的","医疗的","体检"],"collocations":[{"phrase":"medical care","meaning":"医疗护理"},{"phrase":"medical examination","meaning":"体检"},{"phrase":"medical school","meaning":"医学院"}],"root":"medicine 相关；medical care 医疗","synonyms":["clinical","health"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"医疗的","topic":"健康"},"exampleEn":"She received excellent medical care in the hospital.","exampleZh":"她在医院得到了很好的医疗护理。"},{"id":34,"word":"addition","ipa":"/əˈdɪʃn/","pos":"n.","meaning":"n. ①增加，加法（in addition 另外；in addition to + n. / doing 除…之外还）；②增加物。动词 add；additional adj. 额外的。高考 in addition / in addition to 必考：后者必须接宾语。与 besides / as well as 近义。数学 addition 加法。add to 增加、增添。additional 额外的。in addition 后面常加逗号，不能直接接宾语。","phrases":"in addition（另外）, in addition to（除…之外还）, additional（额外的）","example":"In addition to English, she also studies French.（除了英语，她还学法语。）","acceptCN":["增加","加法","另外"],"collocations":[{"phrase":"in addition","meaning":"另外"},{"phrase":"in addition to","meaning":"除…之外还"},{"phrase":"additional","meaning":"额外的"}],"root":"in addition 后不接宾语；in addition to 后接名词/doing","synonyms":["plus","extra"],"antonyms":["subtraction"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"另外","topic":"语法"},"exampleEn":"In addition to English, she also studies French.","exampleZh":"除了英语，她还学法语。"},{"id":35,"word":"admit","ipa":"/ədˈmɪt/","pos":"v.","meaning":"v. ①承认（admit doing / that；admit to doing）；②准许进入（admit sb to / into；be admitted to a university 被录取）。名词 admission。高考 admit doing 不接 to do；录取义 be admitted to。admission ticket 门票。反义 deny。admission to university 入学许可。admit of 容许某种解释（书面）。openly admit 公开承认。过去式 admitted，名词 admission。","phrases":"admit doing（承认做了）, be admitted to（被录取/接纳）, admission（承认；入学；门票）","example":"He admitted making a mistake in the report.（他承认报告里出了错。）","acceptCN":["承认","准许进入","录取"],"collocations":[{"phrase":"admit doing","meaning":"承认做了"},{"phrase":"be admitted to","meaning":"被录取/接纳"},{"phrase":"admission","meaning":"承认；入学；门票"}],"root":"admit doing / that；be admitted to 被录取","synonyms":["confess","accept"],"antonyms":["deny","refuse"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"承认","topic":"教育"},"exampleEn":"He admitted making a mistake in the report.","exampleZh":"他承认报告里出了错。"},{"id":36,"word":"discount","ipa":"/ˈdɪskaʊnt/","pos":"n. / v.","meaning":"n. 折扣（a 10% discount；at a discount 打折；give / offer a discount）。v. 打折；不重视。购物、商务听力高频。注意中文“打九折”是 10% off / a 10% discount，易算错。discount shop 折扣店。高考 at a discount。动词重音亦可后移。","phrases":"a 10% discount（九折）, at a discount（打折）, give a discount（给折扣）","example":"The bookstore offers a 20% discount to students.（这家书店给学生打八折。）","acceptCN":["折扣","打折"],"collocations":[{"phrase":"a 10% discount","meaning":"九折"},{"phrase":"at a discount","meaning":"打折"},{"phrase":"give a discount","meaning":"给折扣"}],"root":"dis-(除去) + count（计数）→ 减价；注意中英折扣换算","synonyms":["reduction","off"],"antonyms":["premium"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"折扣","topic":"生活"},"exampleEn":"The bookstore offers a 20% discount to students.","exampleZh":"这家书店给学生打八折。"},{"id":37,"word":"reflect","ipa":"/rɪˈflekt/","pos":"v.","meaning":"v. ①反射（reflect light / heat）；②反映，体现（reflect society）；③反思（reflect on / upon）。名词 reflection 倒影、反思。镜子、水面、社会评论阅读高频。高考 reflect on 反思；be reflected in 倒映在。reflective adj. 深思的；反光的。reflective 深思的、反光的。a reflection on 对某事的反思。镜子水面均可 reflect 影像。","phrases":"reflect on（反思）, be reflected in（倒映在；反映在）, reflection（倒影；反思）","example":"We need to reflect on what we have learned.（我们需要反思所学的内容。）","acceptCN":["反射","反映","反思"],"collocations":[{"phrase":"reflect on","meaning":"反思"},{"phrase":"be reflected in","meaning":"倒映在；反映在"},{"phrase":"reflection","meaning":"倒影；反思"}],"root":"re-(回) + flect(弯) → 反射/反思","synonyms":["mirror","consider"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"反映","topic":"教育"},"exampleEn":"We need to reflect on what we have learned.","exampleZh":"我们需要反思所学的内容。"},{"id":38,"word":"concentrate","ipa":"/ˈkɒnsntreɪt/ · /ˈkɑːnsntreɪt/","pos":"v.","meaning":"v. ①集中（注意力）（concentrate on / upon）；②浓缩。名词 concentration；concentration camp 为历史义须慎。高考 concentrate on doing。反义 distract。写作“专心学习”高频。concentrated adj. 浓缩的；全力的。不可 concentrate to do。concentrated juice 浓缩果汁。lose concentration 注意力分散。近义短语 focus on。","phrases":"concentrate on（专心于）, concentration（注意力；浓度）, concentrated（浓缩的）","example":"It's hard to concentrate on homework when the TV is on.（开着电视很难专心做作业。）","acceptCN":["集中","专心","浓缩"],"collocations":[{"phrase":"concentrate on","meaning":"专心于"},{"phrase":"concentration","meaning":"注意力；浓度"},{"phrase":"concentrated","meaning":"浓缩的"}],"root":"con-(共同) + centr(中心) → 集中；后接 on","synonyms":["focus","fix"],"antonyms":["distract"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"集中","topic":"教育"},"exampleEn":"It's hard to concentrate on homework when the TV is on.","exampleZh":"开着电视很难专心做作业。"},{"id":39,"word":"help","ipa":"/help/","pos":"v. / n.","meaning":"v. / n. 帮助。help sb (to) do / with sth；cannot help doing 忍不住；cannot help but do 不能不。help yourself 请自便。helpful / helpless。with the help of。高考 help 接不定式可省 to；cannot help doing 必考。help out 帮忙渡过。help out 帮忙渡过难关。helpful 有帮助的。helpless 无助的。Help yourself to 请自行取用。","phrases":"help sb with（帮某人做）, cannot help doing（忍不住）, with the help of（在…帮助下）","example":"She couldn't help laughing at the joke.（听到这个笑话她忍不住笑了。）","acceptCN":["帮助","帮忙"],"collocations":[{"phrase":"help sb with","meaning":"帮某人做"},{"phrase":"cannot help doing","meaning":"忍不住"},{"phrase":"with the help of","meaning":"在…帮助下"}],"root":"cannot help doing 忍不住；help sb (to) do","synonyms":["assist","aid"],"antonyms":["hinder"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"帮助","topic":"日常"},"exampleEn":"She couldn't help laughing at the joke.","exampleZh":"听到这个笑话她忍不住笑了。"},{"id":40,"word":"conductor","ipa":"/kənˈdʌktə/ · /kənˈdʌktər/","pos":"n.","meaning":"n. ①（乐队）指挥；②售票员，列车员（bus conductor）；③导体（electric conductor；不良导体 insulator）。动词 conduct 指挥、进行、传导。物理、音乐、交通三语境。高考科学说明文“导体”与文化“指挥”均见。conduct oneself 表现。","phrases":"an orchestra conductor（乐队指挥）, bus conductor（公共汽车售票员）, electric conductor（电导体）","example":"Copper is a good conductor of electricity.（铜是电的良导体。）","acceptCN":["指挥","售票员","导体"],"collocations":[{"phrase":"an orchestra conductor","meaning":"乐队指挥"},{"phrase":"bus conductor","meaning":"公共汽车售票员"},{"phrase":"electric conductor","meaning":"电导体"}],"root":"conduct 传导/指挥 → conductor 三义","synonyms":["director","ticket collector"],"antonyms":["insulator"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"导体","topic":"科学"},"exampleEn":"Copper is a good conductor of electricity.","exampleZh":"铜是电的良导体。"},{"id":41,"word":"expense","ipa":"/ɪkˈspens/","pos":"n.","meaning":"n. 费用，开支（at the expense of 以…为代价；at one’s own expense 自费）。复数 expenses 经费。expensive adj. 昂贵的。高考 at the expense of 必考：牺牲…换取。travel expenses 差旅费。与 cost / price 辨析：expense 侧重花费行为或项目开支。","phrases":"at the expense of（以…为代价）, at one's own expense（自费）, travel expenses（差旅费）","example":"He succeeded at the expense of his health.（他以健康为代价获得了成功。）","acceptCN":["费用","开支","代价"],"collocations":[{"phrase":"at the expense of","meaning":"以…为代价"},{"phrase":"at one's own expense","meaning":"自费"},{"phrase":"travel expenses","meaning":"差旅费"}],"root":"at the expense of 以…为代价；expensive 昂贵","synonyms":["cost","spending"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"费用","topic":"生活"},"exampleEn":"He succeeded at the expense of his health.","exampleZh":"他以健康为代价获得了成功。"},{"id":42,"word":"choice","ipa":"/tʃɔɪs/","pos":"n. / adj.","meaning":"n. 选择，抉择（make a choice；have no choice but to do 只好；a wide choice of）。adj. 精选的（choice apples）。动词 choose。高考 have no choice but to do 后接带 to 不定式。from choice 出于自愿。与 alternative 近义。of one's own choice 出于自愿选择。choice 作形容词表示精选的。have no choice but to 后接带 to 不定式。","phrases":"make a choice（作出选择）, have no choice but to（只好）, a wide choice of（种类繁多的）","example":"We had no choice but to wait in the rain.（我们只好在雨中等待。）","acceptCN":["选择","抉择","精选的"],"collocations":[{"phrase":"make a choice","meaning":"作出选择"},{"phrase":"have no choice but to","meaning":"只好"},{"phrase":"a wide choice of","meaning":"种类繁多的"}],"root":"have no choice but to do 后接 to do","synonyms":["option","selection"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"选择","topic":"语法"},"exampleEn":"We had no choice but to wait in the rain.","exampleZh":"我们只好在雨中等待。"},{"id":43,"word":"research","ipa":"/rɪˈsɜːtʃ/ · /ˈriːsɜːrtʃ/","pos":"n. / v.","meaning":"n. / v. 研究，调查（do / carry out research on / into；research a topic）。不可数名词为主。researcher 研究员。学术、科普阅读高频。research findings 研究结果。高考介词 on / into。动词重音可在第二音节。market research 市场调研。","phrases":"do research on（对…进行研究）, scientific research（科学研究）, researcher（研究员）","example":"She is doing research on climate change.（她正在研究气候变化。）","acceptCN":["研究","调查"],"collocations":[{"phrase":"do research on","meaning":"对…进行研究"},{"phrase":"scientific research","meaning":"科学研究"},{"phrase":"researcher","meaning":"研究员"}],"root":"不可数；do research on / into","synonyms":["study","investigation"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"研究","topic":"教育"},"exampleEn":"She is doing research on climate change.","exampleZh":"她正在研究气候变化。"},{"id":44,"word":"technical","ipa":"/ˈteknɪkl/","pos":"adj.","meaning":"adj. 技术的，专业的，工艺的（technical support / skills / problem）。名词 technique 技巧；technology 技术（总称）；technician 技术员。副词 technically 严格说来。高考 technique / technology / technical 词族辨析。科技说明文高频。technician 技术员。technique 指技巧方法。Technically speaking 严格说来。","phrases":"technical support（技术支持）, technical skills（专门技能）, technically（严格说来；技术上）","example":"The team provided technical support for the project.（该团队为项目提供了技术支持。）","acceptCN":["技术的","专业的"],"collocations":[{"phrase":"technical support","meaning":"技术支持"},{"phrase":"technical skills","meaning":"专门技能"},{"phrase":"technically","meaning":"严格说来；技术上"}],"root":"technique 技巧 / technology 科技 / technical 技术的","synonyms":["specialized","mechanical"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"技术的","topic":"科技"},"exampleEn":"The team provided technical support for the project.","exampleZh":"该团队为项目提供了技术支持。"},{"id":45,"word":"number","ipa":"/ˈnʌmbə/ · /ˈnʌmbər/","pos":"n. / v.","meaning":"n. 数字，号码，数目（a number of 许多，谓语复数；the number of …的数目，谓语单数）。v. 编号；总计。phone number；in number 在数目上。高考 a number of / the number of 主谓一致必考。numerous 许多的。outnumber 数量超过。","phrases":"a number of（许多）, the number of（…的数目）, phone number（电话号码）","example":"The number of students in our class is 40.（我们班的学生人数是40。）","acceptCN":["数字","数目","号码"],"collocations":[{"phrase":"a number of","meaning":"许多"},{"phrase":"the number of","meaning":"…的数目"},{"phrase":"phone number","meaning":"电话号码"}],"root":"a number of 复数谓语；the number of 单数谓语","synonyms":["figure","amount"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"数目","topic":"语法"},"exampleEn":"The number of students in our class is 40.","exampleZh":"我们班的学生人数是40。"},{"id":46,"word":"pyramid","ipa":"/ˈpɪrəmɪd/","pos":"n.","meaning":"n. 金字塔；锥体（the Pyramids of Egypt；food pyramid 食物金字塔）。几何、历史、营养说明文均见。pyramid scheme 传销（课外义）。the pyramid 常与 Egypt / pharaoh 同现。高考文明史阅读高频文化词。形容词 pyramidal。","phrases":"the Pyramids（金字塔群）, food pyramid（食物金字塔）, pyramid-shaped（金字塔形的）","example":"We saw pictures of the Pyramids in our history book.（我们在历史书里看到了金字塔的图片。）","acceptCN":["金字塔","锥体"],"collocations":[{"phrase":"the Pyramids","meaning":"金字塔群"},{"phrase":"food pyramid","meaning":"食物金字塔"},{"phrase":"pyramid-shaped","meaning":"金字塔形的"}],"root":"埃及文明标志；food pyramid 营养结构","synonyms":["cone"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"金字塔","topic":"历史"},"exampleEn":"We saw pictures of the Pyramids in our history book.","exampleZh":"我们在历史书里看到了金字塔的图片。"},{"id":47,"word":"aware","ipa":"/əˈweə/ · /əˈwer/","pos":"adj.","meaning":"adj. 意识到的，知道的（表语：be / become aware of / that）。名词 awareness。as far as I am aware 据我所知。反义 unaware。高考 be aware of 不接 to。raise awareness of 提高对…的意识，环保写作高频。unaware of 未察觉。unaware of 尚未察觉。raise public awareness 提高公众意识。politically aware 有政治意识。","phrases":"be aware of（意识到）, become aware that（开始意识到）, raise awareness（提高意识）","example":"People are becoming more aware of environmental problems.（人们越来越意识到环境问题。）","acceptCN":["意识到的","知道的"],"collocations":[{"phrase":"be aware of","meaning":"意识到"},{"phrase":"become aware that","meaning":"开始意识到"},{"phrase":"raise awareness","meaning":"提高意识"}],"root":"表语形容词；be aware of / that；awareness 意识","synonyms":["conscious","mindful"],"antonyms":["unaware"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"意识到的","topic":"社会"},"exampleEn":"People are becoming more aware of environmental problems.","exampleZh":"人们越来越意识到环境问题。"},{"id":48,"word":"category","ipa":"/ˈkætəɡəri/ · /ˈkætəɡɔːri/","pos":"n.","meaning":"n. 类别，种类，范畴（fall into a category；in the same category）。动词 categorise / categorize 分类。阅读、图表、说明文“分类讨论”高频。age category 年龄组别。高考 fall into the category of 属于…类。比 kind / type 更书面。英式 categorise、美式 categorize。fall into the category of 属于某一类。比 type 更书面。","phrases":"fall into a category（属于某一类）, in the same category（同一类别）, categorise（分类）","example":"These books fall into three categories.（这些书分成三类。）","acceptCN":["类别","种类","范畴"],"collocations":[{"phrase":"fall into a category","meaning":"属于某一类"},{"phrase":"in the same category","meaning":"同一类别"},{"phrase":"categorise","meaning":"分类"}],"root":"书面“类别”；动词 categorise（英）","synonyms":["class","type"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"类别","topic":"教育"},"exampleEn":"These books fall into three categories.","exampleZh":"这些书分成三类。"},{"id":49,"word":"square","ipa":"/skweə/ · /skwer/","pos":"n. / adj. / v.","meaning":"n. 正方形；广场（Tiananmen Square）；平方（four square metres）。adj. 正方形的；公平的（a square deal）。v. 使成方形；平方。fair and square 光明正大。数学、城市地标阅读常见。squared 平方的。on the square 诚实。square meal 丰盛的一餐。squared 平方。all square 打成平局。Times Square 为专有名词。","phrases":"a public square（公共广场）, square metres（平方米）, fair and square（光明正大）","example":"We met at the square in front of the station.（我们在车站前的广场见面。）","acceptCN":["正方形","广场","平方"],"collocations":[{"phrase":"a public square","meaning":"公共广场"},{"phrase":"square metres","meaning":"平方米"},{"phrase":"fair and square","meaning":"光明正大"}],"root":"几何/广场/平方三义；Tiananmen Square 等专名","synonyms":["plaza","quadrate"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"广场","topic":"通用"},"exampleEn":"We met at the square in front of the station.","exampleZh":"我们在车站前的广场见面。"},{"id":50,"word":"legal","ipa":"/ˈliːɡl/","pos":"adj.","meaning":"adj. 法律的，合法的（legal rights / advice；it is legal to…）。反义 illegal。名词 legality；副词 legally。lawyer 律师。社会、新闻阅读高频。legal age 法定年龄。高考 legal / illegal 拼写。the legal system 法律体系。legally binding 有法律约束力。the legal system 法律体系。反义词 illegal 非法的。","phrases":"legal rights（合法权利）, legal advice（法律咨询）, illegal（非法的）","example":"You must be of legal age to drive.（必须达到法定年龄才能开车。）","acceptCN":["法律的","合法的"],"collocations":[{"phrase":"legal rights","meaning":"合法权利"},{"phrase":"legal advice","meaning":"法律咨询"},{"phrase":"illegal","meaning":"非法的"}],"root":"反义 illegal；legally 合法地","synonyms":["lawful","valid"],"antonyms":["illegal"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"合法的","topic":"社会"},"exampleEn":"You must be of legal age to drive.","exampleZh":"必须达到法定年龄才能开车。"},{"id":51,"word":"spin","ipa":"/spɪn/","pos":"v. / n.","meaning":"v. 旋转；纺纱（spin–spun–spun）；编造（spin a story）。n. 旋转。spin around 转身。washing machine spin 甩干。head is spinning 头晕。体育 spin 旋转球。高考不规则变化 spun。spin out 拖长。与 turn / rotate 近义，spin 更快更猛。spin-off 衍生品、副产品。spin doctor 舆论操控者。洗衣机 spin 甩干。过去分词 spun。","phrases":"spin around（转身；旋转）, spin a story（编故事）, one's head is spinning（头晕）","example":"The dancer spun around on the stage.（舞者在舞台上旋转。）","acceptCN":["旋转","纺纱","编造"],"collocations":[{"phrase":"spin around","meaning":"转身；旋转"},{"phrase":"spin a story","meaning":"编故事"},{"phrase":"one's head is spinning","meaning":"头晕"}],"root":"spin–spun–spun；亦可表头晕、编故事","synonyms":["rotate","twirl"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"旋转","topic":"描写"},"exampleEn":"The dancer spun around on the stage.","exampleZh":"舞者在舞台上旋转。"},{"id":52,"word":"arise","ipa":"/əˈraɪz/","pos":"v.","meaning":"v. 出现，产生，起身（问题、困难 arise；arise from / out of 由…引起）。不规则：arise–arose–arisen。区别 rise（升起、上涨，不及物）、raise（举起、筹集，及物）、arouse（唤起）。高考四词辨析必考。A problem arose. 问题出现了。书面语。","phrases":"arise from（由…引起）, problems arise（问题出现）, arise–arose–arisen","example":"New problems arose during the experiment.（实验过程中出现了新问题。）","acceptCN":["出现","产生","由…引起"],"collocations":[{"phrase":"arise from","meaning":"由…引起"},{"phrase":"problems arise","meaning":"问题出现"},{"phrase":"arise–arose–arisen","meaning":""}],"root":"arise–arose–arisen；区别 rise / raise / arouse","synonyms":["appear","occur"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"出现","topic":"语法"},"exampleEn":"New problems arose during the experiment.","exampleZh":"实验过程中出现了新问题。"},{"id":53,"word":"curious","ipa":"/ˈkjʊəriəs/ · /ˈkjʊriəs/","pos":"adj.","meaning":"adj. ①好奇的（be curious about / to do）；②稀奇的（a curious smell）。副词 curiously；名词 curiosity。out of curiosity 出于好奇。Curiosity killed the cat. 好奇惹祸。高考 be curious about。求知、人物描写写作正面义常用。curiously enough 说来也奇怪。curious to know 很想知道。名词 curiosity 表示好奇心。","phrases":"be curious about（对…好奇）, out of curiosity（出于好奇）, curiosity（好奇心）","example":"Children are curious about the world around them.（孩子们对周围的世界充满好奇。）","acceptCN":["好奇的","稀奇的"],"collocations":[{"phrase":"be curious about","meaning":"对…好奇"},{"phrase":"out of curiosity","meaning":"出于好奇"},{"phrase":"curiosity","meaning":"好奇心"}],"root":"be curious about / to do；名词 curiosity","synonyms":["inquisitive","odd"],"antonyms":["indifferent"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"好奇的","topic":"情感"},"exampleEn":"Children are curious about the world around them.","exampleZh":"孩子们对周围的世界充满好奇。"},{"id":54,"word":"sharpen","ipa":"/ˈʃɑːpən/ · /ˈʃɑːrpən/","pos":"v.","meaning":"v. 使锋利，削尖（sharpen a pencil / knife）；使敏锐（sharpen one’s skills / mind）。形容词 sharp 锋利的、敏锐的、急剧的。-en 表使动：widen / shorten。学习方法、工具使用说明常见。sharpener 卷笔刀。高考词缀 -en。","phrases":"sharpen a pencil（削铅笔）, sharpen one's skills（提高技能）, pencil sharpener（卷笔刀）","example":"She sharpened her pencil before the test.（考试前她把铅笔削尖了。）","acceptCN":["削尖","使锋利","使敏锐"],"collocations":[{"phrase":"sharpen a pencil","meaning":"削铅笔"},{"phrase":"sharpen one's skills","meaning":"提高技能"},{"phrase":"pencil sharpener","meaning":"卷笔刀"}],"root":"sharp + -en（使）→ 使锋利/敏锐","synonyms":["hone","whet"],"antonyms":["blunt"],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"削尖","topic":"日常"},"exampleEn":"She sharpened her pencil before the test.","exampleZh":"考试前她把铅笔削尖了。"},{"id":55,"word":"crossroads","ipa":"/ˈkrɒsrəʊdz/ · /ˈkrɔːsroʊdz/","pos":"n.","meaning":"n. 十字路口（单复同形，a / the crossroads）；人生抉择关头（at a crossroads 处于抉择点）。交通、人生比喻阅读与写作好用。与 crossing / intersection 近义。高考 at the crossroads 既可字面也可比喻。look both ways at the crossroads 过路口左右看。","phrases":"at a crossroads（在十字路口；面临抉择）, the crossroads（十字路口）","example":"He stood at a crossroads in his career.（他正处在职业生涯的抉择关头。）","acceptCN":["十字路口","抉择关头"],"collocations":[{"phrase":"at a crossroads","meaning":"在十字路口；面临抉择"},{"phrase":"the crossroads","meaning":"十字路口"}],"root":"单复同形；at a crossroads 比喻人生关口","synonyms":["intersection","junction"],"antonyms":[],"examTag":{"source":"高中英语","frequency":4,"commonUsage":"十字路口","topic":"生活"},"exampleEn":"He stood at a crossroads in his career.","exampleZh":"他正处在职业生涯的抉择关头。"}];
+
+const TOTAL_QUESTIONS = 55;
+const HISTORY_KEY = 'ielts_vocab_history_list18';
+
+// ==================== DOM ====================
+const navTabs = document.getElementById('navTabs');
+const learnSection = document.getElementById('learnSection');
+const testSection = document.getElementById('testSection');
+const learnGrid = document.getElementById('learnGrid');
+const testSetup = document.getElementById('testSetup');
+const testActiveArea = document.getElementById('testActiveArea');
+const testResults = document.getElementById('testResults');
+const btnStartTest = document.getElementById('btnStartTest');
+const btnPlayTest = document.getElementById('btnPlayTest');
+const btnSubmit = document.getElementById('btnSubmit');
+const btnNext = document.getElementById('btnNext');
+const btnRetry = document.getElementById('btnRetry');
+const btnBackToSetup = document.getElementById('btnBackToSetup');
+const btnClearHistory = document.getElementById('btnClearHistory');
+const inputSpelling = document.getElementById('inputSpelling');
+const inputMeaning = document.getElementById('inputMeaning');
+const testFeedback = document.getElementById('testFeedback');
+const testProgressLabel = document.getElementById('testProgressLabel');
+const testScoreLabel = document.getElementById('testScoreLabel');
+const progressBarFill = document.getElementById('progressBarFill');
+const resultsScore = document.getElementById('resultsScore');
+const resultsDetail = document.getElementById('resultsDetail');
+const resultsTableBody = document.getElementById('resultsTableBody');
+const historyContent = document.getElementById('historyContent');
+
+// ==================== 语音合成（与 LIST 1/2/3 一致） ====================
+let synth = window.speechSynthesis;
+let britishFemaleVoice = null;
+
+async function loadVoices() {
+    if (!synth) return;
+    const getBestVoice = () => {
+        const voices = synth.getVoices();
+        const preferred = ['Google UK English Female','Microsoft Susan','Microsoft Hazel','Samantha','Fiona'];
+        for (const name of preferred) {
+            const found = voices.find(v => v.name === name && v.lang.startsWith('en'));
+            if (found) return found;
+        }
+        let voice = voices.find(v => v.lang.startsWith('en-GB') && (v.name.toLowerCase().includes('female')||v.name.toLowerCase().includes('woman')));
+        if (voice) return voice;
+        voice = voices.find(v => v.lang.startsWith('en-GB')) || voices.find(v => v.lang.startsWith('en-UK')) || voices.find(v => v.lang.startsWith('en'));
+        return voice || voices[0];
+    };
+    if (synth.getVoices().length > 0) {
+        britishFemaleVoice = getBestVoice();
+    } else {
+        await new Promise(resolve => {
+            const handler = () => {
+                britishFemaleVoice = getBestVoice();
+                synth.removeEventListener('voiceschanged', handler);
+                resolve();
+            };
+            synth.addEventListener('voiceschanged', handler);
+            setTimeout(() => {
+                if (!britishFemaleVoice) britishFemaleVoice = getBestVoice();
+                synth.removeEventListener('voiceschanged', handler);
+                resolve();
+            }, 2000);
+        });
+    }
+    console.log('🔊 选用语音:', britishFemaleVoice?.name);
+}
+
+function speakWord(word, callback) {
+    if (!synth) { if(callback) callback(); return; }
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    if (britishFemaleVoice) utterance.voice = britishFemaleVoice;
+    utterance.lang = 'en-GB';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    if (callback) { utterance.onend = callback; utterance.onerror = () => callback(); }
+    synth.speak(utterance);
+}
+
+loadVoices();
+
+// ==================== 历史记录 ====================
+function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch(e) { return []; } }
+function saveHistory(record) { const h = getHistory(); h.unshift(record); if(h.length>50) h.length=50; localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+function clearHistory() { if(confirm('确定要清除所有历史记录吗？')) { localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
+function renderHistory() {
+    const history = getHistory();
+    if(!history.length) { historyContent.innerHTML='<div class="history-empty">暂无检测记录</div>'; return; }
+    const list = document.createElement('ul'); list.className='history-list';
+    history.forEach(r => {
+        const li = document.createElement('li');
+        const t = new Date(r.timestamp);
+        const ts = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+        li.innerHTML = `<div><span class="history-score">${r.score} / ${r.total}</span><span style="margin-left:8px;color:${r.percent>=80?'#3a7d5a':r.percent>=60?'#b8860b':'#c0392b'};">${r.percent}%</span></div><div class="history-time">${ts}</div>`;
+        list.appendChild(li);
+    });
+    historyContent.innerHTML=''; historyContent.appendChild(list);
+}
+
+// ==================== 导航 ====================
+let currentMode = 'learn';
+navTabs.addEventListener('click', e => {
+    const tab = e.target.closest('.nav-tab'); if(!tab) return;
+    const mode = tab.dataset.mode; if(mode===currentMode) return;
+    currentMode = mode;
+    navTabs.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    if(mode==='learn'){ learnSection.classList.add('active'); testSection.classList.remove('active'); resetTestState(); }
+    else { learnSection.classList.remove('active'); testSection.classList.add('active'); showTestSetup(); renderHistory(); }
+    if(synth) synth.cancel();
+    document.querySelectorAll('.playing').forEach(el=>el.classList.remove('playing'));
+});
+function resetTestState(){
+    testSetup.style.display=''; testActiveArea.classList.remove('visible'); testResults.classList.remove('visible');
+    testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
+    btnNext.classList.remove('visible'); inputSpelling.value=''; inputMeaning.value='';
+    inputSpelling.className=''; inputMeaning.className=''; btnSubmit.disabled=false; btnSubmit.style.display='';
+    btnPlayTest.classList.remove('playing');
+}
+function showTestSetup(){ resetTestState(); testSetup.style.display=''; testActiveArea.classList.remove('visible'); testResults.classList.remove('visible'); }
+
+// ==================== 学习模式构建 ====================
+function buildLearnCards(){
+    learnGrid.innerHTML='';
+    wordData.forEach(w => {
+        const card = document.createElement('div'); card.className='word-card';
+        card.innerHTML = `
+            <div class="word-card-top"><div><span class="word-headword">${w.word}</span><span class="word-ipa"> ${w.ipa}</span></div><button class="btn-play btn-play-card" data-word="${w.word}">▶</button></div>
+            <div><span class="word-pos">${w.pos}</span> <span class="word-meaning">${w.meaning}</span></div>
+            <div class="word-detail"><div class="word-detail-row"><strong>📎 常见词组/句型：</strong>${w.phrases}</div><div class="word-detail-example">📖 ${w.example}</div></div>
+            <div class="card-collapse-hint">点击卡片收起详情 ▲</div>`;
+        card.addEventListener('click', function(e){
+            if(e.target.closest('.btn-play-card')) return;
+            const wasExpanded = card.classList.contains('expanded');
+            document.querySelectorAll('.word-card.expanded').forEach(c=>c.classList.remove('expanded'));
+            if(!wasExpanded){ card.classList.add('expanded'); card.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+        });
+        card.querySelector('.btn-play-card').addEventListener('click', function(e){
+            e.stopPropagation();
+            document.querySelectorAll('.btn-play.playing').forEach(b=>b.classList.remove('playing'));
+            this.classList.add('playing');
+            speakWord(w.word, ()=>this.classList.remove('playing'));
+        });
+        learnGrid.appendChild(card);
+    });
+}
+buildLearnCards();
+document.addEventListener('click', function(e){
+    if(currentMode!=='learn') return;
+    if(!e.target.closest('.word-card')) document.querySelectorAll('.word-card.expanded').forEach(c=>c.classList.remove('expanded'));
+});
+
+// ==================== 检测模式 ====================
+let testWords=[], testCurrentIndex=0, testScore=0, testResultsData=[], testSubmitted=false;
+function shuffleArray(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+btnStartTest.addEventListener('click', ()=>{
+    testWords = shuffleArray(wordData).slice(0, TOTAL_QUESTIONS);
+    testCurrentIndex=0; testScore=0; testResultsData=[]; testSubmitted=false;
+    testSetup.style.display='none'; testActiveArea.classList.add('visible'); testResults.classList.remove('visible');
+    testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
+    btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
+    inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
+    btnPlayTest.classList.remove('playing'); updateTestProgress(); setTimeout(()=>playCurrentWord(),400);
+});
+function updateTestProgress(){
+    testProgressLabel.textContent = `第 ${testCurrentIndex+1} / ${TOTAL_QUESTIONS} 题`;
+    testScoreLabel.textContent = `得分: ${testScore}`;
+    progressBarFill.style.width = Math.round((testCurrentIndex/TOTAL_QUESTIONS)*100)+'%';
+}
+function playCurrentWord(){ if(testCurrentIndex>=testWords.length) return; btnPlayTest.classList.add('playing'); speakWord(testWords[testCurrentIndex].word, ()=>btnPlayTest.classList.remove('playing')); }
+btnPlayTest.addEventListener('click', ()=>{ if(!testSubmitted) playCurrentWord(); });
+
+function submitAnswer(){
+    if(testSubmitted || testCurrentIndex>=testWords.length) return;
+    testSubmitted=true; btnSubmit.disabled=true;
+    const w = testWords[testCurrentIndex];
+    const userSpelling = inputSpelling.value.trim();
+    const userMeaning = inputMeaning.value.trim();
+    const spellingCorrect = userSpelling.toLowerCase() === w.word.toLowerCase();
+    let meaningCorrect = false;
+    if(userMeaning.length>0){
+        const userCN = userMeaning.replace(/\s+/g,'');
+        for(const accept of w.acceptCN){ if(userCN.includes(accept)||accept.includes(userCN)){ meaningCorrect=true; break; } }
+        if(!meaningCorrect){
+            const meaningClean = w.meaning.replace(/[；;，,、\s]/g,'');
+            if(userCN.includes(meaningClean.substring(0,Math.min(3,meaningClean.length)))||meaningClean.includes(userCN)) meaningCorrect=true;
+        }
+    }
+    inputSpelling.className = spellingCorrect ? 'correct-input' : 'wrong-input';
+    inputMeaning.className = meaningCorrect ? 'correct-input' : 'wrong-input';
+    const earned = (spellingCorrect&&meaningCorrect)?1:0;
+    if(earned) testScore++;
+    testFeedback.classList.add('visible');
+    if(spellingCorrect&&meaningCorrect){
+        testFeedback.classList.add('correct-all'); testFeedback.classList.remove('partial','wrong-all');
+        testFeedback.innerHTML = `✅ <strong>完全正确！</strong><br>${w.word} — ${w.meaning}`;
+    } else if(!spellingCorrect && !meaningCorrect){
+        testFeedback.classList.add('wrong-all'); testFeedback.classList.remove('correct-all','partial');
+        testFeedback.innerHTML = `❌ <strong>拼写和含义均不正确</strong><br>📝 正确拼写：<strong>${w.word}</strong>（你的：${userSpelling||'未填'}）<br>🈶 正确含义：<strong>${w.meaning}</strong>（你的：${userMeaning||'未填'}）`;
+    } else if(!spellingCorrect){
+        testFeedback.classList.add('partial'); testFeedback.classList.remove('correct-all','wrong-all');
+        testFeedback.innerHTML = `⚠️ <strong>含义正确，拼写有误</strong><br>📝 正确拼写：<strong>${w.word}</strong>（你的：${userSpelling||'未填'}）<br>🈶 含义：${w.meaning} ✅`;
+    } else {
+        testFeedback.classList.add('partial'); testFeedback.classList.remove('correct-all','wrong-all');
+        testFeedback.innerHTML = `⚠️ <strong>拼写正确，含义有误</strong><br>📝 ${w.word} ✅<br>🈶 正确含义：<strong>${w.meaning}</strong>（你的：${userMeaning||'未填'}）`;
+    }
+    testResultsData.push({ word:w.word, ipa:w.ipa, meaning:w.meaning, userSpelling, userMeaning, spellingCorrect, meaningCorrect, earned });
+    updateTestProgress();
+    btnNext.classList.add('visible'); btnSubmit.style.display='none';
+    testFeedback.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+btnSubmit.addEventListener('click', submitAnswer);
+inputMeaning.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!testSubmitted) submitAnswer(); });
+inputSpelling.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!testSubmitted) inputMeaning.focus(); });
+btnNext.addEventListener('click', ()=>{
+    testCurrentIndex++; testSubmitted=false;
+    if(testCurrentIndex>=testWords.length){ showFinalResults(); return; }
+    inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
+    testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
+    btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
+    updateTestProgress(); setTimeout(()=>playCurrentWord(),300); inputSpelling.focus();
+});
+function showFinalResults(){
+    testActiveArea.classList.remove('visible'); testResults.classList.add('visible');
+    const earnedTotal = testResultsData.reduce((s,r)=>s+r.earned,0);
+    const percent = Math.round((earnedTotal/TOTAL_QUESTIONS)*100);
+    resultsScore.textContent = `${earnedTotal} / ${TOTAL_QUESTIONS}`;
+    resultsDetail.textContent = `正确率 ${percent}% — ${percent>=80?'🎉 非常棒！':percent>=60?'👍 不错，继续加油！':'💪 需要更多练习，加油！'}`;
+    resultsTableBody.innerHTML='';
+    testResultsData.forEach((r,i)=>{
+        const tr = document.createElement('tr'); tr.className = r.earned ? 'row-correct' : 'row-wrong';
+        const icon = r.earned ? '✅' : (r.spellingCorrect||r.meaningCorrect?'⚠️':'❌');
+        tr.innerHTML = `<td>${i+1}</td><td><strong>${r.word}</strong> <span style="color:#888;font-size:0.8rem;">${r.ipa}</span><br><span style="font-size:0.8rem;">${r.meaning}</span></td><td style="color:${r.spellingCorrect?'#3a7d5a':'#c0392b'}">${r.userSpelling||'—'}</td><td style="color:${r.meaningCorrect?'#3a7d5a':'#c0392b'}">${r.userMeaning||'—'}</td><td>${icon}</td>`;
+        resultsTableBody.appendChild(tr);
+    });
+    saveHistory({ timestamp:Date.now(), score:earnedTotal, total:TOTAL_QUESTIONS, percent });
+    testResults.scrollIntoView({behavior:'smooth',block:'start'});
+}
+btnRetry.addEventListener('click', ()=>{
+    testResults.classList.remove('visible'); testActiveArea.classList.add('visible');
+    testWords = shuffleArray([...wordData]); testCurrentIndex=0; testScore=0; testResultsData=[]; testSubmitted=false;
+    inputSpelling.value=''; inputMeaning.value=''; inputSpelling.className=''; inputMeaning.className='';
+    testFeedback.classList.remove('visible','correct-all','partial','wrong-all'); testFeedback.textContent='';
+    btnNext.classList.remove('visible'); btnSubmit.disabled=false; btnSubmit.style.display='';
+    btnPlayTest.classList.remove('playing'); updateTestProgress(); setTimeout(()=>playCurrentWord(),400);
+});
+btnBackToSetup.addEventListener('click', ()=>{ showTestSetup(); testResults.classList.remove('visible'); renderHistory(); });
+btnClearHistory.addEventListener('click', clearHistory);
+document.addEventListener('keydown', function(e){
+    if(currentMode!=='test'||testResults.classList.contains('visible')) return;
+    if(testActiveArea.classList.contains('visible') && !testSubmitted){
+        if(e.key===' ' && document.activeElement!==inputSpelling && document.activeElement!==inputMeaning){ e.preventDefault(); playCurrentWord(); }
+    }
+});
+renderHistory();
+})();
+</script>
+</body>
+</html>

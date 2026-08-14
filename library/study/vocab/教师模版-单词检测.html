@@ -1,0 +1,347 @@
+<!--
+================================================================
+优益思达 · 单词检测教师模版
+================================================================
+给机构老师：复制本文件 → 只改下方 wordData → 用浏览器打开即可测。
+
+两种用法：
+A. 教师端布置作业时，上传本 HTML（练习作业 → 选择文件）
+B. 交给技术放入 library/study/vocab/ 并登记词库后，站内「单词检测」也能读
+
+平台只解析：
+  const wordData = [ ... ];     ← 必须以分号结尾
+必填：word（英文）、meaning（中文）
+建议：ipa、pos、acceptCN（本页填空判中文时更宽松）
+
+检测规则（与站内闯关接近）：
+  先选中文意思（四选一）→ 再拼写英文
+  5 条生命 · 每题 20 秒 · 错 5 题即失败
+================================================================
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>优益思达 · 单词检测模版（请改标题）</title>
+  <style>
+    :root {
+      --bg: #f4f1ec; --card: #fff; --ink: #1c1917; --muted: #78716c;
+      --line: #e7e5e4; --brand: #c2410c; --ok: #15803d; --bad: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+      font: 16px/1.5 "PingFang SC", "Hiragino Sans GB", sans-serif;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 28px 18px 48px; }
+    h1 { font-size: 1.35rem; margin: 0 0 6px; }
+    .sub { color: var(--muted); font-size: .9rem; margin: 0 0 22px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 22px 20px; box-shadow: 0 8px 24px rgba(28,25,23,.04);
+    }
+    .meta { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); }
+    .hearts { letter-spacing: 2px; }
+    .hearts .lost { opacity: .25; }
+    .timer { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .timer.warn { color: var(--brand); }
+    .word-ipa { color: var(--muted); font-size: .9rem; margin: 8px 0 16px; min-height: 1.2em; }
+    .opts { display: grid; gap: 8px; margin: 0 0 14px; }
+    .opt {
+      text-align: left; padding: 12px 14px; border-radius: 10px; cursor: pointer;
+      border: 1px solid var(--line); background: #fff; font-size: .95rem;
+    }
+    .opt:hover:not(:disabled) { border-color: #d6d3d1; }
+    .opt.pick { border-color: var(--brand); background: #fff7ed; }
+    .opt.correct { border-color: var(--ok); background: #f0fdf4; }
+    .opt.wrong { border-color: var(--bad); background: #fef2f2; }
+    .opt:disabled { cursor: default; }
+    .spell { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: 1rem; }
+    .spell:focus { outline: 2px solid #fdba74; border-color: var(--brand); }
+    .spell.ok { border-color: var(--ok); background: #f0fdf4; }
+    .spell.bad { border-color: var(--bad); background: #fef2f2; }
+    .fb { min-height: 1.4em; margin: 12px 0; font-size: .92rem; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    button.btn {
+      border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer; font-weight: 600;
+    }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-ghost { background: #fff; border: 1px solid var(--line); }
+    .hidden { display: none !important; }
+    .score { font-size: 2.4rem; font-weight: 800; margin: 8px 0; }
+    .setup p { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 id="pageTitle">单词检测</h1>
+    <p class="sub" id="pageSub">填好 wordData 后，用浏览器打开本文件即可预览。</p>
+
+    <div class="card setup" id="setup">
+      <p id="setupHint">共 0 词 · 先选中文意思，再拼写英文 · 5 条生命 · 每题 20 秒</p>
+      <div class="row">
+        <button type="button" class="btn btn-primary" id="btnStart">开始检测</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="quiz">
+      <div class="meta">
+        <span id="progress">1 / 1</span>
+        <span class="hearts" id="lives"></span>
+        <span class="timer" id="timer">20</span>
+      </div>
+      <div class="word-ipa" id="ipa"></div>
+      <div class="opts" id="opts"></div>
+      <input class="spell hidden" id="spell" type="text" lang="en" inputmode="latin"
+        placeholder="拼写英文…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="fb" id="fb"></div>
+      <div class="row">
+        <button type="button" class="btn btn-primary hidden" id="btnNext">下一题</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="done">
+      <h2 id="doneTitle"></h2>
+      <div class="score" id="doneScore"></div>
+      <p class="sub" id="doneSub"></p>
+      <div class="row">
+        <button type="button" class="btn btn-primary" id="btnRetry">重新检测</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  /* ★ 老师只改这一段。每个对象 = 1 个单词。复制最后一项再改即可。 */
+  const wordData = [
+    { id: 1, word: "include", ipa: "/ɪnˈkluːd/", pos: "v.", meaning: "包括；包含", acceptCN: ["包括", "包含"] },
+    { id: 2, word: "challenge", ipa: "/ˈtʃælɪndʒ/", pos: "n. / v.", meaning: "挑战；质疑", acceptCN: ["挑战", "质疑"] },
+    { id: 3, word: "accurate", ipa: "/ˈækjərət/", pos: "adj.", meaning: "准确的；精确的", acceptCN: ["准确", "精确"] },
+    { id: 4, word: "survive", ipa: "/səˈvaɪv/", pos: "v.", meaning: "幸存；存活", acceptCN: ["幸存", "存活", "生存"] },
+    { id: 5, word: "grateful", ipa: "/ˈɡreɪtfl/", pos: "adj.", meaning: "感激的；感谢的", acceptCN: ["感激", "感谢"] }
+  ];
+
+  const MAX_LIVES = 5;
+  const TIME_SEC = 20;
+  const words = wordData.filter(function (w) {
+    return w && String(w.word || "").trim() && String(w.meaning || "").trim();
+  });
+
+  const setup = document.getElementById("setup");
+  const quiz = document.getElementById("quiz");
+  const done = document.getElementById("done");
+  const optsEl = document.getElementById("opts");
+  const spell = document.getElementById("spell");
+  const fb = document.getElementById("fb");
+  const btnNext = document.getElementById("btnNext");
+
+  var order = [];
+  var idx = 0;
+  var lives = MAX_LIVES;
+  var correct = 0;
+  var wrong = 0;
+  var selected = null;
+  var waiting = false;
+  var timer = null;
+  var left = TIME_SEC;
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function meaningOptions(correctMeaning) {
+    var pool = words.map(function (w) { return w.meaning; })
+      .filter(function (m) { return m !== correctMeaning; });
+    pool = shuffle(pool).slice(0, 3);
+    pool.push(correctMeaning);
+    return shuffle(pool);
+  }
+
+  function paintLives() {
+    var h = "";
+    for (var i = 0; i < MAX_LIVES; i++) h += '<span class="' + (i >= lives ? "lost" : "") + '">❤</span>';
+    document.getElementById("lives").innerHTML = h;
+  }
+
+  function clearTimer() {
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  function startTimer() {
+    clearTimer();
+    left = TIME_SEC;
+    var el = document.getElementById("timer");
+    el.textContent = left;
+    el.classList.remove("warn");
+    timer = setInterval(function () {
+      left--;
+      el.textContent = Math.max(0, left);
+      el.classList.toggle("warn", left <= 5);
+      if (left <= 0) {
+        clearTimer();
+        if (!waiting) judge(true);
+      }
+    }, 1000);
+  }
+
+  function speak(word) {
+    try {
+      var a = new Audio("https://dict.youdao.com/dictvoice?audio=" + encodeURIComponent(word) + "&type=1");
+      var p = a.play();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
+
+  function show(el) {
+    setup.classList.add("hidden");
+    quiz.classList.add("hidden");
+    done.classList.add("hidden");
+    el.classList.remove("hidden");
+  }
+
+  function renderQ() {
+    var w = words[order[idx]];
+    waiting = false;
+    selected = null;
+    spell.value = "";
+    spell.className = "spell hidden";
+    spell.disabled = false;
+    btnNext.classList.add("hidden");
+    fb.textContent = "";
+    document.getElementById("progress").textContent = (idx + 1) + " / " + order.length;
+    document.getElementById("ipa").textContent = (w.ipa || "") + (w.pos ? "  ·  " + w.pos : "");
+    paintLives();
+    optsEl.innerHTML = meaningOptions(w.meaning).map(function (m) {
+      return '<button type="button" class="opt" data-v="' +
+        String(m).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;") +
+        '">' + String(m).replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</button>";
+    }).join("");
+    speak(w.word);
+    startTimer();
+  }
+
+  function paintMeaning(ok) {
+    var w = words[order[idx]];
+    Array.prototype.forEach.call(optsEl.querySelectorAll(".opt"), function (b) {
+      b.disabled = true;
+      var v = b.getAttribute("data-v");
+      if (v === w.meaning) b.classList.add("correct");
+      else if (v === selected && !ok) b.classList.add("wrong");
+    });
+  }
+
+  function failLife(msg) {
+    lives--;
+    wrong++;
+    paintLives();
+    fb.textContent = msg;
+    waiting = true;
+    clearTimer();
+    spell.classList.remove("hidden");
+    spell.disabled = true;
+    if (lives <= 0) {
+      setTimeout(endQuiz, 900);
+      return;
+    }
+    btnNext.classList.remove("hidden");
+  }
+
+  function judge(timeout) {
+    if (waiting) return;
+    var w = words[order[idx]];
+    var meaningOk = selected === w.meaning;
+    if (!meaningOk) {
+      paintMeaning(false);
+      failLife(timeout
+        ? ("⏱ 超时。正确答案：" + w.word + "（" + w.meaning + "）")
+        : ("❌ 意思不对。正确答案：" + w.word + "（" + w.meaning + "）"));
+      return;
+    }
+    paintMeaning(true);
+    spell.classList.remove("hidden");
+    spell.focus();
+    if (timeout) {
+      spell.classList.add("bad");
+      failLife("⏱ 超时未拼写。正确答案：" + w.word);
+      return;
+    }
+  }
+
+  function judgeSpell() {
+    if (waiting) return;
+    var w = words[order[idx]];
+    var typed = spell.value.trim().toLowerCase();
+    if (!typed) { spell.focus(); return; }
+    var ok = typed === String(w.word).toLowerCase();
+    waiting = true;
+    clearTimer();
+    spell.disabled = true;
+    spell.classList.add(ok ? "ok" : "bad");
+    paintMeaning(true);
+    if (ok) {
+      correct++;
+      fb.textContent = "✅ 正确";
+      btnNext.classList.remove("hidden");
+    } else {
+      failLife("❌ 拼写应为：" + w.word + "（" + w.meaning + "）");
+    }
+  }
+
+  function next() {
+    idx++;
+    if (idx >= order.length || lives <= 0) endQuiz();
+    else renderQ();
+  }
+
+  function endQuiz() {
+    clearTimer();
+    var passed = lives > 0 && (idx >= order.length || correct + wrong >= order.length);
+    show(done);
+    document.getElementById("doneTitle").textContent = passed ? "检测通过" : "未通过";
+    document.getElementById("doneScore").textContent = correct + " / " + order.length;
+    document.getElementById("doneSub").textContent = passed
+      ? ("错 " + wrong + " 题 · 剩余生命 " + lives)
+      : ("错误已达 " + MAX_LIVES + " 题，须重测。错 " + wrong + " · 对 " + correct);
+  }
+
+  function start() {
+    if (words.length < 2) {
+      alert("请至少填写 2 个单词（word + meaning），否则无法组成四选一。");
+      return;
+    }
+    order = shuffle(words.map(function (_, i) { return i; }));
+    idx = 0; lives = MAX_LIVES; correct = 0; wrong = 0;
+    show(quiz);
+    renderQ();
+  }
+
+  document.getElementById("setupHint").textContent =
+    "共 " + words.length + " 词 · 先选中文意思，再拼写英文 · 5 条生命 · 每题 20 秒";
+  document.getElementById("btnStart").onclick = start;
+  document.getElementById("btnRetry").onclick = start;
+  btnNext.onclick = next;
+  optsEl.onclick = function (e) {
+    var b = e.target.closest(".opt");
+    if (!b || waiting || !spell.classList.contains("hidden")) return;
+    selected = b.getAttribute("data-v");
+    Array.prototype.forEach.call(optsEl.querySelectorAll(".opt"), function (x) {
+      x.classList.toggle("pick", x === b);
+    });
+    judge(false);
+  };
+  spell.onkeydown = function (e) {
+    if (e.key === "Enter") { e.preventDefault(); judgeSpell(); }
+  };
+
+  document.getElementById("pageTitle").textContent =
+    document.title.replace(/（请改标题）$/, "") || "单词检测";
+})();
+</script>
+</body>
+</html>

@@ -344,7 +344,10 @@ function normalizeWord(w) {
     root: w.root || "",
     synonyms: Array.isArray(w.synonyms) ? w.synonyms : [],
     antonyms: Array.isArray(w.antonyms) ? w.antonyms : [],
-    examTag: w.examTag || null
+    examTag: w.examTag || null,
+    acceptCN: Array.isArray(w.acceptCN)
+      ? w.acceptCN.map(function (s) { return String(s || "").trim(); }).filter(Boolean).slice(0, 4)
+      : []
   };
 }
 
@@ -858,6 +861,27 @@ function mountRoutes(app, opts) {
     return String(raw || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
   }
 
+  // bookId||listId — teacher multi-book assign
+  function parseVocabRef(raw) {
+    var s = String(raw || "").trim();
+    var i = s.indexOf("||");
+    if (i <= 0) return null;
+    var bookId = s.slice(0, i).trim();
+    var listId = s.slice(i + 2).trim();
+    if (!bookId || !listId) return null;
+    return { bookId: bookId, listId: listId, raw: bookId + "||" + listId };
+  }
+
+  function parseVocabRefs(raw) {
+    return parseListIds(raw).map(parseVocabRef).filter(Boolean);
+  }
+
+  function ensureOnShelf(userId, bookId, now) {
+    if (!stmts.findShelf.get(userId, bookId)) {
+      stmts.addShelf.run(userId, bookId, now || new Date().toISOString());
+    }
+  }
+
   function buildPool(book, listIds) {
     var seen = Object.create(null);
     var words = [];
@@ -876,15 +900,75 @@ function mountRoutes(app, opts) {
     return { words: words, labels: labels };
   }
 
-  // Merged word pool for selected lists (60% random sample)
+  function buildPoolFromRefs(cat, refs) {
+    var seen = Object.create(null);
+    var words = [];
+    var labels = [];
+    var bookIds = [];
+    var bookSeen = Object.create(null);
+    refs.forEach(function (ref) {
+      var book = cat.byId[ref.bookId];
+      if (!book) return;
+      if (!bookSeen[ref.bookId]) {
+        bookSeen[ref.bookId] = true;
+        bookIds.push(ref.bookId);
+      }
+      var lesson = resolveLesson(repoRoot, book, ref.listId);
+      if (!lesson) return;
+      labels.push((book.label || ref.bookId) + " · " + (lesson.list.label || ref.listId));
+      lesson.words.forEach(function (w) {
+        var key = String(w.word || "").toLowerCase();
+        if (!key || seen[key]) return;
+        seen[key] = true;
+        words.push(Object.assign({}, w, { listId: ref.raw, bookId: ref.bookId }));
+      });
+    });
+    return { words: words, labels: labels, bookIds: bookIds };
+  }
+
+  // Merged word pool (60% sample). ?refs=book||list,... OR legacy ?bookId=&listIds=
   app.get("/api/vocab-shelf/quiz-pool", authMiddleware, function (req, res) {
+    var cat = loadCatalog();
+    var now = new Date().toISOString();
+    var refs = parseVocabRefs(req.query.refs);
+    if (refs.length) {
+      for (var ri = 0; ri < refs.length; ri++) {
+        if (!cat.byId[refs[ri].bookId]) {
+          return res.status(404).json({ error: "词书不存在: " + refs[ri].bookId });
+        }
+        var knownLists = {};
+        cat.byId[refs[ri].bookId].lists.forEach(function (l) { knownLists[l.id] = true; });
+        if (!knownLists[refs[ri].listId]) {
+          return res.status(404).json({ error: "List 不存在: " + refs[ri].raw });
+        }
+      }
+      refs.forEach(function (r) { ensureOnShelf(req.user.sub, r.bookId, now); });
+      var multi = buildPoolFromRefs(cat, refs);
+      if (!multi.words.length) return res.status(400).json({ error: "所选 List 没有可测单词" });
+      var sampledM = sampleWords(multi.words, QUIZ_RATIO);
+      var primary = cat.byId[multi.bookIds[0]];
+      var bookLabel = multi.bookIds.map(function (id) {
+        return (cat.byId[id] && cat.byId[id].label) || id;
+      }).join(" · ");
+      return res.json({
+        ok: true,
+        book: bookSummary(primary),
+        bookId: multi.bookIds[0],
+        bookLabel: bookLabel,
+        listIds: refs.map(function (r) { return r.raw; }),
+        listLabels: multi.labels,
+        poolTotal: multi.words.length,
+        quizCount: sampledM.length,
+        maxLives: QUIZ_MAX_LIVES,
+        timeLimitSec: QUIZ_TIME_SEC,
+        words: sampledM
+      });
+    }
+
     var bookId = String(req.query.bookId || "").trim();
     var listIds = parseListIds(req.query.listIds);
     if (!bookId || !listIds.length) return res.status(400).json({ error: "缺少 bookId 或 listIds" });
-    if (!stmts.findShelf.get(req.user.sub, bookId)) {
-      return res.status(403).json({ error: "请先将词书加入书架" });
-    }
-    var cat = loadCatalog();
+    ensureOnShelf(req.user.sub, bookId, now);
     var book = cat.byId[bookId];
     if (!book) return res.status(404).json({ error: "词书不存在" });
     var known = {};
@@ -898,6 +982,8 @@ function mountRoutes(app, opts) {
     res.json({
       ok: true,
       book: bookSummary(book),
+      bookId: bookId,
+      bookLabel: book.label || bookId,
       listIds: listIds,
       listLabels: pool.labels,
       poolTotal: pool.words.length,
@@ -921,12 +1007,21 @@ function mountRoutes(app, opts) {
     var passed = body.passed ? 1 : 0;
     var mistakes = Array.isArray(body.mistakes) ? body.mistakes : [];
     if (!bookId || !listIds.length) return res.status(400).json({ error: "缺少 bookId 或 listIds" });
-    if (!stmts.findShelf.get(req.user.sub, bookId)) {
-      return res.status(403).json({ error: "请先将词书加入书架" });
-    }
     var cat = loadCatalog();
-    if (!cat.byId[bookId]) return res.status(404).json({ error: "词书不存在" });
     var now = new Date().toISOString();
+    var finishRefs = listIds.map(parseVocabRef).filter(Boolean);
+    if (finishRefs.length) {
+      for (var fi = 0; fi < finishRefs.length; fi++) {
+        if (!cat.byId[finishRefs[fi].bookId]) {
+          return res.status(404).json({ error: "词书不存在: " + finishRefs[fi].bookId });
+        }
+        ensureOnShelf(req.user.sub, finishRefs[fi].bookId, now);
+      }
+      if (!bookId) bookId = finishRefs[0].bookId;
+    } else {
+      ensureOnShelf(req.user.sub, bookId, now);
+      if (!cat.byId[bookId]) return res.status(404).json({ error: "词书不存在" });
+    }
     var date = todayDate();
     var sid;
     var tx = db.transaction(function () {
@@ -963,13 +1058,15 @@ function mountRoutes(app, opts) {
     var assignmentEventId = Number(body.assignmentEventId || body.eventId || 0) || 0;
     var assignment = null;
     if (assignmentEventId && typeof completeVocabQuizAssignment === "function") {
-      // ponytail: fail → needRetest, no COMPLETED; pass → store score for teacher
+      // ponytail: fail → needRetest; pass one List → partial or COMPLETED
       assignment = completeVocabQuizAssignment(req.user.sub, assignmentEventId, {
         passed: !!passed,
         sessionId: sid,
         total: total,
         correct: correct,
-        wrong: wrongCount
+        wrong: wrongCount,
+        listIds: listIds,
+        listRef: listIds.length === 1 ? listIds[0] : String(body.listRef || "").trim()
       });
     }
     res.json({
@@ -1051,7 +1148,8 @@ function mountRoutes(app, opts) {
           root: base.root || "",
           synonyms: base.synonyms || [],
           antonyms: base.antonyms || [],
-          examTag: base.examTag || null
+          examTag: base.examTag || null,
+          acceptCN: Array.isArray(base.acceptCN) ? base.acceptCN : []
         };
       }).filter(function (w) { return w.word && w.meaning; })
     });
@@ -1200,13 +1298,23 @@ if (require.main === module) {
   var root = resolveContentRoot();
   var cat = buildCatalog(root);
   if (cat.books.length < 4) throw new Error("catalog too small");
-  if (!cat.byId.gaozhong || cat.byId.gaozhong.listCount < 1) throw new Error("gaozhong lists");
+  if (!cat.byId.gaozhong || cat.byId.gaozhong.listCount < 40) throw new Error("gaozhong lists");
+  var gzN = (cat.byId.gaozhong.lists || []).filter(function (l) {
+    return /^高中单词list\d+$/.test(String(l.id));
+  }).length;
+  if (gzN !== 40) throw new Error("gaozhong 40 lists, got " + gzN);
   if (!cat.byId["theme:toeic"]) throw new Error("missing theme:toeic");
   var toeic = cat.byId["theme:toeic"];
   var expect = Math.ceil((toeic.wordCount || 0) / THEME_CHUNK);
   if (toeic.listCount !== expect) throw new Error("toeic listCount");
-  var gz = resolveLesson(root, cat.byId.gaozhong, cat.byId.gaozhong.lists[0].id);
+  var gzList1 = (cat.byId.gaozhong.lists || []).filter(function (l) {
+    return l.id === "高中单词list1";
+  })[0];
+  var gz = resolveLesson(root, cat.byId.gaozhong, gzList1 ? gzList1.id : cat.byId.gaozhong.lists[0].id);
   if (!gz || !gz.words.length) throw new Error("gaozhong lesson empty");
+  if (gz.words.length !== 57 || gz.words[0].word !== "include") throw new Error("list1 excel order");
+  if (!gz.words[0].acceptCN || gz.words[0].acceptCN.length < 2) throw new Error("list1 acceptCN");
+  if (String(gz.words[0].meaning).length < 40) throw new Error("list1 meaning too thin");
   var tl = resolveLesson(root, toeic, "1");
   if (!tl || tl.words.length !== 50) throw new Error("theme list1 size");
   console.log("vocab-shelf self-check ok · books=" + cat.books.length);

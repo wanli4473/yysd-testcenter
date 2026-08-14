@@ -26,7 +26,7 @@
   var detailEventId = null;
 
   var CAT_HINT = {
-    vocab: "单词：选词本 → 勾 1 个 List → 布置「单词检测」（同时自动布置同 List 的列表学习；检测须闯关通过）。",
+    vocab: "单词检测：可跨词书勾选多个 List；学生逐个 List 闯关，全部通过才算完成。",
     part: "补弱：先选册与 Test，再勾 Section / Passage（练习规则，可续做）。",
     skill: "单项模考：先选册与 Test，再勾单科整卷（机考模考规则）。",
     suite: "全套模考：先选册，再勾某套 Test 的听力+阅读+写作。"
@@ -429,7 +429,7 @@
         }).join("");
       }
       if (skillBar) {
-        // ponytail: quiz assign auto-creates learn — no mode toggle
+        // ponytail: vocab assign is quiz-only — no mode toggle
         skillBar.hidden = true;
         skillBar.innerHTML = "";
       }
@@ -569,7 +569,7 @@
     var el = document.getElementById("exercise-picked");
     if (!el) return;
     if (isVocabBrowse() && nPick) {
-      el.textContent = "已选 1 个 List · 将布置单词检测 + 同 List 列表学习";
+      el.textContent = "已选 " + nPick + " 个 List · 学生将逐个闯关";
       return;
     }
     el.textContent = "已选 " + nPick + " 份练习";
@@ -717,8 +717,18 @@
         if (isVq) {
           if (st === "COMPLETED" && s.quizResult) {
             var qr = s.quizResult;
-            prog = "通过 " + (qr.correct || 0) + "/" + (qr.total || 0) +
-              "（错 " + (qr.wrong || 0) + "）";
+            if (qr.passedLists && (ev.linkedExerciseIds || []).length > 1) {
+              var n = Object.keys(qr.passedLists).length;
+              prog = "全部通过 " + n + "/" + (ev.linkedExerciseIds || []).length +
+                " List（最近 " + (qr.correct || 0) + "/" + (qr.total || 0) + "）";
+            } else {
+              prog = "通过 " + (qr.correct || 0) + "/" + (qr.total || 0) +
+                "（错 " + (qr.wrong || 0) + "）";
+            }
+          } else if (s.quizResult && s.quizResult.passedLists) {
+            var pl = Object.keys(s.quizResult.passedLists).length;
+            var tot = Math.max(1, (ev.linkedExerciseIds || []).length);
+            prog = "进度 " + pl + "/" + tot + " List";
           } else {
             prog = "未通过 / 未完成";
           }
@@ -841,7 +851,7 @@
         pickVocabGroup = vgroup.getAttribute("data-ex-vgroup") === "theme" ? "theme" : "core";
         pickVocabBook = "";
         pickVocabRange = "";
-        selectedExercises = {};
+        // ponytail: keep checks — cross-book multi-select
         renderExerciseList();
         return;
       }
@@ -849,7 +859,6 @@
       if (vbook) {
         pickVocabBook = vbook.getAttribute("data-ex-vbook") || "";
         pickVocabRange = "";
-        selectedExercises = {};
         renderExerciseList();
         return;
       }
@@ -910,15 +919,9 @@
       });
     } else if (t.getAttribute("data-exercise")) {
       var id = t.getAttribute("data-exercise");
-      // ponytail: 词库作业 = 一本一词表，单选
-      if (isVocabBrowse() && t.checked) {
-        selectedExercises = {};
-        selectedExercises[id] = true;
-        renderExerciseList();
-        return;
-      }
       if (t.checked) selectedExercises[id] = true;
       else delete selectedExercises[id];
+      if (isVocabBrowse()) updateExercisePicked();
     } else {
       return;
     }
@@ -978,10 +981,7 @@
       return T.api("/api/calendar/events", { method: "POST", body: body })
         .then(function () {
           var n = targetStudentIds.length;
-          var extra = (type === "ASSIGNMENT" && !file && cdtPackForCat(exerciseCat) === "vocab-quiz")
-            ? "（含同 List 列表学习）"
-            : "";
-          showMsg("已发给 " + n + " 名学生" + extra + " · 他们打开待办即可看到", true);
+          showMsg("已发给 " + n + " 名学生 · 他们打开待办即可看到", true);
           closeCreate();
           load();
         })
@@ -990,13 +990,17 @@
 
     var linkedIds = type === "ASSIGNMENT" && !file ? Object.keys(selectedExercises) : [];
     var pack = type === "ASSIGNMENT" && !file ? cdtPackForCat(exerciseCat) : "";
-    if ((pack === "vocab-quiz") && linkedIds.length !== 1) {
-      showMsg("请先选词库本，再只勾选 1 个 List", false);
-      return;
-    }
-    if ((pack === "vocab-quiz") && !parseVocabRef(linkedIds[0])) {
-      showMsg("词库选择无效，请重新勾选 List", false);
-      return;
+    if (pack === "vocab-quiz") {
+      if (!linkedIds.length) {
+        showMsg("请至少勾选 1 个 List", false);
+        return;
+      }
+      for (var vi = 0; vi < linkedIds.length; vi++) {
+        if (!parseVocabRef(linkedIds[vi])) {
+          showMsg("词库选择无效，请重新勾选 List", false);
+          return;
+        }
+      }
     }
 
     var startTime = fromLocalInput(document.getElementById("f-start").value);

@@ -103,8 +103,7 @@
   }
 
   function parseVocabLinked(ids) {
-    var bookId = "";
-    var listIds = [];
+    var refs = [];
     (ids || []).forEach(function (raw) {
       var s = String(raw || "");
       var i = s.indexOf("||");
@@ -112,15 +111,20 @@
       var b = s.slice(0, i);
       var lid = s.slice(i + 2);
       if (!b || !lid) return;
-      if (!bookId) bookId = b;
-      if (b === bookId) listIds.push(lid);
+      refs.push(b + "||" + lid);
     });
-    if (bookId) return { bookId: bookId, listIds: listIds };
+    if (refs.length) {
+      return {
+        bookId: refs[0].slice(0, refs[0].indexOf("||")),
+        listIds: refs.map(function (r) { return r.slice(r.indexOf("||") + 2); }),
+        refs: refs
+      };
+    }
     var id0 = String((ids && ids[0]) || "");
     var legacyBook = "gaozhong";
     if (/cet4|四级/i.test(id0)) legacyBook = "cet4";
     else if (/listening|reading|writing|special|专项/i.test(id0)) legacyBook = "special";
-    return { bookId: legacyBook, listIds: (ids || []).slice() };
+    return { bookId: legacyBook, listIds: (ids || []).slice(), refs: [] };
   }
 
   function focusCta(ev) {
@@ -129,12 +133,13 @@
       var pack = String(ev.cdtPack || "").toLowerCase();
       if (pack === "vocab-quiz") {
         var parsed = parseVocabLinked(ids);
-        return {
-          href: "vocab-quiz.html?book=" + encodeURIComponent(parsed.bookId) +
+        var href = (parsed.refs && parsed.refs.length)
+          ? ("vocab-quiz.html?refs=" + parsed.refs.map(encodeURIComponent).join(",") +
+            "&event=" + encodeURIComponent(ev.id))
+          : ("vocab-quiz.html?book=" + encodeURIComponent(parsed.bookId) +
             "&lists=" + parsed.listIds.map(encodeURIComponent).join(",") +
-            "&event=" + encodeURIComponent(ev.id),
-          label: "开始单词检测"
-        };
+            "&event=" + encodeURIComponent(ev.id));
+        return { href: href, label: "开始单词检测" };
       }
       if (pack === "vocab-learn") {
         var learn = parseVocabLinked(ids);

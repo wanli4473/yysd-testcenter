@@ -1,4 +1,63 @@
 /* vocab-learn.js — template learn UI (card + list); progress synced to bookshelf API */
+
+// ponytail: list display only; split senses[] if list/card keep diverging
+function yysdMeaningForList(raw, accept) {
+  var s = String(raw == null ? "" : raw).trim();
+  if (!s) return accept && accept.length ? accept.join("；") : "";
+  if (!/[A-Za-z]/.test(s) && !/(?:该词高中|须熟记|反义|同义|不规则|源自|易混|高考)/.test(s)) return s;
+
+  s = s.replace(/[（(]([^）)]*)[）)]/g, function (_, inner) {
+    return /[A-Za-z]/.test(inner) ? "" : "（" + inner + "）";
+  });
+  s = s.split(/(?:该词高中|须熟记|注意词性|阅读完形|写作中准确|商业阅读|宗教用语已|核心义项为|源自|易混|高考|较正式|相当于)/)[0];
+  s = s.replace(/[。；;]?\s*(?:反义|同义|不规则)[:：]?[\s\S]*$/, "");
+
+  var POS = /^(?:interj\.|modal(?:\s+v\.?)?|adj\.|adv\.|prep\.|conj\.|pron\.|num\.|art\.|int\.|det\.|aux\.|phr\.|pref\.|abbr\.|pl\.|vt\.|vi\.|n\.|v\.)/i;
+  var out = "";
+  var i = 0;
+  while (i < s.length) {
+    var prev = i === 0 ? " " : s.charAt(i - 1);
+    if (/[\s.、，；。/／]/.test(prev)) {
+      var m = s.slice(i).match(POS);
+      if (m) {
+        out += m[0];
+        i += m[0].length;
+        continue;
+      }
+    }
+    var ch = s.charAt(i);
+    if (/[A-Za-z]/.test(ch)) {
+      i += 1;
+      while (i < s.length && /[A-Za-z0-9'\u2019\-]/.test(s.charAt(i))) i += 1;
+      continue;
+    }
+    out += ch;
+    i += 1;
+  }
+
+  out = out.replace(/[ \t]+/g, " ");
+  out = out.replace(/（[^）]*）/g, function (full, off, str) {
+    var j = off - 1;
+    while (j >= 0 && str.charAt(j) === " ") j -= 1;
+    if (j >= 0 && /[\u4e00-\u9fff]/.test(str.charAt(j))) return full;
+    return "";
+  });
+  out = out.replace(/\s+([。；;，、])/g, "$1");
+  out = out.replace(/([。；;，、]) +/g, "$1");
+  out = out.replace(/(^|[^.\u4e00-\u9fff])\s*\/\s*(?=[^.\u4e00-\u9fff]|$)/g, "$1");
+  out = out.replace(/[。；;，、]{2,}/g, function (x) { return /。/.test(x) ? "。" : x.charAt(0); });
+  out = out.replace(/(?:名词|动词|形容词|副词|介词)[。；;\s]*$/g, "");
+  out = out.replace(/\s{2,}/g, " ");
+  out = out.replace(/^\s*[。；;，、]+|[。；;，、\s]+$/g, "");
+  out = out.replace(/([a-z])\.\s+/gi, "$1. ");
+  out = out.trim();
+  if (out && !/[。！？；]$/.test(out)) out += "。";
+
+  var cjk = (out.match(/[\u4e00-\u9fff]/g) || []).length;
+  if (cjk < 2) return accept && accept.length ? accept.join("；") : s;
+  return out;
+}
+
 (function () {
   "use strict";
   var A = window.YYSD_AUTH;
@@ -121,7 +180,8 @@
         '<td class="col-ipa"><span class="w-ipa">' + esc(w.ipa || "") + "</span></td>" +
         '<td class="col-pos"><span class="w-pos">' + esc(w.pos || "") + "</span></td>" +
         '<td><span class="w-meaning' + (blurMeaning ? " blurred" : "") + '" title="' +
-          (blurMeaning ? "点击暂时显示释义" : "") + '">' + esc(w.meaning) + "</span></td>" +
+          (blurMeaning ? "点击暂时显示释义" : "") + '">' +
+          esc(yysdMeaningForList(w.meaning, w.acceptCN)) + "</span></td>" +
         '<td class="col-speak">' +
           '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(w.word) +
             '" data-accent="1" style="padding:6px 8px;font-size:12px" title="英音">英</button> ' +

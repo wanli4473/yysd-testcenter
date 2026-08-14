@@ -74,8 +74,7 @@
   }
 
   function parseVocabLinked(linkedIds) {
-    var bookId = "";
-    var listIds = [];
+    var refs = [];
     (linkedIds || []).forEach(function (raw) {
       var s = String(raw || "");
       var i = s.indexOf("||");
@@ -83,10 +82,15 @@
       var b = s.slice(0, i);
       var lid = s.slice(i + 2);
       if (!b || !lid) return;
-      if (!bookId) bookId = b;
-      if (b === bookId) listIds.push(lid);
+      refs.push({ bookId: b, listId: lid, raw: b + "||" + lid });
     });
-    if (bookId) return { bookId: bookId, listIds: listIds };
+    if (refs.length) {
+      return {
+        bookId: refs[0].bookId,
+        listIds: refs.map(function (r) { return r.listId; }),
+        refs: refs.map(function (r) { return r.raw; })
+      };
+    }
     // legacy: old catalog item ids
     var id0 = String((linkedIds && linkedIds[0]) || "");
     var it = catalogById[id0] || (Y.resolveItem ? Y.resolveItem(catalogItems, id0) : null);
@@ -94,11 +98,15 @@
     if (it && Y.vocabBookOfSubject) legacyBook = Y.vocabBookOfSubject(it.subject) || "gaozhong";
     else if (/cet4|四级/i.test(id0)) legacyBook = "cet4";
     else if (/listening|reading|writing|special|专项/i.test(id0)) legacyBook = "special";
-    return { bookId: legacyBook, listIds: (linkedIds || []).slice() };
+    return { bookId: legacyBook, listIds: (linkedIds || []).slice(), refs: [] };
   }
 
   function vocabQuizHref(eventId, linkedIds) {
     var parsed = parseVocabLinked(linkedIds || []);
+    if (parsed.refs && parsed.refs.length) {
+      return "vocab-quiz.html?refs=" + parsed.refs.map(encodeURIComponent).join(",") +
+        "&event=" + encodeURIComponent(eventId);
+    }
     var qs = "book=" + encodeURIComponent(parsed.bookId) +
       "&event=" + encodeURIComponent(eventId);
     if (parsed.listIds.length) {

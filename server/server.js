@@ -227,7 +227,7 @@ const stmts = {
     "SELECT * FROM student_task_status WHERE event_id = ? AND student_id = ?"
   ),
   listStudentCalendar: db.prepare(
-    "SELECT e.*, s.status AS task_status, s.completed_at " +
+    "SELECT e.*, s.status AS task_status, s.completed_at, s.result_json " +
     "FROM calendar_events e " +
     "INNER JOIN student_task_status s ON s.event_id = e.id " +
     "WHERE s.student_id = ? " +
@@ -2016,7 +2016,6 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
   var now = new Date().toISOString();
   var exerciseJson = JSON.stringify(eventType === "ASSIGNMENT" ? linkedExerciseIds : []);
   var packToStore = eventType === "ASSIGNMENT" && !htmlContent ? cdtPack : "";
-  // ponytail: vocab-quiz also seeds matching vocab-learn (same list / students / times)
   var created = db.transaction(function () {
     var info = stmts.insertCalendarEvent.run(
       title,
@@ -2033,27 +2032,7 @@ app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {
     );
     var eventId = info.lastInsertRowid;
     targetStudentIds.forEach(function (sid) { stmts.insertTaskStatus.run(eventId, sid); });
-
-    var learnEventId = null;
-    if (packToStore === "vocab-quiz" && linkedExerciseIds.length === 1) {
-      var learnTitle = clipText(title + " · 列表学习", 80);
-      var learnInfo = stmts.insertCalendarEvent.run(
-        learnTitle,
-        description || "",
-        eventType,
-        startTime,
-        dueTime,
-        req.user.sub,
-        JSON.stringify(targetStudentIds),
-        exerciseJson,
-        now,
-        null,
-        "vocab-learn"
-      );
-      learnEventId = learnInfo.lastInsertRowid;
-      targetStudentIds.forEach(function (sid) { stmts.insertTaskStatus.run(learnEventId, sid); });
-    }
-    return { eventId: eventId, learnEventId: learnEventId };
+    return { eventId: eventId };
   })();
 
   var eventId = created.eventId;
@@ -2112,9 +2091,19 @@ app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
     stmts.listScores.all(s.student_id).forEach(function (r) { scored[r.item_id] = 1; });
     var doneIds = exerciseIds.filter(function (xid) { return scored[xid]; });
     var quizResult = null;
-    // ponytail: only surface quiz score after pass (result_json written on complete)
-    if (pack === "vocab-quiz" && s.status === "COMPLETED" && s.result_json) {
+    if (pack === "vocab-quiz" && s.result_json) {
       try { quizResult = JSON.parse(s.result_json); } catch (e) { quizResult = null; }
+    }
+    var vqDone = 0;
+    var vqTotal = isVocabPack ? Math.max(1, exerciseIds.length) : exerciseIds.length;
+    if (pack === "vocab-quiz") {
+      if (s.status === "COMPLETED") vqDone = vqTotal;
+      else if (quizResult && quizResult.passedLists) {
+        vqDone = exerciseIds.filter(function (xid) { return !!quizResult.passedLists[xid]; }).length;
+      }
+    } else if (isVocabPack) {
+      vqDone = s.status === "COMPLETED" ? 1 : 0;
+      vqTotal = 1;
     }
     return {
       studentId: s.student_id,
@@ -2122,9 +2111,13 @@ app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
       phone: stu ? maskPhone(stu.phone) : "",
       status: effectiveTaskStatus(s.status, row.due_time),
       completedAt: s.completed_at || null,
-      doneExerciseIds: doneIds,
-      exerciseDone: isVocabPack ? (s.status === "COMPLETED" ? 1 : 0) : doneIds.length,
-      exerciseTotal: isVocabPack ? 1 : exerciseIds.length,
+      doneExerciseIds: pack === "vocab-quiz"
+        ? (quizResult && quizResult.passedLists
+          ? exerciseIds.filter(function (xid) { return !!quizResult.passedLists[xid]; })
+          : (s.status === "COMPLETED" ? exerciseIds.slice() : []))
+        : doneIds,
+      exerciseDone: isVocabPack ? vqDone : doneIds.length,
+      exerciseTotal: isVocabPack ? vqTotal : exerciseIds.length,
       quizResult: quizResult
     };
   });
@@ -2203,12 +2196,17 @@ app.get("/api/student/assignments/:eventId/meta", authMiddleware, function (req,
   if (!row) return res.status(404).json({ error: "任务不存在" });
   var task = stmts.getTaskStatus.get(eventId, req.user.sub);
   if (!task) return res.status(403).json({ error: "你不在此任务名单中" });
+  var quizProgress = null;
+  if (String(row.cdt_pack || "").toLowerCase() === "vocab-quiz" && task.result_json) {
+    try { quizProgress = JSON.parse(task.result_json); } catch (e) { quizProgress = null; }
+  }
   res.json({
     ok: true,
     event: eventFromRow(row, {
       status: effectiveTaskStatus(task.status, row.due_time),
       completedAt: task.completed_at || null
-    })
+    }),
+    quizProgress: quizProgress
   });
 });
 
@@ -2295,12 +2293,31 @@ app.get("/api/student/calendar", authMiddleware, function (req, res) {
     var doneIds = exerciseIds.filter(function (xid) { return scored[xid]; });
     var doneN = isVocabPack ? (row.task_status === "COMPLETED" ? 1 : 0) : doneIds.length;
     var totalN = isVocabPack ? 1 : exerciseIds.length;
+    var passedListIds = [];
+    if (pack === "vocab-quiz") {
+      totalN = Math.max(1, exerciseIds.length);
+      if (row.task_status === "COMPLETED") {
+        doneN = totalN;
+        passedListIds = exerciseIds.slice();
+      } else if (row.result_json) {
+        var prog = null;
+        try { prog = JSON.parse(row.result_json); } catch (e) { prog = null; }
+        if (prog && prog.passedLists) {
+          passedListIds = exerciseIds.filter(function (xid) { return !!prog.passedLists[xid]; });
+          doneN = passedListIds.length;
+        } else {
+          doneN = 0;
+        }
+      } else {
+        doneN = 0;
+      }
+    }
     return eventFromRow(row, {
       status: effectiveTaskStatus(row.task_status, row.due_time),
       completedAt: row.completed_at || null,
-      doneExerciseIds: isVocabPack
+      doneExerciseIds: pack === "vocab-quiz" ? passedListIds : (isVocabPack
         ? (row.task_status === "COMPLETED" ? exerciseIds.slice() : [])
-        : doneIds,
+        : doneIds),
       exerciseDone: doneN,
       exerciseTotal: totalN
     });
@@ -4048,7 +4065,7 @@ vocabShelf.mountRoutes(app, {
   db: db,
   authMiddleware: authMiddleware,
   repoRoot: path.join(__dirname, ".."),
-  // ponytail: assigned vocab quiz completes only on pass (5 lives / full run)
+  // ponytail: multi-list assign = per-list pass; COMPLETED only when every linked List passed
   completeVocabQuizAssignment: function (studentId, eventId, result) {
     eventId = Number(eventId) || 0;
     result = result || {};
@@ -4062,15 +4079,41 @@ vocabShelf.mountRoutes(app, {
     if (!result.passed) {
       return { ok: false, needRetest: true, error: "未通过检测，作业未完成" };
     }
+    var linked = [];
+    try { linked = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) { linked = []; }
+    linked = linked.map(function (x) { return String(x || ""); }).filter(Boolean);
+    var listKey = String(result.listRef || "").trim();
+    if (!listKey && Array.isArray(result.listIds) && result.listIds.length === 1) {
+      listKey = String(result.listIds[0] || "").trim();
+    }
+    function matchLinked(linkedId, key) {
+      if (!linkedId || !key) return false;
+      if (linkedId === key) return true;
+      var li = linkedId.indexOf("||");
+      var ki = key.indexOf("||");
+      if (li > 0 && linkedId.slice(li + 2) === key) return true;
+      if (ki > 0 && key.slice(ki + 2) === linkedId) return true;
+      return false;
+    }
+    var canon = "";
+    for (var i = 0; i < linked.length; i++) {
+      if (matchLinked(linked[i], listKey)) { canon = linked[i]; break; }
+    }
+    if (!canon && linked.length === 1) canon = linked[0];
+    if (!canon && listKey) canon = listKey;
+    if (linked.length && !canon) {
+      return { ok: false, error: "检测 List 与作业不匹配" };
+    }
+
+    var prev = null;
+    if (task.result_json) {
+      try { prev = JSON.parse(task.result_json); } catch (e) { prev = null; }
+    }
     if (task.status === "COMPLETED") {
-      var prev = null;
-      if (task.result_json) {
-        try { prev = JSON.parse(task.result_json); } catch (e) { prev = null; }
-      }
       return { ok: true, already: true, quizResult: prev };
     }
     var now = new Date().toISOString();
-    var quizResult = {
+    var entry = {
       sessionId: Number(result.sessionId) || 0,
       total: Math.max(0, Math.floor(Number(result.total) || 0)),
       correct: Math.max(0, Math.floor(Number(result.correct) || 0)),
@@ -4078,9 +4121,32 @@ vocabShelf.mountRoutes(app, {
       passed: true,
       completedAt: now
     };
+    if (!prev || typeof prev !== "object") prev = {};
+    if (!prev.passedLists || typeof prev.passedLists !== "object") prev.passedLists = {};
+    if (canon) prev.passedLists[canon] = entry;
+    // single-list legacy fields (teacher detail still reads correct/total)
+    prev.sessionId = entry.sessionId;
+    prev.total = entry.total;
+    prev.correct = entry.correct;
+    prev.wrong = entry.wrong;
+    prev.passed = true;
+
+    var remaining = linked.filter(function (xid) { return !prev.passedLists[xid]; });
+    if (linked.length > 1 && remaining.length) {
+      stmts.setTaskResult.run(JSON.stringify(prev), eventId, studentId);
+      return {
+        ok: true,
+        partial: true,
+        passedCount: linked.length - remaining.length,
+        totalLists: linked.length,
+        remaining: remaining,
+        quizResult: prev
+      };
+    }
+    prev.completedAt = now;
     stmts.setTaskStatus.run("COMPLETED", now, eventId, studentId);
-    stmts.setTaskResult.run(JSON.stringify(quizResult), eventId, studentId);
-    return { ok: true, completedAt: now, quizResult: quizResult };
+    stmts.setTaskResult.run(JSON.stringify(prev), eventId, studentId);
+    return { ok: true, completedAt: now, quizResult: prev };
   },
   completeVocabLearnAssignment: function (studentId, eventId) {
     eventId = Number(eventId) || 0;
