@@ -15,6 +15,7 @@ const tenant = require("./tenant");
 const diagnostic = require("./diagnostic");
 const hsVocab = require("./hs-vocab");
 const vocabShelf = require("./vocab-shelf");
+const vocabChallenge = require("./vocab-challenge");
 
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -4165,6 +4166,15 @@ vocabShelf.mountRoutes(app, {
   }
 });
 
+// Vocab challenge (闯关)
+vocabChallenge.mountRoutes(app, {
+  db: db,
+  authMiddleware: authMiddleware,
+  repoRoot: path.join(__dirname, ".."),
+  canManageStudent: teacherCanManageStudent,
+  listManagedStudentIds: allowedStudentIdsForTeacher
+});
+
 // ponytail: runnable self-check
 if (require.main === module) {
   console.assert(normalizePhone("13800138000") === "13800138000");
@@ -4191,6 +4201,7 @@ if (require.main === module) {
   console.assert(buildTutorSystem("teacher", "", null).indexOf("口语") >= 0);
   console.assert(parseWordFromReply('x\nWORD_JSON:{"word":"cat","ipa":"/kæt/","meaning":"猫"}').word === "cat");
   console.assert(stripWordMarker("hello\nWORD_JSON:{\"word\":\"a\"}") === "hello");
+  vocabChallenge.selfCheck();
   try {
     console.assert(loadActiveBank().part1.length > 0);
     console.assert(buildExamPack("mock").part2.title.indexOf("Describe") === 0);

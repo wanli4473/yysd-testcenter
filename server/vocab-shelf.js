@@ -1296,6 +1296,8 @@ module.exports = {
   sessionTitle: sessionTitle,
   legacyHsSourceLabel: legacyHsSourceLabel,
   buildCatalog: buildCatalog,
+  resolveContentRoot: resolveContentRoot,
+  createCatalogLoader: createCatalogLoader,
   resolveLesson: resolveLesson,
   normalizeWord: normalizeWord,
   ensureSchema: ensureSchema,

@@ -279,7 +279,7 @@
   }
   function unitOf(subject) { return Y.isCambridge(subject) ? " 册" : " 份"; }
 
-  // Vocab hub — 学习台：左进度轨 + 右三主模块；诊断/每日单词为 chips
+  // Vocab hub — 学习台：左进度轨 + 右主模块；诊断/每日单词为 chips
   function dailyWordChipMeta() {
     var dwTask = null;
     var dwResult = null;
@@ -346,14 +346,15 @@
           '<div class="vocab-desk__head-copy">' +
             '<p class="vocab-desk__brand">优益思达 · 单词</p>' +
             "<h2>学习台</h2>" +
-            "<p>词库学习 · 检测巩固 · 错题回炉，从这里继续。</p>" +
+            "<p>词库学习 · 闯关解锁 · 检测巩固 · 错题回炉。</p>" +
           "</div>" +
           bookSvg +
         "</header>" +
         '<div class="vocab-desk__mods" role="navigation" aria-label="单词主模块">' +
           mod("shelf", "vocab-shelf.html", "01", "词库", "书架本数", "—", "进行中 List", "—", "进入书架", "vocab-shelf.html") +
-          mod("quiz", "vocab-quiz.html", "02", "单词检测", "本周次数", "—", "最近正确率", "—", "开始检测", "vocab-quiz.html") +
-          mod("wrong", "wrong-words.html", "03", "错题本", "待复习场次", "—", "错词数", "—", "去复习", "wrong-words.html") +
+          mod("challenge", "vocab-challenge.html", "02", "单词闯关", "当前 List", "—", "抽测池", "—", "开始闯关", "vocab-challenge.html") +
+          mod("quiz", "vocab-quiz.html", "03", "单词检测", "本周次数", "—", "最近正确率", "—", "开始检测", "vocab-quiz.html") +
+          mod("wrong", "wrong-words.html", "04", "错题本", "待复习场次", "—", "错词数", "—", "去复习", "wrong-words.html") +
         "</div>" +
       "</div>" +
     "</section>";
@@ -384,12 +385,19 @@
       set("quiz-m2", "—");
       set("wrong-m1", "0");
       set("wrong-m2", "0");
+      set("challenge-m1", "—");
+      set("challenge-m2", "—");
     }
     if (!A || !A.getToken || !A.getToken() || !A.api) {
       paintGuest();
       return;
     }
-    A.api("/api/vocab-shelf/desk").then(function (d) {
+    Promise.all([
+      A.api("/api/vocab-shelf/desk"),
+      A.api("/api/vocab-challenge/me").catch(function () { return null; })
+    ]).then(function (pair) {
+      var d = pair[0];
+      var ch = pair[1];
       if (!d || !d.ok) { paintGuest(); return; }
       set("shelfBooks", String(d.shelfBooks || 0));
       set("activeLists", String(d.activeLists || 0));
@@ -401,6 +409,15 @@
       set("quiz-m2", d.lastAccuracy != null ? d.lastAccuracy + "%" : "—");
       set("wrong-m1", String(d.pendingSessions || 0));
       set("wrong-m2", String(d.mistakeWords || 0));
+      if (ch && ch.assigned && ch.progress) {
+        set("challenge-m1", "L" + (ch.progress.nextListNo || 1));
+        set("challenge-m2", String((ch.pool && ch.pool.active) || 0));
+        setCta("challenge-cta", "vocab-challenge.html", "继续闯关");
+      } else {
+        set("challenge-m1", "待布置");
+        set("challenge-m2", "—");
+        setCta("challenge-cta", "vocab-challenge.html", "查看闯关");
+      }
       if (d.continueLearn) {
         setCta("shelf-cta", d.continueLearn.href, "续学 · " + (d.continueLearn.listLabel || "List"));
       } else if ((d.shelfBooks || 0) > 0) {

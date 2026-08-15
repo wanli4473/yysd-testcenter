@@ -417,6 +417,7 @@
     if (path === "zone.html" && zone === "study") { activate("words"); return; }
     if (path === "vocab.html" || path === "wrong-words.html" || path === "saved-words.html" ||
         path === "vocab-shelf.html" || path === "vocab-learn.html" || path === "vocab-quiz.html" ||
+        path === "vocab-challenge.html" ||
         path === "vocab-themes.html" || path === "hs-vocab.html" || path === "word-realm.html" ||
         path === "vocab-lesson.html") {
       activate("words");
