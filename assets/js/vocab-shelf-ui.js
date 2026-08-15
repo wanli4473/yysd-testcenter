@@ -52,6 +52,99 @@
       '<div class="vs-grid">' + cards + "</div>";
   }
 
+  // ponytail: id→emoji map; theme ids arrive as "theme:chem"
+  var BOOK_EMOJI = {
+    gaozhong: "📚",
+    cet4: "📗",
+    special: "🎯",
+    cet6: "📘",
+    tem: "🎓",
+    kaoyan: "📖",
+    gaokao: "🏫",
+    bec: "💼",
+    gmat: "📊",
+    gre: "🧠",
+    sat: "✏️",
+    toeic: "🪪",
+    toefl: "✈️",
+    ielts: "🌏",
+    primary: "🌱",
+    junior: "🚌",
+    senior: "🎒",
+    nce: "📕",
+    oxford3000: "📙",
+    collins: "⭐",
+    phrases: "💬",
+    chem: "🧪",
+    geo: "🗺️",
+    math: "🔢",
+    phys: "⚛️",
+    animals: "🐾",
+    plants: "🌿",
+    food: "🍜",
+    urban: "🏙️",
+    travel: "🚗",
+    edu: "🔬",
+    work: "💼",
+    festivals: "🎉",
+    literature: "🎨",
+    sports: "⚽",
+    game: "🎮",
+    film: "🎬",
+    music: "🎵"
+  };
+  var TAG_EMOJI = {
+    exam: "📗",
+    abroad: "✈️",
+    k12: "🎒",
+    learning: "📖",
+    subject: "📐",
+    nature: "🌿",
+    life: "🏠",
+    arts: "🎭",
+    media: "📺"
+  };
+
+  function bookEmoji(b) {
+    var raw = String((b && b.id) || "");
+    var id = raw.indexOf("theme:") === 0 ? raw.slice(6) : raw;
+    id = id.toLowerCase();
+    if (BOOK_EMOJI[id]) return BOOK_EMOJI[id];
+    var label = String((b && b.label) || "");
+    var hay = id + " " + label;
+    if (/高中/.test(label) && (b && b.kind) === "main") return "📚";
+    if (/专项/.test(label)) return "🎯";
+    if (/六级|cet-?6/i.test(hay)) return "📘";
+    if (/四级|cet-?4/i.test(hay)) return "📗";
+    if (/专四|专八/i.test(hay)) return "🎓";
+    if (/考研/i.test(hay)) return "📖";
+    if (/托福|toefl/i.test(hay)) return "✈️";
+    if (/雅思|ielts/i.test(hay)) return "🌏";
+    if (/托业|toeic/i.test(hay)) return "🪪";
+    if (/化学/.test(label)) return "🧪";
+    if (/地理/.test(label)) return "🗺️";
+    if (/数学/.test(label)) return "🔢";
+    if (/物理/.test(label)) return "⚛️";
+    if (/动物/.test(label)) return "🐾";
+    if (/植物/.test(label)) return "🌿";
+    if (/吃喝|美食|食物/.test(label)) return "🍜";
+    if (/城市/.test(label)) return "🏙️";
+    if (/出行|旅行|交通/.test(label)) return "🚗";
+    if (/科教|教育/.test(label)) return "🔬";
+    if (/职业|职场/.test(label)) return "💼";
+    if (/节日/.test(label)) return "🎉";
+    if (/文学|艺术/.test(label)) return "🎨";
+    if (/体育/.test(label)) return "⚽";
+    if (/游戏/.test(label)) return "🎮";
+    if (/影视|电影/.test(label)) return "🎬";
+    if (/音乐|广播/.test(label)) return "🎵";
+    if (/短语/.test(label)) return "💬";
+    if (/柯林斯/.test(label)) return "⭐";
+    var tag = String((b && b.tag) || "").toLowerCase();
+    if (TAG_EMOJI[tag]) return TAG_EMOJI[tag];
+    return "📗";
+  }
+
   function renderCatalog(catalog, shelf) {
     var onShelf = {};
     ((shelf && shelf.books) || []).forEach(function (b) { onShelf[b.bookId] = true; });
@@ -62,13 +155,15 @@
         var hay = (b.label + " " + b.id + " " + (b.tag || "")).toLowerCase();
         return hay.indexOf(filter.toLowerCase()) >= 0;
       });
-      var rows = books.map(function (b) {
+      var tiles = books.map(function (b) {
         var added = !!onShelf[b.id];
         var wc = b.wordCount != null ? (b.wordCount + " 词 · ") : "";
-        return '<div class="vs-row" data-id="' + esc(b.id) + '">' +
-          '<div><b>' + esc(b.label) + '</b>' +
-          '<span class="vs-row__meta">' + esc(wc + b.listCount + " List · " + (b.tag || b.kind)) +
-          "</span></div>" +
+        return '<div class="vs-bento-tile' + (added ? " is-on-shelf" : "") +
+          '" data-id="' + esc(b.id) + '">' +
+          '<span class="vs-bento-emoji" aria-hidden="true">' + bookEmoji(b) + "</span>" +
+          "<b class=\"vs-bento-title\">" + esc(b.label) + "</b>" +
+          '<span class="vs-bento-meta">' + esc(wc + b.listCount + " List · " + (b.tag || b.kind)) +
+          "</span>" +
           (added
             ? '<button type="button" class="btn btn--ghost btn--sm" data-act="remove">移出书架</button>'
             : '<button type="button" class="btn btn--primary btn--sm" data-act="add">加入书架</button>') +
@@ -84,7 +179,9 @@
               esc(q) + '"></label>' +
           "</div>" +
         "</div>" +
-        '<div class="vs-list" id="vs-list">' + (rows || '<p class="vs-empty">没有匹配的词书</p>') + "</div>";
+        '<div class="vs-bento" id="vs-list">' +
+          (tiles || '<p class="vs-empty">没有匹配的词书</p>') +
+        "</div>";
 
       var input = document.getElementById("vs-q");
       if (input) {
@@ -98,7 +195,7 @@
       document.getElementById("vs-list").onclick = function (e) {
         var btn = e.target.closest("button[data-act]");
         if (!btn) return;
-        var row = btn.closest(".vs-row");
+        var row = btn.closest("[data-id]");
         var id = row && row.getAttribute("data-id");
         if (!id) return;
         var act = btn.getAttribute("data-act");
@@ -140,6 +237,8 @@
         '<div class="vs-actions">' +
           '<a class="btn btn--ghost btn--sm" href="vocab-shelf.html">← 书架</a>' +
           '<button type="button" class="btn btn--ghost btn--sm" id="vs-remove">移出书架</button>' +
+          '<a class="btn btn--ghost btn--sm" href="vocab-quiz.html?book=' +
+            encodeURIComponent(book.id) + '">单词检测</a>' +
         "</div>" +
       "</div>" +
       '<div class="vs-list">' + rows + "</div>";

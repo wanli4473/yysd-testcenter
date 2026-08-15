@@ -41,5 +41,6 @@ eq(
 );
 eq(fn("按照；根据"), "按照；根据", "cet4 passthrough");
 eq(fn("adv. 因此，从而，这样。较正式，相当于 therefore / so。thus far（到目前为止）。"), "adv. 因此，从而，这样。", "thus");
+eq(fn("prep. 按照；根据。常用 according to plan（按计划）。", ["根据", "按照"]), "根据；按照", "prefer acceptCN");
 
 console.log("OK: list meaning");

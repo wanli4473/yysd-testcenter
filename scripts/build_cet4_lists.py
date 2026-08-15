@@ -18,6 +18,15 @@ def js_str(s: str) -> str:
 
 
 def word_js(w: dict) -> str:
+    coll = w.get("collocations") or ""
+    if isinstance(coll, list):
+        coll = json.dumps(coll, ensure_ascii=False)
+    else:
+        coll = js_str(coll)
+    exam = w.get("examTag")
+    exam_js = json.dumps(exam, ensure_ascii=False) if exam else "null"
+    syn = w.get("synonyms") if isinstance(w.get("synonyms"), list) else []
+    ant = w.get("antonyms") if isinstance(w.get("antonyms"), list) else []
     return (
         "{\n"
         f"  id: {int(w.get('id') or 0)},\n"
@@ -26,13 +35,19 @@ def word_js(w: dict) -> str:
         f"  pos: {js_str(w.get('pos') or '')},\n"
         f"  meaning: {js_str(w.get('meaning') or '')},\n"
         f"  mnemonic: {js_str(w.get('mnemonic') or '')},\n"
-        f"  collocations: {js_str(w.get('collocations') or '')},\n"
-        f"  phrases: {js_str(w.get('phrases') or w.get('collocations') or '')},\n"
+        f"  root: {js_str(w.get('root') or w.get('mnemonic') or '')},\n"
+        f"  collocations: {coll},\n"
+        f"  phrases: {js_str(w.get('phrases') or ('' if isinstance(w.get('collocations'), list) else (w.get('collocations') or '')))},\n"
         f"  example: {js_str(w.get('example') or '')},\n"
-        f"  exampleEN: {js_str(w.get('exampleEN') or '')},\n"
-        f"  exampleCN: {js_str(w.get('exampleCN') or '')},\n"
+        f"  exampleEN: {js_str(w.get('exampleEN') or w.get('exampleEn') or '')},\n"
+        f"  exampleCN: {js_str(w.get('exampleCN') or w.get('exampleZh') or '')},\n"
+        f"  exampleEn: {js_str(w.get('exampleEn') or w.get('exampleEN') or '')},\n"
+        f"  exampleZh: {js_str(w.get('exampleZh') or w.get('exampleCN') or '')},\n"
         f"  derivatives: {js_str(w.get('derivatives') or '')},\n"
         f"  distinguish: {js_str(w.get('distinguish') or '')},\n"
+        f"  synonyms: {json.dumps(syn, ensure_ascii=False)},\n"
+        f"  antonyms: {json.dumps(ant, ensure_ascii=False)},\n"
+        f"  examTag: {exam_js},\n"
         f"  acceptCN: {json.dumps(w.get('acceptCN') or [], ensure_ascii=False)}\n"
         "}"
     )

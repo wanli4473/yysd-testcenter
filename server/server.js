@@ -1268,13 +1268,13 @@ app.get("/api/tenant/bootstrap", function (req, res) {
   res.json({ ok: true, org: tenant.orgPublicPayload(org) });
 });
 
-// ngrok 内测：网页与 API 同端口，别人通过一个链接即可测试 AI 精听
+// ngrok 内测入口已关闭 — AI 须登录；见 /api/jingting/*、/api/speaking/grade
 app.get("/test/jingting", function (req, res) {
-  res.sendFile(path.join(__dirname, "..", "library", "practice", "jingting", "cam20-test1-section1.html"));
+  res.status(404).json({ error: "已下线，请从站内精听入口进入并登录" });
 });
 
 app.get("/test/speaking", function (req, res) {
-  res.sendFile(path.join(__dirname, "..", "speaking-select.html"));
+  res.status(404).json({ error: "已下线，请从站内口语入口进入并登录" });
 });
 
 app.post("/api/auth/send-code", async function (req, res) {
@@ -2692,7 +2692,7 @@ function shadowPass(accuracy, wordCount) {
   return accuracy >= thresh;
 }
 
-app.post("/api/jingting/shadow", async function (req, res) {
+app.post("/api/jingting/shadow", authMiddleware, async function (req, res) {
   var gate = canUseAi(req.ip || "unknown");
   if (!gate.ok) return res.status(429).json({ error: gate.msg });
   var heard = clipText(req.body && req.body.heard, 500);
@@ -2721,7 +2721,7 @@ app.post("/api/jingting/shadow", async function (req, res) {
   }
 });
 
-app.post("/api/jingting/judge", async function (req, res) {
+app.post("/api/jingting/judge", authMiddleware, async function (req, res) {
   var gate = canUseAi(req.ip || "unknown");
   if (!gate.ok) return res.status(429).json({ error: gate.msg });
   var heard = clipText(req.body && req.body.heard, 500);
@@ -2749,7 +2749,7 @@ var SPEAKING_GRADE_SYSTEM =
   '"questionFeedbacks":[{"question":"","answer":"","fixed":"","feedback":"","keyPoints":["",""]}]}. ' +
   "overallBand and each detailedScores field: number 0-9 in 0.5 steps. questionFeedbacks: one per answer provided.";
 
-app.post("/api/speaking/grade", async function (req, res) {
+app.post("/api/speaking/grade", authMiddleware, async function (req, res) {
   var gate = canUseAi(req.ip || "unknown");
   if (!gate.ok) return res.status(429).json({ error: gate.msg });
   var part = clipText(req.body && req.body.part, 20) || "part1";
@@ -2799,7 +2799,7 @@ app.post("/api/speaking/grade", async function (req, res) {
   }
 });
 
-app.post("/api/jingting/translate", async function (req, res) {
+app.post("/api/jingting/translate", authMiddleware, async function (req, res) {
   var gate = canUseAi(req.ip || "unknown");
   if (!gate.ok) return res.status(429).json({ error: gate.msg });
   var en = clipText(req.body && req.body.en, 500);

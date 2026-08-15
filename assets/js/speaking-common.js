@@ -135,13 +135,22 @@ window.YYSD_SPEAKING = (function () {
 
   function isAiReady() { return aiReady === true; }
 
+  function apiHeaders() {
+    var h = { "Content-Type": "application/json" };
+    try {
+      var t = localStorage.getItem("yysd:auth:token") || localStorage.getItem("yysd:teacher:token") || "";
+      if (t) h.Authorization = "Bearer " + t;
+    } catch (e) {}
+    return h;
+  }
+
   function grade(part, topics, answers) {
     if (!API_BASE) return Promise.reject(new Error(apiUnavailableMsg()));
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 90000);
     return fetch(API_BASE + "/api/speaking/grade", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders(),
       body: JSON.stringify({ part: part, topics: topics, answers: answers }),
       signal: ctrl.signal
     }).then(function (r) {
@@ -150,6 +159,7 @@ window.YYSD_SPEAKING = (function () {
         try { d = text ? JSON.parse(text) : {}; } catch (e) {
           throw new Error("评分失败（" + r.status + "）— 请稍后重试");
         }
+        if (r.status === 401) throw new Error("请先登录后再使用 AI 评分");
         if (!r.ok) {
           var msg = (d && d.error) || ("评分失败（" + r.status + "）");
           if (/上限|用完|额度/i.test(msg) && !/明日/.test(msg)) msg = msg.replace(/[。！!]?$/, "") + "，明日再来";

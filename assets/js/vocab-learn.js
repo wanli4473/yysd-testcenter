@@ -1,9 +1,10 @@
 /* vocab-learn.js — template learn UI (card + list); progress synced to bookshelf API */
 
-// ponytail: list display only; split senses[] if list/card keep diverging
+// ponytail: list = short gloss; card keeps full meaning 详解
 function yysdMeaningForList(raw, accept) {
+  if (accept && accept.length) return accept.join("；");
   var s = String(raw == null ? "" : raw).trim();
-  if (!s) return accept && accept.length ? accept.join("；") : "";
+  if (!s) return "";
   if (!/[A-Za-z]/.test(s) && !/(?:该词高中|须熟记|反义|同义|不规则|源自|易混|高考)/.test(s)) return s;
 
   s = s.replace(/[（(]([^）)]*)[）)]/g, function (_, inner) {
@@ -156,6 +157,37 @@ function yysdMeaningForList(raw, accept) {
     }
   }
 
+  function quizHrefForList() {
+    return "vocab-quiz.html?book=" + encodeURIComponent(bookId) +
+      "&lists=" + encodeURIComponent(listId);
+  }
+
+  function askStartListQuiz() {
+    var existing = document.getElementById("vl-quiz-overlay");
+    if (existing) existing.remove();
+    var ov = document.createElement("div");
+    ov.id = "vl-quiz-overlay";
+    ov.className = "vl-overlay show";
+    ov.innerHTML =
+      '<div class="vl-result-box" role="dialog" aria-modal="true">' +
+        "<h2>单词检测</h2>" +
+        '<div style="color:#4d625b;font-size:14px;margin-top:6px">确定开始本 List 的单词检测吗？</div>' +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px">' +
+          '<button type="button" class="vl-btn" id="vl-quiz-cancel">退出</button>' +
+          '<button type="button" class="vl-btn vl-btn-primary" id="vl-quiz-ok">确定</button>' +
+        "</div></div>";
+    document.body.appendChild(ov);
+    document.getElementById("vl-quiz-cancel").onclick = function () { ov.remove(); };
+    document.getElementById("vl-quiz-ok").onclick = function () {
+      location.href = quizHrefForList();
+    };
+  }
+
+  function bindQuizEntry() {
+    var btn = document.getElementById("btnQuizList");
+    if (btn) btn.onclick = askStartListQuiz;
+  }
+
   function shell(inner) {
     app.innerHTML =
       '<div class="vl-top-bar">' +
@@ -284,6 +316,7 @@ function yysdMeaningForList(raw, accept) {
           (state.blurAllOff ? "恢复默认模糊" : "本课全部明文") + "</button>" +
         '<button type="button" class="vl-btn" id="btnSpeakUk">🔊 英音</button>' +
         '<button type="button" class="vl-btn" id="btnSpeakUs">🔊 美音</button>' +
+        '<button type="button" class="vl-btn" id="btnQuizList">单词检测</button>' +
       "</div>" +
       '<div class="vl-word">' + esc(w.word) + "</div>" +
       '<div class="vl-ipa">' + esc(w.ipa || "") + "</div>" +
@@ -298,6 +331,7 @@ function yysdMeaningForList(raw, accept) {
       "</div>";
 
     bindLearnChrome();
+    bindQuizEntry();
     document.getElementById("btnSpeakUk").onclick = function () { speak(w.word, 1); };
     document.getElementById("btnSpeakUs").onclick = function () { speak(w.word, 2); };
     document.getElementById("meaning").onclick = function () {

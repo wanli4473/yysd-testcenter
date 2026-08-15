@@ -3,7 +3,7 @@
 set -euo pipefail
 DIR=/opt/yysd/server
 OUT="$DIR/data/backups"
-KEEP=14
+KEEP=168 # hourly × 168 ≈ 7d local rollback (~0.5GB at current db size)
 mkdir -p "$OUT"
 cd "$DIR"
 STAMP=$(date -u +%Y-%m-%dT%H-%M-%SZ)

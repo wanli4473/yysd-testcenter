@@ -792,6 +792,17 @@
       loadAssignProgress().then(function () { renderAssignPicker(); });
       return;
     }
+    // Free deep-link from List 学习：只测指定 List，跳过准备页
+    if (!assignEventId && preRefs.length) {
+      meta.listIds = preRefs.slice();
+      startQuiz("", preRefs);
+      return;
+    }
+    if (!assignEventId && preBook && preListIds.length) {
+      meta.listIds = preListIds.slice();
+      startQuiz(preBook, preListIds);
+      return;
+    }
     A.api("/api/vocab-shelf/bookshelf")
       .then(function (shelf) {
         if (!shelf.books || !shelf.books.length) {

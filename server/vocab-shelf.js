@@ -128,7 +128,12 @@ function buildCatalog(repoRoot) {
 
   MAIN_BOOKS.forEach(function (def) {
     var lists = items.filter(function (it) {
-      return def.subjects.indexOf(it.subject) >= 0;
+      if (def.subjects.indexOf(it.subject) < 0) return false;
+      // ponytail: teacher HTML templates are not student Lists
+      var id = String(it.id || "");
+      var title = String(it.title || "");
+      if (/模版|template/i.test(id) || /模版|template/i.test(title)) return false;
+      return true;
     });
     lists.sort(function (a, b) {
       var ai = def.subjects.indexOf(a.subject);
@@ -338,10 +343,10 @@ function normalizeWord(w) {
     ipa: String(w.ipa || w.phonetic || "").trim(),
     pos: String(w.pos || "").trim(),
     meaning: meaning,
-    exampleEn: w.exampleEn || (em ? em[1].trim() : ex),
-    exampleZh: w.exampleZh || (em ? em[2].trim() : ""),
+    exampleEn: w.exampleEn || w.exampleEN || (em ? em[1].trim() : ex),
+    exampleZh: w.exampleZh || w.exampleCN || (em ? em[2].trim() : ""),
     collocations: coll,
-    root: w.root || "",
+    root: w.root || w.mnemonic || "",
     synonyms: Array.isArray(w.synonyms) ? w.synonyms : [],
     antonyms: Array.isArray(w.antonyms) ? w.antonyms : [],
     examTag: w.examTag || null,
@@ -615,23 +620,28 @@ function mountRoutes(app, opts) {
   });
 
   app.get("/api/vocab-shelf/bookshelf", authMiddleware, function (req, res) {
-    var cat = loadCatalog();
-    var rows = stmts.listShelf.all(req.user.sub);
-    res.json({
-      ok: true,
-      books: rows.map(function (r) {
-        var meta = bookSummary(cat.byId[r.book_id]);
-        var prog = progressMap(req.user.sub, r.book_id);
-        var doneLists = 0;
-        Object.keys(prog).forEach(function (k) { if (prog[k].done) doneLists++; });
-        return {
-          bookId: r.book_id,
-          addedAt: r.added_at,
-          book: meta || { id: r.book_id, label: r.book_id, kind: "unknown", listCount: 0 },
-          doneLists: doneLists
-        };
-      })
-    });
+    try {
+      var cat = loadCatalog();
+      var rows = stmts.listShelf.all(req.user.sub);
+      res.json({
+        ok: true,
+        books: rows.map(function (r) {
+          var meta = bookSummary(cat.byId[r.book_id]);
+          var prog = progressMap(req.user.sub, r.book_id);
+          var doneLists = 0;
+          Object.keys(prog).forEach(function (k) { if (prog[k].done) doneLists++; });
+          return {
+            bookId: r.book_id,
+            addedAt: r.added_at,
+            book: meta || { id: r.book_id, label: r.book_id, kind: "unknown", listCount: 0 },
+            doneLists: doneLists
+          };
+        })
+      });
+    } catch (e) {
+      console.error("[vocab-shelf/bookshelf]", e && e.message);
+      res.status(503).json({ error: "词库暂时不可用，请稍后重试" });
+    }
   });
 
   // ponytail: one round-trip for vocab hub desk; today/week words = sum(word_idx) on lists touched in range (index proxy, not event log)

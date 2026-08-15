@@ -376,11 +376,23 @@ function shadowCheck(text){
   var s = SENTENCES[cur];
   if(API_BASE){
     fetch(API_BASE + '/api/jingting/shadow', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST',
+      headers:(function(){
+        var h={'Content-Type':'application/json'};
+        try{
+          var t=localStorage.getItem('yysd:auth:token')||localStorage.getItem('yysd:teacher:token')||'';
+          if(t) h.Authorization='Bearer '+t;
+        }catch(e){}
+        return h;
+      })(),
       body: JSON.stringify({ heard:text, target:s.en })
-    }).then(function(r){ return r.json(); })
+    }).then(function(r){ return r.json().then(function(d){ d._status=r.status; return d; }); })
       .then(function(d){
-        if(d.error){ verdict.className='verdict show no'; verdict.innerHTML='<b>❌</b> '+d.error; return; }
+        if(d._status===401 || d.error){
+          verdict.className='verdict show no';
+          verdict.innerHTML='<b>❌</b> '+(d._status===401?'请先登录后再使用 AI 跟读':d.error);
+          return;
+        }
         showShadowResult(d, text);
       })
       .catch(function(){
