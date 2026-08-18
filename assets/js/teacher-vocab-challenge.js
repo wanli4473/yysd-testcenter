@@ -15,6 +15,30 @@
     return (s && (s.displayName || s.name || s.phone)) || ("学生 #" + (s && s.id));
   }
 
+  function formatProgress(s) {
+    var prog = s.progress;
+    if (!prog) return "—";
+    if (prog.progressDay) {
+      var tasks = s.todayTasks || [];
+      var done = tasks.filter(function (t) { return t.status === "completed"; }).length;
+      var total = tasks.length;
+      var line = "第 " + prog.progressDay + " 天";
+      if (s.programComplete) line += " · 已完成";
+      else if (total) line += " · 今日 " + done + "/" + total;
+      return line;
+    }
+    return "已通 L" + prog.clearedListNo + " · 下一 L" + prog.nextListNo;
+  }
+
+  function formatTodayTasks(s) {
+    var tasks = s.todayTasks || [];
+    if (!tasks.length) return "—";
+    return tasks.map(function (t) {
+      var mark = t.status === "completed" ? "✓" : t.status === "failed" ? "!" : "○";
+      return mark + " L" + t.listNo + (t.taskType === "review" ? "复" : "新");
+    }).join(" ");
+  }
+
   function paint(students) {
     if (!students.length) {
       root.innerHTML = '<div class="state state--brand teacher-empty"><h3>暂无学生</h3><p>请先在「学生分配」中绑定学生。</p></div>';
@@ -22,19 +46,17 @@
     }
     root.innerHTML =
       '<div class="table-wrap"><table class="data teacher-table">' +
-        "<thead><tr><th>学生</th><th>当前词册</th><th>进度</th><th>抽测池 / 错题本</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>学生</th><th>当前词册</th><th>进度</th><th>今日任务</th><th>抽测池 / 错题本</th><th>操作</th></tr></thead>" +
         "<tbody>" +
         students.map(function (s) {
           var asg = s.assignment;
-          var prog = s.progress;
           var pool = s.pool;
           return "<tr data-id=\"" + s.studentId + "\">" +
             "<td><b>" + esc(label(s)) + "</b><br><span class=\"teacher-card__meta\">" +
               esc(s.phone || "") + "</span></td>" +
             "<td>" + (asg ? esc(asg.bookId) : "未布置") + "</td>" +
-            "<td>" + (prog
-              ? ("已通 L" + prog.clearedListNo + " · 下一 L" + prog.nextListNo)
-              : "—") + "</td>" +
+            "<td>" + esc(formatProgress(s)) + "</td>" +
+            "<td><span class=\"teacher-card__meta\">" + esc(formatTodayTasks(s)) + "</span></td>" +
             "<td>" + (pool
               ? ("池 " + pool.active + " · 顽固 " + pool.stubborn + " · 本 " + pool.notebook)
               : "—") + "</td>" +
