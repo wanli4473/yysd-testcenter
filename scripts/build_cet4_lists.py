@@ -211,8 +211,8 @@ body {{ font-family:"PingFang SC","Inter",sans-serif; background:var(--bg); colo
       '<button class="btn-play btn-play-card" data-word="'+esc(w.word)+'">▶</button></div>'+
       '<div><span class="word-pos">'+esc(w.pos)+'</span><span>'+esc(w.meaning)+'</span></div>'+
       '<div class="word-blocks">'+
-        block('记', w.mnemonic)+
-        block('考', w.collocations || w.phrases)+
+        block('记', w.mnemonic || w.root)+
+        block('考', w.phrases || w.collocations)+
         block('例', w.example)+
         block('派', w.derivatives)+
         block('辨', w.distinguish)+
