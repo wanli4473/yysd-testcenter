@@ -23,6 +23,8 @@ assert.ok(ui.indexOf("/api/vocab-challenge/submit-new") >= 0, "submit-new");
 assert.ok(ui.indexOf("/api/vocab-challenge/submit-review") >= 0, "submit-review");
 assert.ok(ui.indexOf("/api/vocab-challenge/notebook") >= 0, "notebook");
 assert.ok(ui.indexOf("先选中文含义，再拼写") >= 0 || ui.indexOf("先选中文") >= 0, "A then D");
+assert.ok(ui.indexOf("HP_MAX") >= 0 && ui.indexOf("starsHtml") >= 0, "hp stars");
+assert.ok(html.indexOf("vc-hp") >= 0, "hp css");
 
 var zone = read("assets/js/zone.js");
 assert.ok(zone.indexOf("vocab-challenge.html") >= 0, "zone links challenge");

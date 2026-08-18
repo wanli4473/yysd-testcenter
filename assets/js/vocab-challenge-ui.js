@@ -7,6 +7,7 @@
   var params = new URLSearchParams(location.search);
   var view = params.get("view") || "hub"; // hub | notebook | practice
 
+  var HP_MAX = 5;
   var session = {
     attemptId: 0,
     phase: "",
@@ -140,6 +141,34 @@
     if (phase === "retest") return "错词重测";
     if (phase === "makeup") return "补考循环";
     return phase || "";
+  }
+
+  function livesLeft() {
+    var n = 0;
+    for (var i = 0; i < session.answers.length; i++) {
+      if (!session.answers[i].correct) n++;
+    }
+    return Math.max(0, HP_MAX - n);
+  }
+
+  function starsHtml() {
+    var left = livesLeft();
+    var html = '<aside class="vc-hp" aria-label="血量 ' + left + "/" + HP_MAX + '">';
+    for (var i = 0; i < HP_MAX; i++) {
+      html += '<span class="star' + (i >= left ? " lost" : "") + '" aria-hidden="true">★</span>';
+    }
+    return html + "</aside>";
+  }
+
+  function paintStars() {
+    var el = root.querySelector(".vc-hp");
+    if (!el) return;
+    var left = livesLeft();
+    el.setAttribute("aria-label", "血量 " + left + "/" + HP_MAX);
+    var stars = el.querySelectorAll(".star");
+    for (var i = 0; i < stars.length; i++) {
+      stars[i].classList.toggle("lost", i >= left);
+    }
   }
 
   // ---- hub ----
@@ -291,7 +320,10 @@
     session.answered = false;
     var opts = meaningOptions(w, session.words, 4);
     var labels = ["A", "B", "C", "D"];
+    var showHp = session.phase === "new_words";
     shell(
+      '<div class="vc-quiz-row">' +
+        '<div class="vc-quiz-main">' +
       noticesHtml(session.idx === 0 ? session.notices : []) +
       '<p class="vl-listen-hint">' + esc(phaseLabel(session.phase)) +
         " · 听发音，先选中文含义，再拼写英文</p>" +
@@ -311,6 +343,9 @@
       '<div class="vl-nav-row">' +
         '<button type="button" class="vl-btn" id="vc-abort">退出（作废）</button>' +
         '<button type="button" class="vl-btn vl-btn-primary" id="qnext" disabled>下一题 →</button>' +
+      "</div>" +
+        "</div>" +
+        (showHp ? starsHtml() : "") +
       "</div>",
       "List " + session.listNo
     );
@@ -365,6 +400,7 @@
       fb.className = "vl-feedback show " + (ok ? "ok" : "fail");
       fb.textContent = ok ? "正确" : ("错误 · 答案 " + w.word);
       session.answers.push({ word: w.word, correct: ok, userAnswer: spell });
+      if (showHp) paintStars();
       document.getElementById("qnext").disabled = false;
     }
 
