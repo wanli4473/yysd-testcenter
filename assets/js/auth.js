@@ -19,6 +19,9 @@ window.YYSD_AUTH = (function () {
   var AUTH_COOKIE = "yysd_auth";
   var ICP_TEXT = "皖ICP备2026021555号-1";
   var ICP_URL = "https://beian.miit.gov.cn/";
+  var MPS_TEXT = "皖公网安备34010402705009号";
+  var MPS_URL = "https://beian.mps.gov.cn/#/query/webSearch?code=34010402705009";
+  var MPS_ICON = "assets/img/gongan.png";
   var PUBLIC_PAGES = {
     "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
     "agreement.html": 1, "privacy.html": 1, "report.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
@@ -106,8 +109,8 @@ window.YYSD_AUTH = (function () {
       if (!p) continue;
       var tag = p.tagName;
       if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT") continue;
-      if (p.getAttribute && (p.getAttribute("data-icp") != null || p.getAttribute("data-report") != null)) continue;
-      if (p.closest && (p.closest("[data-icp]") || p.closest("[data-report]"))) continue;
+      if (p.getAttribute && (p.getAttribute("data-icp") != null || p.getAttribute("data-report") != null || p.getAttribute("data-mps") != null)) continue;
+      if (p.closest && (p.closest("[data-icp]") || p.closest("[data-report]") || p.closest("[data-mps]"))) continue;
       var t = node.nodeValue;
       if (!t || (t.indexOf("优益思达") < 0 && t.indexOf("YYSD") < 0 && t.indexOf("Yysd") < 0)) continue;
       var next = t;
@@ -128,6 +131,7 @@ window.YYSD_AUTH = (function () {
       var yearText = year ? year.textContent : String(new Date().getFullYear());
       var icp = el.querySelector("[data-icp]");
       var report = el.querySelector("[data-report]");
+      var mps = el.querySelector("[data-mps]");
       el.innerHTML = "© <span id=\"year\">" + yearText + "</span> ";
       if (report) el.appendChild(report);
       if (icp) el.appendChild(icp);
@@ -137,6 +141,7 @@ window.YYSD_AUTH = (function () {
         span.setAttribute("data-icp", "");
         el.appendChild(span);
       }
+      if (mps) el.appendChild(mps);
     });
   }
 
@@ -667,6 +672,29 @@ window.YYSD_AUTH = (function () {
       link.rel = "noopener noreferrer";
       link.setAttribute("data-icp", "");
       link.textContent = ICP_TEXT;
+    });
+    bindMps();
+  }
+
+  // ponytail: 公安备案号跟 ICP 一样注入页脚，不改每一页 HTML
+  function bindMps() {
+    if (!MPS_TEXT) return;
+    document.querySelectorAll(".minimal-footer__copy").forEach(function (el) {
+      if (el.querySelector("[data-mps]")) return;
+      var a = document.createElement("a");
+      a.href = MPS_URL;
+      a.target = "_blank";
+      a.rel = "noreferrer";
+      a.className = "site-mps";
+      a.setAttribute("data-mps", "");
+      var img = document.createElement("img");
+      img.src = MPS_ICON;
+      img.alt = "";
+      img.width = 14;
+      img.height = 14;
+      a.appendChild(img);
+      a.appendChild(document.createTextNode(MPS_TEXT));
+      el.appendChild(a);
     });
   }
 
