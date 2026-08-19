@@ -279,7 +279,11 @@ window.YYSD_AUTH = (function () {
 
   function getToken() {
     try {
-      return localStorage.getItem(TOKEN_KEY) || localStorage.getItem(TEACHER_TOKEN_KEY) || "";
+      var student = localStorage.getItem(TOKEN_KEY);
+      if (student) return student;
+      // ponytail: site-mode student APIs must not fall back to teacher JWT
+      if (localStorage.getItem("yysd:teacher:mode") === "site") return "";
+      return localStorage.getItem(TEACHER_TOKEN_KEY) || "";
     } catch (e) { return ""; }
   }
 
@@ -287,11 +291,24 @@ window.YYSD_AUTH = (function () {
     var n = pageName();
     return n === "teacher.html" || n === "teacher-calendar.html" ||
       n === "admin-assign.html" || n === "teacher-login.html" ||
-      n === "teacher-register.html" || n === "platform.html";
+      n === "teacher-register.html" || n === "platform.html" ||
+      n === "teacher-diagnostic.html" || n === "teacher-student-diagnostic.html" ||
+      n === "teacher-vocab-challenge.html";
+  }
+
+  function isTeacherSiteMode() {
+    try {
+      return localStorage.getItem("yysd:teacher:mode") === "site" &&
+        !!localStorage.getItem(TOKEN_KEY) &&
+        !!localStorage.getItem(TEACHER_TOKEN_KEY);
+    } catch (e) {
+      return false;
+    }
   }
 
   function isTeacher() {
     try {
+      if (isTeacherSiteMode()) return false;
       // student session wins on student-facing pages (avoids dashboard bounce)
       if (localStorage.getItem(TOKEN_KEY)) return false;
       return !!localStorage.getItem(TEACHER_TOKEN_KEY);
@@ -458,6 +475,49 @@ window.YYSD_AUTH = (function () {
     });
   }
 
+  function teacherSiteModeNeedsRestore() {
+    try {
+      if (localStorage.getItem("yysd:teacher:mode") !== "site") return false;
+      if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return false;
+      var stu = localStorage.getItem(TOKEN_KEY);
+      var tea = localStorage.getItem(TEACHER_TOKEN_KEY);
+      return !stu || stu === tea;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var siteRestoreP = null;
+
+  /** Re-issue shadow-student JWT when teacher re-login polluted yysd:auth:token. */
+  function ensureTeacherSiteStudentToken() {
+    if (!teacherSiteModeNeedsRestore()) return Promise.resolve();
+    if (siteRestoreP) return siteRestoreP;
+    var tea = localStorage.getItem(TEACHER_TOKEN_KEY);
+    siteRestoreP = fetch(API_BASE + "/api/teacher/site-mode/enter", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Tenant-Slug": tenantSlug(),
+        Authorization: "Bearer " + tea
+      }
+    }).then(function (r) {
+      return r.text().then(function (text) {
+        var d = null;
+        try { d = text ? JSON.parse(text) : null; } catch (e) { d = null; }
+        if (!r.ok) throw new Error((d && d.error) || "无法恢复体验模式");
+        applyLogin({ token: d.token, user: d.user, role: "student" });
+        return d;
+      });
+    }).catch(function () {
+      try { localStorage.setItem("yysd:teacher:mode", "admin"); } catch (e) {}
+      return null;
+    }).finally(function () {
+      siteRestoreP = null;
+    });
+    return siteRestoreP;
+  }
+
   function authHeaders() {
     var h = { "Content-Type": "application/json", "X-Tenant-Slug": tenantSlug() };
     var t = getToken();
@@ -467,27 +527,29 @@ window.YYSD_AUTH = (function () {
 
   function api(path, opts) {
     opts = opts || {};
-    return fetch(API_BASE + path, {
-      method: opts.method || "GET",
-      headers: authHeaders(),
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
-      cache: "no-store"
-    }).then(function (r) {
-      return r.text().then(function (text) {
-        var d = null;
-        // ponytail: 304/empty used to parse as {} and wipe yysd:results on sync
-        if (!text) {
-          throw new Error(r.status === 304
-            ? "成绩同步失败，请强刷后重试"
-            : "服务器返回空响应（" + r.status + "）");
-        }
-        try { d = JSON.parse(text); } catch (e) {
-          throw new Error(r.status === 502 || r.status === 504
-            ? "服务器暂时不可用，请稍后重试"
-            : "服务器返回异常（" + r.status + "），请确认已部署最新版本");
-        }
-        if (!r.ok) throw new Error((d && d.error) || "请求失败");
-        return d;
+    return ensureTeacherSiteStudentToken().then(function () {
+      return fetch(API_BASE + path, {
+        method: opts.method || "GET",
+        headers: authHeaders(),
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+        cache: "no-store"
+      }).then(function (r) {
+        return r.text().then(function (text) {
+          var d = null;
+          // ponytail: 304/empty used to parse as {} and wipe yysd:results on sync
+          if (!text) {
+            throw new Error(r.status === 304
+              ? "成绩同步失败，请强刷后重试"
+              : "服务器返回空响应（" + r.status + "）");
+          }
+          try { d = JSON.parse(text); } catch (e) {
+            throw new Error(r.status === 502 || r.status === 504
+              ? "服务器暂时不可用，请稍后重试"
+              : "服务器返回异常（" + r.status + "），请确认已部署最新版本");
+          }
+          if (!r.ok) throw new Error((d && d.error) || "请求失败");
+          return d;
+        });
       });
     });
   }
@@ -877,8 +939,20 @@ window.YYSD_AUTH = (function () {
     }).catch(function () { return null; });
   }
 
+  function loadTeacherModeScript() {
+    try {
+      if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return;
+      if (document.querySelector("script[data-teacher-mode]")) return;
+      var s = document.createElement("script");
+      s.src = "assets/js/teacher-mode.js?v=20260819mode1";
+      s.setAttribute("data-teacher-mode", "1");
+      document.body.appendChild(s);
+    } catch (e) {}
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     bootstrapTenant().then(function () {
+      loadTeacherModeScript();
       if (redirectLoggedInAwayFromMarketing()) return;
       if (!guardPage()) return;
       return refreshSessionFlags().then(function () {
@@ -908,6 +982,9 @@ window.YYSD_AUTH = (function () {
     setToken: setToken,
     applyLogin: applyLogin,
     isTeacher: isTeacher,
+    isTeacherSiteMode: isTeacherSiteMode,
+    teacherSiteModeNeedsRestore: teacherSiteModeNeedsRestore,
+    ensureTeacherSiteStudentToken: ensureTeacherSiteStudentToken,
     isAdmin: isAdmin,
     isPlatformAdmin: isPlatformAdmin,
     getUser: getUser,

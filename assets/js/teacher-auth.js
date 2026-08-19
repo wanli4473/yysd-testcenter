@@ -28,6 +28,7 @@ window.YYSD_TEACHER = (function () {
     return n === "teacher.html" || n === "teacher-calendar.html" ||
       n === "teacher-diagnostic.html" ||
       n === "teacher-student-diagnostic.html" ||
+      n === "teacher-vocab-challenge.html" ||
       n === "admin-assign.html" || isPublicPage();
   }
 
@@ -43,6 +44,7 @@ window.YYSD_TEACHER = (function () {
       localStorage.removeItem(TEACHER_KEY);
       localStorage.removeItem(STUDENT_TOKEN_KEY);
       localStorage.removeItem("yysd:auth:user");
+      localStorage.removeItem("yysd:teacher:mode");
     } catch (e) {}
     setAuthCookie(false);
   }
@@ -60,10 +62,9 @@ window.YYSD_TEACHER = (function () {
     }
     try {
       localStorage.setItem(TOKEN_KEY, t);
-      localStorage.setItem(STUDENT_TOKEN_KEY, t);
+      // ponytail: never mirror teacher JWT into yysd:auth:token — site-mode uses a shadow student
     } catch (e) {}
     setAuthCookie(true);
-    if (!t) setTeacher(null);
   }
 
   function getTeacher() {
@@ -156,7 +157,7 @@ window.YYSD_TEACHER = (function () {
 
   document.addEventListener("DOMContentLoaded", function () {
     if (!isTeacherPage()) return;
-    // Cross-subdomain impersonation handoff
+    // ponytail: teacher-mode.js is loaded synchronously on admin teacher pages
     try {
       var m = location.search.match(/[?&]impersonate=([^&]+)/);
       if (m) {

@@ -135,27 +135,28 @@
         body: { phone: phoneEl.value.trim(), password: passwordEl.value }
       })
         .then(function (d) {
+          var teacher = d.teacher || { phone: phoneEl.value.trim() };
           T.setToken(d.token);
-          T.setTeacher(d.teacher || { phone: phoneEl.value.trim() });
-          try {
-            var teacher = d.teacher || {};
-            localStorage.setItem("yysd:auth:user", JSON.stringify({
-              phone: teacher.phone || phoneEl.value.trim(),
-              role: "teacher",
-              displayName: teacher.name || "",
-              avatarUrl: teacher.avatarUrl || "",
-              isAdmin: !!teacher.isAdmin,
-              isPlatformAdmin: !!teacher.isPlatformAdmin
-            }));
-            localStorage.setItem("yysd:teacher:user", JSON.stringify({
-              phone: teacher.phone || phoneEl.value.trim(),
-              name: teacher.name || "",
-              avatarUrl: teacher.avatarUrl || "",
-              isAdmin: !!teacher.isAdmin,
-              isPlatformAdmin: !!teacher.isPlatformAdmin
-            }));
-          } catch (e) {}
-          location.href = next;
+          T.setTeacher(teacher);
+          var hadSite = false;
+          try { hadSite = localStorage.getItem("yysd:teacher:mode") === "site"; } catch (e) {}
+          if (!hadSite) {
+            location.href = next;
+            return;
+          }
+          return T.api("/api/teacher/site-mode/enter", { method: "POST" }).then(function (site) {
+            try {
+              localStorage.setItem("yysd:teacher:mode", "site");
+              localStorage.setItem("yysd:auth:token", site.token);
+              localStorage.setItem("yysd:auth:user", JSON.stringify({
+                phone: (site.user && site.user.phone) || "",
+                role: "student",
+                displayName: (site.user && site.user.displayName) || "",
+                avatarUrl: (site.user && site.user.avatarUrl) || ""
+              }));
+            } catch (e) {}
+            location.href = next;
+          });
         })
         .catch(function (e) { showMsg(e.message); });
     });

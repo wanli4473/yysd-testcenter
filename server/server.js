@@ -16,6 +16,7 @@ const diagnostic = require("./diagnostic");
 const hsVocab = require("./hs-vocab");
 const vocabShelf = require("./vocab-shelf");
 const vocabChallenge = require("./vocab-challenge");
+const teacherPreview = require("./teacher-preview");
 
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -77,7 +78,8 @@ db.exec(
 try { db.exec("ALTER TABLE users ADD COLUMN password_hash TEXT"); } catch (e) { /* already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN display_name TEXT"); } catch (e) { /* already exists */ }
 try { db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT"); } catch (e) { /* already exists */ }
-try { db.exec("ALTER TABLE teachers ADD COLUMN avatar_url TEXT"); } catch (e) { /* already exists */ }
+try { db.exec("ALTER TABLE teachers ADD COLUMN preview_user_id INTEGER"); } catch (e) { /* already exists */ }
+teacherPreview.ensureSchema(db);
 
 var tenantInit = tenant.initTenant(db);
 var orgStmts = tenantInit.stmts;
@@ -1455,6 +1457,11 @@ app.post("/api/auth/login", function (req, res) {
     var tokenTeacher = isAdminPhone(phone)
       ? Object.assign({}, teacher, { org_id: org.id })
       : teacher;
+    try {
+      teacherPreview.provisionTeacher(db, stmts, vocabChallenge, tokenTeacher);
+    } catch (provErr) {
+      console.error("[auth/login] teacher preview provision", provErr && provErr.message);
+    }
     var teacherToken = issueTeacherToken(tokenTeacher, phone);
     if (!teacherToken) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
     return res.json({
@@ -1723,6 +1730,11 @@ app.post("/api/teacher/register", function (req, res) {
   var teacher = stmts.findTeacher.get(phone);
   var token = issueTeacherToken(teacher, phone);
   if (!token) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
+  try {
+    teacherPreview.provisionTeacher(db, stmts, vocabChallenge, teacher);
+  } catch (provErr) {
+    console.error("[teacher/register] preview provision", provErr && provErr.message);
+  }
   if (becomeOrgAdmin) {
     auditPlatform(phone, "org.admin_register", org.id, org.slug + (staffKey ? " key" : " invite"));
   }
@@ -1795,6 +1807,12 @@ app.post("/api/teacher/login", function (req, res) {
   var tokenTeacher = isAdminPhone(phone)
     ? Object.assign({}, teacher, { org_id: org.id })
     : teacher;
+
+  try {
+    teacherPreview.provisionTeacher(db, stmts, vocabChallenge, tokenTeacher);
+  } catch (provErr) {
+    console.error("[teacher/login] preview provision", provErr && provErr.message);
+  }
 
   var token = issueTeacherToken(tokenTeacher, phone);
   if (!token) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
@@ -4188,6 +4206,15 @@ vocabShelf.mountRoutes(app, {
 });
 
 // Vocab challenge (闯关)
+teacherPreview.mountRoutes(app, {
+  db: db,
+  stmts: stmts,
+  teacherAuthMiddleware: teacherAuthMiddleware,
+  issueToken: issueToken,
+  authUserPayload: authUserPayload,
+  vocabChallenge: vocabChallenge
+});
+
 vocabChallenge.mountRoutes(app, {
   db: db,
   authMiddleware: authMiddleware,
@@ -4223,6 +4250,12 @@ if (require.main === module) {
   console.assert(parseWordFromReply('x\nWORD_JSON:{"word":"cat","ipa":"/kæt/","meaning":"猫"}').word === "cat");
   console.assert(stripWordMarker("hello\nWORD_JSON:{\"word\":\"a\"}") === "hello");
   vocabChallenge.selfCheck();
+  try {
+    teacherPreview.selfCheck(db, stmts, vocabChallenge);
+  } catch (e) {
+    console.error("teacher-preview self-check failed", e.message);
+    process.exitCode = 1;
+  }
   try {
     console.assert(loadActiveBank().part1.length > 0);
     console.assert(buildExamPack("mock").part2.title.indexOf("Describe") === 0);
