@@ -92,8 +92,28 @@ var path = require("path");
 var serverPath = path.join(__dirname, "..", "server", "server.js");
 var src = fs.readFileSync(serverPath, "utf8");
 assert(src.indexOf("__yysdScoreBridgeV2") >= 0, "V2 bridge marker missing");
+assert(src.indexOf("fromResCorrect") >= 0, "bridge must parse #resCorrect (Cambridge upload HTML)");
+assert(src.indexOf("upload-\" + evId") >= 0, "autoComplete must fallback via assignmentEventId for uploads");
 assert(/wrong:wrong/.test(src) || /wrong: wrong/.test(src) || src.indexOf("wrong:wrong") >= 0 || src.indexOf(",wrong:wrong") >= 0, "bridge should post wrong");
 assert(src.indexOf("getAttemptByStamp") >= 0, "attempt upsert helper missing");
+assert(/out\.wrong = wrong/.test(src) || src.indexOf("if (wrong.length) out.wrong = wrong") >= 0, "sanitizeScore must keep wrong[]");
+
+var examJs = fs.readFileSync(path.join(__dirname, "..", "assets/js/exam.js"), "utf8");
+assert(examJs.indexOf("function persistWrongUpgrade") >= 0, "exam.js must upgrade empty→wrong after scrape race");
+assert(examJs.indexOf("lastScorePushKey === pushKey") >= 0 && examJs.indexOf("persistWrongUpgrade(incomingWrong)") >= 0, "duplicate score post must still accept later wrong[]");
+assert(examJs.indexOf("wrongCaptureOf") >= 0, "exam.js must classify wrongCapture");
+
+var resultsHtml = fs.readFileSync(path.join(__dirname, "..", "results.html"), "utf8");
+assert(resultsHtml.indexOf("AI 错题讲解即将上线") < 0, "results.html must not stub-disable 查看错题");
+assert(resultsHtml.indexOf("results-wrongs.js") >= 0, "results.html must load wrongs hub");
+assert(resultsHtml.indexOf('id="results-wrongs"') >= 0, "results.html must have #results-wrongs");
+assert(resultsHtml.indexOf("wrong-record.html?item=") >= 0, "results rows must link to wrong-record");
+assert(resultsHtml.indexOf("hashchange") >= 0, "results must listen to hashchange");
+assert(resultsHtml.indexOf('qs.get("event") ? "wrongs"') >= 0, "results ?event= opens wrongs tab");
+
+var teacherJs = fs.readFileSync(path.join(__dirname, "..", "assets/js/teacher.js"), "utf8");
+assert(teacherJs.indexOf("data-item") >= 0, "teacher 查看错题 must keep item fallback");
+assert(teacherJs.indexOf("data-copy-wrong") >= 0, "teacher wrong list must be copyable");
 
 console.log("ok: wrong capture");
 console.log("");

@@ -646,7 +646,13 @@ var SCORE_BRIDGE_SCRIPT =
   "}" +
   "if(total>0&&isFinite(score))report(score,total);" +
   "}" +
-  "function run(){fromSummary();fromVocabResults();}" +
+  "function fromResCorrect(){" +
+  "var rc=document.getElementById('resCorrect');" +
+  "if(!rc)return;" +
+  "var m=String(rc.textContent||'').match(/(\\d+)\\s*\\/\\s*(\\d+)/);" +
+  "if(m&&m[2]!=='0')report(Number(m[1]),Number(m[2]));" +
+  "}" +
+  "function run(){fromSummary();fromVocabResults();fromResCorrect();}" +
   "function watch(){" +
   "var el=document.getElementById('testResults')||document.getElementById('resultArea');" +
   "if(!el){setTimeout(watch,400);return;}" +
@@ -655,6 +661,8 @@ var SCORE_BRIDGE_SCRIPT =
   "if(sum)new MutationObserver(run).observe(sum,{childList:true,subtree:true,characterData:true});" +
   "var rs=document.getElementById('resultsScore');" +
   "if(rs)new MutationObserver(run).observe(rs,{childList:true,characterData:true,subtree:true});" +
+  "var rc=document.getElementById('resCorrect');" +
+  "if(rc)new MutationObserver(run).observe(rc,{childList:true,characterData:true,subtree:true});" +
   "run();" +
   "}" +
   "if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch);else watch();" +
@@ -704,7 +712,7 @@ function readAssignmentHtml(eventId) {
   }
 }
 
-function autoCompleteAssignments(studentId, itemId) {
+function autoCompleteAssignments(studentId, itemId, assignmentEventId) {
   var rows = stmts.listOpenAssignmentsForStudent.all(studentId);
   var scoreRows = stmts.listScores.all(studentId);
   var scored = {};
@@ -718,6 +726,17 @@ function autoCompleteAssignments(studentId, itemId) {
     var allDone = ids.every(function (id) { return scored[id]; });
     if (allDone) stmts.setTaskStatus.run("COMPLETED", now, row.id, studentId);
   });
+  // ponytail: upload HTML fallback — linked_exercise_ids empty/missing still completes via event id
+  var evId = Number(assignmentEventId);
+  if (evId > 0 && itemId === "upload-" + evId) {
+    var task = stmts.getTaskStatus.get(evId, studentId);
+    if (task && task.status !== "COMPLETED") {
+      var evRow = stmts.getCalendarEvent.get(evId);
+      if (evRow && evRow.event_type === "ASSIGNMENT") {
+        stmts.setTaskStatus.run("COMPLETED", now, evId, studentId);
+      }
+    }
+  }
 }
 
 // ponytail: client-resized JPEG/PNG base64; switch to multipart+multer if avatars get big
@@ -2440,6 +2459,8 @@ function sanitizeScore(body) {
   if (wrongCapture === "ok" || wrongCapture === "empty_perfect" || wrongCapture === "empty_missed") {
     out.wrongCapture = wrongCapture;
   }
+  var wrong = sanitizeWrong(body.wrong);
+  if (wrong.length) out.wrong = wrong;
   return out;
 }
 
@@ -2489,7 +2510,7 @@ app.put("/api/scores/:itemId", authMiddleware, function (req, res) {
   } else {
     stmts.insertAttempt.run(req.user.sub, itemId, JSON.stringify(attempt), attemptAt);
   }
-  try { autoCompleteAssignments(req.user.sub, itemId); } catch (e) {
+  try { autoCompleteAssignments(req.user.sub, itemId, rec.assignmentEventId); } catch (e) {
     console.error("[yysd-api] calendar auto-complete", e && e.message);
   }
   res.json({ ok: true, score: rec });
