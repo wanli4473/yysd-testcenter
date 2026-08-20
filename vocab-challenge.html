@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="assets/css/style.css?v=20260723read">
   <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260723read">
   <link rel="stylesheet" href="assets/css/vocab-shelf.css?v=20260812s1">
-  <link rel="stylesheet" href="assets/css/vocab-learn.css?v=20260812q3">
+  <link rel="stylesheet" href="assets/css/vocab-learn.css?v=20260819ime3">
   <style>
     .vc-notice {
       margin: 0 0 14px;
@@ -52,6 +52,77 @@
     .vc-list-chip.is-today-new { border-color: #2d6b4f; background: #fff; }
     .vc-list-chip.is-today-review { border-color: #b8860b; background: #fffbf0; }
     .vc-list-chip.is-done-today { opacity: 0.72; }
+    .vc-stage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+      gap: 6px;
+      margin: 16px 0 8px;
+    }
+    .vc-stage-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      padding: 8px 4px;
+      border-radius: 10px;
+      border: 1px solid #d7e5de;
+      background: #f7fbf9;
+      font-size: 12px;
+      font-weight: 700;
+      color: #8a9e96;
+      user-select: none;
+    }
+    .vc-stage-chip span { font-size: 14px; line-height: 1.1; }
+    .vc-stage-chip small { font-size: 10px; font-weight: 600; }
+    .vc-stage-chip.is-current,
+    .vc-stage-chip.is-progress {
+      color: #1a2e2a;
+      border-color: #2d6b4f;
+      background: #fff;
+      box-shadow: 0 0 0 2px rgba(45, 107, 79, 0.28);
+    }
+    .vc-stage-chip.is-completed {
+      color: #2d6b4f;
+      background: #eaf5ef;
+      border-color: #2d6b4f;
+      cursor: pointer;
+    }
+    .vc-stage-chip.is-completed:hover {
+      background: #dcefe4;
+      transform: translateY(-1px);
+    }
+    .vc-stage-chip.is-locked { opacity: 0.55; }
+    .vc-stage-hint { margin: 0 0 8px; }
+    .vc-stage-hint strong { color: #2d6b4f; }
+    .vc-stage-panel {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(45, 107, 79, 0.25);
+      background: #fff;
+    }
+    .vc-stage-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .vc-stage-panel-close {
+      border: 0;
+      background: transparent;
+      font-size: 20px;
+      line-height: 1;
+      color: #8a9e96;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+    .vc-stage-panel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
     .vc-day-card {
       margin: 0 0 16px;
       padding: 14px 16px;
@@ -75,6 +146,126 @@
       padding: 10px 0; border-bottom: 1px solid #e8efeb; font-size: 14px;
     }
     .vc-nb-row b { font-size: 15px; }
+    .vc-ebb-intro {
+      margin: 0 0 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(45, 107, 79, 0.22);
+      background: linear-gradient(180deg, #f7fbf9 0%, #fff 100%);
+      overflow: hidden;
+    }
+    .vc-ebb-intro-sum {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .vc-ebb-intro-sum::-webkit-details-marker { display: none; }
+    .vc-ebb-intro-sum::after {
+      content: "展开";
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      font-size: 12px;
+      color: #2d6b4f;
+      font-weight: 600;
+    }
+    .vc-ebb-intro[open] .vc-ebb-intro-sum::after { content: "收起"; }
+    .vc-ebb-intro-sum { position: relative; padding-right: 52px; }
+    .vc-ebb-intro-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a2e2a;
+    }
+    .vc-ebb-intro-teaser {
+      font-size: 13px;
+      color: #4a6358;
+      line-height: 1.45;
+    }
+    .vc-ebb-intro-body {
+      padding: 0 16px 16px;
+      border-top: 1px solid #e8efeb;
+    }
+    .vc-ebb-intro-lead {
+      margin: 14px 0 10px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #2d4a3a;
+    }
+    .vc-ebb-intro-note {
+      margin: 0 0 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #fff9e8;
+      border: 1px solid rgba(180, 110, 30, 0.2);
+      font-size: 13px;
+      line-height: 1.5;
+      color: #6b4a12;
+    }
+    .vc-ebb-rules {
+      margin: 0 0 12px;
+      padding-left: 18px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #3d5248;
+    }
+    .vc-ebb-rules li { margin-bottom: 6px; }
+    .vc-ebb-today-plan {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #eaf5ef;
+      border: 1px solid rgba(45, 107, 79, 0.18);
+      font-size: 13px;
+      color: #1f553f;
+      line-height: 1.5;
+    }
+    .vc-ebb-sub {
+      margin-top: 8px;
+      border: 1px solid #e8efeb;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .vc-ebb-sub summary {
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2d6b4f;
+      list-style: none;
+    }
+    .vc-ebb-sub summary::-webkit-details-marker { display: none; }
+    .vc-ebb-scroll {
+      max-height: 240px;
+      overflow: auto;
+      border-top: 1px solid #eef3f1;
+    }
+    .vc-ebb-scroll--tall { max-height: 320px; }
+    .vc-ebb-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .vc-ebb-table th,
+    .vc-ebb-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #eef3f1;
+      text-align: left;
+      vertical-align: top;
+    }
+    .vc-ebb-table th {
+      position: sticky;
+      top: 0;
+      background: #f7fbf9;
+      color: #4a6358;
+      font-weight: 600;
+    }
+    .vc-ebb-table tr.is-today td {
+      background: #fff9e8;
+      font-weight: 600;
+      color: #7a4a12;
+    }
   </style>
 </head>
 <body class="home-minimal page-premium">
@@ -110,6 +301,8 @@
   <script src="assets/js/nav.js?v=20260729admit2"></script>
   <script src="assets/js/ui.js?v=20260723motion"></script>
   <script src="assets/js/word-audio.js?v=20260812accent1"></script>
-  <script src="assets/js/vocab-challenge-ui.js?v=20260818ebb1"></script>
+  <script src="assets/js/english-spell-input.js?v=20260819ime3"></script>
+  <script src="assets/js/english-ime-gate.js?v=20260819ime3"></script>
+  <script src="assets/js/vocab-challenge-ui.js?v=20260819stage1"></script>
 </body>
 </html>

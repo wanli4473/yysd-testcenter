@@ -23,6 +23,8 @@
     assignmentEventId: 0, assignRefs: [], assignProgress: null
   };
   var words = [];
+  var lastQuizPayload = null;
+  var lastQuizOpts = null;
   var state = {
     phase: "setup", // setup | quiz | done
     quizOrder: [],
@@ -37,6 +39,10 @@
     gameOver: false,
     timer: null,
     timerLeft: TIME_SEC,
+    timerPaused: false,
+    imeBlocked: false,
+    imeViolations: 0,
+    imeDebounce: null,
     poolTotal: 0
   };
 
@@ -82,17 +88,36 @@
   }
 
   function quizMeaning(w) {
-    var cn = w && w.acceptCN;
-    if (Array.isArray(cn) && cn.length) return cn.filter(Boolean).join(" / ");
-    return String((w && w.meaning) || "");
+    if (!w) return "（暂无释义）";
+    var cn = w.acceptCN;
+    if (Array.isArray(cn) && cn.length) {
+      var joined = cn.filter(Boolean).join(" / ");
+      if (joined) return joined;
+    }
+    var m = String(w.meaning || "").trim();
+    return m || "（暂无释义）";
   }
 
   function meaningOptions(w, n) {
     n = n || 4;
     var correct = quizMeaning(w);
-    var pool = words.map(quizMeaning).filter(function (m) { return m && m !== correct; });
-    pool = shuffle(pool).slice(0, n - 1);
-    while (pool.length < n - 1) pool.push("（干扰项）" + (pool.length + 1));
+    var used = {};
+    used[correct] = true;
+    var pool = [];
+    var poolMeanings = shuffle(words.map(quizMeaning));
+    for (var i = 0; i < poolMeanings.length && pool.length < n - 1; i++) {
+      var m = poolMeanings[i];
+      if (!m || used[m]) continue;
+      used[m] = true;
+      pool.push(m);
+    }
+    while (pool.length < n - 1) {
+      var filler = "（干扰项）" + (pool.length + 1);
+      if (!used[filler]) {
+        used[filler] = true;
+        pool.push(filler);
+      }
+    }
     return shuffle([correct].concat(pool));
   }
 
@@ -259,7 +284,9 @@
 
   function beginWithWords(d, opts) {
     opts = opts || {};
-    words = d.words || [];
+    lastQuizPayload = d;
+    lastQuizOpts = opts;
+    words = shuffle(d.words || []);
     if (!words.length) throw new Error("没有可测单词");
     meta.bookId = d.bookId || (d.book && d.book.id) || meta.bookId;
     meta.bookLabel = d.bookLabel || (d.book && d.book.label) || meta.bookId;
@@ -277,8 +304,13 @@
     state.mistakes = [];
     state.gameOver = false;
     state.phase = "quiz";
+    state.imeViolations = 0;
+    if (state.imeDebounce) {
+      clearTimeout(state.imeDebounce);
+      state.imeDebounce = null;
+    }
     document.title = (opts.sessionId ? "错词重测 · " : "检测 · ") + meta.bookLabel + " · 优益思达";
-    renderQuizActive();
+    requireImeGate("start", renderQuizActive);
   }
 
   function ensureBookOnShelf(bookId) {
@@ -365,24 +397,101 @@
     });
   }
 
+  function tickTimer() {
+    state.timerLeft--;
+    var num = document.getElementById("timerNum");
+    if (num) {
+      num.textContent = state.timerLeft;
+      num.classList.toggle("warning", state.timerLeft <= 3);
+    }
+    if (state.timerLeft <= 0) {
+      clearInterval(state.timer);
+      state.timer = null;
+      if (!state.answered && !state.gameOver && !state.imeBlocked) onTimeout();
+    }
+  }
+
   function startTimer() {
     clearInterval(state.timer);
+    state.timerPaused = false;
     state.timerLeft = TIME_SEC;
     var wrap = document.getElementById("timerWrap");
     var num = document.getElementById("timerNum");
     if (wrap) wrap.style.display = "block";
     if (num) { num.textContent = state.timerLeft; num.className = "num"; }
-    state.timer = setInterval(function () {
-      state.timerLeft--;
-      if (num) {
-        num.textContent = state.timerLeft;
-        num.classList.toggle("warning", state.timerLeft <= 3);
+    state.timer = setInterval(tickTimer, 1000);
+  }
+
+  function pauseTimerForIme() {
+    if (state.timer) {
+      clearInterval(state.timer);
+      state.timer = null;
+    }
+    state.timerPaused = true;
+  }
+
+  function resumeTimerIfNeeded() {
+    if (!state.timerPaused || state.answered || state.gameOver || state.imeBlocked) return;
+    state.timerPaused = false;
+    if (state.timerLeft <= 0) return;
+    state.timer = setInterval(tickTimer, 1000);
+  }
+
+  function requireImeGate(reason, cb) {
+    state.imeBlocked = true;
+    pauseTimerForIme();
+    var gate = window.YYSD_IME_GATE;
+    var p = gate
+      ? gate.require({ reason: reason, strikes: reason === "violation" ? state.imeViolations : 0 })
+      : Promise.resolve();
+    p.then(function () {
+      state.imeBlocked = false;
+      cb();
+    });
+  }
+
+  function handleImeCheat() {
+    state.gameOver = true;
+    state.imeBlocked = true;
+    pauseTimerForIme();
+    if (window.YYSD_IME_GATE) YYSD_IME_GATE.reset();
+    var gate = window.YYSD_IME_GATE;
+    if (!gate || !gate.showCheat) {
+      alert("多次切换中文输入法，本次测试已作废。");
+      location.href = meta.sessionId
+        ? ("wrong-words.html?session=" + encodeURIComponent(meta.sessionId))
+        : "vocab-shelf.html";
+      return;
+    }
+    gate.showCheat({
+      onRestart: function () {
+        if (lastQuizPayload) beginWithWords(lastQuizPayload, lastQuizOpts || {});
+        else boot();
+      },
+      onExit: function () {
+        location.href = meta.sessionId
+          ? ("wrong-words.html?session=" + encodeURIComponent(meta.sessionId))
+          : "vocab-shelf.html";
       }
-      if (state.timerLeft <= 0) {
-        clearInterval(state.timer);
-        if (!state.answered && !state.gameOver) onTimeout();
-      }
-    }, 1000);
+    });
+  }
+
+  function onImeViolation() {
+    if (state.imeBlocked || state.answered || state.gameOver) return;
+    if (window.YYSD_IME_GATE && window.YYSD_IME_GATE.isOpen()) return;
+    if (state.imeDebounce) return;
+    state.imeDebounce = setTimeout(function () { state.imeDebounce = null; }, 1200);
+    state.imeViolations++;
+    var limit = (window.YYSD_IME_GATE && YYSD_IME_GATE.CHEAT_LIMIT) || 3;
+    if (state.imeViolations > limit) {
+      handleImeCheat();
+      return;
+    }
+    requireImeGate("violation", function () {
+      resumeTimerIfNeeded();
+      var spell = document.getElementById("spell");
+      if (spell && !spell.disabled) spell.focus();
+    });
   }
 
   function softPrompt(msg) {
@@ -392,47 +501,13 @@
     fb.textContent = msg;
   }
 
-  // ponytail: browsers can't force OS IME; latin inputmode + strip CJK is the real fix
-  function asciiSpell(s) {
-    return String(s || "").replace(/[^a-zA-Z'-]/g, "");
-  }
-
+  // ponytail: shared english-spell-input.js blocks Chinese IME autocomplete
   function bindEnglishSpellInput(el) {
-    if (!el || el.__yysdEnSpell) return;
-    el.__yysdEnSpell = true;
-    el.setAttribute("lang", "en");
-    el.setAttribute("inputmode", "latin");
-    el.setAttribute("autocomplete", "off");
-    el.setAttribute("autocorrect", "off");
-    el.setAttribute("autocapitalize", "off");
-    el.setAttribute("spellcheck", "false");
-    try { el.style.imeMode = "disabled"; } catch (e) { /* ignore */ }
-    var composing = false;
-    el.addEventListener("compositionstart", function () { composing = true; });
-    el.addEventListener("compositionend", function () {
-      composing = false;
-      var next = asciiSpell(el.value);
-      if (next !== el.value) {
-        el.value = next;
-        if (!state.answered) softPrompt("请切换到英文输入法后再拼写");
-      }
-    });
-    el.addEventListener("beforeinput", function (e) {
-      if (state.answered || composing) return;
-      if (e.inputType && e.inputType.indexOf("delete") === 0) return;
-      var data = e.data;
-      if (data == null) return;
-      if (/[^a-zA-Z'-]/.test(data)) {
-        e.preventDefault();
-        if (/[\u4e00-\u9fff]/.test(data) && !state.answered) {
-          softPrompt("请切换到英文输入法后再拼写");
-        }
-      }
-    });
-    el.addEventListener("input", function () {
-      if (composing) return;
-      var next = asciiSpell(el.value);
-      if (next !== el.value) el.value = next;
+    if (!window.YYSD_EN_SPELL || !window.YYSD_EN_SPELL.bind) return;
+    YYSD_EN_SPELL.bind(el, {
+      isLocked: function () { return !!state.answered || !!state.imeBlocked; },
+      onWarn: softPrompt,
+      onImeViolation: onImeViolation
     });
   }
 
@@ -493,7 +568,7 @@
         }).join("") +
       "</div>" +
       '<div class="vl-spell-row" id="spellRow" hidden>' +
-        '<input type="text" id="spell" lang="en" inputmode="latin" placeholder="拼写英文..." ' +
+        '<input type="text" id="spell" lang="en" inputmode="latin" placeholder="英文拼写（请用英文输入法）" ' +
           'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />' +
         '<button type="button" class="vl-btn vl-btn-primary" id="submit" disabled>提交</button>' +
       "</div>" +

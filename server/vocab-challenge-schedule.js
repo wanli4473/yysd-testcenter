@@ -100,6 +100,36 @@ function drawReviewWords(allWords, statsRows, count, rng) {
   return weightedSample(allWords, statsByWord, count || REVIEW_DRAW_SIZE, rng);
 }
 
+/** Client-readable summary: per-day plan + per-list new/review days. */
+function buildPlanSummary(bookId) {
+  var sched = loadSchedule(bookId);
+  if (!sched) return null;
+  var listIndex = {};
+  var dayRows = [];
+  for (var d = 1; d <= sched.totalDays; d++) {
+    var plan = sched.days[String(d)];
+    if (!plan) continue;
+    var newL = plan.new == null ? null : Math.floor(Number(plan.new) || 0) || null;
+    var revs = (plan.reviews || []).map(function (n) { return Math.floor(Number(n) || 0); }).filter(function (n) { return n > 0; });
+    dayRows.push({ day: d, new: newL, reviews: revs });
+    if (newL) {
+      if (!listIndex[newL]) listIndex[newL] = { newDay: d, reviewDays: [] };
+      listIndex[newL].newDay = d;
+    }
+    revs.forEach(function (r) {
+      if (!listIndex[r]) listIndex[r] = { newDay: null, reviewDays: [] };
+      listIndex[r].reviewDays.push(d);
+    });
+  }
+  return {
+    bookId: bookId,
+    totalDays: sched.totalDays,
+    totalLists: Object.keys(listIndex).length,
+    dayRows: dayRows,
+    listIndex: listIndex
+  };
+}
+
 module.exports = {
   REVIEW_DRAW_SIZE: REVIEW_DRAW_SIZE,
   MAX_REVIEW_WRONG: MAX_REVIEW_WRONG,
@@ -110,5 +140,6 @@ module.exports = {
   programComplete: programComplete,
   introducedListNos: introducedListNos,
   weightedSample: weightedSample,
-  drawReviewWords: drawReviewWords
+  drawReviewWords: drawReviewWords,
+  buildPlanSummary: buildPlanSummary
 };

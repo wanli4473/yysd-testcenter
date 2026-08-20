@@ -22,9 +22,9 @@
       var tasks = s.todayTasks || [];
       var done = tasks.filter(function (t) { return t.status === "completed"; }).length;
       var total = tasks.length;
-      var line = "第 " + prog.progressDay + " 天";
+      var line = "第 " + prog.progressDay + " 关";
       if (s.programComplete) line += " · 已完成";
-      else if (total) line += " · 今日 " + done + "/" + total;
+      else if (total) line += " · 本关 " + done + "/" + total;
       return line;
     }
     return "已通 L" + prog.clearedListNo + " · 下一 L" + prog.nextListNo;
@@ -46,7 +46,7 @@
     }
     root.innerHTML =
       '<div class="table-wrap"><table class="data teacher-table">' +
-        "<thead><tr><th>学生</th><th>当前词册</th><th>进度</th><th>今日任务</th><th>抽测池 / 错题本</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>学生</th><th>当前词册</th><th>进度</th><th>本关任务</th><th>抽测池 / 错题本</th><th>操作</th></tr></thead>" +
         "<tbody>" +
         students.map(function (s) {
           var asg = s.assignment;

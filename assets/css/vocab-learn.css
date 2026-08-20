@@ -240,13 +240,15 @@
 }
 .vl-spell-row[hidden] { display: none !important; }
 .vl-spell-row.is-open[hidden] { display: flex !important; }
-.vl-spell-row input {
+.vl-spell-row input,
+.yysd-en-spell {
   flex: 1;
   border: 2px solid #eef3f1;
   border-radius: 16px;
   padding: 10px 14px;
   font-size: 16px;
-  ime-mode: disabled; /* legacy hint; Chrome ignores — JS strips CJK */
+  ime-mode: disabled;
+  -webkit-ime-mode: disabled;
 }
 .vl-spell-row input.spell-ok {
   border-color: #2d6b4f;
@@ -329,3 +331,109 @@
 }
 .vq-check:hover { background: #f4f8f6; }
 .vq-check input { margin-top: 3px; }
+
+/* English IME gate — full-screen block before spell tests */
+.yysd-ime-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(12, 24, 18, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.yysd-ime-gate-open .vl-app,
+.yysd-ime-gate-open .minimal-shell {
+  pointer-events: none;
+  user-select: none;
+}
+.ime-gate-panel {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+}
+.ime-gate-panel h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  color: #1a3328;
+}
+.ime-gate-lead {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #3d5248;
+}
+.ime-gate-lead--warn {
+  color: #b42318;
+  font-weight: 600;
+}
+.ime-gate-tip {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7f74;
+}
+.ime-gate-probe-label {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #2d4a3a;
+}
+.ime-gate-progress {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ime-gate-char {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 2px solid #dce8e2;
+  font-weight: 700;
+  font-size: 16px;
+  color: #8a9e96;
+  text-transform: lowercase;
+}
+.ime-gate-char.active {
+  border-color: #2d6b4f;
+  color: #2d6b4f;
+  background: #eaf5ef;
+}
+.ime-gate-char.done {
+  border-color: #2d6b4f;
+  background: #2d6b4f;
+  color: #fff;
+}
+.ime-gate-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.ime-gate-err {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #b42318;
+  font-weight: 600;
+}
+.ime-gate-err[hidden] { display: none; }
+.ime-gate-strikes {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #8a5a00;
+}
+.ime-gate-strikes strong { color: #b42318; }
+.ime-gate-panel--cheat .ime-gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+.yysd-ime-gate--cheat .ime-gate-panel {
+  border: 2px solid #f5c2c0;
+}

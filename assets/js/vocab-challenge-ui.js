@@ -28,6 +28,11 @@
     livesMax: HP_MAX,
     timer: null,
     timerLeft: TIME_SEC,
+    timerPaused: false,
+    imeBlocked: false,
+    imeGatePassed: false,
+    imeViolations: 0,
+    imeDebounce: null,
     gameOver: false,
     pendingStart: null
   };
@@ -82,48 +87,43 @@
   }
 
   function quizMeaning(w) {
-    if (w.acceptCN && w.acceptCN.length) return w.acceptCN.join(" / ");
-    return String(w.meaning || "");
+    if (!w) return "（暂无释义）";
+    if (w.acceptCN && w.acceptCN.length) {
+      var cn = w.acceptCN.filter(Boolean).join(" / ");
+      if (cn) return cn;
+    }
+    var m = String(w.meaning || "").trim();
+    return m || "（暂无释义）";
   }
 
   function meaningOptions(w, pool, n) {
     n = n || 4;
     var correct = quizMeaning(w);
-    var distract = pool.map(quizMeaning).filter(function (m) { return m && m !== correct; });
-    distract = shuffle(distract).slice(0, n - 1);
-    while (distract.length < n - 1) distract.push("（干扰项）" + (distract.length + 1));
+    var used = {};
+    used[correct] = true;
+    var distract = [];
+    var poolMeanings = shuffle(pool.map(quizMeaning));
+    for (var i = 0; i < poolMeanings.length && distract.length < n - 1; i++) {
+      var m = poolMeanings[i];
+      if (!m || used[m]) continue;
+      used[m] = true;
+      distract.push(m);
+    }
+    while (distract.length < n - 1) {
+      var filler = "（干扰项）" + (distract.length + 1);
+      if (!used[filler]) {
+        used[filler] = true;
+        distract.push(filler);
+      }
+    }
     return shuffle([correct].concat(distract));
   }
 
-  function asciiSpell(s) {
-    return String(s || "").replace(/[^a-zA-Z'-]/g, "");
-  }
-
   function bindEnglishSpellInput(el) {
-    if (!el || el.__yysdEnSpell) return;
-    el.__yysdEnSpell = true;
-    el.setAttribute("lang", "en");
-    el.setAttribute("inputmode", "latin");
-    el.setAttribute("autocomplete", "off");
-    el.setAttribute("autocorrect", "off");
-    el.setAttribute("autocapitalize", "off");
-    el.setAttribute("spellcheck", "false");
-    var composing = false;
-    el.addEventListener("compositionstart", function () { composing = true; });
-    el.addEventListener("compositionend", function () {
-      composing = false;
-      var next = asciiSpell(el.value);
-      if (next !== el.value) el.value = next;
-    });
-    el.addEventListener("beforeinput", function (e) {
-      if (composing) return;
-      if (e.inputType && e.inputType.indexOf("delete") === 0) return;
-      if (e.data != null && /[^a-zA-Z'-]/.test(e.data)) e.preventDefault();
-    });
-    el.addEventListener("input", function () {
-      if (composing) return;
-      var next = asciiSpell(el.value);
-      if (next !== el.value) el.value = next;
+    if (!window.YYSD_EN_SPELL || !window.YYSD_EN_SPELL.bind) return;
+    YYSD_EN_SPELL.bind(el, {
+      isLocked: function () { return !!session.answered || !!session.imeBlocked; },
+      onImeViolation: onImeViolation
     });
   }
 
@@ -181,6 +181,168 @@
     return t === "review" ? "复习" : "新词";
   }
 
+  function stageChipSub(plan) {
+    if (!plan) return "—";
+    var parts = [];
+    if (plan.new) parts.push("L" + plan.new);
+    if (plan.reviews && plan.reviews.length) parts.push("复" + plan.reviews.join(","));
+    return parts.join("·") || "—";
+  }
+
+  function stageStatusLabel(st) {
+    if (st === "completed") return "已过";
+    if (st === "current") return "本关";
+    return "锁";
+  }
+
+  function stageGridHtml(stagesData, progressDay) {
+    var stages = (stagesData && stagesData.stages) || [];
+    if (!stages.length) return "";
+    return (
+      '<div class="vc-stage-grid">' +
+        stages.map(function (s) {
+          var cls = "vc-stage-chip is-" + s.status;
+          if (s.stage === progressDay) cls += " is-progress";
+          var attrs = s.practiceable
+            ? (' data-stage="' + s.stage + '" tabindex="0" role="button"')
+            : "";
+          return '<div class="' + cls + '"' + attrs + ' title="第 ' + s.stage + " 关 · " +
+            esc(stageChipSub(s.plan)) + '">' +
+            "<span>" + s.stage + "</span>" +
+            "<small>" + esc(stageStatusLabel(s.status)) + "</small>" +
+            "</div>";
+        }).join("") +
+      "</div>" +
+      '<p class="vc-meta vc-stage-hint">共 ' + (stagesData.totalStages || stages.length) +
+        " 关 · 点击<strong>已过</strong>的关卡可自主重练（不影响进度）</p>" +
+      '<div id="vc-stage-panel" hidden></div>'
+    );
+  }
+
+  function renderStagePanel(stage, stagesData) {
+    var panel = document.getElementById("vc-stage-panel");
+    if (!panel) return;
+    if (!stage || !stagesData) {
+      panel.hidden = true;
+      panel.innerHTML = "";
+      return;
+    }
+    var info = (stagesData.stages || []).filter(function (s) { return s.stage === stage; })[0];
+    if (!info || !info.practiceable) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    panel.innerHTML =
+      '<div class="vc-stage-panel-head">' +
+        "<strong>第 " + stage + " 关 · 已通过</strong>" +
+        '<button type="button" class="vc-stage-panel-close" id="vc-stage-close" aria-label="关闭">×</button>' +
+      "</div>" +
+      '<p class="vc-meta">' + esc(stageChipSub(info.plan)) + " · 选择要重练的任务</p>" +
+      '<div class="vc-stage-panel-actions">' +
+        info.tasks.map(function (t) {
+          return '<button type="button" class="vl-btn vl-btn-sm vc-stage-practice" data-list="' + t.listNo +
+            '" data-type="' + esc(t.taskType) + '" data-stage="' + stage + '">' +
+            "List " + t.listNo + " · " + taskTypeLabel(t.taskType) + " 练习</button>";
+        }).join("") +
+      "</div>";
+    document.getElementById("vc-stage-close").onclick = function () { renderStagePanel(null, null); };
+    panel.querySelectorAll(".vc-stage-practice").forEach(function (btn) {
+      btn.onclick = function () {
+        startListPractice(
+          Number(btn.getAttribute("data-list")),
+          btn.getAttribute("data-type"),
+          Number(btn.getAttribute("data-stage"))
+        );
+      };
+    });
+  }
+
+  function formatReviewStages(stages) {
+    if (!stages || !stages.length) return "—";
+    return stages.map(function (d) { return "第 " + d + " 关"; }).join("、");
+  }
+
+  function ebbinghausIntroHtml(plan, progressDay, todayPlan) {
+    if (!plan || !plan.dayRows) {
+      return noticesHtml(["艾宾浩斯闯关：每关先新词（5 命 · 18 秒）→ 复习（20 题 · 3 命）。"]);
+    }
+    progressDay = Math.floor(Number(progressDay) || 0) || 1;
+    var stageNew = todayPlan && todayPlan.new ? ("List " + todayPlan.new) : "—";
+    var stageRev = todayPlan && todayPlan.reviews && todayPlan.reviews.length
+      ? todayPlan.reviews.map(function (n) { return "List " + n; }).join("、")
+      : "—";
+
+    var listNos = Object.keys(plan.listIndex).sort(function (a, b) {
+      return Number(a) - Number(b);
+    });
+    var listRows = listNos.map(function (no) {
+      var li = plan.listIndex[no];
+      var cls = "";
+      if (todayPlan) {
+        if (todayPlan.new === Number(no) || (todayPlan.reviews || []).indexOf(Number(no)) >= 0) {
+          cls = " is-today";
+        }
+      }
+      return '<tr class="' + cls + '"><td>List ' + no + "</td><td>第 " + (li.newDay || "—") +
+        " 关</td><td>" + formatReviewStages(li.reviewDays) + "</td></tr>";
+    }).join("");
+
+    var dayRows = plan.dayRows.map(function (row) {
+      var cls = row.day === progressDay ? " is-today" : "";
+      var newPart = row.new ? ("新 List " + row.new) : "—";
+      var revPart = row.reviews.length
+        ? row.reviews.map(function (r) { return "L" + r; }).join("、")
+        : "—";
+      return '<tr class="' + cls + '"><td>第 ' + row.day + " 关</td><td>" + newPart +
+        "</td><td>" + revPart + "</td></tr>";
+    }).join("");
+
+    return (
+      '<details class="vc-ebb-intro">' +
+        '<summary class="vc-ebb-intro-sum">' +
+          '<span class="vc-ebb-intro-title">艾宾浩斯科学闯关</span>' +
+          '<span class="vc-ebb-intro-teaser">结合记忆曲线安排新词与复习 · 点击展开规则与 ' +
+            plan.totalDays + " 关完整计划</span>" +
+        "</summary>" +
+        '<div class="vc-ebb-intro-body">' +
+          '<p class="vc-ebb-intro-lead">本闯关将<strong>艾宾浩斯遗忘曲线</strong>拆成 <strong>' + plan.totalDays +
+            " 关</strong>学习任务：在新词学习后的关键节点自动安排复习，帮助你在正确的时间巩固记忆。</p>" +
+          '<p class="vc-ebb-intro-note">关数按你<strong>完成任务的进度</strong>推进，与日历日期无关；进度快的话，一天内可以连续完成多关。</p>' +
+          '<ul class="vc-ebb-rules">' +
+            "<li><strong>每关顺序</strong>：先完成本关<strong>新词闯关</strong>，再做本关<strong>复习检测</strong>。</li>" +
+            "<li><strong>新词检测</strong>：听发音 → 选中文义 → 拼写英文；<strong>5 命</strong>，每题 <strong>18 秒</strong>；错词当场重测至全对。</li>" +
+            "<li><strong>复习检测</strong>：从已学 List 抽 <strong>20 题</strong>（错题加权）；<strong>3 命</strong>；通过后写入抽测池。</li>" +
+            "<li><strong>整体节奏</strong>：" + plan.totalLists + " 个 List 分散在 <strong>" + plan.totalDays +
+              " 关</strong>中完成；越往后复习任务越多，请保持学习节奏。</li>" +
+          "</ul>" +
+          '<div class="vc-ebb-today-plan">' +
+            "<strong>你当前进度：第 " + progressDay + " 关</strong>" +
+            " · 本关新词 " + stageNew + " · 本关复习 " + stageRev +
+          "</div>" +
+          '<details class="vc-ebb-sub">' +
+            '<summary>按 List 查看：每个 List 的新词关与复习关</summary>' +
+            '<div class="vc-ebb-scroll">' +
+              '<table class="vc-ebb-table">' +
+                "<thead><tr><th>List</th><th>新词关</th><th>复习关</th></tr></thead>" +
+                "<tbody>" + listRows + "</tbody>" +
+              "</table>" +
+            "</div>" +
+          "</details>" +
+          '<details class="vc-ebb-sub">' +
+            '<summary>按关查看：' + plan.totalDays + " 关完整任务表</summary>" +
+            '<div class="vc-ebb-scroll vc-ebb-scroll--tall">' +
+              '<table class="vc-ebb-table">' +
+                "<thead><tr><th>进度关</th><th>本关新词</th><th>本关复习 List</th></tr></thead>" +
+                "<tbody>" + dayRows + "</tbody>" +
+              "</table>" +
+            "</div>" +
+          "</details>" +
+        "</div>" +
+      "</details>"
+    );
+  }
+
   function updateLives() {
     var el = document.getElementById("lives");
     if (!el) return;
@@ -199,8 +361,22 @@
     }
   }
 
+  function tickTimer() {
+    session.timerLeft--;
+    var num = document.getElementById("timerNum");
+    if (num) {
+      num.textContent = session.timerLeft;
+      num.classList.toggle("warning", session.timerLeft <= 3);
+    }
+    if (session.timerLeft <= 0) {
+      clearTimer();
+      if (!session.answered && !session.gameOver && !session.imeBlocked) onTimeout();
+    }
+  }
+
   function startTimer() {
     clearTimer();
+    session.timerPaused = false;
     session.timerLeft = TIME_SEC;
     var wrap = document.getElementById("timerWrap");
     var num = document.getElementById("timerNum");
@@ -209,17 +385,109 @@
       num.textContent = session.timerLeft;
       num.className = "num";
     }
-    session.timer = setInterval(function () {
-      session.timerLeft--;
-      if (num) {
-        num.textContent = session.timerLeft;
-        num.classList.toggle("warning", session.timerLeft <= 3);
+    session.timer = setInterval(tickTimer, 1000);
+  }
+
+  function pauseTimerForIme() {
+    clearTimer();
+    session.timerPaused = true;
+  }
+
+  function resumeTimerIfNeeded() {
+    if (!session.timerPaused || session.answered || session.gameOver || session.imeBlocked) return;
+    session.timerPaused = false;
+    if (session.timerLeft <= 0) return;
+    session.timer = setInterval(tickTimer, 1000);
+  }
+
+  function requireImeGate(reason, cb) {
+    if (reason === "start" && session.imeGatePassed) {
+      cb();
+      return;
+    }
+    session.imeBlocked = true;
+    pauseTimerForIme();
+    var gate = window.YYSD_IME_GATE;
+    var p = gate
+      ? gate.require({ reason: reason, strikes: reason === "violation" ? session.imeViolations : 0 })
+      : Promise.resolve();
+    p.then(function () {
+      session.imeBlocked = false;
+      session.imeGatePassed = true;
+      cb();
+    });
+  }
+
+  function handleImeCheat() {
+    session.gameOver = true;
+    session.imeBlocked = true;
+    pauseTimerForIme();
+    if (window.YYSD_IME_GATE) YYSD_IME_GATE.reset();
+    var gate = window.YYSD_IME_GATE;
+    var isPractice = session.phase === "practice";
+    if (!gate || !gate.showCheat) {
+      alert("多次切换中文输入法，本次测试已作废。");
+      location.href = isPractice ? "vocab-challenge.html?view=notebook" : "vocab-challenge.html";
+      return;
+    }
+    gate.showCheat({
+      onRestart: function () {
+        if (isPractice) {
+          startPractice();
+          return;
+        }
+        var listNo = session.listNo;
+        var taskType = session.taskType;
+        var attemptId = session.attemptId;
+        var go = function () {
+          session.attemptId = 0;
+          startChallenge(listNo, taskType);
+        };
+        if (attemptId) {
+          A.api("/api/vocab-challenge/void", {
+            method: "POST",
+            body: { attemptId: attemptId }
+          }).finally(go);
+        } else {
+          go();
+        }
+      },
+      onExit: function () {
+        if (isPractice) {
+          location.href = "vocab-challenge.html?view=notebook";
+          return;
+        }
+        if (session.attemptId) {
+          A.api("/api/vocab-challenge/void", {
+            method: "POST",
+            body: { attemptId: session.attemptId }
+          }).finally(function () {
+            session.attemptId = 0;
+            renderHub();
+          });
+        } else {
+          renderHub();
+        }
       }
-      if (session.timerLeft <= 0) {
-        clearTimer();
-        if (!session.answered && !session.gameOver) onTimeout();
-      }
-    }, 1000);
+    });
+  }
+
+  function onImeViolation() {
+    if (session.imeBlocked || session.answered || session.gameOver) return;
+    if (window.YYSD_IME_GATE && window.YYSD_IME_GATE.isOpen()) return;
+    if (session.imeDebounce) return;
+    session.imeDebounce = setTimeout(function () { session.imeDebounce = null; }, 1200);
+    session.imeViolations++;
+    var limit = (window.YYSD_IME_GATE && YYSD_IME_GATE.CHEAT_LIMIT) || 3;
+    if (session.imeViolations > limit) {
+      handleImeCheat();
+      return;
+    }
+    requireImeGate("violation", function () {
+      resumeTimerIfNeeded();
+      var spell = document.getElementById("spell");
+      if (spell && !spell.disabled) spell.focus();
+    });
   }
 
   // ---- hub ----
@@ -263,11 +531,16 @@
         if (l.todayRole === "new") cls += " is-today-new";
         if (l.todayRole === "review") cls += " is-today-review";
         if (l.todayStatus === "completed") cls += " is-done-today";
-        var sub = l.cleared || l.clearedNew ? "已通" : l.todayRole === "new" ? "今日新" :
-          l.todayRole === "review" ? "今日复习" : l.unlocked ? "已学" : "锁";
+        var sub = l.cleared || l.clearedNew ? "已通" : l.todayRole === "new" ? "本关新" :
+          l.todayRole === "review" ? "本关复习" : l.unlocked ? "已学" : "锁";
         return '<div class="' + cls + '"><span>L' + l.listNo + "</span>" +
           "<small>" + sub + "</small></div>";
       }).join("");
+
+      var passedStages = lists.stages && lists.stages.stages
+        ? lists.stages.stages.filter(function (s) { return s.status === "completed"; }).length
+        : 0;
+      var stageGrid = isEbb ? stageGridHtml(lists.stages, progressDay) : "";
 
       var learnHref = "";
       var cur = (lists.lists || []).filter(function (l) {
@@ -284,11 +557,11 @@
       var todayHtml = "";
       if (isEbb) {
         if (programComplete) {
-          todayHtml = '<p class="vc-notice">艾宾浩斯 78 天计划已全部完成。错题本仍可练习。</p>';
+          todayHtml = '<p class="vc-notice">艾宾浩斯 78 关计划已全部完成。错题本仍可练习。</p>';
         } else {
           todayHtml =
             '<section class="vc-day-card">' +
-              '<h2 class="vc-day-title">第 ' + progressDay + " 天 · 今日任务</h2>" +
+              '<h2 class="vc-day-title">第 ' + progressDay + " 关 · 本关任务</h2>" +
               '<p class="vc-meta">先完成新词，再做复习 · 新词 5 命 · 复习 20 题 3 命</p>' +
               '<ul class="vc-day-tasks">' +
               todayTasks.map(function (t) {
@@ -308,16 +581,20 @@
 
       var metaLine = isEbb
         ? esc(lists.bookLabel || lists.bookId) +
-          " · 进度日 " + progressDay +
-          " · 已通新词 List " + (prog.clearedListNo || 0)
+          " · 进度关 " + progressDay +
+          " · 已通过 " + passedStages + " / " + ((lists.stages && lists.stages.totalStages) || 78) + " 关"
         : esc(lists.bookLabel || lists.bookId) +
           " · 已通关 List " + (prog.clearedListNo || 0) +
           " · 下一关 List " + (prog.nextListNo || 1) +
           " · 重测配额 " + (lists.retestQuota || 0) + " 题";
 
       var noticeLine = isEbb
-        ? "艾宾浩斯闯关：每日先新词（5 命 · 18 秒）→ 复习（20 题 · 3 命）。"
+        ? ""
         : "按顺序闯关：新词（5 命 · 每题 18 秒）→ 错词重测 → 补考至全对。";
+
+      var introHtml = isEbb
+        ? ebbinghausIntroHtml(lists.ebbinghausPlan, progressDay, lists.todayPlan)
+        : noticesHtml([noticeLine]);
 
       var resumeHtml = "";
       if (me.activeAttemptId) {
@@ -327,14 +604,14 @@
       }
 
       shell(
-        noticesHtml([noticeLine]) +
+        introHtml +
         todayHtml +
         resumeHtml +
         '<p class="vc-meta">' + metaLine +
         '</p><p class="vc-meta">抽测池 ' + (pool.active || 0) +
           " · 顽固词 " + (pool.stubborn || 0) +
           " · 错题本 " + (pool.notebook || 0) + "</p>" +
-        '<div class="vc-list-grid">' + chips + "</div>" +
+        (isEbb ? stageGrid : ('<div class="vc-list-grid">' + chips + "</div>")) +
         '<div class="vc-actions">' +
           (!isEbb
             ? '<button type="button" class="vl-btn vl-btn-primary" id="vc-start">开始 List ' +
@@ -357,6 +634,19 @@
           );
         };
       });
+      if (isEbb && lists.stages) {
+        root.querySelectorAll(".vc-stage-chip.is-completed[data-stage]").forEach(function (chip) {
+          chip.onclick = function () {
+            renderStagePanel(Number(chip.getAttribute("data-stage")), lists.stages);
+          };
+          chip.onkeydown = function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              chip.click();
+            }
+          };
+        });
+      }
       var startBtn = document.getElementById("vc-start");
       if (startBtn) {
         startBtn.onclick = function () {
@@ -380,6 +670,12 @@
   }
 
   function startChallenge(listNo, taskType) {
+    session.imeGatePassed = false;
+    session.imeViolations = 0;
+    if (session.imeDebounce) {
+      clearTimeout(session.imeDebounce);
+      session.imeDebounce = null;
+    }
     session.pendingStart = { listNo: listNo, taskType: taskType || "new" };
     shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>准备题目…</div>', "开始");
     var body = {};
@@ -404,11 +700,13 @@
   }
 
   function enterPhase(d) {
-    session.attemptId = d.attemptId;
+    // ponytail: submit-new/makeup responses omitted attemptId before fix — keep session id
+    session.attemptId = d.attemptId || session.attemptId;
     session.phase = d.phase;
-    session.listId = d.listId || "";
-    session.listNo = d.listNo || 0;
-    session.taskType = d.taskType || (d.phase === "scheduled_review" ? "review" : "new");
+    session.listId = d.listId || session.listId || "";
+    session.listNo = d.listNo || session.listNo || 0;
+    session.taskType = d.taskType || session.taskType ||
+      (d.phase === "scheduled_review" ? "review" : "new");
     session.notices = d.notices || [];
     session.words = shuffle((d.items || []).map(parseWord).filter(function (w) { return w.word; }));
     session.answers = [];
@@ -444,7 +742,11 @@
       return;
     }
 
-    renderQuestion();
+    beginQuestionPhase();
+  }
+
+  function beginQuestionPhase() {
+    requireImeGate("start", renderQuestion);
   }
 
   function revealSpellRow(focus) {
@@ -644,7 +946,7 @@
         }).join("") +
       "</div>" +
       '<div class="vl-spell-row" id="spellRow" hidden>' +
-        '<input type="text" id="spell" lang="en" inputmode="latin" placeholder="拼写英文..." ' +
+        '<input type="text" id="spell" lang="en" inputmode="latin" placeholder="英文拼写（请用英文输入法）" ' +
           'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />' +
         '<button type="button" class="vl-btn vl-btn-primary" id="submit" disabled>提交</button>' +
       "</div>" +
@@ -730,15 +1032,21 @@
         return;
       }
       enterPhase(d);
-    }).catch(function () {
-      shell('<p class="vs-empty">提交失败</p>', "错误");
+    }).catch(function (err) {
+      shell(
+        '<p class="vc-notice vc-notice--warn">' + esc((err && err.message) || "提交失败") + "</p>" +
+        '<div class="vc-actions"><button type="button" class="vl-btn" id="vc-back">返回</button></div>',
+        "错误"
+      );
+      var back = document.getElementById("vc-back");
+      if (back) back.onclick = renderHub;
     });
   }
 
   function renderCleared(d) {
     session.attemptId = 0;
     var prog = d.progress || {};
-    var dayNote = d.dayAdvanced ? '<p class="vc-notice">今日任务已全部完成，已进入下一天。</p>' : "";
+    var dayNote = d.dayAdvanced ? '<p class="vc-notice">本关任务已全部完成，已进入下一关。</p>' : "";
     shell(
       noticesHtml(d.notices || []) +
       dayNote +
@@ -747,12 +1055,12 @@
         : "") +
       '<p class="vc-meta">' +
         (prog.progressDay
-          ? "进度日 " + prog.progressDay + " · 已通新词 List " + (prog.clearedListNo || session.listNo)
+          ? "进度关 " + prog.progressDay + " · 已通新词 List " + (prog.clearedListNo || session.listNo)
           : "已通关至 List " + (prog.clearedListNo || session.listNo) +
             " · 下一关 List " + (prog.nextListNo || ((prog.clearedListNo || 0) + 1))) +
       "</p>" +
       '<div class="vc-actions">' +
-        '<button type="button" class="vl-btn vl-btn-primary" id="vc-hub">返回今日任务</button>' +
+        '<button type="button" class="vl-btn vl-btn-primary" id="vc-hub">返回本关任务</button>' +
       "</div>",
       "通关"
     );
@@ -797,6 +1105,50 @@
       });
   }
 
+  function startListPractice(listNo, taskType, stageNo) {
+    shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>抽题…</div>', "练习");
+    A.api(
+      "/api/vocab-challenge/list-practice-pool?listNo=" + encodeURIComponent(listNo) +
+        "&taskType=" + encodeURIComponent(taskType || "new")
+    )
+      .then(function (d) {
+        if (!d || !d.ok || !(d.words || []).length) {
+          shell(
+            '<p class="vs-empty">' + esc((d && d.error) || "没有可练习的词") + "</p>" +
+            '<div class="vc-actions"><button type="button" class="vl-btn" id="vc-back-hub">返回</button></div>',
+            "练习"
+          );
+          var back = document.getElementById("vc-back-hub");
+          if (back) back.onclick = renderHub;
+          return;
+        }
+        session.phase = "practice";
+        session.attemptId = 0;
+        session.practiceLabel = stageNo
+          ? ("第 " + stageNo + " 关 · List " + listNo + " · " + taskTypeLabel(taskType))
+          : ("List " + listNo + " · " + taskTypeLabel(taskType));
+        session.notices = [d.notice || "已通过关卡练习不影响闯关进度与抽测池。"];
+        session.words = shuffle(d.words.map(parseWord).filter(function (w) { return w.word; }));
+        session.answers = [];
+        session.idx = 0;
+        session.lives = HP_MAX;
+        session.gameOver = false;
+        session.waiting = false;
+        session.imeViolations = 0;
+        session.imeGatePassed = false;
+        if (session.imeDebounce) {
+          clearTimeout(session.imeDebounce);
+          session.imeDebounce = null;
+        }
+        requireImeGate("start", renderPracticeQ);
+      })
+      .catch(function () {
+        shell('<p class="vs-empty">加载失败</p><div class="vc-actions"><button type="button" class="vl-btn" id="vc-back-hub">返回</button></div>', "练习");
+        var back = document.getElementById("vc-back-hub");
+        if (back) back.onclick = renderHub;
+      });
+  }
+
   function startPractice() {
     shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>抽题…</div>', "练习");
     A.api("/api/vocab-challenge/notebook/practice-pool?limit=20")
@@ -807,6 +1159,7 @@
         }
         session.phase = "practice";
         session.attemptId = 0;
+        session.practiceLabel = "错题本练习";
         session.notices = [d.notice || "错题本练习不影响闯关抽测池。"];
         session.words = shuffle(d.words.map(parseWord).filter(function (w) { return w.word; }));
         session.answers = [];
@@ -814,7 +1167,13 @@
         session.lives = HP_MAX;
         session.gameOver = false;
         session.waiting = false;
-        renderPracticeQ();
+        session.imeViolations = 0;
+        session.imeGatePassed = false;
+        if (session.imeDebounce) {
+          clearTimeout(session.imeDebounce);
+          session.imeDebounce = null;
+        }
+        requireImeGate("start", renderPracticeQ);
       });
   }
 
@@ -838,7 +1197,7 @@
     session.answered = false;
     session.waiting = false;
     shell(
-      questionInner("错题本练习 · 听发音，先选中文含义，再拼写英文", false),
+      questionInner((session.practiceLabel || "练习") + " · 听发音，先选中文含义，再拼写英文", false),
       "练习",
       { showLives: true, showTimer: true }
     );
