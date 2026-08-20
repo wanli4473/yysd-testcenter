@@ -133,7 +133,8 @@
   .match-q { display:flex; align-items:center; gap:10px; margin:8px 0; }
   .match-q .mq-txt { flex:1; }
   .map-wrap { border:1px solid #d8e0ea; border-radius:10px; background:#fafcff; padding:14px 16px; margin-bottom:16px; text-align:center; }
-  .map-img { max-width:100%; height:auto; border-radius:8px; }
+  .map-img { display:block; width:100%; max-width:920px; height:auto; margin:0 auto; border-radius:8px; cursor:zoom-in; }
+  .map-wrap.is-zoom .map-img { cursor:zoom-out; max-width:none; width:min(1400px, 96vw); }
   .map-missing { color:#8a6d1b; background:#fff7e0; border:1px dashed #e0c879; border-radius:8px; padding:18px; font-size:14px; }
 
   .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
@@ -500,7 +501,7 @@ const TEST = {
           "title": "Questions 15–20",
           "instruction": "Label the map below.<br>Write the correct letter, A–I, next to Questions 15–20.",
           "mapTitle": "Melby Coal Mine",
-          "image": "cambridge-21-test-2-map.png",
+          "image": "cambridge-21-test-2-map.svg",
           "letters": [
             "A",
             "B",
@@ -971,8 +972,9 @@ function groupHtml(g){
   }
   else if(g.kind==='map'){
     const letters=g.letters||['A','B','C','D','E','F','G','H','I'];
+    const src=g.svg||g.image;
     const img=`<div class="map-wrap">${g.mapTitle?`<div class="note-title">${g.mapTitle}</div>`:''}`+
-      `<img class="map-img" src="${g.image}" alt="${g.mapTitle||'map'}" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">`+
+      `<img class="map-img" src="${src}" alt="${g.mapTitle||'map'}" onclick="this.closest('.map-wrap').classList.toggle('is-zoom')" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">`+
       `<div class="map-missing" style="display:none;">📍 地图图片待上传：请把书上这张地图发给老师，上传后此处会显示地图，即可对照作答。</div></div>`;
     const sel=k=>`<select id="${k}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
     const qs=g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel(q.id)}</div>`).join('');

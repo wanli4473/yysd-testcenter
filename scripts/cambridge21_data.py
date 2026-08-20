@@ -369,7 +369,7 @@ _LISTENING = {1: {'meta': {'volume': 21, 'testNo': 1},
                                'instruction': 'Label the map below.<br>Write the correct letter, A–I, next to '
                                               'Questions 15–20.',
                                'mapTitle': 'Melby Coal Mine',
-                               'image': 'cambridge-21-test-2-map.png',
+                               'image': 'cambridge-21-test-2-map.svg',
                                'letters': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'],
                                'questions': [{'id': 'L15',
                                               'no': 15,

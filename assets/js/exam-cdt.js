@@ -464,7 +464,9 @@
       "body.yysd-cdt-listening .note-table th{background:#eef2f7;font-weight:700}",
       "body.yysd-cdt-listening .note-table td,body.yysd-cdt-listening .note-table th{",
       "border-color:#b0bccb;padding:8px 10px}",
-      // keep .map-missing visible when PNG missing (CDT still needs the placeholder)
+      "body.yysd-cdt-listening .map-wrap{margin:8px 0 18px;padding:10px 8px 14px}",
+      "body.yysd-cdt-listening .map-img{width:100%;max-width:920px;height:auto;margin:0 auto;display:block;cursor:zoom-in}",
+      "body.yysd-cdt-listening .map-wrap.is-zoom .map-img{max-width:none;width:min(1400px,96vw);cursor:zoom-out}",
     ].join("");
   }
 
