@@ -127,7 +127,7 @@ var NOTICE = {
   enterReview: "复习检测：20 题 · 3 命 · 每题 18 秒。",
   reviewFail: "错误已达 3 题，本次复习失败，请重测（将重新抽题）。",
   reviewPass: "复习通过。",
-  dayAdvanced: "今日任务已全部完成，进入下一天。"
+  dayAdvanced: "本关任务已全部完成，进入下一关。"
 };
 
 function isoNow(now) {
@@ -362,6 +362,67 @@ function getTodayTasks(db, studentId, bookId) {
   };
 }
 
+/** Per-stage progress for Ebbinghaus hub grid (78 关). */
+function getStageSummaries(db, studentId, bookId) {
+  var sched = schedule.loadSchedule(bookId);
+  if (!sched) return null;
+  var progressDay = getProgressDay(db, studentId, bookId);
+  var programComplete = schedule.programComplete(progressDay, bookId);
+  var rows = db
+    .prepare(
+      "SELECT progress_day, list_no, task_type, status FROM vocab_challenge_day_task " +
+        "WHERE student_id = ? AND book_id = ?"
+    )
+    .all(studentId, bookId);
+  var statusByDay = {};
+  rows.forEach(function (r) {
+    if (!statusByDay[r.progress_day]) statusByDay[r.progress_day] = {};
+    statusByDay[r.progress_day][r.task_type + ":" + r.list_no] = r.status;
+  });
+  var out = [];
+  for (var d = 1; d <= sched.totalDays; d++) {
+    var plan = schedule.getDayPlan(bookId, d);
+    if (!plan) continue;
+    var dayMap = statusByDay[d] || {};
+    var tasks = [];
+    var allDone = true;
+    var hasTask = false;
+    if (plan.new) {
+      hasTask = true;
+      var nst = dayMap[TASK_NEW + ":" + plan.new] || "pending";
+      tasks.push({ listNo: plan.new, taskType: TASK_NEW, status: nst });
+      if (nst !== "completed") allDone = false;
+    }
+    (plan.reviews || []).forEach(function (ln) {
+      hasTask = true;
+      var rst = dayMap[TASK_REVIEW + ":" + ln] || "pending";
+      tasks.push({ listNo: ln, taskType: TASK_REVIEW, status: rst });
+      if (rst !== "completed") allDone = false;
+    });
+    var stageStatus;
+    if (programComplete || d < progressDay) {
+      stageStatus = "completed";
+    } else if (d === progressDay) {
+      stageStatus = allDone && hasTask ? "completed" : "current";
+    } else {
+      stageStatus = "locked";
+    }
+    out.push({
+      stage: d,
+      status: stageStatus,
+      plan: { new: plan.new, reviews: plan.reviews || [] },
+      tasks: tasks,
+      practiceable: stageStatus === "completed"
+    });
+  }
+  return {
+    totalStages: sched.totalDays,
+    currentStage: progressDay,
+    programComplete: programComplete,
+    stages: out
+  };
+}
+
 function canStartScheduledTask(newDone, status, listNo, taskType, activeAttempt, activeDraft) {
   if (status === "completed") return false;
   if (taskType === TASK_REVIEW && !newDone) return false;
@@ -398,6 +459,27 @@ function resetEbbinghausStudent(db, studentId, bookId, nowIso) {
       "VALUES (?, ?, 0, 1, ?) " +
       "ON CONFLICT(student_id, book_id) DO UPDATE SET " +
       "cleared_list_no = 0, progress_day = 1, updated_at = excluded.updated_at"
+  ).run(studentId, bookId, nowIso);
+}
+
+/** Assign / re-assign gaozhong without wiping saved 闯关 progress. */
+function ensureEbbinghausProgress(db, studentId, bookId, nowIso) {
+  if (!schedule.isEbbinghausBook(bookId)) return;
+  var row = db
+    .prepare(
+      "SELECT progress_day FROM vocab_challenge_progress WHERE student_id = ? AND book_id = ?"
+    )
+    .get(studentId, bookId);
+  if (row) {
+    db.prepare(
+      "UPDATE vocab_challenge_attempt SET status = ?, updated_at = ? " +
+        "WHERE student_id = ? AND book_id = ? AND status = ?"
+    ).run(STATUS_VOIDED, nowIso, studentId, bookId, STATUS_IN_PROGRESS);
+    return;
+  }
+  db.prepare(
+    "INSERT INTO vocab_challenge_progress (student_id, book_id, cleared_list_no, progress_day, updated_at) " +
+      "VALUES (?, ?, 0, 1, ?)"
   ).run(studentId, bookId, nowIso);
 }
 
@@ -610,18 +692,41 @@ function replaceItems(db, s, attemptId, words, opts) {
   });
 }
 
+function parseWordJson(raw) {
+  if (raw == null) return null;
+  try {
+    return typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** Merge wordMeta + pool row + word_json for retest/makeup items. */
+function itemPublicMeta(draft, word) {
+  var key = String(word);
+  var meta = (draft && draft.wordMeta && draft.wordMeta[key]) || {};
+  var pool = (draft && draft.poolByWord && draft.poolByWord[key]) || {};
+  var wjRaw = meta.word_json != null ? meta.word_json : pool.word_json;
+  var wj = parseWordJson(wjRaw);
+  return {
+    ipa: meta.ipa || pool.ipa || (wj && wj.ipa) || null,
+    meaning: meta.meaning || pool.meaning || (wj && wj.meaning) || null,
+    word_json: wjRaw != null ? wjRaw : null
+  };
+}
+
 function publicItems(rows, draft) {
   return (rows || []).map(function (r) {
-    var meta = (draft && draft.wordMeta && draft.wordMeta[r.word]) || {};
+    var pub = itemPublicMeta(draft, r.word);
     return {
       word: r.word,
       sortOrd: r.sort_ord,
       locked: !!r.locked,
       isCorrect: r.is_correct == null ? null : !!r.is_correct,
       userAnswer: r.user_answer,
-      ipa: meta.ipa || null,
-      meaning: meta.meaning || null,
-      word_json: meta.word_json || null
+      ipa: pub.ipa,
+      meaning: pub.meaning,
+      word_json: pub.word_json
     };
   });
 }
@@ -708,7 +813,7 @@ function startListChallenge(db, opts) {
         return t.listNo === listNo && t.taskType === TASK_NEW;
       })[0];
       if (!match) {
-        return { ok: false, error: "List " + listNo + " 不是今日新词任务" };
+        return { ok: false, error: "List " + listNo + " 不是本关新词任务" };
       }
       if (!match.canStart) {
         return { ok: false, error: "请先完成前置任务或继续进行中的闯关", todayTasks: today.tasks };
@@ -792,10 +897,10 @@ function startScheduledReview(db, opts) {
       return t.listNo === listNo && t.taskType === TASK_REVIEW;
     })[0];
     if (!match) {
-      return { ok: false, error: "List " + listNo + " 不是今日复习任务" };
+      return { ok: false, error: "List " + listNo + " 不是本关复习任务" };
     }
     if (!match.canStart) {
-      return { ok: false, error: "请先完成今日新词或继续进行中的复习", todayTasks: today.tasks };
+      return { ok: false, error: "请先完成本关新词或继续进行中的复习", todayTasks: today.tasks };
     }
   }
   var statsRows = db
@@ -1108,6 +1213,7 @@ function submitNewWords(db, attemptId, studentId, answers, now) {
     return draft.poolByWord[k];
   });
   var drawn = selectDrawWords(poolRows, attempt.list_no, nowIso);
+  drawn.forEach(function (row) { rememberMeta(draft, row); });
   var quota = retestQuota(attempt.list_no);
   draft.remaining = [];
   draft.notices = [NOTICE.enterRetest];
@@ -1131,6 +1237,11 @@ function submitNewWords(db, attemptId, studentId, answers, now) {
     out = {
       ok: true,
       passed: true,
+      attemptId: attemptId,
+      listId: attempt.list_id,
+      listNo: attempt.list_no,
+      taskType: draft.taskType || TASK_NEW,
+      livesMax: MAX_NEW_WRONG,
       wrongCount: wrongs.length,
       phase: PHASE_RETEST,
       status: STATUS_IN_PROGRESS,
@@ -1205,6 +1316,9 @@ function submitReview(db, attemptId, studentId, answers, now) {
     }
 
     draft.remaining = stillWrong.slice();
+    stillWrong.forEach(function (word) {
+      rememberMeta(draft, draft.poolByWord[word] || draft.wordMeta[word] || { word: word });
+    });
     if (attempt.phase === PHASE_RETEST) {
       notices = [NOTICE.enterMakeup].concat(notices);
     }
@@ -1221,6 +1335,11 @@ function submitReview(db, attemptId, studentId, answers, now) {
     replaceItems(db, s, attemptId, stillWrong);
     result = {
       ok: true,
+      attemptId: attemptId,
+      listId: attempt.list_id,
+      listNo: attempt.list_no,
+      taskType: draft.taskType || TASK_NEW,
+      livesMax: MAX_NEW_WRONG,
       cleared: false,
       phase: PHASE_MAKEUP,
       status: STATUS_IN_PROGRESS,
@@ -1415,6 +1534,7 @@ function ensureSchema(db) {
     db.exec("ALTER TABLE vocab_challenge_progress ADD COLUMN progress_day INTEGER NOT NULL DEFAULT 1");
   }
 
+  // ponytail: one-time cutover to Ebbinghaus schedule (Aug 2026). Runs once per DB; never re-run after meta row exists.
   var migrated = db.prepare("SELECT value FROM vocab_challenge_meta WHERE key = 'ebbinghaus_reset_v1'").get();
   if (!migrated) {
     db.exec("DELETE FROM vocab_challenge_day_task");
@@ -1574,6 +1694,23 @@ function selfCheck() {
     throw new Error("fromDb: " + fromDb.map(function (w) { return w.word; }).join(","));
   }
 
+  // publicItems falls back to pool row when wordMeta missing (retest history words)
+  var metaDraft = {
+    wordMeta: { alpha: { word: "alpha", meaning: "a", word_json: null } },
+    poolByWord: {
+      legacy: {
+        word: "legacy",
+        meaning: "旧词",
+        word_json: JSON.stringify({ word: "legacy", acceptCN: ["遗留"] })
+      }
+    }
+  };
+  var legacyPub = publicItems(
+    [{ word: "legacy", sort_ord: 0, locked: 0, is_correct: null, user_answer: null }],
+    metaDraft
+  )[0];
+  if (!legacyPub.meaning || legacyPub.meaning !== "旧词") throw new Error("publicItems pool fallback");
+
   // --- pass engine ---
   db.prepare("DELETE FROM vocab_challenge_draw_pool").run();
   db.prepare("DELETE FROM vocab_challenge_day_task").run();
@@ -1668,6 +1805,7 @@ function selfCheck() {
     now
   );
   if (!pass.passed || pass.phase !== PHASE_RETEST || pass.wrongCount !== 2) throw new Error("pass→retest");
+  if (pass.attemptId !== start.attemptId) throw new Error("submit-new must return attemptId");
   if (loadActivePool(db, 1, "gaozhong").length !== 0) throw new Error("draft only before clear");
 
   // void → still no pool
@@ -1700,6 +1838,8 @@ function selfCheck() {
   });
   pass = submitNewWords(db, start.attemptId, 1, ans(wordsOf(), { alpha: 1 }), now);
   if (pass.phase !== PHASE_RETEST || pass.drawnCount < 1) throw new Error("list2 retest draw");
+  var alphaItem = pass.items.filter(function (it) { return it.word === "alpha"; })[0];
+  if (!alphaItem || alphaItem.meaning !== "a") throw new Error("alpha retest meaning from wordMeta");
 
   // miss all retest items once → makeup
   var retestItems = pass.items.map(function (it) { return it.word; });
@@ -1709,6 +1849,7 @@ function selfCheck() {
     now
   );
   if (review1.phase !== PHASE_MAKEUP || !review1.remainingCount) throw new Error("enter makeup");
+  if (review1.attemptId !== start.attemptId) throw new Error("submit-review must return attemptId");
 
   // fail same remaining twice more on first word to hit stubborn (already 1 fail in retest... 
   // makeup_fail_streak only counts in makeup. Need 3 makeup fails.
@@ -1861,6 +2002,9 @@ function selfCheck() {
   require("./vocab-shelf").ensureSchema(db);
   var a1 = assignBook(db, { studentId: 9, bookId: "gaozhong", teacherId: 2, now: now });
   if (!a1.ok) throw new Error("assign");
+  db.prepare(
+    "UPDATE vocab_challenge_progress SET progress_day = 5 WHERE student_id = 9 AND book_id = 'gaozhong'"
+  ).run();
   var a2 = assignBook(db, { studentId: 9, bookId: "cet4", teacherId: 2, now: now });
   if (!a2.ok || !a2.switched) throw new Error("switch");
   var hist = db.prepare(
@@ -1868,6 +2012,9 @@ function selfCheck() {
   ).get();
   if (!hist || hist.book_id !== "gaozhong") throw new Error("history");
   if (getAssignment(db, 9).book_id !== "cet4") throw new Error("current book");
+  var a3 = assignBook(db, { studentId: 9, bookId: "gaozhong", teacherId: 2, now: now });
+  if (!a3.ok || !a3.switched) throw new Error("switch back gaozhong");
+  if (getProgressDay(db, 9, "gaozhong") !== 5) throw new Error("assign must preserve gaozhong progress");
 
   db.close();
   return true;
@@ -1931,7 +2078,7 @@ function assignBook(db, opts) {
       "INSERT OR IGNORE INTO vocab_bookshelf (student_id, book_id, added_at) VALUES (?, ?, ?)"
     ).run(studentId, bookId, nowIso);
     if (schedule.isEbbinghausBook(bookId)) {
-      resetEbbinghausStudent(db, studentId, bookId, nowIso);
+      ensureEbbinghausProgress(db, studentId, bookId, nowIso);
     } else {
       db.prepare(
         "INSERT OR IGNORE INTO vocab_challenge_progress " +
@@ -1957,12 +2104,13 @@ function assignBook(db, opts) {
             "ON CONFLICT(student_id) DO UPDATE SET " +
             "book_id = excluded.book_id, teacher_id = excluded.teacher_id, assigned_at = excluded.assigned_at"
         ).run(studentId, bookId, teacherId, nowIso);
-        db.prepare(
-          "INSERT OR IGNORE INTO vocab_challenge_progress " +
-            "(student_id, book_id, cleared_list_no, progress_day, updated_at) VALUES (?, ?, 0, 1, ?)"
-        ).run(studentId, bookId, nowIso);
         if (schedule.isEbbinghausBook(bookId)) {
-          resetEbbinghausStudent(db, studentId, bookId, nowIso);
+          ensureEbbinghausProgress(db, studentId, bookId, nowIso);
+        } else {
+          db.prepare(
+            "INSERT OR IGNORE INTO vocab_challenge_progress " +
+              "(student_id, book_id, cleared_list_no, progress_day, updated_at) VALUES (?, ?, 0, 1, ?)"
+          ).run(studentId, bookId, nowIso);
         }
       })();
     } else {
@@ -2144,6 +2292,12 @@ function mountRoutes(app, opts) {
       programComplete: today ? today.programComplete : false,
       todayPlan: today ? today.plan : null,
       todayTasks: today ? today.tasks : null,
+      ebbinghausPlan: schedule.isEbbinghausBook(asg.book_id)
+        ? schedule.buildPlanSummary(asg.book_id)
+        : null,
+      stages: schedule.isEbbinghausBook(asg.book_id)
+        ? getStageSummaries(db, req.user.sub, asg.book_id)
+        : null,
       retestQuota: retestQuota(prog.nextListNo),
       lists: lists
     });
@@ -2267,6 +2421,57 @@ function mountRoutes(app, opts) {
           firstMissedAt: r.first_missed_at,
           lastMissedAt: r.last_missed_at,
           missCount: r.miss_count
+        };
+      })
+    });
+  });
+
+  // Voluntary practice for a passed list task — does not touch draw_pool or progress
+  app.get("/api/vocab-challenge/list-practice-pool", authMiddleware, function (req, res) {
+    if (!requireStudent(req, res)) return;
+    var asg = getAssignment(db, req.user.sub);
+    if (!asg) return res.status(400).json({ error: "老师尚未布置词册" });
+    var listNo = Math.floor(Number(req.query.listNo) || 0);
+    var taskType = String(req.query.taskType || TASK_NEW).trim();
+    if (!listNo) return res.status(400).json({ error: "缺少 listNo" });
+    var tt = taskType === TASK_REVIEW ? TASK_REVIEW : TASK_NEW;
+    var passed = db
+      .prepare(
+        "SELECT 1 AS ok FROM vocab_challenge_day_task " +
+          "WHERE student_id = ? AND book_id = ? AND list_no = ? AND task_type = ? AND status = 'completed' LIMIT 1"
+      )
+      .get(req.user.sub, asg.book_id, listNo, tt);
+    if (!passed) return res.status(400).json({ error: "该任务尚未通过，暂不可练习" });
+    var cat = catalog();
+    var book = cat.byId[asg.book_id];
+    if (!book) return res.status(404).json({ error: "词册不存在" });
+    var list = findListByNo(book, listNo);
+    if (!list) return res.status(404).json({ error: "List 不存在" });
+    var lesson = shelf.resolveLesson(resolveRoot, book, list.id);
+    if (!lesson || !lesson.words.length) return res.status(404).json({ error: "词表缺失" });
+    var words = lesson.words;
+    if (tt === TASK_REVIEW) {
+      var statsRows = db
+        .prepare(
+          "SELECT word, wrong_count FROM vocab_challenge_list_word_stats " +
+            "WHERE student_id = ? AND book_id = ? AND list_no = ?"
+        )
+        .all(req.user.sub, asg.book_id, listNo);
+      words = schedule.drawReviewWords(words, statsRows, schedule.REVIEW_DRAW_SIZE);
+    }
+    res.json({
+      ok: true,
+      bookId: asg.book_id,
+      listNo: listNo,
+      taskType: tt,
+      notice: "已通过关卡练习不影响闯关进度与抽测池。",
+      words: words.map(function (w) {
+        return {
+          word: w.word,
+          ipa: w.ipa,
+          meaning: w.meaning,
+          word_json: w,
+          listId: list.id
         };
       })
     });
@@ -2409,8 +2614,10 @@ module.exports = {
   selectDrawWordsFromDb: selectDrawWordsFromDb,
   getProgress: getProgress,
   getTodayTasks: getTodayTasks,
+  getStageSummaries: getStageSummaries,
   getAssignment: getAssignment,
   assignBook: assignBook,
+  ensureEbbinghausProgress: ensureEbbinghausProgress,
   resetEbbinghausStudent: resetEbbinghausStudent,
   studentChallengeSummary: studentChallengeSummary,
   startListChallenge: startListChallenge,
