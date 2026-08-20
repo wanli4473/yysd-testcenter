@@ -477,11 +477,16 @@ window.YYSD_AUTH = (function () {
 
   function teacherSiteModeNeedsRestore() {
     try {
-      if (localStorage.getItem("yysd:teacher:mode") !== "site") return false;
       if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return false;
+      if (isTeacherPage()) return false;
       var stu = localStorage.getItem(TOKEN_KEY);
       var tea = localStorage.getItem(TEACHER_TOKEN_KEY);
-      return !stu || stu === tea;
+      if (stu && stu !== tea) return false;
+      // ponytail: teacher JWT on student pages 403s as "网络错误"; enter shadow student once
+      if (localStorage.getItem("yysd:teacher:mode") !== "site") {
+        try { localStorage.setItem("yysd:teacher:mode", "site"); } catch (e) {}
+      }
+      return true;
     } catch (e) {
       return false;
     }
@@ -944,7 +949,7 @@ window.YYSD_AUTH = (function () {
       if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return;
       if (document.querySelector("script[data-teacher-mode]")) return;
       var s = document.createElement("script");
-      s.src = "assets/js/teacher-mode.js?v=20260819mode1";
+      s.src = "assets/js/teacher-mode.js?v=20260820site2";
       s.setAttribute("data-teacher-mode", "1");
       document.body.appendChild(s);
     } catch (e) {}

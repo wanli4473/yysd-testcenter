@@ -664,8 +664,17 @@
             .catch(function () { renderHub(); });
         };
       }
-    }).catch(function () {
-      shell('<p class="vs-empty">网络错误</p>', "错误");
+    }).catch(function (e) {
+      var msg = (e && e.message) || "";
+      if (msg.indexOf("学生账号") >= 0 || (A.isTeacher && A.isTeacher())) {
+        shell(
+          '<p class="vc-notice vc-notice--warn">教师账号不能直接闯关。请先在教师端切换到「网站功能区」，再打开本页。</p>' +
+          '<div class="vc-actions"><a class="vl-btn vl-btn-primary" href="teacher.html">打开教师端</a></div>',
+          "教师预览"
+        );
+        return;
+      }
+      shell('<p class="vs-empty">' + esc(msg || "加载失败，请刷新重试") + "</p>", "错误");
     });
   }
 

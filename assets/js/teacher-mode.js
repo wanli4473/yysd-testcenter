@@ -44,21 +44,29 @@
     return !!(A && A.teacherSiteModeNeedsRestore && A.teacherSiteModeNeedsRestore());
   }
 
-  function restoreSiteModeToken() {
-    if (!T || !T.api) return Promise.reject(new Error("请先登录教师账号"));
-    if (A && A.ensureTeacherSiteStudentToken) {
-      return A.ensureTeacherSiteStudentToken();
-    }
+  function enterViaApi() {
     return T.api("/api/teacher/site-mode/enter", { method: "POST" }).then(function (d) {
+      if (!d || !d.token) throw new Error("无法进入网站功能区");
       applySiteModeLogin(d);
       return d;
     });
   }
 
+  function restoreSiteModeToken() {
+    if (!T || !T.api) return Promise.reject(new Error("请先登录教师账号"));
+    // ponytail: ensureTeacherSiteStudentToken no-ops on teacher pages / admin mode
+    if (A && A.ensureTeacherSiteStudentToken && siteModeNeedsRestore()) {
+      return A.ensureTeacherSiteStudentToken().then(function (d) {
+        return (d && d.token) ? d : enterViaApi();
+      });
+    }
+    return enterViaApi();
+  }
+
   function enterSiteMode() {
     if (!T || !T.api) return Promise.reject(new Error("请先登录教师账号"));
-    return restoreSiteModeToken().then(function (d) {
-      location.href = d.redirect || "index.html";
+    return enterViaApi().then(function (d) {
+      location.href = (d && d.redirect) || "index.html";
     });
   }
 
