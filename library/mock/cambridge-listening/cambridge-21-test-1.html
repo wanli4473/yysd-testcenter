@@ -133,6 +133,14 @@
   .map-wrap { border:1px solid #d8e0ea; border-radius:10px; background:#fafcff; padding:14px 16px; margin-bottom:16px; text-align:center; }
   .map-img { max-width:100%; height:auto; border-radius:8px; }
   .map-missing { color:#8a6d1b; background:#fff7e0; border:1px dashed #e0c879; border-radius:8px; padding:18px; font-size:14px; }
+  .flowchart { max-width:440px; margin:0 auto 14px; }
+  .fc-title { font-weight:700; text-align:center; margin:0 0 14px; font-size:16px; color:#223; }
+  .fc-step { display:flex; flex-direction:column; align-items:center; }
+  .fc-box { border:1.5px solid #223; border-radius:2px; padding:12px 16px 10px; width:100%; text-align:center; background:#fff; }
+  .fc-label { font-weight:700; margin-bottom:6px; font-size:15px; }
+  .fc-gap { justify-content:center; margin:0; gap:8px; }
+  .fc-gap .mq-txt { display:none; }
+  .fc-arrow { font-size:18px; line-height:1; margin:2px 0 6px; color:#223; }
 
   .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
   .submit-btn:hover { transform:translateY(-2px); }
@@ -290,7 +298,7 @@ const TEST = {
     "volume": 21,
     "testNo": 1
   },
-  "durationMin": 32,
+  "durationMin": 30,
   "sections": [
     {
       "id": 1,
@@ -973,7 +981,7 @@ function groupHtml(g){
   if(g.kind==='note'){
     body=`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
       g.lines.map(l=>{
-        if(l.h) return `<div class="note-h">${l.h}</div>`;
+        if(l.h) return `<div class="note-h">${expandQ(l.h)}</div>`;
         if(l.plain) return `<div class="note-li${l.sub?' sub':''}">${expandQ(l.html)}</div>`;
         if(l.html==null) return '';
         const cls='note-li'+(l.sub2?' sub2':(l.sub?' sub':''));
@@ -995,7 +1003,17 @@ function groupHtml(g){
   else if(g.kind==='match'){
     const box=`<div class="match-box"><div class="mb-h">${g.boxTitle}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
     const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
-    const qs=`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    const isFlow=/flowchart/i.test(g.instruction||'');
+    let qs;
+    if(isFlow){
+      const steps=g.questions.map((q,i)=>{
+        const arrow=i<g.questions.length-1?`<div class="fc-arrow">↓</div>`:'';
+        return `<div class="fc-step"><div class="fc-box"><div class="fc-label">${q.q}</div><div class="match-q fc-gap"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div></div>${arrow}</div>`;
+      }).join('');
+      qs=`<div class="flowchart">${g.subTitle?`<div class="fc-title">${g.subTitle}</div>`:''}${steps}</div>`;
+    } else {
+      qs=`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
+    }
     body=box+qs;
   }
   else if(g.kind==='multi'){

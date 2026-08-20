@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260820c21t2p2";
+  var CONTENT_VER = "20260820c21fix2";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
