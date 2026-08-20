@@ -57,8 +57,10 @@ _CORE_UNLABELED_SPLIT = re.compile(
 
 _EXT_UNLABELED_SPLIT = re.compile(
     r"(?<=\.)\s+(?="
-    r"(?:However,|Moreover,|Furthermore,|That said,|There's some evidence|While it is |"
-    r"Nearly two millennia|If we are to|One of the many|Although |Not everyone|"
+    r"(?:However,|Moreover,|Furthermore,|Nevertheless,|That said,|There's some evidence|While it is |"
+    r"Nearly two millennia|If we are to|One of the many|Although |Not everyone|Less is known|"
+    r"However, we still|Another non-human|Similarly, a report|The trouble is|It is likely that|"
+    r"This is a wonderfully rich|It is now widely consumed|"
     r"Poaching reached|The dramatic decline|Despite these|Recent efforts|Another threat|"
     r"Climate change|Some years ago|For the women|Using solid fuels|In east Africa|"
     r"But sugar production|Where once only|Bosma's discussion|The book provides|"
@@ -175,23 +177,50 @@ def _has_section_labels(lines: list[str]) -> bool:
     return any(_is_section_line(ln) for ln in lines)
 
 
-def _join_wrapped(lines: list[str]) -> str:
+_NAME_PARA = re.compile(r"^[A-Z][a-z]+\s*\(\d{4}")
+
+
+def _ends_sentence(cur: str) -> bool:
+    return bool(re.search(r"[.!?]['\"]?\s*$", cur.rstrip()))
+
+
+def _should_start_new_para(cur: str, ln: str) -> bool:
+    if not cur or not ln or ln[0].islower() or cur.rstrip().endswith("-"):
+        return False
+    if _NAME_PARA.match(ln):
+        return True
+    if not _ends_sentence(cur):
+        return False
+    norm = re.sub(r"([.!?])['\"]", r"\1", cur.rstrip())
+    return len(_EXT_UNLABELED_SPLIT.split(norm + " " + ln)) > 1
+
+
+def _append_wrapped_line(cur: str, ln: str) -> str:
+    if ln[0].islower() or cur.rstrip().endswith("-"):
+        if cur.rstrip().endswith("-"):
+            return (
+                cur.rstrip()[:-1] + " " + ln.lstrip()
+                if len(ln.split()[0]) <= 3
+                else cur.rstrip() + ln.lstrip()
+            )
+        return cur + " " + ln
+    return cur + " " + ln
+
+
+def _lines_to_paras(lines: list[str]) -> list[str]:
+    chunks: list[str] = []
     cur = ""
     for ln in lines:
         if not cur:
             cur = ln
-        elif ln[0].islower() or cur.rstrip().endswith("-"):
-            if cur.rstrip().endswith("-"):
-                cur = (
-                    cur.rstrip()[:-1] + " " + ln.lstrip()
-                    if len(ln.split()[0]) <= 3
-                    else cur.rstrip() + ln.lstrip()
-                )
-            else:
-                cur += " " + ln
+        elif _should_start_new_para(cur, ln):
+            chunks.append(cur)
+            cur = ln
         else:
-            cur += " " + ln
-    return cur
+            cur = _append_wrapped_line(cur, ln)
+    if cur:
+        chunks.append(cur)
+    return chunks
 
 
 def _split_unlabeled(text: str) -> list[str]:
@@ -212,9 +241,14 @@ def _split_unlabeled(text: str) -> list[str]:
 
 
 def _merge_unlabeled(lines: list[str]) -> list[str]:
-    text = _join_wrapped(lines)
-    out = _split_unlabeled(text)
-    return out if len(out) > 1 else ([text] if text else [])
+    out: list[str] = []
+    for chunk in _lines_to_paras(lines):
+        chunk = _clean_para(chunk)
+        if not chunk:
+            continue
+        sub = _split_unlabeled(chunk)
+        out.extend(sub if len(sub) > 1 else [chunk])
+    return out
 
 
 def _merge_labeled(lines: list[str]) -> list[str]:
@@ -227,8 +261,11 @@ def _merge_labeled(lines: list[str]) -> list[str]:
             cur = ln
         elif not cur:
             cur = ln
+        elif _should_start_new_para(cur, ln):
+            paras.extend(_split_inlined_labels(cur))
+            cur = ln
         else:
-            cur += " " + ln
+            cur = _append_wrapped_line(cur, ln)
     if cur:
         paras.extend(_split_inlined_labels(cur))
     return paras
@@ -284,8 +321,9 @@ _MIN_PARAS: dict[tuple[int, int], int] = {
     (4, 3): 7,
 }
 _EXACT_PARAS: dict[tuple[int, int], int] = {
-    (1, 2): 7,
-    (3, 3): 9,
+    (1, 2): 9,
+    (2, 1): 10,
+    (3, 3): 10,
 }
 
 
