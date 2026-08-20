@@ -14,6 +14,7 @@ function must(cond, msg) {
 }
 
 var gate = read("assets/js/diagnostic-gate.js");
+must(gate.indexOf("GATE_ENABLED") >= 0, "gate has enable switch");
 must(gate.indexOf("placement_done") >= 0, "gate checks placement_done");
 must(gate.indexOf("diagnostic.html?gate=1") >= 0, "gate redirects to gate=1");
 must(gate.indexOf("bookForLevel") >= 0, "gate exports bookForLevel");

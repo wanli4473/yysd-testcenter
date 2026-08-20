@@ -2,6 +2,8 @@
 (function (global) {
   "use strict";
 
+  // ponytail: off until product re-enables first-time placement test
+  var GATE_ENABLED = false;
   var GATE_HREF = "diagnostic.html?gate=1";
 
   function isStudentLoggedIn() {
@@ -13,6 +15,7 @@
 
   /** @returns {Promise<boolean>} true = may stay on page; false = redirected */
   function ensurePlacement(opts) {
+    if (!GATE_ENABLED) return Promise.resolve(true);
     opts = opts || {};
     var A = global.YYSD_AUTH;
     if (!isStudentLoggedIn()) {
