@@ -105,7 +105,7 @@ function yysdMeaningForList(raw, accept) {
     if (!A || !A.api || !bookId || !listId) return Promise.resolve();
     var wordIdx = state.learnIdx;
     // shelf progress may mark done at last card; assignment only on explicit finish
-    var isDone = !!done || wordIdx >= Math.max(0, words.length - 1);
+    var isDone = !!done;
     var body = { bookId: bookId, listId: listId, wordIdx: wordIdx, done: isDone };
     if (done && assignEventId) body.assignmentEventId = assignEventId;
     return A.api("/api/vocab-shelf/progress", {

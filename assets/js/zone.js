@@ -331,7 +331,7 @@
         '<p class="vocab-desk__rail-kicker">学习进度</p>' +
         '<ul class="vocab-desk__stats">' +
           '<li><span>书架本数</span><b data-desk="shelfBooks">—</b></li>' +
-          '<li><span>进行中 List</span><b data-desk="activeLists">—</b></li>' +
+          '<li><span>词书学习</span><b data-desk="activeLists">—</b></li>' +
           '<li><span>今日已学</span><b data-desk="todayWords">—</b></li>' +
           '<li><span>本周已学</span><b data-desk="weekWords">—</b></li>' +
         "</ul>" +
@@ -351,8 +351,8 @@
           bookSvg +
         "</header>" +
         '<div class="vocab-desk__mods" role="navigation" aria-label="单词主模块">' +
-          mod("shelf", "vocab-shelf.html", "01", "词库", "书架本数", "—", "进行中 List", "—", "进入书架", "vocab-shelf.html") +
-          mod("challenge", "vocab-challenge.html", "02", "单词闯关", "当前 List", "—", "抽测池", "—", "开始闯关", "vocab-challenge.html") +
+          mod("shelf", "vocab-shelf.html", "01", "词库", "书架本数", "—", "续学", "—", "进入书架", "vocab-shelf.html") +
+          mod("challenge", "vocab-challenge.html", "02", "单词闯关", "当前关", "—", "抽测池", "—", "开始闯关", "vocab-challenge.html") +
           mod("quiz", "vocab-quiz.html", "03", "单词检测", "本周次数", "—", "最近正确率", "—", "开始检测", "vocab-quiz.html") +
           mod("wrong", "wrong-words.html", "04", "错题本", "待复习场次", "—", "错词数", "—", "去复习", "wrong-words.html") +
         "</div>" +
@@ -400,19 +400,31 @@
       var ch = pair[1];
       if (!d || !d.ok) { paintGuest(); return; }
       set("shelfBooks", String(d.shelfBooks || 0));
-      set("activeLists", String(d.activeLists || 0));
+      set("activeLists", d.continueLearn && d.continueLearn.listLabel
+        ? String(d.continueLearn.listLabel)
+        : String(d.activeLists || 0));
       set("todayWords", String(d.todayWords || 0));
       set("weekWords", String(d.weekWords || 0));
       set("shelf-m1", (d.shelfBooks || 0) + " 本");
-      set("shelf-m2", String(d.activeLists || 0));
+      set("shelf-m2", d.continueLearn && d.continueLearn.listLabel
+        ? String(d.continueLearn.listLabel)
+        : String(d.activeLists || 0));
       set("quiz-m1", String(d.weekQuizzes || 0));
       set("quiz-m2", d.lastAccuracy != null ? d.lastAccuracy + "%" : "—");
       set("wrong-m1", String(d.pendingSessions || 0));
       set("wrong-m2", String(d.mistakeWords || 0));
       if (ch && ch.assigned && ch.progress) {
-        set("challenge-m1", "L" + (ch.progress.nextListNo || 1));
+        if (ch.programComplete) {
+          set("challenge-m1", "已完成");
+          setCta("challenge-cta", "vocab-challenge.html", "查看进度");
+        } else if (ch.progressDay) {
+          set("challenge-m1", "第 " + Math.min(ch.progressDay, 78) + " 关");
+          setCta("challenge-cta", "vocab-challenge.html", ch.activeAttemptId ? "继续闯关" : "去闯关");
+        } else {
+          set("challenge-m1", "L" + (ch.progress.nextListNo || 1));
+          setCta("challenge-cta", "vocab-challenge.html", "去闯关");
+        }
         set("challenge-m2", String((ch.pool && ch.pool.active) || 0));
-        setCta("challenge-cta", "vocab-challenge.html", "继续闯关");
       } else {
         set("challenge-m1", "待布置");
         set("challenge-m2", "—");

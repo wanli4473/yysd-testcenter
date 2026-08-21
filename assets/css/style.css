@@ -5708,6 +5708,107 @@ a.alevel-paper-title:hover { color: var(--c-pte); text-decoration: underline; }
   color: #fff;
 }
 .teacher-side__link--muted { color: var(--text-muted); font-weight: 500; }
+
+.teacher-mode-switch {
+  display: flex;
+  gap: 6px;
+  padding: 0 4px 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.teacher-mode-switch__btn {
+  flex: 1;
+  padding: 8px 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--brand-navy);
+  cursor: pointer;
+  line-height: 1.35;
+}
+.teacher-mode-switch__btn.is-active {
+  background: var(--brand-navy);
+  color: #fff;
+  border-color: var(--brand-navy);
+}
+.teacher-site-banner {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #102a4c;
+  color: #fff;
+  border-bottom: 2px solid #c7a45d;
+}
+body.has-teacher-site-banner .minimal-topbar {
+  top: 52px;
+}
+body.has-teacher-site-banner .ha-text-link[href="teacher-login.html"],
+body.has-teacher-site-banner a[href="teacher-login.html"] {
+  display: none;
+}
+.teacher-site-banner .teacher-mode-switch {
+  border-bottom: 0;
+  margin: 0;
+  padding: 0;
+}
+.teacher-site-banner .teacher-mode-switch__btn {
+  font-size: 12px;
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .25);
+  color: #fff;
+}
+.teacher-site-banner .teacher-mode-switch__btn.is-active {
+  background: #c7a45d;
+  border-color: #c7a45d;
+  color: #102a4c;
+}
+.teacher-site-banner__hint {
+  font-size: 12px;
+  opacity: .85;
+}
+.teacher-mode-picker {
+  max-width: 560px;
+  margin: 0 auto;
+}
+.teacher-mode-picker__choices {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+.teacher-mode-picker__btn {
+  display: block;
+  width: 100%;
+  padding: 24px 20px;
+  text-align: left;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-paper);
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.teacher-mode-picker__btn:hover {
+  border-color: var(--brand-gold, #c7a45d);
+  box-shadow: 0 4px 20px rgba(16, 42, 76, .08);
+}
+.teacher-mode-picker__btn strong {
+  display: block;
+  font-size: 1.15rem;
+  color: var(--brand-navy);
+  margin-bottom: 6px;
+}
+.teacher-mode-picker__btn span {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 .teacher-content {
   padding: 8px 28px 48px;
   min-width: 0;

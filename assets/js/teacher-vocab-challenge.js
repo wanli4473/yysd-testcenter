@@ -22,8 +22,8 @@
       var tasks = s.todayTasks || [];
       var done = tasks.filter(function (t) { return t.status === "completed"; }).length;
       var total = tasks.length;
-      var line = "第 " + prog.progressDay + " 关";
-      if (s.programComplete) line += " · 已完成";
+      var line = "第 " + Math.min(prog.progressDay, 78) + " 关";
+      if (s.programComplete) line = "已完成 78 关";
       else if (total) line += " · 本关 " + done + "/" + total;
       return line;
     }
@@ -41,7 +41,11 @@
 
   function paint(students) {
     if (!students.length) {
-      root.innerHTML = '<div class="state state--brand teacher-empty"><h3>暂无学生</h3><p>请先在「学生分配」中绑定学生。</p></div>';
+      var hint = (T.isAdmin && T.isAdmin())
+        ? '请先在<a href="admin-assign.html">学生分配</a>中把学生绑到教师账号。'
+        : "还没有分配给你的学生。请联系管理员绑定后再布置闯关。";
+      root.innerHTML = '<div class="state state--brand teacher-empty"><h3>暂无学生</h3><p>' +
+        hint + "</p></div>";
       return;
     }
     root.innerHTML =
@@ -127,20 +131,6 @@
           var byId = {};
           list.forEach(function (s) { byId[s.id] = s; });
           var rows = (roster && roster.students) || [];
-          if (!rows.length) {
-            // teacher roster uses listManagedStudentIds — should be populated
-            rows = ids.map(function (id) {
-              return {
-                studentId: id,
-                phone: byId[id] && byId[id].phone,
-                displayName: byId[id] && (byId[id].displayName || byId[id].name),
-                assignment: null,
-                progress: null,
-                pool: null
-              };
-            });
-            // enrich via parallel student calls — ponytail: one roster is enough if API works
-          }
           rows.forEach(function (r) {
             var src = byId[r.studentId];
             if (src) {

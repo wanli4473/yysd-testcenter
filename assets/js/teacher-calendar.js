@@ -369,7 +369,12 @@
         '<input type="checkbox" data-student="' + s.id + '"' + checked + ">" +
         '<span>' + esc(studentLabel(s)) + "</span></label>";
     }).join("");
-    document.getElementById("student-list").innerHTML = html || '<p class="profile-hint">暂无学生</p>';
+    document.getElementById("student-list").innerHTML = html ||
+      ('<p class="profile-hint">' +
+        ((T.isAdmin && T.isAdmin())
+          ? '暂无学生。请先到<a href="admin-assign.html">学生分配</a>绑定。'
+          : "暂无学生。请联系管理员把学生分配给你。") +
+      "</p>");
     document.getElementById("student-picked").textContent =
       "已选 " + Object.keys(selectedStudents).length + " 人";
   }

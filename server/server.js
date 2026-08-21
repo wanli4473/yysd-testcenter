@@ -1949,6 +1949,8 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
   var orgId = req.user.orgId;
   var rows = (orgId ? orgStmts.listStudentsByOrg.all(orgId) : []).filter(function (row) {
     return !allowedSet || allowedSet[row.id];
+  }).filter(function (row) {
+    return !teacherPreview.isPreviewUser(row);
   });
   var students = rows.map(function (row) {
     var scores = stmts.listStudentAttempts.all(row.id).map(parseScorePayload)
@@ -2265,7 +2267,9 @@ app.get("/api/admin/teachers", adminAuthMiddleware, function (req, res) {
 });
 
 app.get("/api/admin/students", adminAuthMiddleware, function (req, res) {
-  var students = orgStmts.listStudentsByOrg.all(req.user.orgId).map(function (row) {
+  var students = orgStmts.listStudentsByOrg.all(req.user.orgId).filter(function (row) {
+    return !teacherPreview.isPreviewUser(row);
+  }).map(function (row) {
     return {
       id: row.id,
       phone: maskPhone(row.phone),
@@ -4089,7 +4093,9 @@ diagnostic.mountRoutes(app, {
   teacherCanManageStudent: teacherCanManageStudent,
   findUserById: function (id) { return stmts.findUserById.get(id); },
   listStudentsByOrg: function (orgId) {
-    return orgStmts.listStudentsByOrg.all(orgId);
+    return (orgStmts.listStudentsByOrg.all(orgId) || []).filter(function (row) {
+      return !teacherPreview.isPreviewUser(row);
+    });
   },
   repoRoot: path.join(__dirname, "..")
 });
@@ -4220,7 +4226,8 @@ vocabChallenge.mountRoutes(app, {
   authMiddleware: authMiddleware,
   repoRoot: path.join(__dirname, ".."),
   canManageStudent: teacherCanManageStudent,
-  listManagedStudentIds: allowedStudentIdsForTeacher
+  listManagedStudentIds: allowedStudentIdsForTeacher,
+  isPreviewStudent: teacherPreview.isPreviewUser
 });
 
 // ponytail: runnable self-check

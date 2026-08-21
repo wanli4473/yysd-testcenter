@@ -293,7 +293,7 @@ window.YYSD_AUTH = (function () {
       n === "admin-assign.html" || n === "teacher-login.html" ||
       n === "teacher-register.html" || n === "platform.html" ||
       n === "teacher-diagnostic.html" || n === "teacher-student-diagnostic.html" ||
-      n === "teacher-vocab-challenge.html";
+      n === "teacher-vocab-challenge.html" || n === "teacher-mode-picker.html";
   }
 
   function isTeacherSiteMode() {
@@ -479,14 +479,11 @@ window.YYSD_AUTH = (function () {
     try {
       if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return false;
       if (isTeacherPage()) return false;
+      if (localStorage.getItem("yysd:teacher:mode") !== "site") return false;
       var stu = localStorage.getItem(TOKEN_KEY);
       var tea = localStorage.getItem(TEACHER_TOKEN_KEY);
       if (stu && stu !== tea) return false;
-      // ponytail: teacher JWT on student pages 403s as "网络错误"; enter shadow student once
-      if (localStorage.getItem("yysd:teacher:mode") !== "site") {
-        try { localStorage.setItem("yysd:teacher:mode", "site"); } catch (e) {}
-      }
-      return true;
+      return !stu || stu === tea;
     } catch (e) {
       return false;
     }
@@ -698,7 +695,7 @@ window.YYSD_AUTH = (function () {
       return;
     }
     if (getToken()) {
-      el.href = "profile.html";
+      el.href = (isTeacherPage() && !isTeacherSiteMode()) ? "teacher.html" : "profile.html";
       el.classList.add("nav-persist");
       var user = getUser();
       var phone = (user.phone || "").trim();
@@ -949,7 +946,7 @@ window.YYSD_AUTH = (function () {
       if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return;
       if (document.querySelector("script[data-teacher-mode]")) return;
       var s = document.createElement("script");
-      s.src = "assets/js/teacher-mode.js?v=20260820site2";
+      s.src = "assets/js/teacher-mode.js?v=20260821gate1";
       s.setAttribute("data-teacher-mode", "1");
       document.body.appendChild(s);
     } catch (e) {}

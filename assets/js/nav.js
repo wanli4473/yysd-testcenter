@@ -98,9 +98,16 @@
     var phone = (user.phone || "").trim();
     var label = (user.displayName || "").trim() || "个人中心";
     var src = logged && A.avatarSrc ? A.avatarSrc(user.avatarUrl) : "";
+    var digits = phone.replace(/\D/g, "");
+    var avatarText = "·";
+    if (/体验/.test(label) || /^900/.test(digits) || /^19900000/.test(digits)) {
+      avatarText = "体验";
+    } else if (phone) {
+      avatarText = phone.slice(-4);
+    }
     var avatar = src
       ? '<img class="nav-auth__avatar nav-auth__avatar--img" src="' + esc(src) + '" alt="">'
-      : '<span class="nav-auth__avatar" aria-hidden="true">' + esc(phone.slice(-4) || "·") + "</span>";
+      : '<span class="nav-auth__avatar" aria-hidden="true">' + esc(avatarText) + "</span>";
     return '<div class="reme-user" id="nav-user">' +
       '<a href="' + (logged ? "profile.html" : "login.html") + '" id="nav-auth" class="reme-avatar' + (logged ? " is-logged-in" : "") + '">' +
         avatar + '<span class="nav-auth__label">' + (logged ? esc(label) : "登录") + "</span>" +

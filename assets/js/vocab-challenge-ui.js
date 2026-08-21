@@ -96,27 +96,75 @@
     return m || "（暂无释义）";
   }
 
+  // ponytail: real Chinese glosses when the current pool is too small for 4 options
+  var FALLBACK_CN = [
+    "桌子 / 课桌", "跑步 / 奔跑", "窗户 / 窗口", "黄色 / 金黄",
+    "安静 / 平静", "朋友 / 友人", "天气 / 气候", "学校 / 校园"
+  ];
+
   function meaningOptions(w, pool, n) {
     n = n || 4;
     var correct = quizMeaning(w);
     var used = {};
     used[correct] = true;
     var distract = [];
-    var poolMeanings = shuffle(pool.map(quizMeaning));
+    var poolMeanings = shuffle((pool || []).map(quizMeaning));
     for (var i = 0; i < poolMeanings.length && distract.length < n - 1; i++) {
       var m = poolMeanings[i];
       if (!m || used[m]) continue;
       used[m] = true;
       distract.push(m);
     }
-    while (distract.length < n - 1) {
-      var filler = "（干扰项）" + (distract.length + 1);
-      if (!used[filler]) {
-        used[filler] = true;
-        distract.push(filler);
-      }
+    for (var f = 0; f < FALLBACK_CN.length && distract.length < n - 1; f++) {
+      var filler = FALLBACK_CN[f];
+      if (used[filler]) continue;
+      used[filler] = true;
+      distract.push(filler);
     }
     return shuffle([correct].concat(distract));
+  }
+
+  var DRAFT_KEY = "yysd:vc:draft:";
+  function saveQuizDraft() {
+    if (!session.attemptId) return;
+    try {
+      sessionStorage.setItem(DRAFT_KEY + session.attemptId, JSON.stringify({
+        phase: session.phase,
+        words: session.words,
+        answers: session.answers,
+        idx: session.idx,
+        lives: session.lives,
+        livesMax: session.livesMax,
+        waiting: !!session.waiting
+      }));
+    } catch (e) { /* quota */ }
+  }
+  function loadQuizDraft(attemptId, phase) {
+    try {
+      var raw = sessionStorage.getItem(DRAFT_KEY + attemptId);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || d.phase !== phase || !d.words || !d.words.length) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+  function clearQuizDraft(attemptId) {
+    if (!attemptId) return;
+    try { sessionStorage.removeItem(DRAFT_KEY + attemptId); } catch (e) { /* ignore */ }
+  }
+
+  function displayProgressDay(day, complete, total) {
+    total = total || 78;
+    day = Math.floor(Number(day) || 0);
+    if (complete || day > total) return total;
+    return day > 0 ? day : 1;
+  }
+
+  function spellMatches(user, expected) {
+    if (window.YYSD_EN_SPELL && YYSD_EN_SPELL.matches) {
+      return YYSD_EN_SPELL.matches(user, expected);
+    }
+    return String(user || "").trim().toLowerCase() === String(expected || "").trim().toLowerCase();
   }
 
   function bindEnglishSpellInput(el) {
@@ -137,6 +185,7 @@
         livesHtml += '<span class="heart' + (i >= session.lives ? " lost" : "") + '">❤️</span>';
       }
     }
+    document.body.classList.toggle("vc-playing", !!opts.showLives);
     root.innerHTML =
       '<div class="vl-app">' +
         '<div class="vl-top-bar">' +
@@ -170,15 +219,15 @@
     return phase || "";
   }
 
-  function taskStatusLabel(st) {
+  function taskStatusLabel(st, inProgress) {
     if (st === "completed") return "已通过";
     if (st === "failed") return "需重测";
-    if (st === "pending") return "待做";
+    if (st === "pending") return inProgress ? "闯关中" : "待做";
     return st || "";
   }
 
   function taskTypeLabel(t) {
-    return t === "review" ? "复习" : "新词";
+    return t === "review" ? "复习抽测" : "新词";
   }
 
   function stageChipSub(plan) {
@@ -199,6 +248,7 @@
     var stages = (stagesData && stagesData.stages) || [];
     if (!stages.length) return "";
     return (
+      '<div id="vc-stage-panel" hidden></div>' +
       '<div class="vc-stage-grid">' +
         stages.map(function (s) {
           var cls = "vc-stage-chip is-" + s.status;
@@ -214,8 +264,7 @@
         }).join("") +
       "</div>" +
       '<p class="vc-meta vc-stage-hint">共 ' + (stagesData.totalStages || stages.length) +
-        " 关 · 点击<strong>已过</strong>的关卡可自主重练（不影响进度）</p>" +
-      '<div id="vc-stage-panel" hidden></div>'
+        " 关 · 点击<strong>已过</strong>的关卡可自主重练（不影响进度）</p>"
     );
   }
 
@@ -256,6 +305,8 @@
         );
       };
     });
+    try { panel.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+    catch (e) { panel.scrollIntoView(); }
   }
 
   function formatReviewStages(stages) {
@@ -343,15 +394,28 @@
     );
   }
 
+  function setQuizCounter() {
+    var el = document.getElementById("vc-counter");
+    if (!el) return;
+    var n = (session.idx + 1) + "</strong> / " + session.words.length + " · 剩余生命 " + session.lives;
+    if (session.phase === "practice") {
+      el.innerHTML = "第 <strong>" + n;
+      return;
+    }
+    el.innerHTML = phaseLabel(session.phase) + " · 第 <strong>" + n;
+  }
+
   function updateLives() {
     var el = document.getElementById("lives");
-    if (!el) return;
-    var h = "";
-    var maxL = session.livesMax || HP_MAX;
-    for (var i = 0; i < maxL; i++) {
-      h += '<span class="heart' + (i >= session.lives ? " lost" : "") + '">❤️</span>';
+    if (el) {
+      var h = "";
+      var maxL = session.livesMax || HP_MAX;
+      for (var i = 0; i < maxL; i++) {
+        h += '<span class="heart' + (i >= session.lives ? " lost" : "") + '">❤️</span>';
+      }
+      el.innerHTML = h;
     }
-    el.innerHTML = h;
+    setQuizCounter();
   }
 
   function clearTimer() {
@@ -561,28 +625,31 @@
         } else {
           todayHtml =
             '<section class="vc-day-card">' +
-              '<h2 class="vc-day-title">第 ' + progressDay + " 关 · 本关任务</h2>" +
+              '<h2 class="vc-day-title">第 ' + displayProgressDay(progressDay, programComplete) + " 关 · 本关任务</h2>" +
               '<p class="vc-meta">先完成新词，再做复习 · 新词 5 命 · 复习 20 题 3 命</p>' +
               '<ul class="vc-day-tasks">' +
               todayTasks.map(function (t) {
                 var btn = "";
-                if (t.canStart && t.status !== "completed") {
+                if (t.canStart && t.status !== "completed" && !me.activeAttemptId) {
                   btn = '<button type="button" class="vl-btn vl-btn-sm vc-task-start" data-list="' +
                     t.listNo + '" data-type="' + esc(t.taskType) + '">' +
                     (t.status === "failed" ? "重测" : "开始") + "</button>";
                 }
                 return '<li class="vc-day-task vc-day-task--' + esc(t.status) + '">' +
                   "<span>List " + t.listNo + " · " + taskTypeLabel(t.taskType) +
-                  " · " + taskStatusLabel(t.status) + "</span>" + btn + "</li>";
+                  " · " + taskStatusLabel(t.status, !!me.activeAttemptId) + "</span>" + btn + "</li>";
               }).join("") +
               "</ul></section>";
         }
       }
 
+      var shownDay = displayProgressDay(progressDay, programComplete);
       var metaLine = isEbb
         ? esc(lists.bookLabel || lists.bookId) +
-          " · 进度关 " + progressDay +
-          " · 已通过 " + passedStages + " / " + ((lists.stages && lists.stages.totalStages) || 78) + " 关"
+          (programComplete
+            ? " · 已完成 " + shownDay + " / " + ((lists.stages && lists.stages.totalStages) || 78) + " 关"
+            : " · 进度关 " + shownDay +
+              " · 已通过 " + passedStages + " / " + ((lists.stages && lists.stages.totalStages) || 78) + " 关")
         : esc(lists.bookLabel || lists.bookId) +
           " · 已通关 List " + (prog.clearedListNo || 0) +
           " · 下一关 List " + (prog.nextListNo || 1) +
@@ -669,7 +736,7 @@
       if (msg.indexOf("学生账号") >= 0 || (A.isTeacher && A.isTeacher())) {
         shell(
           '<p class="vc-notice vc-notice--warn">教师账号不能直接闯关。请先在教师端切换到「网站功能区」，再打开本页。</p>' +
-          '<div class="vc-actions"><a class="vl-btn vl-btn-primary" href="teacher.html">打开教师端</a></div>',
+          '<div class="vc-actions"><a class="vl-btn vl-btn-primary" href="teacher-mode-picker.html">选择网站功能区</a></div>',
           "教师预览"
         );
         return;
@@ -686,26 +753,34 @@
       session.imeDebounce = null;
     }
     session.pendingStart = { listNo: listNo, taskType: taskType || "new" };
-    shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>准备题目…</div>', "开始");
-    var body = {};
-    if (listNo) body.listNo = listNo;
-    if (taskType) body.taskType = taskType;
-    A.api("/api/vocab-challenge/start", { method: "POST", body: body })
-      .then(function (d) {
-        if (!d || !d.ok) {
+    requireImeGate("start", function () {
+      shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>准备题目…</div>', "开始");
+      var body = {};
+      if (listNo) body.listNo = listNo;
+      if (taskType) body.taskType = taskType;
+      A.api("/api/vocab-challenge/start", { method: "POST", body: body })
+        .then(function (d) {
+          if (!d || !d.ok) {
+            shell(
+              '<p class="vc-notice vc-notice--warn">' + esc((d && d.error) || "无法开始") + "</p>" +
+              '<div class="vc-actions"><button type="button" class="vl-btn" id="vc-back">返回</button></div>',
+              "错误"
+            );
+            document.getElementById("vc-back").onclick = renderHub;
+            return;
+          }
+          enterPhase(d);
+        })
+        .catch(function (e) {
           shell(
-            '<p class="vc-notice vc-notice--warn">' + esc((d && d.error) || "无法开始") + "</p>" +
+            '<p class="vc-notice vc-notice--warn">' + esc((e && e.message) || "开始失败") + "</p>" +
             '<div class="vc-actions"><button type="button" class="vl-btn" id="vc-back">返回</button></div>',
             "错误"
           );
-          document.getElementById("vc-back").onclick = renderHub;
-          return;
-        }
-        enterPhase(d);
-      })
-      .catch(function () {
-        shell('<p class="vs-empty">开始失败</p>', "错误");
-      });
+          var back = document.getElementById("vc-back");
+          if (back) back.onclick = renderHub;
+        });
+    });
   }
 
   function enterPhase(d) {
@@ -717,15 +792,31 @@
     session.taskType = d.taskType || session.taskType ||
       (d.phase === "scheduled_review" ? "review" : "new");
     session.notices = d.notices || [];
-    session.words = shuffle((d.items || []).map(parseWord).filter(function (w) { return w.word; }));
-    session.answers = [];
-    session.idx = 0;
-    session.livesMax = d.livesMax || (session.taskType === "review" ? HP_REVIEW : HP_MAX);
-    session.lives = session.livesMax;
-    session.gameOver = false;
-    session.waiting = false;
+    var saved = loadQuizDraft(session.attemptId, session.phase);
+    if (saved) {
+      session.words = saved.words;
+      session.answers = saved.answers || [];
+      session.livesMax = saved.livesMax || d.livesMax ||
+        (session.taskType === "review" ? HP_REVIEW : HP_MAX);
+      session.lives = saved.lives != null ? saved.lives : session.livesMax;
+      session.idx = saved.waiting ? (saved.idx + 1) : (saved.idx || 0);
+      if (session.idx < 0) session.idx = 0;
+      if (session.idx > session.words.length) session.idx = session.words.length;
+      session.gameOver = session.lives <= 0;
+      session.waiting = false;
+    } else {
+      session.words = shuffle((d.items || []).map(parseWord).filter(function (w) { return w.word; }));
+      session.answers = [];
+      session.idx = 0;
+      session.livesMax = d.livesMax || (session.taskType === "review" ? HP_REVIEW : HP_MAX);
+      session.lives = session.livesMax;
+      session.gameOver = false;
+      session.waiting = false;
+      saveQuizDraft();
+    }
 
     if (d.cleared || d.phase === "cleared") {
+      clearQuizDraft(session.attemptId);
       renderCleared(d);
       return;
     }
@@ -748,6 +839,12 @@
           else enterPhase(r);
         });
       };
+      return;
+    }
+
+    if (session.gameOver || session.idx >= session.words.length) {
+      if (session.gameOver) padUnansweredWrong();
+      finishPhase();
       return;
     }
 
@@ -801,17 +898,17 @@
     session.answers.forEach(function (a) { seen[a.word] = true; });
     session.words.forEach(function (w) {
       if (!seen[w.word]) {
-        session.answers.push({ word: w.word, correct: false, userAnswer: "(lives)" });
+        session.answers.push({ word: w.word, correct: false, userAnswer: "(lives)", userMeaning: "" });
       }
     });
   }
 
   function afterAnswer() {
     session.waiting = true;
+    saveQuizDraft();
     var nextBtn = document.getElementById("qnext");
     var isPractice = session.phase === "practice";
-    var depletes = session.phase === "new_words" || session.phase === "scheduled_review" || isPractice;
-    if (depletes && session.lives <= 0) {
+    if (session.lives <= 0) {
       if (nextBtn) nextBtn.disabled = true;
       session.gameOver = true;
       setTimeout(function () {
@@ -846,7 +943,7 @@
     var spellRaw = spellEl ? spellEl.value.trim() : "";
     var spell = spellRaw.toLowerCase();
     var meaningOk = !!(session.selectedMeaning && session.selectedMeaning === quizMeaning(w));
-    var spellOk = !!(spell && spell === w.word.toLowerCase());
+    var spellOk = spellMatches(spellRaw, w.word);
     var ok = meaningOk && spellOk;
     if (!timeout) {
       if (!session.selectedMeaning) return "needMeaning";
@@ -873,7 +970,8 @@
     session.answers.push({
       word: w.word,
       correct: ok,
-      userAnswer: timeout ? (spellRaw || "(timeout)") : spell
+      userAnswer: timeout ? (spellRaw || "(timeout)") : spell,
+      userMeaning: session.selectedMeaning || ""
     });
     afterAnswer();
     return "ok";
@@ -927,12 +1025,19 @@
     var abort = document.getElementById("vc-abort");
     if (abort) {
       abort.onclick = function () {
+        if (session.phase === "practice") {
+          clearTimer();
+          renderHub();
+          return;
+        }
         if (!confirm("退出将作废本次闯关，确定？")) return;
         clearTimer();
+        var aid = session.attemptId;
         A.api("/api/vocab-challenge/void", {
           method: "POST",
-          body: { attemptId: session.attemptId }
+          body: { attemptId: aid }
         }).finally(function () {
+          clearQuizDraft(aid);
           session.attemptId = 0;
           renderHub();
         });
@@ -961,7 +1066,11 @@
       "</div>" +
       '<div class="vl-feedback" id="fb"></div>' +
       '<div class="vl-nav-row">' +
-        (showAbort ? '<button type="button" class="vl-btn" id="vc-abort">退出（作废）</button>' : "") +
+        (showAbort
+          ? '<button type="button" class="vl-btn vl-btn-abort" id="vc-abort">退出并作废</button>'
+          : (session.phase === "practice"
+            ? '<button type="button" class="vl-btn vl-btn-abort" id="vc-abort">退出练习</button>'
+            : "")) +
         '<button type="button" class="vl-btn vl-btn-primary" id="qnext" disabled>下一题 →</button>' +
       "</div>";
   }
@@ -975,18 +1084,18 @@
     session.selectedMeaning = null;
     session.answered = false;
     session.waiting = false;
+    saveQuizDraft();
     shell(
       questionInner(phaseLabel(session.phase) + " · 听发音，先选中文含义，再拼写英文", true),
       "List " + session.listNo,
       { showLives: true, showTimer: true }
     );
-    document.getElementById("vc-counter").innerHTML =
-      phaseLabel(session.phase) + " · 第 <strong>" + (session.idx + 1) + "</strong> / " +
-      session.words.length + " · 剩余生命 " + session.lives;
+    setQuizCounter();
     bindQuizQuestion(w);
   }
 
   function finishPhase() {
+    clearQuizDraft(session.attemptId);
     shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>提交中…</div>', "提交");
     var path = session.phase === "new_words"
       ? "/api/vocab-challenge/submit-new"
@@ -1056,6 +1165,10 @@
     session.attemptId = 0;
     var prog = d.progress || {};
     var dayNote = d.dayAdvanced ? '<p class="vc-notice">本关任务已全部完成，已进入下一关。</p>' : "";
+    var shown = displayProgressDay(
+      prog.progressDay,
+      !!(d.todayTasks && d.todayTasks.programComplete)
+    );
     shell(
       noticesHtml(d.notices || []) +
       dayNote +
@@ -1064,7 +1177,7 @@
         : "") +
       '<p class="vc-meta">' +
         (prog.progressDay
-          ? "进度关 " + prog.progressDay + " · 已通新词 List " + (prog.clearedListNo || session.listNo)
+          ? "进度关 " + shown + " · 已通新词 List " + (prog.clearedListNo || session.listNo)
           : "已通关至 List " + (prog.clearedListNo || session.listNo) +
             " · 下一关 List " + (prog.nextListNo || ((prog.clearedListNo || 0) + 1))) +
       "</p>" +
@@ -1092,7 +1205,7 @@
               return '<div class="vc-nb-row"><div><b>' + esc(r.word) + "</b> " +
                 '<span class="vc-meta">' + esc(r.ipa || "") + "</span><br>" +
                 '<span class="vc-meta">' + esc(r.meaning || "") + "</span></div>" +
-                "<div class=\"vc-meta\">错 " + (r.missCount || 1) + " 次</div></div>";
+                "<div class=\"vc-nb-miss\">错 " + (r.missCount || 1) + " 次</div></div>";
             }).join("")
           : '<p class="vs-empty">错题本还是空的。</p>';
         shell(
@@ -1140,6 +1253,7 @@
         session.words = shuffle(d.words.map(parseWord).filter(function (w) { return w.word; }));
         session.answers = [];
         session.idx = 0;
+        session.livesMax = HP_MAX;
         session.lives = HP_MAX;
         session.gameOver = false;
         session.waiting = false;
@@ -1173,6 +1287,7 @@
         session.words = shuffle(d.words.map(parseWord).filter(function (w) { return w.word; }));
         session.answers = [];
         session.idx = 0;
+        session.livesMax = HP_MAX;
         session.lives = HP_MAX;
         session.gameOver = false;
         session.waiting = false;
@@ -1210,8 +1325,7 @@
       "练习",
       { showLives: true, showTimer: true }
     );
-    document.getElementById("vc-counter").innerHTML =
-      "第 <strong>" + (session.idx + 1) + "</strong> / " + session.words.length;
+    setQuizCounter();
     bindQuizQuestion(w);
   }
 

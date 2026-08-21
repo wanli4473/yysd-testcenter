@@ -98,6 +98,11 @@
     return m || "（暂无释义）";
   }
 
+  var FALLBACK_CN = [
+    "桌子 / 课桌", "跑步 / 奔跑", "窗户 / 窗口", "黄色 / 金黄",
+    "安静 / 平静", "朋友 / 友人", "天气 / 气候", "学校 / 校园"
+  ];
+
   function meaningOptions(w, n) {
     n = n || 4;
     var correct = quizMeaning(w);
@@ -111,12 +116,11 @@
       used[m] = true;
       pool.push(m);
     }
-    while (pool.length < n - 1) {
-      var filler = "（干扰项）" + (pool.length + 1);
-      if (!used[filler]) {
-        used[filler] = true;
-        pool.push(filler);
-      }
+    for (var f = 0; f < FALLBACK_CN.length && pool.length < n - 1; f++) {
+      var filler = FALLBACK_CN[f];
+      if (used[filler]) continue;
+      used[filler] = true;
+      pool.push(filler);
     }
     return shuffle([correct].concat(pool));
   }
@@ -293,6 +297,7 @@
     meta.listIds = d.listIds || meta.listIds || [];
     meta.listLabels = d.listLabels || meta.listLabels || [];
     meta.sessionId = opts.sessionId || 0;
+    meta.quizToken = d.quizToken || 0;
     MAX_LIVES = d.maxLives || MAX_LIVES || 5;
     TIME_SEC = d.timeLimitSec || TIME_SEC || 20;
     state.poolTotal = d.poolTotal != null ? d.poolTotal : words.length;
@@ -302,6 +307,7 @@
     state.correct = 0;
     state.wrong = 0;
     state.mistakes = [];
+    state.quizResults = [];
     state.gameOver = false;
     state.phase = "quiz";
     state.imeViolations = 0;
@@ -381,6 +387,16 @@
 
   function currentWord() {
     return words[state.quizOrder[state.quizIdx]];
+  }
+
+  function recordQuizResult(w, userAnswer, userMeaning, ok) {
+    if (!w) return;
+    state.quizResults.push({
+      word: w.word,
+      userAnswer: userAnswer != null ? String(userAnswer) : "",
+      userMeaning: userMeaning != null ? String(userMeaning) : ""
+    });
+    if (!ok) pushMistake(w, userAnswer);
   }
 
   function pushMistake(w, userAnswer) {
@@ -626,7 +642,9 @@
     lockQuizControls();
     var w = currentWord();
     var meaningOk = state.selectedMeaning === quizMeaning(w);
-    var spellOk = spell === w.word.toLowerCase();
+    var spellOk = window.YYSD_EN_SPELL && YYSD_EN_SPELL.matches
+      ? YYSD_EN_SPELL.matches(spell, w.word)
+      : spell === w.word.toLowerCase();
     var ok = meaningOk && spellOk;
     paintMeaningResult(meaningOk);
     paintSpellResult(spellOk);
@@ -638,11 +656,11 @@
     } else {
       state.lives--;
       state.wrong++;
-      pushMistake(w, spell);
       fb.className = "vl-feedback show fail";
       fb.textContent = "❌ 正确答案：" + w.word + "（" + quizMeaning(w) + "）";
       updateLives();
     }
+    recordQuizResult(w, spell, state.selectedMeaning, ok);
     afterAnswer();
   }
 
@@ -655,7 +673,9 @@
     var spellRaw = spellEl ? spellEl.value.trim() : "";
     var spell = spellRaw.toLowerCase();
     var meaningOk = !!(state.selectedMeaning && state.selectedMeaning === quizMeaning(w));
-    var spellOk = !!(spell && spell === w.word.toLowerCase());
+    var spellOk = window.YYSD_EN_SPELL && YYSD_EN_SPELL.matches
+      ? YYSD_EN_SPELL.matches(spellRaw, w.word)
+      : !!(spell && spell === w.word.toLowerCase());
     var ok = meaningOk && spellOk;
     revealSpellRow(false);
     lockQuizControls();
@@ -667,13 +687,13 @@
       fb.textContent = "✅ 时间到，但作答正确！";
       state.correct++;
     } else {
-      pushMistake(w, spellRaw || "(timeout)");
       state.lives--;
       state.wrong++;
       updateLives();
       fb.className = "vl-feedback show timeout";
       fb.textContent = "⏰ 时间到！答案：" + w.word + "（" + quizMeaning(w) + "）";
     }
+    recordQuizResult(w, spellRaw || "(timeout)", state.selectedMeaning || "", ok);
     afterAnswer();
   }
 
@@ -716,6 +736,8 @@
             bookId: meta.bookId,
             listIds: meta.listIds,
             listLabels: meta.listLabels,
+            quizToken: meta.quizToken || 0,
+            results: state.quizResults || [],
             total: state.quizOrder.length,
             correct: state.correct,
             wrong: state.wrong,

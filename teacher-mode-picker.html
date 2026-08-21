@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>选择使用模式 · 教师端</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260821tfix1">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260722polish">
+</head>
+<body class="home-minimal teacher-auth-page">
+
+  <header class="minimal-topbar">
+    <div class="minimal-shell minimal-topbar__inner">
+      <a href="teacher-mode-picker.html" class="minimal-brand" aria-label="优益思达国际课程中心">
+        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
+        <span class="minimal-brand__text">
+          <b>优益思达国际课程中心</b>
+          <span>Teacher Portal</span>
+        </span>
+      </a>
+      <nav class="minimal-nav" aria-label="教师导航">
+        <button type="button" class="btn btn--ghost btn--sm" id="logout-btn">退出登录</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="minimal-shell minimal-main auth-main">
+    <section class="auth-card reveal teacher-mode-picker">
+      <div class="minimal-eyebrow">TEACHER MODE</div>
+      <h1 class="auth-card__title">请选择使用模式</h1>
+      <p class="auth-card__desc">登录后请先选择要进入的区域。之后如需切换，请使用页面顶部的模式切换按钮。</p>
+
+      <div class="teacher-mode-picker__choices">
+        <button type="button" class="teacher-mode-picker__btn pressable" id="pick-admin">
+          <strong>教室管理区</strong>
+          <span>查看学情、布置任务、词汇诊断、单词闯关管理与学生成绩。</span>
+        </button>
+        <button type="button" class="teacher-mode-picker__btn pressable" id="pick-site">
+          <strong>网站功能区</strong>
+          <span>以学生视角体验单词区、练习区、真题区等功能与闯关进度。</span>
+        </button>
+      </div>
+
+      <p class="auth-msg" id="msg" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer class="minimal-footer minimal-footer--rich">
+    <div class="minimal-shell minimal-footer__inner">
+      <p class="minimal-footer__copy">© <span id="year"></span> 优益思达国际课程中心 · 教师端</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/teacher-auth.js?v=20260821gate1"></script>
+  <script src="assets/js/teacher-mode.js?v=20260821gate1"></script>
+  <script>
+  (function () {
+    var T = window.YYSD_TEACHER;
+    var M = window.YYSD_TEACHER_MODE;
+    var msgEl = document.getElementById("msg");
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    if (!T || !T.getToken()) {
+      location.replace("teacher-login.html?next=" + encodeURIComponent("teacher-mode-picker.html"));
+      return;
+    }
+
+    function showMsg(text) {
+      msgEl.textContent = text || "";
+      msgEl.className = "auth-msg" + (text ? " auth-msg--err" : "");
+    }
+
+    document.getElementById("logout-btn").addEventListener("click", function () {
+      T.logout();
+    });
+
+    document.getElementById("pick-admin").addEventListener("click", function () {
+      showMsg("");
+      M.enterAdminMode();
+    });
+
+    document.getElementById("pick-site").addEventListener("click", function () {
+      showMsg("");
+      var btn = this;
+      btn.disabled = true;
+      M.enterSiteMode().catch(function (err) {
+        showMsg((err && err.message) || "无法进入网站功能区");
+        btn.disabled = false;
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

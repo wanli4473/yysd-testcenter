@@ -8,7 +8,18 @@ var PILOT_BOOK = "gaozhong";
 
 function previewPhone(teacherId) {
   var id = Math.max(1, Math.floor(Number(teacherId) || 0));
-  return "199" + String(id).padStart(8, "0").slice(-8);
+  // ponytail: 900… internal segment — avoids collision with real 199 MSISDN
+  return "900" + String(id).padStart(8, "0").slice(-8);
+}
+
+function isPreviewUser(user) {
+  var phone = String((user && (user.phone || user.Phone)) || "").replace(/\D/g, "");
+  var name = String((user && (user.display_name || user.displayName || user.name)) || "");
+  if (/（体验）/.test(name)) return true;
+  if (/^900\d{8}$/.test(phone)) return true;
+  // leftover from old previewPhone("199"+pad)
+  if (/^19900000\d{3}$/.test(phone)) return true;
+  return false;
 }
 
 function ensureSchema(db) {
@@ -106,31 +117,25 @@ function mountRoutes(app, opts) {
 
 function selfCheck(db, stmts, vocabChallenge) {
   ensureSchema(db);
-  if (previewPhone(1) !== "19900000001" || previewPhone(26) !== "19900000026") {
+  if (previewPhone(1) !== "90000000001" || previewPhone(26) !== "90000000026") {
     throw new Error("previewPhone format");
   }
-  db.exec("DELETE FROM users WHERE phone LIKE '199%'");
-  db.exec("DELETE FROM teachers WHERE phone = '19900000099'");
-  db.prepare(
-    "INSERT INTO teachers (phone, password_hash, name, created_at, last_login_at, org_id) " +
-      "VALUES ('19900000099', 'x', 'Test', ?, ?, NULL)"
-  ).run(new Date().toISOString(), new Date().toISOString());
-  var teacher = db.prepare("SELECT * FROM teachers WHERE phone = '19900000099'").get();
-  var user = provisionTeacher(db, stmts, vocabChallenge, teacher);
-  if (!user || !user.id) throw new Error("provisionTeacher user");
-  teacher = getTeacher(db, teacher.id);
-  if (teacher.preview_user_id !== user.id) throw new Error("preview_user_id link");
-  if (vocabChallenge && vocabChallenge.getAssignment) {
-    var asg = vocabChallenge.getAssignment(db, user.id);
-    if (!asg || asg.book_id !== PILOT_BOOK) throw new Error("gaozhong assign");
+  if (!isPreviewUser({ phone: "90000000002", display_name: "张老师（体验）" })) {
+    throw new Error("isPreviewUser 900");
   }
-  db.exec("DELETE FROM users WHERE id = " + user.id);
-  db.exec("DELETE FROM teachers WHERE id = " + teacher.id);
+  if (!isPreviewUser({ phone: "19900000004", display_name: "馨馨老师（体验）" })) {
+    throw new Error("isPreviewUser leftover 199");
+  }
+  if (isPreviewUser({ phone: "15901754473", display_name: "张老师" })) {
+    throw new Error("isPreviewUser false positive");
+  }
+  // ponytail: boot must not DELETE 199% users on live db — wipes teacher preview accounts + progress
 }
 
 module.exports = {
   PILOT_BOOK: PILOT_BOOK,
   previewPhone: previewPhone,
+  isPreviewUser: isPreviewUser,
   ensureSchema: ensureSchema,
   provisionTeacher: provisionTeacher,
   mountRoutes: mountRoutes,

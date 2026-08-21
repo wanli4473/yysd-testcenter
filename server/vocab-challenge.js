@@ -5,6 +5,7 @@
  */
 
 var schedule = require("./vocab-challenge-schedule");
+var grade = require("./vocab-grade");
 
 var MAX_NEW_WRONG = 5;
 var PARDON_STREAK = 5;
@@ -13,6 +14,20 @@ var PILOT_BOOK_ID = "gaozhong";
 var MS_PER_DAY = 86400000;
 var TASK_NEW = "new";
 var TASK_REVIEW = "review";
+
+/** Org admin returns null from listManagedStudentIds — Array.isArray(null) is false. */
+function resolveRosterStudentIds(listManagedStudentIds, req) {
+  if (!listManagedStudentIds) return [];
+  var ids = listManagedStudentIds(req);
+  if (ids === null) {
+    var raw = String((req && req.query && req.query.studentIds) || "");
+    return raw
+      .split(",")
+      .map(function (x) { return Number(x); })
+      .filter(function (n) { return n > 0; });
+  }
+  return Array.isArray(ids) ? ids : [];
+}
 
 /** Retest draw size by List number (1-based). */
 function retestQuota(listNo) {
@@ -123,7 +138,7 @@ var NOTICE = {
   emptyRetest: "暂无错题，完成本阶段后即可通关。",
   enterMakeup: "重测有错，进入补考循环：已对的词已锁定，只重做错词。",
   stubborn: "该词在补考中累计答错 3 次，已临时放行并标记为顽固词。",
-  cleared: "本 List 已通关，下一 List 已解锁。",
+  cleared: "本任务已通过。",
   enterReview: "复习检测：20 题 · 3 命 · 每题 18 秒。",
   reviewFail: "错误已达 3 题，本次复习失败，请重测（将重新抽题）。",
   reviewPass: "复习通过。",
@@ -678,12 +693,18 @@ function stmtsFor(db) {
 function replaceItems(db, s, attemptId, words, opts) {
   opts = opts || {};
   s.deleteItems.run(attemptId);
-  (words || []).forEach(function (w, i) {
+  var seen = {};
+  var seq = 0;
+  (words || []).forEach(function (w) {
     var word = typeof w === "string" ? w : w.word;
+    var key = String(word).toLowerCase();
+    // ponytail: vocab HTML may repeat same headword (e.g. can×2 in L4) — UNIQUE(attempt_id, word)
+    if (seen[key]) return;
+    seen[key] = true;
     s.insertItem.run(
       attemptId,
       String(word),
-      i,
+      seq++,
       opts.locked ? 1 : 0,
       opts.isCorrect != null ? (opts.isCorrect ? 1 : 0) : null,
       null,
@@ -828,6 +849,9 @@ function startListChallenge(db, opts) {
     };
   }
 
+  var resume = resumeSameAttempt(db, studentId, bookId, listNo, PHASE_NEW);
+  if (resume) return resume;
+
   var s = stmtsFor(db);
   var draft = emptyDraft();
   draft.taskType = TASK_NEW;
@@ -903,6 +927,10 @@ function startScheduledReview(db, opts) {
       return { ok: false, error: "请先完成本关新词或继续进行中的复习", todayTasks: today.tasks };
     }
   }
+
+  var resume = resumeSameAttempt(db, studentId, bookId, listNo, PHASE_SCHEDULED_REVIEW);
+  if (resume) return resume;
+
   var statsRows = db
     .prepare(
       "SELECT word, wrong_count FROM vocab_challenge_list_word_stats " +
@@ -974,7 +1002,7 @@ function submitScheduledReview(db, attemptId, studentId, answers, now) {
   var nowIso = isoNow(now);
   var draft = parseDraft(attempt.draft_json);
   var items = s.listItems.all(attemptId);
-  var map = answerMap(answers);
+  var map = grade.gradedAnswerMap(draft, answers);
   var wrongs = [];
   for (var i = 0; i < items.length; i++) {
     var it = items[i];
@@ -1172,9 +1200,9 @@ function submitNewWords(db, attemptId, studentId, answers, now) {
   if (attempt.phase !== PHASE_NEW) return { ok: false, error: "当前不是新词阶段" };
 
   var items = s.listItems.all(attemptId);
-  var map = answerMap(answers);
   var nowIso = isoNow(now);
   var draft = parseDraft(attempt.draft_json);
+  var map = grade.gradedAnswerMap(draft, answers);
   var wrongs = [];
   for (var i = 0; i < items.length; i++) {
     var it = items[i];
@@ -1184,6 +1212,20 @@ function submitNewWords(db, attemptId, studentId, answers, now) {
   }
 
   if (wrongs.length >= MAX_NEW_WRONG) {
+    var failDay = draft.progressDay || getProgressDay(db, studentId, attempt.book_id);
+    if (schedule.isEbbinghausBook(attempt.book_id) && failDay) {
+      upsertDayTask(
+        db,
+        studentId,
+        attempt.book_id,
+        failDay,
+        attempt.list_no,
+        TASK_NEW,
+        "failed",
+        attemptId,
+        nowIso
+      );
+    }
     s.updateAttempt.run(
       PHASE_NEW,
       STATUS_FAILED,
@@ -1273,7 +1315,7 @@ function submitReview(db, attemptId, studentId, answers, now) {
   var nowIso = isoNow(now);
   var draft = parseDraft(attempt.draft_json);
   var items = s.listItems.all(attemptId);
-  var map = answerMap(answers);
+  var map = grade.gradedAnswerMap(draft, answers);
   var inMakeup = attempt.phase === PHASE_MAKEUP;
   var stillWrong = [];
   var stubbornWords = [];
@@ -1556,6 +1598,11 @@ function tableNames(db) {
 }
 
 function selfCheck() {
+  var adminIds = resolveRosterStudentIds(function () { return null; }, { query: { studentIds: "9,44" } });
+  if (adminIds.join(",") !== "9,44") throw new Error("roster admin ids: " + adminIds.join(","));
+  var boundIds = resolveRosterStudentIds(function () { return [1, 2]; }, { query: { studentIds: "9" } });
+  if (boundIds.join(",") !== "1,2") throw new Error("roster bound ids: " + boundIds.join(","));
+
   var Database = require("better-sqlite3");
   var db = new Database(":memory:");
   ensureSchema(db);
@@ -1759,9 +1806,32 @@ function selfCheck() {
       { word: "golf", meaning: "g" }
     ];
   }
+  function meaningOf(word) {
+    var m = {
+      alpha: "a", bravo: "b", charlie: "c", delta: "d", echo: "e", foxtrot: "f", golf: "g",
+      only: "only", stubonly: "stubonly"
+    };
+    return m[word] || word;
+  }
+  function ansWord(word, ok) {
+    return {
+      word: word,
+      userAnswer: ok ? word : "x",
+      userMeaning: meaningOf(word),
+      correct: !!ok
+    };
+  }
   function ans(list, wrongSet) {
     return list.map(function (w) {
-      return { word: w.word || w, correct: !wrongSet[w.word || w] };
+      var word = w.word || w;
+      var ok = !wrongSet[word];
+      var meaning = String(w.meaning || word);
+      return {
+        word: word,
+        correct: ok,
+        userAnswer: ok ? word : "wrong",
+        userMeaning: meaning
+      };
     });
   }
 
@@ -1845,7 +1915,7 @@ function selfCheck() {
   var retestItems = pass.items.map(function (it) { return it.word; });
   var review1 = submitReview(
     db, start.attemptId, 1,
-    retestItems.map(function (w) { return { word: w, correct: false }; }),
+    retestItems.map(function (w) { return ansWord(w, false); }),
     now
   );
   if (review1.phase !== PHASE_MAKEUP || !review1.remainingCount) throw new Error("enter makeup");
@@ -1856,8 +1926,8 @@ function selfCheck() {
   var target = review1.items[0].word;
   var others = review1.items.slice(1).map(function (it) { return it.word; });
   function makeupRound(correctTarget, correctOthers) {
-    var a = [{ word: target, correct: correctTarget }];
-    others.forEach(function (w) { a.push({ word: w, correct: correctOthers }); });
+    var a = [ansWord(target, correctTarget)];
+    others.forEach(function (w) { a.push(ansWord(w, correctOthers)); });
     return submitReview(db, start.attemptId, 1, a, now);
   }
   // round1 wrong target, correct others
@@ -1879,7 +1949,7 @@ function selfCheck() {
   if (!final.cleared) {
     final = submitReview(
       db, start.attemptId, 1,
-      final.items.map(function (it) { return { word: it.word, correct: true }; }),
+      final.items.map(function (it) { return ansWord(it.word, true); }),
       now
     );
   }
@@ -1910,7 +1980,7 @@ function selfCheck() {
   pass = submitNewWords(db, start.attemptId, 1, ans(wordsOf(), {}), now);
   cleared = submitReview(
     db, start.attemptId, 1,
-    pass.items.map(function (it) { return { word: it.word, correct: true }; }),
+    pass.items.map(function (it) { return ansWord(it.word, true); }),
     now
   );
   if (!cleared.cleared) throw new Error("list3 clear");
@@ -1933,15 +2003,15 @@ function selfCheck() {
   ).run(entered);
   start = startListChallenge(db, {
     studentId: 1, bookId: "gaozhong", listId: "L4", listNo: 4,
-    words: [{ word: "only" }], now: now
+    words: [{ word: "only", meaning: "only" }], now: now
   });
-  pass = submitNewWords(db, start.attemptId, 1, [{ word: "only", correct: true }], now);
+  pass = submitNewWords(db, start.attemptId, 1, [ansWord("only", true)], now);
   if (pass.drawnCount !== 1 || pass.items[0].word !== "stubonly") throw new Error("draw stubonly");
-  review1 = submitReview(db, start.attemptId, 1, [{ word: "stubonly", correct: false }], now);
+  review1 = submitReview(db, start.attemptId, 1, [ansWord("stubonly", false)], now);
   if (review1.phase !== PHASE_MAKEUP) throw new Error("stub→makeup");
-  m1 = submitReview(db, start.attemptId, 1, [{ word: "stubonly", correct: false }], now);
-  m2 = submitReview(db, start.attemptId, 1, [{ word: "stubonly", correct: false }], now);
-  m3 = submitReview(db, start.attemptId, 1, [{ word: "stubonly", correct: false }], now);
+  m1 = submitReview(db, start.attemptId, 1, [ansWord("stubonly", false)], now);
+  m2 = submitReview(db, start.attemptId, 1, [ansWord("stubonly", false)], now);
+  m3 = submitReview(db, start.attemptId, 1, [ansWord("stubonly", false)], now);
   if (!m3.cleared || !m3.stubbornReleased || m3.stubbornReleased.indexOf("stubonly") < 0) {
     throw new Error("stubborn release clear");
   }
@@ -1978,7 +2048,7 @@ function selfCheck() {
   var revFail = submitScheduledReview(
     db, revStart.attemptId, 1,
     revStart.items.map(function (it, idx) {
-      return { word: it.word, correct: idx < revStart.items.length - 3 };
+      return ansWord(it.word, idx < revStart.items.length - 3);
     }),
     now
   );
@@ -1992,7 +2062,7 @@ function selfCheck() {
   if (!revRetry.ok || revRetry.attemptId === revStart.attemptId) throw new Error("review retry new attempt");
   var revPass = submitScheduledReview(
     db, revRetry.attemptId, 1,
-    revRetry.items.map(function (it) { return { word: it.word, correct: true }; }),
+    revRetry.items.map(function (it) { return ansWord(it.word, true); }),
     now
   );
   if (!revPass.passed) throw new Error("review pass");
@@ -2016,6 +2086,36 @@ function selfCheck() {
   if (!a3.ok || !a3.switched) throw new Error("switch back gaozhong");
   if (getProgressDay(db, 9, "gaozhong") !== 5) throw new Error("assign must preserve gaozhong progress");
 
+  grade.selfCheck();
+
+  // duplicate headwords in one list (e.g. L4 can×2) must not hit UNIQUE(attempt_id, word)
+  var dupStart = startListChallenge(db, {
+    studentId: 99, bookId: "gaozhong", listId: "L4", listNo: 4,
+    words: [{ word: "can" }, { word: "pure" }, { word: "can" }],
+    now: now,
+    skipScheduleGate: true
+  });
+  if (!dupStart.ok) throw new Error("dup words start: " + (dupStart.error || ""));
+  var dupItems = db
+    .prepare("SELECT word FROM vocab_challenge_attempt_item WHERE attempt_id = ? ORDER BY sort_ord")
+    .all(dupStart.attemptId);
+  if (dupItems.length !== 2 || dupItems[0].word !== "can" || dupItems[1].word !== "pure") {
+    throw new Error("dup words deduped");
+  }
+
+  // start while in-progress same list must resume, not void
+  var live1 = startListChallenge(db, {
+    studentId: 77, bookId: "gaozhong", listId: "L1", listNo: 1,
+    words: wordsOf(), now: now, skipScheduleGate: true
+  });
+  var live2 = startListChallenge(db, {
+    studentId: 77, bookId: "gaozhong", listId: "L1", listNo: 1,
+    words: wordsOf(), now: now, skipScheduleGate: true
+  });
+  if (!live1.ok || !live2.ok || live2.attemptId !== live1.attemptId) {
+    throw new Error("resume same in-progress attempt");
+  }
+
   db.close();
   return true;
 }
@@ -2023,10 +2123,19 @@ function selfCheck() {
 function findActiveAttempt(db, studentId, bookId) {
   return db
     .prepare(
-      "SELECT id FROM vocab_challenge_attempt " +
+      "SELECT id, list_no, phase FROM vocab_challenge_attempt " +
         "WHERE student_id = ? AND book_id = ? AND status = ? ORDER BY id DESC LIMIT 1"
     )
     .get(studentId, bookId, STATUS_IN_PROGRESS);
+}
+
+function resumeSameAttempt(db, studentId, bookId, listNo, phase) {
+  var live = getActiveAttemptRow(db, studentId, bookId);
+  if (!live) return null;
+  if (live.list_no === listNo && live.phase === phase) {
+    return getAttemptView(db, live.id, studentId);
+  }
+  return null;
 }
 
 function getAssignment(db, studentId) {
@@ -2518,6 +2627,14 @@ function mountRoutes(app, opts) {
     var studentId = Number(body.studentId);
     var bookId = String(body.bookId || PILOT_BOOK_ID).trim();
     if (!studentId) return res.status(400).json({ error: "缺少 studentId" });
+    if (opts.isPreviewStudent) {
+      var previewRow = db.prepare(
+        "SELECT phone, display_name FROM users WHERE id = ?"
+      ).get(studentId);
+      if (opts.isPreviewStudent(previewRow)) {
+        return res.status(400).json({ error: "体验账号请在网站功能区闯关，不要在此布置" });
+      }
+    }
     if (!canManageStudent(req, studentId)) {
       return res.status(403).json({ error: "无权布置该学生" });
     }
@@ -2561,21 +2678,12 @@ function mountRoutes(app, opts) {
 
   app.get("/api/vocab-challenge/teacher/roster", authMiddleware, function (req, res) {
     if (!requireTeacher(req, res)) return;
-    var ids = Array.isArray(opts.listManagedStudentIds)
-      ? opts.listManagedStudentIds(req)
-      : [];
-    if (opts.listManagedStudentIds && ids === null) {
-      // org admin: optional ?studentIds=1,2,3
-      var raw = String(req.query.studentIds || "");
-      ids = raw
-        .split(",")
-        .map(function (x) { return Number(x); })
-        .filter(function (n) { return n > 0; });
-    }
+    var ids = resolveRosterStudentIds(opts.listManagedStudentIds, req);
     var students = (ids || []).map(function (id) {
       var u = db.prepare(
         "SELECT id, phone, display_name FROM users WHERE id = ?"
       ).get(id);
+      if (opts.isPreviewStudent && opts.isPreviewStudent(u)) return null;
       var sum = studentChallengeSummary(db, id);
       return {
         studentId: id,
@@ -2589,7 +2697,7 @@ function mountRoutes(app, opts) {
         pool: sum.pool,
         activeAttemptId: sum.activeAttemptId
       };
-    });
+    }).filter(Boolean);
     res.json({ ok: true, students: students });
   });
 }
@@ -2629,6 +2737,7 @@ module.exports = {
   getAttemptView: getAttemptView,
   ensureSchema: ensureSchema,
   mountRoutes: mountRoutes,
+  resolveRosterStudentIds: resolveRosterStudentIds,
   selfCheck: selfCheck
 };
 

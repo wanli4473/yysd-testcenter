@@ -22,7 +22,9 @@ must(gate.indexOf("bookForLevel") >= 0, "gate exports bookForLevel");
 var statusApi = read("server/diagnostic.js");
 must(statusApi.indexOf("placement_done") >= 0, "status API returns placement_done");
 
-["vocab.html", "vocab-shelf.html", "vocab-lesson.html", "wrong-words.html", "zone.html", "word-realm.html", "diagnostic-report.html"].forEach(function (f) {
+["vocab.html", "vocab-shelf.html", "vocab-lesson.html", "vocab-learn.html",
+  "vocab-quiz.html", "vocab-challenge.html", "wrong-words.html", "zone.html",
+  "word-realm.html", "diagnostic-report.html"].forEach(function (f) {
   must(read(f).indexOf("diagnostic-gate.js") >= 0, f + " includes diagnostic-gate.js");
 });
 

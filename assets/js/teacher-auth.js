@@ -13,6 +13,7 @@ window.YYSD_TEACHER = (function () {
   var STUDENT_TOKEN_KEY = "yysd:auth:token";
   var AUTH_COOKIE = "yysd_auth";
   var PUBLIC_PAGES = { "teacher-login.html": 1, "teacher-register.html": 1 };
+  var MODE_KEY = "yysd:teacher:mode";
 
   function pageName() {
     var parts = location.pathname.split("/").filter(Boolean);
@@ -23,12 +24,30 @@ window.YYSD_TEACHER = (function () {
     return !!PUBLIC_PAGES[pageName()];
   }
 
+  function isModePickerPage() {
+    return pageName() === "teacher-mode-picker.html";
+  }
+
+  function getTeacherMode() {
+    try {
+      return localStorage.getItem(MODE_KEY) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function hasChosenMode() {
+    var m = getTeacherMode();
+    return m === "admin" || m === "site";
+  }
+
   function isTeacherPage() {
     var n = pageName();
     return n === "teacher.html" || n === "teacher-calendar.html" ||
       n === "teacher-diagnostic.html" ||
       n === "teacher-student-diagnostic.html" ||
       n === "teacher-vocab-challenge.html" ||
+      n === "teacher-mode-picker.html" ||
       n === "admin-assign.html" || isPublicPage();
   }
 
@@ -51,7 +70,8 @@ window.YYSD_TEACHER = (function () {
 
   function getToken() {
     try {
-      return localStorage.getItem(TOKEN_KEY) || localStorage.getItem(STUDENT_TOKEN_KEY) || "";
+      // ponytail: student JWT must not count as teacher login (opens picker)
+      return localStorage.getItem(TOKEN_KEY) || "";
     } catch (e) { return ""; }
   }
 
@@ -152,6 +172,15 @@ window.YYSD_TEACHER = (function () {
       return false;
     }
     setAuthCookie(true);
+    if (isModePickerPage()) return true;
+    if (!hasChosenMode()) {
+      location.replace("teacher-mode-picker.html");
+      return false;
+    }
+    if (getTeacherMode() === "site") {
+      location.replace("index.html");
+      return false;
+    }
     return true;
   }
 

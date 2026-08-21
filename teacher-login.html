@@ -104,7 +104,7 @@
     </div>
   </footer>
 
-  <script src="assets/js/teacher-auth.js?v=20260812scores304"></script>
+  <script src="assets/js/teacher-auth.js?v=20260821gate1"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
@@ -113,10 +113,14 @@
     var phoneEl = document.getElementById("phone");
     var passwordEl = document.getElementById("password");
     var msgEl = document.getElementById("msg");
-    var next = new URLSearchParams(location.search).get("next") || "teacher.html";
+    var next = new URLSearchParams(location.search).get("next") || "teacher-mode-picker.html";
 
     if (T.getToken()) {
-      location.replace(next.indexOf("teacher-login") !== -1 ? "teacher.html" : next);
+      var mode = "";
+      try { mode = localStorage.getItem("yysd:teacher:mode") || ""; } catch (e) {}
+      if (mode === "site") location.replace("index.html");
+      else if (mode === "admin") location.replace("teacher.html");
+      else location.replace("teacher-mode-picker.html");
       return;
     }
 
@@ -138,25 +142,12 @@
           var teacher = d.teacher || { phone: phoneEl.value.trim() };
           T.setToken(d.token);
           T.setTeacher(teacher);
-          var hadSite = false;
-          try { hadSite = localStorage.getItem("yysd:teacher:mode") === "site"; } catch (e) {}
-          if (!hadSite) {
-            location.href = next;
-            return;
-          }
-          return T.api("/api/teacher/site-mode/enter", { method: "POST" }).then(function (site) {
-            try {
-              localStorage.setItem("yysd:teacher:mode", "site");
-              localStorage.setItem("yysd:auth:token", site.token);
-              localStorage.setItem("yysd:auth:user", JSON.stringify({
-                phone: (site.user && site.user.phone) || "",
-                role: "student",
-                displayName: (site.user && site.user.displayName) || "",
-                avatarUrl: (site.user && site.user.avatarUrl) || ""
-              }));
-            } catch (e) {}
-            location.href = next;
-          });
+          try {
+            localStorage.removeItem("yysd:teacher:mode");
+            localStorage.removeItem("yysd:auth:token");
+            localStorage.removeItem("yysd:auth:user");
+          } catch (e) {}
+          location.href = "teacher-mode-picker.html";
         })
         .catch(function (e) { showMsg(e.message); });
     });

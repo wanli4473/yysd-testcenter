@@ -463,7 +463,16 @@
     var correct = w.meaning;
     var pool = state.words.map(function (x) { return x.meaning; }).filter(function (m) { return m && m !== correct; });
     pool = shuffle(pool).slice(0, 3);
-    while (pool.length < 3) pool.push("（干扰项）选项 " + (pool.length + 1));
+    var used = {};
+    used[correct] = true;
+    pool.forEach(function (m) { used[m] = true; });
+    var extras = ["桌子 / 课桌", "跑步 / 奔跑", "窗户 / 窗口", "黄色 / 金黄",
+      "安静 / 平静", "朋友 / 友人", "天气 / 气候", "学校 / 校园"];
+    for (var i = 0; i < extras.length && pool.length < 3; i++) {
+      if (used[extras[i]]) continue;
+      used[extras[i]] = true;
+      pool.push(extras[i]);
+    }
     return shuffle([correct].concat(pool));
   }
 

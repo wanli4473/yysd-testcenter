@@ -1,16 +1,35 @@
-/* teacher-mode.js — 教师端 ⇄ 网站功能区 切换 */
+/* teacher-mode.js — 教室管理区 ⇄ 网站功能区 切换 */
 (function () {
   "use strict";
 
   var MODE_KEY = "yysd:teacher:mode";
+  var TEACHER_TOKEN_KEY = "yysd:teacher:token";
   var T = window.YYSD_TEACHER;
   var A = window.YYSD_AUTH;
 
+  function pageName() {
+    var parts = location.pathname.split("/").filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : "index.html";
+  }
+
   function getMode() {
     try {
-      return localStorage.getItem(MODE_KEY) || "admin";
+      return localStorage.getItem(MODE_KEY) || "";
     } catch (e) {
-      return "admin";
+      return "";
+    }
+  }
+
+  function hasChosenMode() {
+    var m = getMode();
+    return m === "admin" || m === "site";
+  }
+
+  function hasTeacherToken() {
+    try {
+      return !!localStorage.getItem(TEACHER_TOKEN_KEY);
+    } catch (e) {
+      return false;
     }
   }
 
@@ -20,22 +39,67 @@
     } catch (e) {}
   }
 
+  function clearMode() {
+    try {
+      localStorage.removeItem(MODE_KEY);
+    } catch (e) {}
+  }
+
+  function redirectToPicker() {
+    if (pageName() === "teacher-mode-picker.html") return;
+    location.replace("teacher-mode-picker.html");
+  }
+
   function isSiteMode() {
     try {
       return getMode() === "site" &&
-        !!localStorage.getItem("yysd:teacher:token") &&
+        !!localStorage.getItem(TEACHER_TOKEN_KEY) &&
         !!localStorage.getItem("yysd:auth:token");
     } catch (e) {
       return false;
     }
   }
 
+  function setStudentAuthCookie(on) {
+    try {
+      var secure = location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = "yysd_auth=" + (on ? "1" : "") +
+        "; path=/; max-age=" + (on ? 2592000 : 0) + "; SameSite=Lax" + secure;
+    } catch (e) {}
+  }
+
+  // ponytail: picker.html does not load auth.js — write student keys here
+  function writeStudentSession(d) {
+    if (!d || !d.token) return;
+    try {
+      localStorage.setItem("yysd:auth:token", d.token);
+      var u = d.user || {};
+      localStorage.setItem("yysd:auth:user", JSON.stringify({
+        phone: u.phone || "",
+        role: "student",
+        displayName: u.displayName || "",
+        avatarUrl: u.avatarUrl || "",
+        isAdmin: !!u.isAdmin,
+        isPlatformAdmin: !!u.isPlatformAdmin
+      }));
+    } catch (e) {}
+    setStudentAuthCookie(true);
+  }
+
+  function clearStudentSession() {
+    try {
+      localStorage.removeItem("yysd:auth:token");
+      localStorage.removeItem("yysd:auth:user");
+    } catch (e) {}
+    if (A && A.clearSession) A.clearSession();
+    else setStudentAuthCookie(false);
+  }
+
   function applySiteModeLogin(d) {
     setMode("site");
+    writeStudentSession(d);
     if (A && A.applyLogin) {
       A.applyLogin({ token: d.token, user: d.user, role: "student" });
-    } else if (A && A.setToken) {
-      A.setToken(d.token);
     }
   }
 
@@ -54,13 +118,18 @@
 
   function restoreSiteModeToken() {
     if (!T || !T.api) return Promise.reject(new Error("请先登录教师账号"));
-    // ponytail: ensureTeacherSiteStudentToken no-ops on teacher pages / admin mode
     if (A && A.ensureTeacherSiteStudentToken && siteModeNeedsRestore()) {
       return A.ensureTeacherSiteStudentToken().then(function (d) {
         return (d && d.token) ? d : enterViaApi();
       });
     }
     return enterViaApi();
+  }
+
+  function enterAdminMode() {
+    setMode("admin");
+    clearStudentSession();
+    location.href = "teacher.html";
   }
 
   function enterSiteMode() {
@@ -72,7 +141,7 @@
 
   function exitSiteMode() {
     setMode("admin");
-    if (A && A.clearSession) A.clearSession();
+    clearStudentSession();
     location.href = "teacher.html";
   }
 
@@ -81,7 +150,7 @@
       '<div class="teacher-mode-switch" role="tablist" aria-label="教师端模式">' +
         '<button type="button" class="teacher-mode-switch__btn' +
           (active === "admin" ? " is-active" : "") +
-          '" data-mode="admin">教师管理区</button>' +
+          '" data-mode="admin">教室管理区</button>' +
         '<button type="button" class="teacher-mode-switch__btn' +
           (active === "site" ? " is-active" : "") +
           '" data-mode="site">网站功能区</button>' +
@@ -109,6 +178,9 @@
         return;
       }
       if (mode === "admin") {
+        var busy = document.body.classList.contains("yysd-ime-gate-open") ||
+          document.body.classList.contains("vc-playing");
+        if (busy && !confirm("闯关进行中，离开会暂停本题。确定回到教室管理区？")) return;
         if (isSiteMode()) exitSiteMode();
         else if (location.pathname.indexOf("teacher") < 0) location.href = "teacher.html";
       }
@@ -139,15 +211,38 @@
   }
 
   function boot() {
+    if (pageName() === "teacher-mode-picker.html") return;
+
     if (document.body.classList.contains("teacher-page")) {
+      if (hasTeacherToken() && !hasChosenMode()) {
+        redirectToPicker();
+        return;
+      }
+      if (isSiteMode()) {
+        location.href = "index.html";
+        return;
+      }
       mountAdminSwitch();
       return;
     }
+
+    if (hasTeacherToken()) {
+      if (!hasChosenMode()) {
+        redirectToPicker();
+        return;
+      }
+      if (getMode() !== "site") {
+        location.replace(getMode() === "admin" ? "teacher.html" : "teacher-mode-picker.html");
+        return;
+      }
+    }
+
     if (siteModeNeedsRestore()) {
       restoreSiteModeToken()
         .then(function () { mountSiteBanner(); })
         .catch(function () {
           setMode("admin");
+          location.replace("teacher.html");
         });
       return;
     }
@@ -157,9 +252,12 @@
   window.YYSD_TEACHER_MODE = {
     getMode: getMode,
     setMode: setMode,
+    hasChosenMode: hasChosenMode,
+    clearMode: clearMode,
     isSiteMode: isSiteMode,
     siteModeNeedsRestore: siteModeNeedsRestore,
     restoreSiteModeToken: restoreSiteModeToken,
+    enterAdminMode: enterAdminMode,
     enterSiteMode: enterSiteMode,
     exitSiteMode: exitSiteMode
   };

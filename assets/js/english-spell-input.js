@@ -2,8 +2,33 @@
 (function () {
   "use strict";
 
+  // ponytail: keep matches() in sync with server/vocab-grade.js spellMatches
+  var SPELL_OK = /[a-zA-Z0-9' ()-]/;
   function asciiSpell(s) {
-    return String(s || "").replace(/[^a-zA-Z'-]/g, "");
+    return String(s || "").replace(/[^a-zA-Z0-9' ()-]/g, "");
+  }
+
+  function normalizeSpell(s) {
+    return String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function matches(user, expected) {
+    var u = normalizeSpell(user);
+    var e = normalizeSpell(expected);
+    if (!u || !e) return false;
+    if (u === e) return true;
+    var optS = e.replace(/\s*\(s\)\s*$/i, "");
+    if (optS !== e && (u === optS || u === optS + "s")) return true;
+    if (/wards?$/.test(e)) {
+      var stem = e.replace(/s$/, "");
+      if (u === stem || u === stem + "s") return true;
+    }
+    var compactU = u.replace(/[\s'-]/g, "");
+    var compactE = e.replace(/[\s'()-]/g, "");
+    if (compactU && compactU === compactE) return true;
+    if (e === "0" && (u === "zero" || u === "nought" || u === "nil")) return true;
+    if (e === "zero" && (u === "0" || u === "o")) return true;
+    return false;
   }
 
   var BLOCK_TYPES = {
@@ -81,7 +106,7 @@
         return;
       }
       if (t === "insertText" && e.data != null) {
-        if (e.data.length !== 1 || /[^a-zA-Z'-]/.test(e.data)) {
+        if (e.data.length !== 1 || !SPELL_OK.test(e.data)) {
           e.preventDefault();
           if (/[\u4e00-\u9fff]/.test(e.data)) warn();
         }
@@ -103,5 +128,5 @@
     });
   }
 
-  window.YYSD_EN_SPELL = { bind: bind, asciiSpell: asciiSpell };
+  window.YYSD_EN_SPELL = { bind: bind, asciiSpell: asciiSpell, matches: matches, normalizeSpell: normalizeSpell };
 })();
