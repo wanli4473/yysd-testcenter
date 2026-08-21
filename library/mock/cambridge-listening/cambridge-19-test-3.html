@@ -360,6 +360,7 @@ const TEST = {
           ]},
         { kind:'match', title:'Questions 26–30',
           instruction:'Complete the flowchart below. Choose FIVE answers from the box and write the correct letter, A–H, next to Questions 26–30.',
+          image:'ielts19_test3_flow.png?v=20260821c19lis1',
           boxTitle:'Options',
           box:{A:`size`,B:`escape`,C:`age`,D:`water`,E:`cereal`,F:`calculations`,G:`changes`,H:`colour`},
           subTitle:'Flowchart',
@@ -491,10 +492,11 @@ function groupHtml(g){
     }).join('');
   }
   else if(g.kind==='match'){
+    const img=g.image?`<div class="map-wrap"><img class="map-img" src="${g.image}" alt="flowchart"></div>`:'';
     const box=`<div class="match-box"><div class="mb-h">${g.boxTitle}</div>${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
     const sel=`<select id="REP"><option value="">—</option>${Object.keys(g.box).map(k=>`<option value="${k}">${k}</option>`).join('')}</select>`;
     const qs=`<div style="font-weight:700;margin:6px 0 8px;">${g.subTitle}</div>`+g.questions.map(q=>`<div class="match-q"><span class="qnum-badge">${q.no}</span><span class="mq-txt">${q.q}</span>${sel.replace('REP',q.id)}</div>`).join('');
-    body=box+qs;
+    body=img+box+qs;
   }
   else if(g.kind==='multi'){
     const box=`<div class="match-box">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
