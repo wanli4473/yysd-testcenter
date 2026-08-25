@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
   <link rel="stylesheet" href="assets/css/style.css?v=20260801browse2">
-  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260722polish">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260825desk1">
 </head>
 <body class="home-minimal teacher-page teacher-layout shell-compact-nav page-premium">
 
@@ -73,83 +73,105 @@
 
   <div class="cal-modal" id="create-modal" hidden>
     <div class="cal-modal__backdrop" data-close="1"></div>
-    <div class="cal-modal__panel" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
-      <div class="cal-modal__head">
-        <h2 id="create-modal-title">新建任务 / 日程</h2>
-        <button type="button" class="cal-modal__x" data-close="1" aria-label="关闭">×</button>
-      </div>
-      <form class="cal-form" id="create-form">
-        <label class="auth-field">
-          <span>标题</span>
-          <input type="text" id="f-title" maxlength="80" required placeholder="如：本周剑桥听力 Test 1">
-        </label>
-        <label class="auth-field">
-          <span>类型</span>
-          <select id="f-type">
-            <option value="ASSIGNMENT">练习作业</option>
-            <option value="LESSON">课程日程</option>
-            <option value="ANNOUNCEMENT">提醒事项</option>
-          </select>
-        </label>
-        <div class="cal-form__row">
-          <label class="auth-field">
-            <span id="f-start-label">开始 / 上课时间</span>
-            <input type="datetime-local" id="f-start">
-          </label>
-          <label class="auth-field" id="f-due-wrap">
-            <span>截止时间</span>
-            <input type="datetime-local" id="f-due">
-          </label>
+    <div class="cal-modal__panel cal-modal__panel--desk" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+      <form class="cal-form assign-desk" id="create-form">
+        <div class="cal-modal__head">
+          <h2 id="create-modal-title">新建任务 / 日程</h2>
+          <button type="button" class="cal-modal__x" data-close="1" aria-label="关闭">×</button>
         </div>
-        <label class="auth-field">
-          <span>说明</span>
-          <textarea id="f-desc" rows="3" maxlength="2000" placeholder="给学生的要求或课程备注"></textarea>
-        </label>
+        <div class="assign-desk__body">
+          <section class="assign-desk__meta">
+            <label class="auth-field">
+              <span>标题</span>
+              <input type="text" id="f-title" maxlength="80" required placeholder="如：本周剑桥听力 Test 1">
+            </label>
+            <label class="auth-field">
+              <span>类型</span>
+              <select id="f-type">
+                <option value="ASSIGNMENT">练习作业</option>
+                <option value="LESSON">课程日程</option>
+                <option value="ANNOUNCEMENT">提醒事项</option>
+              </select>
+            </label>
+            <div class="cal-form__row">
+              <label class="auth-field">
+                <span id="f-start-label">开始 / 上课时间</span>
+                <input type="datetime-local" id="f-start">
+              </label>
+              <label class="auth-field" id="f-due-wrap">
+                <span>截止时间</span>
+                <input type="datetime-local" id="f-due">
+              </label>
+            </div>
+            <label class="auth-field">
+              <span>说明</span>
+              <textarea id="f-desc" rows="2" maxlength="2000" placeholder="给学生的要求或课程备注"></textarea>
+            </label>
+            <fieldset class="cal-fieldset assign-desk__students">
+              <legend>目标学生</legend>
+              <div class="cal-picker-toolbar">
+                <input type="search" id="student-q" placeholder="搜索姓名或手机号" autocomplete="off">
+                <button type="button" class="btn btn--ghost btn--sm" id="select-all-students">全选</button>
+                <button type="button" class="btn btn--ghost btn--sm" id="clear-students">清空</button>
+              </div>
+              <div class="cal-check-list" id="student-list"></div>
+            </fieldset>
+          </section>
 
-        <fieldset class="cal-fieldset">
-          <legend>目标学生</legend>
-          <div class="cal-picker-toolbar">
-            <input type="search" id="student-q" placeholder="搜索姓名或手机号" autocomplete="off">
-            <button type="button" class="btn btn--ghost btn--sm" id="select-all-students">全选</button>
-            <button type="button" class="btn btn--ghost btn--sm" id="clear-students">清空</button>
-          </div>
-          <div class="cal-check-list" id="student-list"></div>
-          <p class="profile-hint" id="student-picked">已选 0 人</p>
-        </fieldset>
-
-        <fieldset class="cal-fieldset" id="exercise-fieldset">
-          <legend>关联练习</legend>
-          <label class="auth-field">
-            <span>上传自有 HTML 练习（可选，单文件）</span>
-            <input type="file" id="f-html" accept=".html,text/html">
-            <p class="profile-hint" id="html-file-hint">上传后优先生效；学生将在站内打开做题。也可下方勾选网站现有练习。</p>
-          </label>
-          <div class="cal-ex-cats" id="exercise-cats" role="tablist" aria-label="作业类型">
-            <button type="button" class="chip is-active" data-ex-cat="vocab">单词</button>
-            <button type="button" class="chip" data-ex-cat="part">补弱练习</button>
-            <button type="button" class="chip" data-ex-cat="qtype">题型练习</button>
-            <button type="button" class="chip" data-ex-cat="scene">场景练习</button>
-            <button type="button" class="chip" data-ex-cat="skill">单项模考</button>
-            <button type="button" class="chip" data-ex-cat="suite">全套模考</button>
-          </div>
-          <p class="profile-hint" id="exercise-cat-hint">先选作业类型，再按下钻勾选。</p>
-          <div class="cal-ex-browse" id="exercise-browse" hidden>
-            <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-vol-filter" role="tablist" aria-label="剑桥册"></div>
-            <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-book-filter" hidden role="tablist" aria-label="词本"></div>
-            <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-test-filter" role="tablist" aria-label="Test"></div>
-            <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-skill-filter" hidden role="tablist" aria-label="技能"></div>
-          </div>
-          <div class="cal-picker-toolbar cal-picker-toolbar--ex">
-            <input type="search" id="exercise-q" placeholder="或直接搜索：CET-6 / List 3 / c20 t1" autocomplete="off">
-          </div>
-          <div class="cal-check-list cal-check-list--tall" id="exercise-list"></div>
-          <p class="profile-hint" id="exercise-picked">已选 0 份练习</p>
-        </fieldset>
-
+          <fieldset class="cal-fieldset assign-desk__work" id="exercise-fieldset">
+            <legend>关联练习</legend>
+            <div class="cal-ex-cats" id="exercise-cats" role="tablist" aria-label="作业类型">
+              <button type="button" class="chip is-active" data-ex-cat="vocab">单词</button>
+              <button type="button" class="chip" data-ex-cat="part">补弱练习</button>
+              <button type="button" class="chip" data-ex-cat="qtype">题型练习</button>
+              <button type="button" class="chip" data-ex-cat="scene">场景练习</button>
+              <button type="button" class="chip" data-ex-cat="skill">单项模考</button>
+              <button type="button" class="chip" data-ex-cat="suite">全套模考</button>
+            </div>
+            <p class="profile-hint" id="exercise-cat-hint">先选作业类型，再按下钻勾选。</p>
+            <div class="cal-ex-browse" id="exercise-browse" hidden>
+              <div class="assign-filter-row">
+                <span class="assign-filter-label">册</span>
+                <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-vol-filter" role="tablist" aria-label="剑桥册"></div>
+              </div>
+              <div class="assign-filter-row">
+                <span class="assign-filter-label">范围</span>
+                <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-book-filter" hidden role="tablist" aria-label="词本"></div>
+              </div>
+              <div class="assign-filter-row">
+                <span class="assign-filter-label">Test</span>
+                <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-test-filter" role="tablist" aria-label="Test"></div>
+              </div>
+              <div class="assign-filter-row">
+                <span class="assign-filter-label">分类</span>
+                <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-skill-filter" hidden role="tablist" aria-label="技能"></div>
+              </div>
+            </div>
+            <div class="cal-picker-toolbar cal-picker-toolbar--ex">
+              <input type="search" id="exercise-q" placeholder="或直接搜索：CET-6 / List 3 / c20 t1" autocomplete="off">
+            </div>
+            <div class="cal-check-list cal-check-list--tall" id="exercise-list"></div>
+            <details class="assign-desk__upload">
+              <summary>上传自有试卷</summary>
+              <label class="auth-field">
+                <span>HTML 练习（可选，单文件）</span>
+                <input type="file" id="f-html" accept=".html,text/html">
+                <p class="profile-hint" id="html-file-hint">上传后优先生效；学生将在站内打开做题。</p>
+              </label>
+            </details>
+          </fieldset>
+        </div>
         <p class="auth-msg" id="create-msg" role="status"></p>
         <div class="cal-form__foot">
-          <button type="button" class="btn btn--ghost" data-close="1">取消</button>
-          <button type="submit" class="btn btn--primary pressable">发布</button>
+          <p class="assign-desk__summary">
+            <span id="student-picked">已选 0 人</span>
+            <span aria-hidden="true"> · </span>
+            <span id="exercise-picked">已选 0 份练习</span>
+          </p>
+          <div class="assign-desk__acts">
+            <button type="button" class="btn btn--ghost" data-close="1">取消</button>
+            <button type="submit" class="btn btn--primary pressable">发布</button>
+          </div>
         </div>
       </form>
     </div>
@@ -181,6 +203,6 @@
   <script src="assets/js/teacher-auth.js?v=20260821gate1"></script>
   <script src="assets/js/teacher-mode.js?v=20260821gate1"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/teacher-calendar.js?v=20260825qtype2"></script>
+  <script src="assets/js/teacher-calendar.js?v=20260825desk1"></script>
 </body>
 </html>

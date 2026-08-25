@@ -3634,3 +3634,177 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
     -webkit-backdrop-filter: none;
   }
 }
+
+/* —— 教师新建任务：双栏作业台（仅 #create-modal） —— */
+#create-modal .cal-modal__panel--desk {
+  width: min(1120px, calc(100vw - 32px));
+  height: min(88vh, 900px);
+  max-height: min(88vh, 900px);
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+#create-modal .assign-desk {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+}
+#create-modal .assign-desk > .cal-modal__head {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 16px 20px 12px;
+}
+#create-modal .assign-desk__body {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+#create-modal .assign-desk--meta-only .assign-desk__body {
+  grid-template-columns: 1fr;
+}
+#create-modal .assign-desk__meta {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 20px 16px;
+  border-right: 1px solid var(--border);
+}
+#create-modal .assign-desk--meta-only .assign-desk__meta {
+  border-right: 0;
+}
+#create-modal .assign-desk__students {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+#create-modal .assign-desk__students .cal-check-list {
+  flex: 1;
+  min-height: 140px;
+  max-height: none;
+}
+#create-modal .assign-desk__work {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 4px 20px 12px;
+}
+#create-modal .assign-desk__work > legend {
+  padding: 0;
+}
+#create-modal .assign-desk__work .cal-ex-cats {
+  gap: 8px;
+}
+#create-modal .assign-desk__work .cal-ex-cats .chip {
+  font-size: 13px;
+  padding: 8px 14px;
+}
+#create-modal .cal-ex-browse {
+  gap: 8px;
+  padding: 10px 12px;
+}
+#create-modal .assign-filter-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+#create-modal .assign-filter-row:has([hidden]) {
+  display: none;
+}
+#create-modal .assign-filter-label {
+  flex: 0 0 3.25em;
+  padding-top: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-foreground, #64748b);
+  line-height: 1.2;
+}
+#create-modal .assign-filter-row .cal-ex-cats {
+  flex: 1;
+  min-width: 0;
+}
+#create-modal .assign-desk__work .cal-check-list--tall {
+  flex: 1;
+  min-height: 280px;
+  max-height: none;
+}
+#create-modal .assign-desk__upload {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted-foreground, #64748b);
+}
+#create-modal .assign-desk__upload summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--brand-navy, #102a4c);
+}
+#create-modal .assign-desk__upload .auth-field {
+  margin: 8px 0 0;
+}
+#create-modal .assign-desk > .auth-msg {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 20px;
+}
+#create-modal .assign-desk > .cal-form__foot {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+#create-modal .assign-desk__summary {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted-foreground, #64748b);
+}
+#create-modal .assign-desk--meta-only #exercise-picked,
+#create-modal .assign-desk--meta-only .assign-desk__summary [aria-hidden] {
+  display: none;
+}
+#create-modal .assign-desk__acts {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+@media (max-width: 899px) {
+  #create-modal .cal-modal__panel--desk {
+    height: min(92vh, 900px);
+  }
+  #create-modal .assign-desk__body {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+  #create-modal .assign-desk__meta {
+    border-right: 0;
+    overflow: visible;
+  }
+  #create-modal .assign-desk__students .cal-check-list {
+    min-height: 120px;
+    max-height: 200px;
+  }
+  #create-modal .assign-desk__work {
+    overflow: visible;
+    min-height: 52vh;
+  }
+  #create-modal .assign-desk__work .cal-check-list--tall {
+    min-height: 220px;
+    max-height: 40vh;
+  }
+}

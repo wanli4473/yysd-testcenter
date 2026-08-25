@@ -402,7 +402,7 @@
     pickScene = "";
     pickDiff = "";
     var hint = document.getElementById("html-file-hint");
-    if (hint) hint.textContent = "上传后优先生效；学生将在站内打开做题。也可下方勾选网站现有练习。";
+    if (hint) hint.textContent = "上传后优先生效；学生将在站内打开做题。";
     document.getElementById("f-type").value = "ASSIGNMENT";
     syncTypeUi();
     renderStudentList();
@@ -417,10 +417,21 @@
     var type = document.getElementById("f-type").value;
     var ex = document.getElementById("exercise-fieldset");
     var dueWrap = document.getElementById("f-due-wrap");
+    var form = document.getElementById("create-form");
     ex.hidden = type !== "ASSIGNMENT";
     dueWrap.hidden = type === "LESSON";
+    if (form) form.classList.toggle("assign-desk--meta-only", type !== "ASSIGNMENT");
     document.getElementById("f-start-label").textContent =
       type === "LESSON" ? "上课时间" : "开始时间（可选）";
+  }
+
+  function stampBrowseLabels() {
+    ["exercise-vol-filter", "exercise-book-filter", "exercise-test-filter", "exercise-skill-filter"].forEach(function (id) {
+      var el = document.getElementById(id);
+      var lab = el && el.previousElementSibling;
+      if (!lab || !lab.classList.contains("assign-filter-label")) return;
+      lab.textContent = el.getAttribute("aria-label") || lab.textContent;
+    });
   }
 
   function studentLabel(s) {
@@ -495,6 +506,7 @@
       }
       var ranges = pickVocabBook ? vocabRangesForBook(pickVocabBook) : [];
       if (testHost) {
+        testHost.hidden = false;
         testHost.setAttribute("aria-label", "List 分段");
         testHost.innerHTML = ranges.map(function (r) {
           var on = r.id === pickVocabRange;
@@ -507,6 +519,7 @@
         skillBar.hidden = true;
         skillBar.innerHTML = "";
       }
+      stampBrowseLabels();
       return;
     }
 
@@ -545,6 +558,7 @@
             '" data-ex-diff="' + esc(d) + '">' + esc(d || "全部难度") + "</button>";
         }).join("");
       }
+      stampBrowseLabels();
       return;
     }
 
@@ -566,6 +580,7 @@
             '" data-ex-scene="' + esc(s) + '">' + esc(s) + "</button>";
         }).join("");
       }
+      stampBrowseLabels();
       return;
     }
 
@@ -601,6 +616,7 @@
           '" data-ex-skill="all">全部</button>';
       }
     }
+    stampBrowseLabels();
   }
 
   function renderExerciseList() {
