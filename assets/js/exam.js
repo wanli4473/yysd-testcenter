@@ -467,8 +467,7 @@
 
     backBtn.textContent = isStudy ? "← 返回单词" : "← 退出考场";
     if (isStudy && (Y.isVocabListSubject(item.subject) || Y.isVocabSpecial(item.subject))) {
-      var backBook = item.subject === "vocab" ? "gaozhong"
-        : (item.subject === "vocab-cet4" ? "cet4" : "special");
+      var backBook = Y.vocabBookOfSubject(item.subject) || "special";
       backBtn.href = "vocab-shelf.html?book=" + encodeURIComponent(backBook);
       backBtn.textContent = "← 返回词库";
     } else if (isStudy) {
@@ -486,6 +485,9 @@
     if (item.partNum) {
       src += "&assignPart=" + encodeURIComponent(item.partNum) +
         "&assignKind=" + encodeURIComponent(item.partKind || "s");
+      if (item.qFrom && item.qTo) {
+        src += "&qFrom=" + encodeURIComponent(item.qFrom) + "&qTo=" + encodeURIComponent(item.qTo);
+      }
     }
     var vocabMode = qs.get("vocabMode");
     if (vocabMode === "learn" || vocabMode === "test") {
@@ -672,6 +674,10 @@
     if (item.partNum) {
       script.dataset.assignPart = String(item.partNum);
       script.dataset.assignKind = item.partKind || "s";
+      if (item.qFrom && item.qTo) {
+        script.dataset.assignQFrom = String(item.qFrom);
+        script.dataset.assignQTo = String(item.qTo);
+      }
     }
     doc.body.appendChild(script);
   }

@@ -28,16 +28,31 @@ assert(/cambridgeCdtQs/.test(dash), "dashboard uses cambridgeCdtQs");
 assert(/function cambridgeCdtQs/.test(cfg), "config cambridgeCdtQs");
 assert(/data-ex-cat="skill"/.test(thtml), "teacher skill mock cat");
 assert(/data-ex-cat="part"/.test(thtml) && /补弱练习/.test(thtml), "teacher part cat renamed");
+assert(/data-ex-cat="qtype"/.test(thtml) && /题型练习/.test(thtml), "teacher qtype cat");
+assert(/data-ex-cat="scene"/.test(thtml) && /场景练习/.test(thtml), "teacher scene cat");
 assert(!/data-ex-cat="listening"/.test(thtml), "no listening practice chip");
 assert(/exercise-browse|exercise-vol-filter/.test(thtml), "browse cascade hosts");
 assert(/cdtPackForCat/.test(teach) && /ensureBrowseDefaults/.test(teach), "teacher cascade browse");
+assert(/cat === "qtype" \|\| cat === "scene"/.test(teach) || /cat === "part" \|\| cat === "qtype"/.test(teach), "qtype/scene drill pack");
+assert(/isTaxonomyBrowse/.test(teach) && /loadListeningTaxonomy/.test(teach), "teacher taxonomy browse");
 assert(/matchVolTest/.test(teach) && /cambridgeVolumes/.test(teach), "vol/test filter helpers");
 assert(/ensureVocabBrowseDefaults/.test(teach) && /data-ex-vbook/.test(teach), "teacher vocab book browse");
-assert(/VOCAB_BOOK_OPTS/.test(teach) && /matchVocabBrowse/.test(teach), "vocab range filter");
+assert(/vocabRangesForBook/.test(teach) && /listsInVocabRange/.test(teach), "vocab range filter");
 assert(/cdt_pack/.test(server) && /cdtPack/.test(server), "server cdt_pack");
 assert(/writingPrompt1/.test(server) && /writingChartNote/.test(server), "sanitizeScore keeps prompts");
 assert(/event/.test(report) && /rpt-retry/.test(report), "report retry keeps event");
 assert(/keep 52px chrome height/.test(css) || /height: 52px/.test(css), "mobile header stays 52px");
+
+assert(/function parseGroupId/.test(cfg), "parseGroupId");
+assert(/function clipAssignedGroup/.test(bridge), "clip assigned q-range group");
+assert(/assignQFrom/.test(exam), "exam.js passes qFrom");
+assert(/loadListeningTaxonomy/.test(cfg), "config loads listening taxonomy");
+
+var tax = JSON.parse(fs.readFileSync("library/listening-taxonomy.json", "utf8"));
+assert(tax.groups && tax.groups.length > 400, "taxonomy groups");
+assert(tax.parts && tax.parts.length > 200, "taxonomy scene parts");
+assert(tax.types && tax.types.indexOf("填空题") >= 0, "taxonomy types");
+assert(tax.scenes && tax.scenes.indexOf("求职") >= 0, "taxonomy scenes");
 
 var start = cfg.indexOf("function cambridgeCdtQs");
 var end = cfg.indexOf("\n  function makePartItem");
@@ -46,7 +61,16 @@ var qs = Function(cfg.slice(start, end) + "\nreturn cambridgeCdtQs;")();
 assert(qs("cambridge-16-test-4-reading-p3", ["cambridge-16-test-4-reading-p3"]) === "&cdt=1&pack=drill", "part drill cdt");
 assert(qs("cambridge-16-test-4-reading", ["cambridge-16-test-4-reading"], "exam") === "&cdt=1&pack=exam", "skill mock exam");
 assert(qs("cambridge-16-test-4-s2", ["cambridge-16-test-4-s2"]) === "&cdt=1&pack=drill", "listening section drill");
+assert(qs("cambridge-21-test-1-s1-q1-6", ["cambridge-21-test-1-s1-q1-6"]) === "&cdt=1&pack=drill", "qtype group drill");
 assert(qs("cambridge-16-test-4", ["cambridge-16-test-4", "cambridge-16-test-4-reading", "cambridge-16-test-4-writing"]) === "&cdt=1&pack=exam&suite=1", "suite cdt");
 assert(qs("not-cambridge", []) === "", "non-cam empty");
+
+var pgStart = cfg.indexOf("function parseGroupId");
+var pgEnd = cfg.indexOf("\n  function cambridgeCdtQs");
+assert(pgStart > 0 && pgEnd > pgStart, "parseGroupId slice");
+var parseGroupId = Function(cfg.slice(pgStart, pgEnd) + "\nreturn parseGroupId;")();
+var g = parseGroupId("cambridge-21-test-1-s1-q1-6");
+assert(g && g.parentId === "cambridge-21-test-1" && g.num === 1 && g.qFrom === 1 && g.qTo === 6, "parseGroupId fields");
+assert(!parseGroupId("cambridge-21-test-1-s1"), "parseGroupId ignores section id");
 
 console.log("ok: cdt p1 guards");

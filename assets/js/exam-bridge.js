@@ -53,6 +53,61 @@
     var p = (script && script.dataset && script.dataset.pack) || "";
     return p === "drill" ? "drill" : "exam";
   }
+
+  function assignQRange() {
+    var from = Number((script && script.dataset.assignQFrom) || 0);
+    var to = Number((script && script.dataset.assignQTo) || 0);
+    if ((!from || !to) && location.search) {
+      try {
+        var qs = new URLSearchParams(location.search);
+        from = from || Number(qs.get("qFrom") || 0);
+        to = to || Number(qs.get("qTo") || 0);
+      } catch (e) { /* ignore */ }
+    }
+    return (from && to) ? { from: from, to: to } : null;
+  }
+
+  function clipHtmlQ(html, from, to) {
+    return String(html == null ? "" : html).replace(/<Q n="(\d+)">/g, function (m, n) {
+      n = +n;
+      return (n >= from && n <= to) ? m : "";
+    });
+  }
+
+  function clipGroupToRange(g, from, to) {
+    var qs = (g.questions || []).filter(function (q) { return q.no >= from && q.no <= to; });
+    if (!qs.length) return null;
+    g = Object.assign({}, g, { questions: qs });
+    if (g.lines) {
+      g.lines = g.lines.map(function (l) {
+        var n = Object.assign({}, l);
+        if (n.html) n.html = clipHtmlQ(n.html, from, to);
+        if (n.h) n.h = clipHtmlQ(n.h, from, to);
+        return n;
+      });
+    }
+    if (g.rows) {
+      g.rows = g.rows.map(function (row) {
+        return row.map(function (cell) { return clipHtmlQ(cell, from, to); });
+      });
+    }
+    return g;
+  }
+
+  function clipAssignedGroup() {
+    var range = assignQRange();
+    var part = Number((script && script.dataset.assignPart) || 0);
+    if (!part && location.search) {
+      try { part = Number(new URLSearchParams(location.search).get("assignPart") || 0); } catch (e) { part = 0; }
+    }
+    if (!range || !part || !window.TEST || !TEST.sections) return;
+    TEST.sections = TEST.sections.filter(function (s) { return +s.id === part; }).map(function (s) {
+      var groups = (s.groups || []).map(function (g) {
+        return clipGroupToRange(g, range.from, range.to);
+      }).filter(Boolean);
+      return Object.assign({}, s, { groups: groups });
+    });
+  }
   var posted = false;
 
   function resolveExamId() {
@@ -1274,6 +1329,7 @@
 
   function initDraft() {
     ensureBandHelpers();
+    clipAssignedGroup();
     hookStartTest();
     hookSubmitTest();
     hookBackToCover();

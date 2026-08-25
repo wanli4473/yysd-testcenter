@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260821c16fix";
+  var CONTENT_VER = "20260825qtype1";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -24,7 +24,7 @@ window.YYSD = (function () {
 
   // ordered subjects per zone (leaf keys used by the manifest / folder classification)
   var ZONE_SUBJECTS = {
-    study:    ["grammar", "vocab", "vocab-cet4",
+    study:    ["grammar", "vocab", "vocab-cet4", "vocab-cet4-lite",
                "vocab-special-listening", "vocab-special-reading", "vocab-special-writing",
                "vocab-themes"],
     practice: ["changnanju", "shuzi-tingxie", "ielts-speaking", "ielts"],
@@ -47,6 +47,7 @@ window.YYSD = (function () {
     grammar: { label: "语法", en: "Grammar", color: "var(--c-grammar)" },
     vocab:   { label: "高中词汇", en: "Vocabulary", color: "var(--c-vocab)" },
     "vocab-cet4":    { label: "四级词汇", en: "CET-4", color: "var(--c-vocab)" },
+    "vocab-cet4-lite": { label: "四级词汇（精简版）", en: "CET-4 Compact", color: "var(--c-vocab)" },
     "vocab-special-listening": { label: "听力专项词汇", en: "Listening Words", color: "var(--c-cambridge-listening)" },
     "vocab-special-reading":   { label: "阅读专项词汇", en: "Reading Words", color: "var(--c-cambridge-reading)" },
     "vocab-special-writing":   { label: "写作专项词汇", en: "Writing Vocabulary", color: "var(--c-writing)" },
@@ -63,6 +64,7 @@ window.YYSD = (function () {
       { key: "vocab", label: "单词", children: [
         { label: "高中词汇", subject: "vocab" },
         { label: "四级词汇", subject: "vocab-cet4" },
+        { label: "四级词汇（精简版）", subject: "vocab-cet4-lite" },
         { key: "vocab-special", label: "雅思专项词汇", children: [
           { label: "听力专项词汇", subject: "vocab-special-listening" },
           { label: "阅读专项词汇", subject: "vocab-special-reading" },
@@ -115,6 +117,7 @@ window.YYSD = (function () {
   function vocabBookOfSubject(subject) {
     if (subject === "vocab") return "gaozhong";
     if (subject === "vocab-cet4") return "cet4";
+    if (subject === "vocab-cet4-lite") return "cet4-lite";
     if (isVocabSpecial(subject)) return "special";
     return null;
   }
@@ -248,7 +251,7 @@ window.YYSD = (function () {
 
   function wrongWordsStripHTML(prefix) {
     var p = prefix || "";
-    var n = ["gaozhong", "cet4", "special"].reduce(function (sum, k) {
+    var n = ["gaozhong", "cet4", "cet4-lite", "special"].reduce(function (sum, k) {
       return sum + (wrongWordCount(k) || 0);
     }, 0);
     return '<div class="wrong-notebook-strip" aria-label="单词错题本">' +
@@ -274,6 +277,19 @@ window.YYSD = (function () {
   }
 
   var _manifestPromise;
+  var _taxPromise;
+
+  function loadListeningTaxonomy() {
+    if (_taxPromise) return _taxPromise;
+    _taxPromise = fetch(manifestUrl().replace(/manifest\.json$/, "listening-taxonomy.json")).then(function (r) {
+      if (!r.ok) throw new Error("listening-taxonomy.json HTTP " + r.status);
+      return r.json();
+    }).catch(function (err) {
+      _taxPromise = null;
+      throw err;
+    });
+    return _taxPromise;
+  }
 
   function load() {
     if (_manifestPromise) return _manifestPromise;
@@ -352,6 +368,9 @@ window.YYSD = (function () {
         { id: "zero", label: "零频", start: 29, end: 35 }
       ]
     },
+    "cet4-lite": {
+      key: "cet4-lite", label: "四级词汇（精简版）", subject: "vocab-cet4-lite", tag: "CET-4 精简", chunk: 10
+    },
     special:  {
       key: "special", label: "雅思专项词汇", tag: "专题",
       subjects: ["vocab-special-listening", "vocab-special-reading", "vocab-special-writing"]
@@ -360,7 +379,7 @@ window.YYSD = (function () {
   };
 
   function isVocabListSubject(subject) {
-    return subject === "vocab" || subject === "vocab-cet4";
+    return subject === "vocab" || subject === "vocab-cet4" || subject === "vocab-cet4-lite";
   }
 
   function isVocabSpecial(subject) {
@@ -396,6 +415,7 @@ window.YYSD = (function () {
     if (!n) return (item && item.title) || "";
     if (s === "vocab") return "高中词汇单元" + n;
     if (s === "vocab-cet4") return "单元 " + n;
+    if (s === "vocab-cet4-lite") return "精简 List " + n;
     if (s === "vocab-special-listening") return "听力词汇单元" + n;
     if (s === "vocab-special-reading") return "阅读词汇单元" + n;
     if (s === "vocab-special-writing") return "写作词汇单元" + n;
@@ -418,15 +438,22 @@ window.YYSD = (function () {
     return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]) };
   }
 
+  // 题型练习: cambridge-21-test-1-s1-q1-6
+  function parseGroupId(id) {
+    var m = String(id || "").match(/^(cambridge-\d+-test-\d+)-s(\d+)-q(\d+)-(\d+)$/i);
+    if (!m) return null;
+    return { parentId: m[1], kind: "s", num: Number(m[2]), qFrom: Number(m[3]), qTo: Number(m[4]) };
+  }
+
   // Calendar / dashboard: Cambridge L/R/W (full or part) → CDT chrome query
   // cdtPack from teacher assign: drill | exam | "" (infer)
   function cambridgeCdtQs(itemId, linkedIds, cdtPack) {
     var id = String(itemId || "");
-    if (!/^cambridge-\d+-test-\d+(-reading(-p\d+)?|-writing|-s\d+)?$/.test(id)) return "";
+    if (!/^cambridge-\d+-test-\d+(-reading(-p\d+)?|-writing|-s\d+(-q\d+-\d+)?)?$/.test(id)) return "";
     var base = "";
     if (/^cambridge-\d+-test-\d+$/.test(id)) base = id;
     else {
-      var m = id.match(/^(cambridge-\d+-test-\d+)(?:-reading(?:-p\d+)?|-writing|-s\d+)$/);
+      var m = id.match(/^(cambridge-\d+-test-\d+)(?:-reading(?:-p\d+)?|-writing|-s\d+(?:-q\d+-\d+)?)$/);
       if (m) base = m[1];
     }
     var ids = linkedIds || [];
@@ -454,10 +481,29 @@ window.YYSD = (function () {
     });
   }
 
+  function makeGroupItem(parent, num, qFrom, qTo) {
+    if (!parent || !num || !qFrom || !qTo) return null;
+    var part = makePartItem(parent, "s", num);
+    if (!part) return null;
+    part.id = parent.id + "-s" + num + "-q" + qFrom + "-" + qTo;
+    part.title = part.title + " Q" + qFrom + "–" + qTo;
+    part.qFrom = qFrom;
+    part.qTo = qTo;
+    return part;
+  }
+
   function resolveItem(items, id) {
     var list = items || [];
     for (var i = 0; i < list.length; i++) {
       if (list[i].id === id) return list[i];
+    }
+    var group = parseGroupId(id);
+    if (group) {
+      var gParent = null;
+      for (var gi = 0; gi < list.length; gi++) {
+        if (list[gi].id === group.parentId) { gParent = list[gi]; break; }
+      }
+      return gParent ? makeGroupItem(gParent, group.num, group.qFrom, group.qTo) : null;
     }
     var part = parsePartId(id);
     if (!part) return null;
@@ -562,7 +608,7 @@ window.YYSD = (function () {
   }
 
   function vocabBooksForZone(items) {
-    return ["gaozhong", "cet4", "special"].map(function (k) {
+    return ["gaozhong", "cet4", "cet4-lite", "special"].map(function (k) {
       return vocabBookStats(items, k);
     }).filter(function (s) { return s && s.total > 0; });
   }
@@ -573,7 +619,8 @@ window.YYSD = (function () {
     var unit = book.subject ? " 单元" : " 份";
     var cnt = stats.total + unit;
     var progTxt = prog.done ? ("已学 " + prog.done + "/" + stats.total) : cnt;
-    var shortLabel = book.key === "gaozhong" ? "高中" : (book.key === "cet4" ? "四级" : "雅思");
+    var shortLabel = book.key === "gaozhong" ? "高中"
+      : (book.key === "cet4" ? "四级" : (book.key === "cet4-lite" ? "精简" : "雅思"));
     var tagTier = book.key === "special" ? "new" : (book.key === "cet4" ? "mid" : "base");
     var shieldIcon = '<svg class="vol-card__shield" viewBox="0 0 14 16" aria-hidden="true"><path d="M7 1.2 12 3v5.2c0 3.4-2.1 5.9-5 7.3-2.9-1.4-5-3.9-5-7.3V3L7 1.2Z" fill="currentColor"/></svg>';
     var bookIcon = '<svg class="vol-card__book" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
@@ -1201,9 +1248,11 @@ window.YYSD = (function () {
     VOCAB_BOOKS: VOCAB_BOOKS, isVocabListSubject: isVocabListSubject, isVocabSpecial: isVocabSpecial,
     needsVocabBridge: needsVocabBridge,
     vocabListNo: vocabListNo, vocabDisplayTitle: vocabDisplayTitle,     displayTitle: displayTitle,
-    parsePartId: parsePartId, makePartItem: makePartItem, resolveItem: resolveItem,
+    parsePartId: parsePartId, parseGroupId: parseGroupId,
+    makePartItem: makePartItem, makeGroupItem: makeGroupItem, resolveItem: resolveItem,
     cambridgeCdtQs: cambridgeCdtQs,
     expandAssignableParts: expandAssignableParts, partSearchText: partSearchText,
+    loadListeningTaxonomy: loadListeningTaxonomy,
     vocabTopic: vocabTopic,
     vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
     vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML,

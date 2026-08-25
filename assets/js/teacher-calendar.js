@@ -10,6 +10,7 @@
   var events = [];
   var students = [];
   var catalog = [];
+  var taxonomy = { types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] };
   var shelfBooks = []; // /api/vocab-shelf/catalog — same books as student 词库
   var monthCursor = new Date();
   monthCursor.setDate(1);
@@ -23,17 +24,22 @@
   var pickVocabGroup = "core"; // core | theme
   var pickVocabBook = "";
   var pickVocabRange = "";
+  var pickQType = "";
+  var pickScene = "";
+  var pickDiff = "";
   var detailEventId = null;
 
   var CAT_HINT = {
     vocab: "单词检测：可跨词书勾选多个 List；学生逐个 List 闯关，全部通过才算完成。",
     part: "补弱：先选册与 Test，再勾 Section / Passage（练习规则，可续做）。",
+    qtype: "题型练习：选题型与册，再勾题组（只出该组题，音频仍是整段 Part）。",
+    scene: "场景练习：选场景与册，再勾 Part（整段练习规则）。",
     skill: "单项模考：先选册与 Test，再勾单科整卷（机考模考规则）。",
     suite: "全套模考：先选册，再勾某套 Test 的听力+阅读+写作。"
   };
 
   function cdtPackForCat(cat) {
-    if (cat === "part") return "drill";
+    if (cat === "part" || cat === "qtype" || cat === "scene") return "drill";
     if (cat === "skill" || cat === "suite") return "exam";
     if (cat === "vocab") return "vocab-quiz";
     return "";
@@ -79,7 +85,12 @@
   }
 
   function isCambridgeBrowse() {
-    return exerciseCat === "part" || exerciseCat === "skill" || exerciseCat === "suite";
+    return exerciseCat === "part" || exerciseCat === "skill" || exerciseCat === "suite"
+      || exerciseCat === "qtype" || exerciseCat === "scene";
+  }
+
+  function isTaxonomyBrowse() {
+    return exerciseCat === "qtype" || exerciseCat === "scene";
   }
 
   function isVocabBrowse() {
@@ -251,8 +262,63 @@
     return out.sort(function (a, b) { return Number(a) - Number(b); });
   }
 
+  function taxRows() {
+    return exerciseCat === "scene" ? (taxonomy.parts || []) : (taxonomy.groups || []);
+  }
+
+  function taxonomyVolumes() {
+    var seen = {};
+    var out = [];
+    taxRows().forEach(function (row) {
+      var v = String(row.volume || "");
+      if (!v || seen[v]) return;
+      seen[v] = 1;
+      out.push(v);
+    });
+    return out.sort(function (a, b) { return Number(b) - Number(a); });
+  }
+
+  function taxonomyTests(vol) {
+    var seen = {};
+    var out = [];
+    (taxonomy.groups || []).forEach(function (g) {
+      if (String(g.volume) !== String(vol)) return;
+      if (pickQType && g.qType !== pickQType) return;
+      if (pickDiff && g.diff !== pickDiff) return;
+      var t = String(g.test || "");
+      if (!t || seen[t]) return;
+      seen[t] = 1;
+      out.push(t);
+    });
+    return out.sort(function (a, b) { return Number(a) - Number(b); });
+  }
+
+  function groupLabel(g) {
+    var bits = ["剑" + g.volume, "Test " + g.test, "Part " + g.part, "Q" + g.qFrom + "-" + g.qTo];
+    var extra = [g.qType, g.scene, g.diff].filter(Boolean);
+    return bits.join(" ") + (extra.length ? " · " + extra.join(" · ") : "");
+  }
+
+  function partSceneLabel(p) {
+    return "剑" + p.volume + " Test " + p.test + " Part " + p.part + (p.scene ? (" · " + p.scene) : "");
+  }
+
   function ensureBrowseDefaults() {
     if (!isCambridgeBrowse()) return;
+    if (isTaxonomyBrowse()) {
+      var tvols = taxonomyVolumes();
+      if (!pickVol || tvols.indexOf(pickVol) < 0) pickVol = tvols[0] || "";
+      if (exerciseCat === "qtype") {
+        var types = taxonomy.types || [];
+        if (!pickQType || types.indexOf(pickQType) < 0) pickQType = types[0] || "";
+        var tests = pickVol ? taxonomyTests(pickVol) : [];
+        if (!pickTest || tests.indexOf(pickTest) < 0) pickTest = tests[0] || "";
+      } else {
+        var scenes = taxonomy.scenes || [];
+        if (!pickScene || scenes.indexOf(pickScene) < 0) pickScene = scenes[0] || "";
+      }
+      return;
+    }
     var vols = cambridgeVolumes();
     if (!pickVol || vols.indexOf(pickVol) < 0) pickVol = vols[0] || "";
     var tests = pickVol ? testsForVolume(pickVol) : [];
@@ -332,6 +398,9 @@
     pickTest = "";
     pickVocabBook = "";
     pickVocabRange = "";
+    pickQType = "";
+    pickScene = "";
+    pickDiff = "";
     var hint = document.getElementById("html-file-hint");
     if (hint) hint.textContent = "上传后优先生效；学生将在站内打开做题。也可下方勾选网站现有练习。";
     document.getElementById("f-type").value = "ASSIGNMENT";
@@ -448,9 +517,62 @@
 
     ensureBrowseDefaults();
     if (volHost) volHost.setAttribute("aria-label", "剑桥册");
-    if (testHost) testHost.setAttribute("aria-label", "Test");
-    var vols = cambridgeVolumes();
+    var vols = isTaxonomyBrowse() ? taxonomyVolumes() : cambridgeVolumes();
     renderChipRow(volHost, vols, "ex-vol", pickVol, "Cam ");
+
+    if (exerciseCat === "qtype") {
+      if (testHost) {
+        testHost.hidden = false;
+        testHost.setAttribute("aria-label", "Test");
+        renderChipRow(testHost, pickVol ? taxonomyTests(pickVol) : [], "ex-test", pickTest, "Test ");
+      }
+      if (skillBar) {
+        skillBar.hidden = false;
+        skillBar.setAttribute("aria-label", "题型");
+        skillBar.innerHTML = (taxonomy.types || []).map(function (t) {
+          var on = t === pickQType;
+          return '<button type="button" class="chip chip--sub' + (on ? " is-active" : "") +
+            '" data-ex-qtype="' + esc(t) + '">' + esc(t) + "</button>";
+        }).join("");
+      }
+      if (bookHost) {
+        bookHost.hidden = false;
+        bookHost.setAttribute("aria-label", "难度");
+        var diffs = [""].concat(taxonomy.diffs || ["易", "中", "难"]);
+        bookHost.innerHTML = diffs.map(function (d) {
+          var on = String(pickDiff || "") === String(d);
+          return '<button type="button" class="chip chip--sub' + (on ? " is-active" : "") +
+            '" data-ex-diff="' + esc(d) + '">' + esc(d || "全部难度") + "</button>";
+        }).join("");
+      }
+      return;
+    }
+
+    if (exerciseCat === "scene") {
+      if (testHost) {
+        testHost.hidden = true;
+        testHost.innerHTML = "";
+      }
+      if (bookHost) {
+        bookHost.hidden = true;
+        bookHost.innerHTML = "";
+      }
+      if (skillBar) {
+        skillBar.hidden = false;
+        skillBar.setAttribute("aria-label", "场景");
+        skillBar.innerHTML = (taxonomy.scenes || []).map(function (s) {
+          var on = s === pickScene;
+          return '<button type="button" class="chip chip--sub' + (on ? " is-active" : "") +
+            '" data-ex-scene="' + esc(s) + '">' + esc(s) + "</button>";
+        }).join("");
+      }
+      return;
+    }
+
+    if (testHost) {
+      testHost.hidden = false;
+      testHost.setAttribute("aria-label", "Test");
+    }
     var tests = pickVol ? testsForVolume(pickVol) : [];
     renderChipRow(testHost, tests, "ex-test", pickTest, "Test ");
 
@@ -536,6 +658,41 @@
           "<span><b>" + esc(row.list.label || ("List " + row.list.id)) + "</b>" +
           "<small>" + esc(row.book.label || row.book.id) + " · " + esc(wc) + "</small></span></label>";
       }).join("");
+    } else if (isTaxonomyBrowse()) {
+      ensureBrowseDefaults();
+      var rows = [];
+      if (exerciseCat === "qtype") {
+        rows = (taxonomy.groups || []).filter(function (g) {
+          if (searching) {
+            return (groupLabel(g) + " " + g.id).toLowerCase().indexOf(q) >= 0;
+          }
+          if (pickQType && g.qType !== pickQType) return false;
+          if (pickVol && String(g.volume) !== String(pickVol)) return false;
+          if (pickTest && String(g.test) !== String(pickTest)) return false;
+          if (pickDiff && g.diff !== pickDiff) return false;
+          return true;
+        });
+      } else {
+        rows = (taxonomy.parts || []).filter(function (p) {
+          if (searching) {
+            return (partSceneLabel(p) + " " + p.id).toLowerCase().indexOf(q) >= 0;
+          }
+          if (pickScene && p.scene !== pickScene) return false;
+          if (pickVol && String(p.volume) !== String(pickVol)) return false;
+          return true;
+        });
+      }
+      rows = rows.slice(0, searching ? 120 : 80);
+      html = rows.map(function (row) {
+        var checked = selectedExercises[row.id] ? " checked" : "";
+        var title = exerciseCat === "qtype" ? groupLabel(row) : partSceneLabel(row);
+        var small = exerciseCat === "qtype"
+          ? (row.qType + (row.scene ? (" · " + row.scene) : "") + (row.diff ? (" · " + row.diff) : ""))
+          : (row.scene || "场景 Part");
+        return '<label class="cal-check">' +
+          '<input type="checkbox" data-exercise="' + esc(row.id) + '"' + checked + ">" +
+          "<span><b>" + esc(title) + "</b><small>" + esc(small) + "</small></span></label>";
+      }).join("");
     } else {
       var items = catalog.filter(function (it) {
         if (!itemInCat(it, exerciseCat)) return false;
@@ -563,7 +720,9 @@
       ? "没有匹配的练习"
       : (isVocabBrowse()
         ? (shelfBooks.length ? "该词书 / 分段暂无 List，换一本试试" : "词库加载中或为空")
-        : (isCambridgeBrowse() ? "该册 / Test 下暂无内容，换一册试试" : "没有匹配的练习"));
+        : (isTaxonomyBrowse()
+          ? "该筛选下暂无题目，换题型 / 场景或换一册试试"
+          : (isCambridgeBrowse() ? "该册 / Test 下暂无内容，换一册试试" : "没有匹配的练习")));
     document.getElementById("exercise-list").innerHTML =
       html || '<p class="profile-hint">' + emptyMsg + "</p>";
     updateExercisePicked();
@@ -795,7 +954,10 @@
       T.api("/api/calendar/events"),
       T.api("/api/teacher/students"),
       Y.load().catch(function () { return []; }),
-      T.api("/api/vocab-shelf/catalog").catch(function () { return { books: shelfBooks }; })
+      T.api("/api/vocab-shelf/catalog").catch(function () { return { books: shelfBooks }; }),
+      (Y.loadListeningTaxonomy
+        ? Y.loadListeningTaxonomy().catch(function () { return { types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] }; })
+        : Promise.resolve({ types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] }))
     ]).then(function (res) {
       events = res[0].events || [];
       students = (res[1].students || []).map(function (s) {
@@ -803,6 +965,7 @@
       });
       catalog = Y.expandAssignableParts ? Y.expandAssignableParts(res[2] || []) : (res[2] || []);
       shelfBooks = (res[3] && res[3].books) || shelfBooks || [];
+      taxonomy = res[4] || taxonomy;
       render();
     }).catch(function (e) {
       // ponytail: stay put — same as teacher.js
@@ -845,6 +1008,9 @@
     pickVocabGroup = "core";
     pickVocabBook = "";
     pickVocabRange = "";
+    pickQType = "";
+    pickScene = "";
+    pickDiff = "";
     renderExerciseList();
   });
 
@@ -889,6 +1055,26 @@
       var skillBtn = e.target.closest("[data-ex-skill]");
       if (skillBtn) {
         exerciseSkill = skillBtn.getAttribute("data-ex-skill") || "listening";
+        renderExerciseList();
+        return;
+      }
+      var qtypeBtn = e.target.closest("[data-ex-qtype]");
+      if (qtypeBtn) {
+        pickQType = qtypeBtn.getAttribute("data-ex-qtype") || "";
+        pickTest = "";
+        renderExerciseList();
+        return;
+      }
+      var sceneBtn = e.target.closest("[data-ex-scene]");
+      if (sceneBtn) {
+        pickScene = sceneBtn.getAttribute("data-ex-scene") || "";
+        renderExerciseList();
+        return;
+      }
+      var diffBtn = e.target.closest("[data-ex-diff]");
+      if (diffBtn) {
+        pickDiff = diffBtn.getAttribute("data-ex-diff") || "";
+        pickTest = "";
         renderExerciseList();
       }
     });
