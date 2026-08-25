@@ -253,7 +253,7 @@
     catalog.forEach(function (it) {
       if (!Y.isCambridge || !Y.isCambridge(it.subject)) return;
       if (it.partNum) return;
-      if (String(Y.camVolume(it) || "") !== String(vol)) return;
+      if (vol && String(Y.camVolume(it) || "") !== String(vol)) return;
       var t = String(Y.camTestNo(it) || "");
       if (!t || seen[t]) return;
       seen[t] = 1;
@@ -282,7 +282,7 @@
     var seen = {};
     var out = [];
     (taxonomy.groups || []).forEach(function (g) {
-      if (String(g.volume) !== String(vol)) return;
+      if (vol && String(g.volume) !== String(vol)) return;
       if (pickQType && g.qType !== pickQType) return;
       if (pickDiff && g.diff !== pickDiff) return;
       var t = String(g.test || "");
@@ -307,11 +307,11 @@
     if (!isCambridgeBrowse()) return;
     if (isTaxonomyBrowse()) {
       var tvols = taxonomyVolumes();
-      if (!pickVol || tvols.indexOf(pickVol) < 0) pickVol = tvols[0] || "";
+      if (pickVol && tvols.indexOf(pickVol) < 0) pickVol = tvols[0] || "";
       if (exerciseCat === "qtype") {
         var types = taxonomy.types || [];
         if (!pickQType || types.indexOf(pickQType) < 0) pickQType = types[0] || "";
-        var tests = pickVol ? taxonomyTests(pickVol) : [];
+        var tests = taxonomyTests(pickVol);
         if (!pickTest || tests.indexOf(pickTest) < 0) pickTest = tests[0] || "";
       } else {
         var scenes = taxonomy.scenes || [];
@@ -320,8 +320,8 @@
       return;
     }
     var vols = cambridgeVolumes();
-    if (!pickVol || vols.indexOf(pickVol) < 0) pickVol = vols[0] || "";
-    var tests = pickVol ? testsForVolume(pickVol) : [];
+    if (pickVol && vols.indexOf(pickVol) < 0) pickVol = vols[0] || "";
+    var tests = testsForVolume(pickVol);
     if (!pickTest || tests.indexOf(pickTest) < 0) pickTest = tests[0] || "";
     if (exerciseCat === "part") {
       if (exerciseSkill !== "listening" && exerciseSkill !== "reading") exerciseSkill = "listening";
@@ -333,17 +333,18 @@
   }
 
   function matchVolTest(it) {
-    if (!pickVol || !pickTest) return false;
-    return String(Y.camVolume(it) || "") === String(pickVol) &&
-      String(Y.camTestNo(it) || "") === String(pickTest);
+    if (!pickTest) return false;
+    if (pickVol && String(Y.camVolume(it) || "") !== String(pickVol)) return false;
+    return String(Y.camTestNo(it) || "") === String(pickTest);
   }
 
   function renderChipRow(host, items, attr, active, prefix) {
     if (!host) return;
     host.innerHTML = items.map(function (v) {
       var on = String(v) === String(active);
+      var label = v ? ((prefix || "") + v) : (attr === "ex-vol" ? "全部册" : "全部");
       return '<button type="button" class="chip chip--sub' + (on ? " is-active" : "") +
-        '" data-' + attr + '="' + esc(v) + '">' + esc((prefix || "") + v) + "</button>";
+        '" data-' + attr + '="' + esc(v) + '">' + esc(label) + "</button>";
     }).join("");
   }
 
@@ -531,13 +532,13 @@
     ensureBrowseDefaults();
     if (volHost) volHost.setAttribute("aria-label", "剑桥册");
     var vols = isTaxonomyBrowse() ? taxonomyVolumes() : cambridgeVolumes();
-    renderChipRow(volHost, vols, "ex-vol", pickVol, "Cam ");
+    renderChipRow(volHost, [""].concat(vols), "ex-vol", pickVol, "Cam ");
 
     if (exerciseCat === "qtype") {
       if (testHost) {
         testHost.hidden = false;
         testHost.setAttribute("aria-label", "Test");
-        renderChipRow(testHost, pickVol ? taxonomyTests(pickVol) : [], "ex-test", pickTest, "Test ");
+        renderChipRow(testHost, taxonomyTests(pickVol), "ex-test", pickTest, "Test ");
       }
       if (skillBar) {
         skillBar.hidden = false;
@@ -588,7 +589,7 @@
       testHost.hidden = false;
       testHost.setAttribute("aria-label", "Test");
     }
-    var tests = pickVol ? testsForVolume(pickVol) : [];
+    var tests = testsForVolume(pickVol);
     renderChipRow(testHost, tests, "ex-test", pickTest, "Test ");
 
     if (skillBar) {
@@ -631,7 +632,7 @@
           var hay = (s.base + " " + Y.displayTitle(s.listening)).toLowerCase();
           return hay.indexOf(q) >= 0;
         }
-        return String(Y.camVolume(s.listening) || "") === String(pickVol) &&
+        return (!pickVol || String(Y.camVolume(s.listening) || "") === String(pickVol)) &&
           String(Y.camTestNo(s.listening) || "") === String(pickTest);
       }).slice(0, searching ? 80 : 8);
       html = suites.map(function (s) {

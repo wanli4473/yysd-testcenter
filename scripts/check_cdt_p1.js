@@ -37,7 +37,7 @@ assert(/cat === "qtype" \|\| cat === "scene"/.test(teach) || /cat === "part" \|\
 assert(/isTaxonomyBrowse/.test(teach) && /loadListeningTaxonomy/.test(teach), "teacher taxonomy browse");
 assert(/assign-desk/.test(thtml) && /cal-modal__panel--desk/.test(thtml), "assign desk layout");
 assert(!/id="f-desc"/.test(thtml) && /assign-desk__students-body/.test(thtml), "no desc field; student body wrap");
-assert(/stampBrowseLabels/.test(teach) && /assign-desk--meta-only/.test(teach), "assign desk type toggle");
+assert(/全部册/.test(teach) && /concat\(vols\)/.test(teach), "all-volumes chip");
 assert(/matchVolTest/.test(teach) && /cambridgeVolumes/.test(teach), "vol/test filter helpers");
 assert(/ensureVocabBrowseDefaults/.test(teach) && /data-ex-vbook/.test(teach), "teacher vocab book browse");
 assert(/vocabRangesForBook/.test(teach) && /listsInVocabRange/.test(teach), "vocab range filter");
