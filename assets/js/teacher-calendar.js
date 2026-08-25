@@ -958,7 +958,10 @@
         if (vLabel) return "<li>" + esc(vLabel) + "</li>";
         var it = catalog.filter(function (c) { return c.id === xid; })[0]
           || (Y.resolveItem ? Y.resolveItem(catalog, xid) : null);
-        return "<li>" + esc(it ? Y.displayTitle(it) : xid) + "</li>";
+        var kind = Y.drillKindLabel ? Y.drillKindLabel(xid) : "";
+        return "<li>" + esc(it ? Y.displayTitle(it) : xid) +
+          (kind ? '<small class="cal-ex-kind">' + esc(kind) + "</small>" : "") +
+          "</li>";
       }).join("");
       var doneN = (ev.students || []).filter(function (s) { return s.status === "COMPLETED"; }).length;
       var totalN = (ev.students || []).length;

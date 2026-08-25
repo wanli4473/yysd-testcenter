@@ -57,6 +57,9 @@ assert(/TEST\.passages = clipBlocks/.test(bridge), "clip reading passages");
 assert(/assignQFrom/.test(exam), "exam.js passes qFrom");
 assert(/loadListeningTaxonomy/.test(cfg) && /loadReadingTaxonomy/.test(cfg), "config loads taxonomies");
 assert(/replace\("manifest\.json", file\)/.test(cfg), "taxonomy url keeps ?v=");
+assert(/function rememberTaxonomy/.test(cfg) && /function drillKindLabel/.test(cfg), "taxonomy kind lookup");
+assert(/cal-ex-kind/.test(cal) && /drillKindLabel/.test(cal), "student list shows drill kind");
+assert(/drillKindLabel/.test(teach), "teacher detail shows drill kind");
 
 var tax = JSON.parse(fs.readFileSync("library/listening-taxonomy.json", "utf8"));
 assert(tax.groups && tax.groups.length > 400, "taxonomy groups");
@@ -81,6 +84,15 @@ assert(taxById(rtax.parts, "cambridge-15-test-4-reading-p2").scene === "语言�
 assert(taxById(rtax.parts, "cambridge-14-test-3-reading-p1").scene === "语言教育", "c14 t3 p1 scene");
 assert(taxById(rtax.parts, "cambridge-14-test-3-reading-p3").scene === "语言教育", "c14 t3 p3 scene");
 assert(taxById(rtax.parts, "cambridge-12-test-3-reading-p3").scene === "社会人文", "c12 t3 p3 scene");
+var dkStart = cfg.indexOf("  var _taxById");
+var dkEnd = cfg.indexOf("  function loadTaxonomyJson");
+assert(dkStart > 0 && dkEnd > dkStart, "drillKindLabel slice");
+var kindApi = Function(cfg.slice(dkStart, dkEnd) + "\nreturn { rememberTaxonomy: rememberTaxonomy, drillKindLabel: drillKindLabel };")();
+kindApi.rememberTaxonomy(tax);
+kindApi.rememberTaxonomy(rtax);
+assert(kindApi.drillKindLabel("cambridge-14-test-2-s3-q21-24").indexOf("单选题") >= 0, "kind qtype");
+assert(kindApi.drillKindLabel("cambridge-21-test-1-s1") === "场景：日常生活", "kind scene part");
+assert(kindApi.drillKindLabel("nope") === "", "kind missing");
 
 var start = cfg.indexOf("function cambridgeCdtQs");
 var end = cfg.indexOf("\n  function makePartItem");

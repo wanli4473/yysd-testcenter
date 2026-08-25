@@ -278,13 +278,31 @@ window.YYSD = (function () {
 
   var _manifestPromise;
   var _taxPromises = {};
+  var _taxById = {};
+
+  function rememberTaxonomy(data) {
+    if (!data) return data;
+    (data.groups || []).concat(data.parts || []).forEach(function (row) {
+      if (row && row.id) _taxById[row.id] = row;
+    });
+    return data;
+  }
+
+  function drillKindLabel(id) {
+    var row = _taxById[String(id || "")];
+    if (!row) return "";
+    var bits = [];
+    if (row.qType) bits.push("题型：" + row.qType);
+    if (row.scene) bits.push("场景：" + row.scene);
+    return bits.join(" · ");
+  }
 
   function loadTaxonomyJson(file) {
     if (_taxPromises[file]) return _taxPromises[file];
     _taxPromises[file] = fetch(manifestUrl().replace("manifest.json", file)).then(function (r) {
       if (!r.ok) throw new Error(file + " HTTP " + r.status);
       return r.json();
-    }).catch(function (err) {
+    }).then(rememberTaxonomy).catch(function (err) {
       _taxPromises[file] = null;
       throw err;
     });
@@ -1263,6 +1281,7 @@ window.YYSD = (function () {
     expandAssignableParts: expandAssignableParts, partSearchText: partSearchText,
     loadListeningTaxonomy: loadListeningTaxonomy,
     loadReadingTaxonomy: loadReadingTaxonomy,
+    drillKindLabel: drillKindLabel,
     vocabTopic: vocabTopic,
     vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
     vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML,

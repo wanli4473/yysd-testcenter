@@ -377,11 +377,13 @@
     var isVocab = pack === "vocab-quiz" || pack === "vocab-learn";
     var exList = linkedIds.map(function (xid) {
       var title = catalogTitle(xid, ev.attachmentName, pack);
+      var kind = (!isVocab && Y.drillKindLabel) ? Y.drillKindLabel(xid) : "";
       var done = isVocab ? ev.status === "COMPLETED" : !!doneSet[xid];
       var href = examHref(xid, ev.id, linkedIds, ev.cdtPack);
       return '<li class="cal-ex-row' + (done ? " is-done" : "") + '">' +
         "<span><b>" + esc(title) + "</b>" +
           (done ? '<small class="cal-ex-done">已完成</small>' : "") +
+          (kind ? '<small class="cal-ex-kind">' + esc(kind) + "</small>" : "") +
         "</span>" +
         (done
           ? '<a class="btn btn--ghost btn--sm" href="' + href + '">再看一次</a>'
@@ -439,7 +441,9 @@
     viewEl.innerHTML = '<div class="state state--brand"><div class="spinner spinner--brand"></div></div>';
     Promise.all([
       A.api("/api/student/calendar"),
-      Y.load()
+      Y.load(),
+      Y.loadListeningTaxonomy ? Y.loadListeningTaxonomy().catch(function () { return null; }) : Promise.resolve(null),
+      Y.loadReadingTaxonomy ? Y.loadReadingTaxonomy().catch(function () { return null; }) : Promise.resolve(null)
     ]).then(function (res) {
       events = res[0].events || [];
       catalogById = {};
