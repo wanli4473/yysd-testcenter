@@ -100,13 +100,17 @@
     if (!part && location.search) {
       try { part = Number(new URLSearchParams(location.search).get("assignPart") || 0); } catch (e) { part = 0; }
     }
-    if (!range || !part || !window.TEST || !TEST.sections) return;
-    TEST.sections = TEST.sections.filter(function (s) { return +s.id === part; }).map(function (s) {
-      var groups = (s.groups || []).map(function (g) {
-        return clipGroupToRange(g, range.from, range.to);
-      }).filter(Boolean);
-      return Object.assign({}, s, { groups: groups });
-    });
+    if (!range || !part || !window.TEST) return;
+    function clipBlocks(blocks) {
+      return (blocks || []).filter(function (s) { return +s.id === part; }).map(function (s) {
+        var groups = (s.groups || []).map(function (g) {
+          return clipGroupToRange(g, range.from, range.to);
+        }).filter(Boolean);
+        return Object.assign({}, s, { groups: groups });
+      });
+    }
+    if (TEST.sections) TEST.sections = clipBlocks(TEST.sections);
+    if (TEST.passages) TEST.passages = clipBlocks(TEST.passages);
   }
   var posted = false;
 

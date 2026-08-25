@@ -10,7 +10,9 @@
   var events = [];
   var students = [];
   var catalog = [];
-  var taxonomy = { types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] };
+  var listenTax = { types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] };
+  var readTax = { types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] };
+  var taxonomy = listenTax;
   var shelfBooks = []; // /api/vocab-shelf/catalog — same books as student 词库
   var monthCursor = new Date();
   monthCursor.setDate(1);
@@ -34,12 +36,14 @@
     part: "补弱：先选册与 Test，再勾 Section / Passage（练习规则，可续做）。",
     qtype: "听力题型练习：选题型与册，再勾题组（只出该组题，音频仍是整段 Part）。",
     scene: "听力场景练习：选场景与册，再勾 Part（整段练习规则）。",
+    rqtype: "阅读题型练习：选题型与册，再勾题组（只出该组题，文章仍是整篇 Passage）。",
+    rscene: "阅读场景练习：选场景与册，再勾 Passage（整篇练习规则）。",
     skill: "单项模考：先选册与 Test，再勾单科整卷（机考模考规则）。",
     suite: "全套模考：先选册，再勾某套 Test 的听力+阅读+写作。"
   };
 
   function cdtPackForCat(cat) {
-    if (cat === "part" || cat === "qtype" || cat === "scene") return "drill";
+    if (cat === "part" || cat === "qtype" || cat === "scene" || cat === "rqtype" || cat === "rscene") return "drill";
     if (cat === "skill" || cat === "suite") return "exam";
     if (cat === "vocab") return "vocab-quiz";
     return "";
@@ -86,11 +90,27 @@
 
   function isCambridgeBrowse() {
     return exerciseCat === "part" || exerciseCat === "skill" || exerciseCat === "suite"
-      || exerciseCat === "qtype" || exerciseCat === "scene";
+      || isQTypeBrowse() || isSceneBrowse();
+  }
+
+  function isQTypeBrowse() {
+    return exerciseCat === "qtype" || exerciseCat === "rqtype";
+  }
+
+  function isSceneBrowse() {
+    return exerciseCat === "scene" || exerciseCat === "rscene";
+  }
+
+  function isReadingTax() {
+    return exerciseCat === "rqtype" || exerciseCat === "rscene";
   }
 
   function isTaxonomyBrowse() {
-    return exerciseCat === "qtype" || exerciseCat === "scene";
+    return isQTypeBrowse() || isSceneBrowse();
+  }
+
+  function applyTaxonomy() {
+    taxonomy = isReadingTax() ? readTax : listenTax;
   }
 
   function isVocabBrowse() {
@@ -263,7 +283,7 @@
   }
 
   function taxRows() {
-    return exerciseCat === "scene" ? (taxonomy.parts || []) : (taxonomy.groups || []);
+    return isSceneBrowse() ? (taxonomy.parts || []) : (taxonomy.groups || []);
   }
 
   function taxonomyVolumes() {
@@ -294,13 +314,15 @@
   }
 
   function groupLabel(g) {
-    var bits = ["剑" + g.volume, "Test " + g.test, "Part " + g.part, "Q" + g.qFrom + "-" + g.qTo];
+    var unit = isReadingTax() ? "Passage " : "Part ";
+    var bits = ["剑" + g.volume, "Test " + g.test, unit + g.part, "Q" + g.qFrom + "-" + g.qTo];
     var extra = [g.qType, g.scene, g.diff].filter(Boolean);
     return bits.join(" ") + (extra.length ? " · " + extra.join(" · ") : "");
   }
 
   function partSceneLabel(p) {
-    return "剑" + p.volume + " Test " + p.test + " Part " + p.part + (p.scene ? (" · " + p.scene) : "");
+    var unit = isReadingTax() ? "Passage " : "Part ";
+    return "剑" + p.volume + " Test " + p.test + " " + unit + p.part + (p.scene ? (" · " + p.scene) : "");
   }
 
   function ensureBrowseDefaults() {
@@ -308,7 +330,7 @@
     if (isTaxonomyBrowse()) {
       var tvols = taxonomyVolumes();
       if (pickVol && tvols.indexOf(pickVol) < 0) pickVol = tvols[0] || "";
-      if (exerciseCat === "qtype") {
+      if (isQTypeBrowse()) {
         var types = taxonomy.types || [];
         if (!pickQType || types.indexOf(pickQType) < 0) pickQType = types[0] || "";
         var tests = taxonomyTests(pickVol);
@@ -535,7 +557,7 @@
     var vols = isTaxonomyBrowse() ? taxonomyVolumes() : cambridgeVolumes();
     renderChipRow(volHost, [""].concat(vols), "ex-vol", pickVol, "Cam ");
 
-    if (exerciseCat === "qtype") {
+    if (isQTypeBrowse()) {
       if (testHost) {
         testHost.hidden = false;
         testHost.setAttribute("aria-label", "Test");
@@ -564,7 +586,7 @@
       return;
     }
 
-    if (exerciseCat === "scene") {
+    if (isSceneBrowse()) {
       if (testHost) {
         testHost.hidden = true;
         testHost.innerHTML = "";
@@ -679,7 +701,7 @@
     } else if (isTaxonomyBrowse()) {
       ensureBrowseDefaults();
       var rows = [];
-      if (exerciseCat === "qtype") {
+      if (isQTypeBrowse()) {
         rows = (taxonomy.groups || []).filter(function (g) {
           if (searching) {
             return (groupLabel(g) + " " + g.id).toLowerCase().indexOf(q) >= 0;
@@ -703,10 +725,10 @@
       rows = rows.slice(0, searching ? 240 : 200);
       html = rows.map(function (row) {
         var checked = selectedExercises[row.id] ? " checked" : "";
-        var title = exerciseCat === "qtype" ? groupLabel(row) : partSceneLabel(row);
-        var small = exerciseCat === "qtype"
+        var title = isQTypeBrowse() ? groupLabel(row) : partSceneLabel(row);
+        var small = isQTypeBrowse()
           ? (row.qType + (row.scene ? (" · " + row.scene) : "") + (row.diff ? (" · " + row.diff) : ""))
-          : (row.scene || "场景 Part");
+          : (row.scene || (isReadingTax() ? "场景 Passage" : "场景 Part"));
         return '<label class="cal-check">' +
           '<input type="checkbox" data-exercise="' + esc(row.id) + '"' + checked + ">" +
           "<span><b>" + esc(title) + "</b><small>" + esc(small) + "</small></span></label>";
@@ -975,6 +997,9 @@
       T.api("/api/vocab-shelf/catalog").catch(function () { return { books: shelfBooks }; }),
       (Y.loadListeningTaxonomy
         ? Y.loadListeningTaxonomy().catch(function () { return { types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] }; })
+        : Promise.resolve({ types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] })),
+      (Y.loadReadingTaxonomy
+        ? Y.loadReadingTaxonomy().catch(function () { return { types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] }; })
         : Promise.resolve({ types: [], scenes: [], diffs: ["易", "中", "难"], groups: [], parts: [] }))
     ]).then(function (res) {
       events = res[0].events || [];
@@ -983,7 +1008,9 @@
       });
       catalog = Y.expandAssignableParts ? Y.expandAssignableParts(res[2] || []) : (res[2] || []);
       shelfBooks = (res[3] && res[3].books) || shelfBooks || [];
-      taxonomy = res[4] || taxonomy;
+      listenTax = res[4] || listenTax;
+      readTax = res[5] || readTax;
+      applyTaxonomy();
       render();
     }).catch(function (e) {
       // ponytail: stay put — same as teacher.js
@@ -1029,6 +1056,7 @@
     pickQType = "";
     pickScene = "";
     pickDiff = "";
+    applyTaxonomy();
     renderExerciseList();
   });
 

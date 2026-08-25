@@ -154,7 +154,8 @@ def parse_test(raw: str) -> str:
 
 def parse_part(raw: str) -> int:
     s = str(raw or "").strip()
-    m = re.search(r"(?:part|section|s|p)\s*(\d)", s, re.I)
+    # ponytail: passage before p so "Passage 2" is not p + assage
+    m = re.search(r"(?:passage|part|section|s|p)\s*(\d)", s, re.I)
     if m:
         return int(m.group(1))
     m = re.search(r"^(\d)(?:\.0)?$", s)

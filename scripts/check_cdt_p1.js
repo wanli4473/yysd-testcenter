@@ -30,11 +30,13 @@ assert(/data-ex-cat="skill"/.test(thtml), "teacher skill mock cat");
 assert(/data-ex-cat="part"/.test(thtml) && /补弱练习/.test(thtml), "teacher part cat renamed");
 assert(/data-ex-cat="qtype"/.test(thtml) && /听力题型练习/.test(thtml), "teacher qtype cat");
 assert(/data-ex-cat="scene"/.test(thtml) && /听力场景练习/.test(thtml), "teacher scene cat");
+assert(/data-ex-cat="rqtype"/.test(thtml) && /阅读题型练习/.test(thtml), "teacher reading qtype cat");
+assert(/data-ex-cat="rscene"/.test(thtml) && /阅读场景练习/.test(thtml), "teacher reading scene cat");
 assert(!/data-ex-cat="listening"/.test(thtml), "no listening practice chip");
 assert(/exercise-browse|exercise-vol-filter/.test(thtml), "browse cascade hosts");
 assert(/cdtPackForCat/.test(teach) && /ensureBrowseDefaults/.test(teach), "teacher cascade browse");
 assert(/cat === "qtype" \|\| cat === "scene"/.test(teach) || /cat === "part" \|\| cat === "qtype"/.test(teach), "qtype/scene drill pack");
-assert(/isTaxonomyBrowse/.test(teach) && /loadListeningTaxonomy/.test(teach), "teacher taxonomy browse");
+assert(/isTaxonomyBrowse/.test(teach) && /loadListeningTaxonomy/.test(teach) && /loadReadingTaxonomy/.test(teach), "teacher taxonomy browse");
 assert(/assign-desk/.test(thtml) && /cal-modal__panel--desk/.test(thtml), "assign desk layout");
 assert(!/id="f-desc"/.test(thtml) && /assign-desk__students-body/.test(thtml), "no desc field; student body wrap");
 assert(/全部册/.test(teach) && /concat\(vols\)/.test(teach), "all-volumes chip");
@@ -49,15 +51,23 @@ assert(/keep 52px chrome height/.test(css) || /height: 52px/.test(css), "mobile 
 
 assert(/function parseGroupId/.test(cfg), "parseGroupId");
 assert(/function clipAssignedGroup/.test(bridge), "clip assigned q-range group");
+assert(/TEST\.passages = clipBlocks/.test(bridge), "clip reading passages");
 assert(/assignQFrom/.test(exam), "exam.js passes qFrom");
-assert(/loadListeningTaxonomy/.test(cfg), "config loads listening taxonomy");
-assert(/replace\("manifest\.json", "listening-taxonomy\.json"\)/.test(cfg), "taxonomy url keeps ?v=");
+assert(/loadListeningTaxonomy/.test(cfg) && /loadReadingTaxonomy/.test(cfg), "config loads taxonomies");
+assert(/replace\("manifest\.json", file\)/.test(cfg), "taxonomy url keeps ?v=");
 
 var tax = JSON.parse(fs.readFileSync("library/listening-taxonomy.json", "utf8"));
 assert(tax.groups && tax.groups.length > 400, "taxonomy groups");
 assert(tax.parts && tax.parts.length > 200, "taxonomy scene parts");
 assert(tax.types && tax.types.indexOf("填空题") >= 0, "taxonomy types");
 assert(tax.scenes && tax.scenes.indexOf("求职") >= 0, "taxonomy scenes");
+
+var rtax = JSON.parse(fs.readFileSync("library/reading-taxonomy.json", "utf8"));
+assert(rtax.groups && rtax.groups.length > 400, "reading taxonomy groups");
+assert(rtax.parts && rtax.parts.length > 150, "reading taxonomy scene parts");
+assert(rtax.types && rtax.types.indexOf("判断题") >= 0, "reading taxonomy types");
+assert(rtax.scenes && rtax.scenes.indexOf("社会人文") >= 0, "reading taxonomy scenes");
+assert(rtax.groups[0].id.indexOf("-reading-p") > 0, "reading group id shape");
 
 var start = cfg.indexOf("function cambridgeCdtQs");
 var end = cfg.indexOf("\n  function makePartItem");
@@ -67,6 +77,7 @@ assert(qs("cambridge-16-test-4-reading-p3", ["cambridge-16-test-4-reading-p3"]) 
 assert(qs("cambridge-16-test-4-reading", ["cambridge-16-test-4-reading"], "exam") === "&cdt=1&pack=exam", "skill mock exam");
 assert(qs("cambridge-16-test-4-s2", ["cambridge-16-test-4-s2"]) === "&cdt=1&pack=drill", "listening section drill");
 assert(qs("cambridge-21-test-1-s1-q1-6", ["cambridge-21-test-1-s1-q1-6"]) === "&cdt=1&pack=drill", "qtype group drill");
+assert(qs("cambridge-21-test-1-reading-p1-q1-7", ["cambridge-21-test-1-reading-p1-q1-7"]) === "&cdt=1&pack=drill", "reading qtype group drill");
 assert(qs("cambridge-16-test-4", ["cambridge-16-test-4", "cambridge-16-test-4-reading", "cambridge-16-test-4-writing"]) === "&cdt=1&pack=exam&suite=1", "suite cdt");
 assert(qs("not-cambridge", []) === "", "non-cam empty");
 
@@ -77,5 +88,17 @@ var parseGroupId = Function(cfg.slice(pgStart, pgEnd) + "\nreturn parseGroupId;"
 var g = parseGroupId("cambridge-21-test-1-s1-q1-6");
 assert(g && g.parentId === "cambridge-21-test-1" && g.num === 1 && g.qFrom === 1 && g.qTo === 6, "parseGroupId fields");
 assert(!parseGroupId("cambridge-21-test-1-s1"), "parseGroupId ignores section id");
+var rg = parseGroupId("cambridge-21-test-1-reading-p1-q1-7");
+assert(rg && rg.parentId === "cambridge-21-test-1-reading" && rg.kind === "p" && rg.num === 1 && rg.qFrom === 1 && rg.qTo === 7, "parseGroupId reading");
+assert(!parseGroupId("cambridge-21-test-1-reading-p1"), "parseGroupId ignores passage id");
+
+var mgStart = cfg.indexOf("function makePartItem");
+var mgEnd = cfg.indexOf("\n  function resolveItem");
+assert(mgStart > 0 && mgEnd > mgStart, "makeGroupItem slice");
+var makeGroupItem = Function(cfg.slice(mgStart, mgEnd) + "\nreturn makeGroupItem;")();
+var rItem = makeGroupItem({ id: "cambridge-21-test-1-reading", subject: "cambridge-reading", title: "剑21" }, 1, 1, 7);
+assert(rItem && rItem.id === "cambridge-21-test-1-reading-p1-q1-7" && rItem.partKind === "p", "makeGroupItem reading");
+var lItem = makeGroupItem({ id: "cambridge-21-test-1", subject: "cambridge-listening", title: "剑21" }, 1, 1, 6);
+assert(lItem && lItem.id === "cambridge-21-test-1-s1-q1-6" && lItem.partKind === "s", "makeGroupItem listening");
 
 console.log("ok: cdt p1 guards");

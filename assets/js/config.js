@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260825qtype2";
+  var CONTENT_VER = "20260825rqtype1";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -277,18 +277,26 @@ window.YYSD = (function () {
   }
 
   var _manifestPromise;
-  var _taxPromise;
+  var _taxPromises = {};
 
-  function loadListeningTaxonomy() {
-    if (_taxPromise) return _taxPromise;
-    _taxPromise = fetch(manifestUrl().replace("manifest.json", "listening-taxonomy.json")).then(function (r) {
-      if (!r.ok) throw new Error("listening-taxonomy.json HTTP " + r.status);
+  function loadTaxonomyJson(file) {
+    if (_taxPromises[file]) return _taxPromises[file];
+    _taxPromises[file] = fetch(manifestUrl().replace("manifest.json", file)).then(function (r) {
+      if (!r.ok) throw new Error(file + " HTTP " + r.status);
       return r.json();
     }).catch(function (err) {
-      _taxPromise = null;
+      _taxPromises[file] = null;
       throw err;
     });
-    return _taxPromise;
+    return _taxPromises[file];
+  }
+
+  function loadListeningTaxonomy() {
+    return loadTaxonomyJson("listening-taxonomy.json");
+  }
+
+  function loadReadingTaxonomy() {
+    return loadTaxonomyJson("reading-taxonomy.json");
   }
 
   function load() {
@@ -438,22 +446,22 @@ window.YYSD = (function () {
     return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]) };
   }
 
-  // 题型练习: cambridge-21-test-1-s1-q1-6
+  // 题型练习: cambridge-21-test-1-s1-q1-6 / cambridge-21-test-1-reading-p1-q1-7
   function parseGroupId(id) {
-    var m = String(id || "").match(/^(cambridge-\d+-test-\d+)-s(\d+)-q(\d+)-(\d+)$/i);
+    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?)-(s|p)(\d+)-q(\d+)-(\d+)$/i);
     if (!m) return null;
-    return { parentId: m[1], kind: "s", num: Number(m[2]), qFrom: Number(m[3]), qTo: Number(m[4]) };
+    return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]), qFrom: Number(m[4]), qTo: Number(m[5]) };
   }
 
   // Calendar / dashboard: Cambridge L/R/W (full or part) → CDT chrome query
   // cdtPack from teacher assign: drill | exam | "" (infer)
   function cambridgeCdtQs(itemId, linkedIds, cdtPack) {
     var id = String(itemId || "");
-    if (!/^cambridge-\d+-test-\d+(-reading(-p\d+)?|-writing|-s\d+(-q\d+-\d+)?)?$/.test(id)) return "";
+    if (!/^cambridge-\d+-test-\d+(-reading(-p\d+(-q\d+-\d+)?)?|-writing|-s\d+(-q\d+-\d+)?)?$/.test(id)) return "";
     var base = "";
     if (/^cambridge-\d+-test-\d+$/.test(id)) base = id;
     else {
-      var m = id.match(/^(cambridge-\d+-test-\d+)(?:-reading(?:-p\d+)?|-writing|-s\d+(?:-q\d+-\d+)?)$/);
+      var m = id.match(/^(cambridge-\d+-test-\d+)(?:-reading(?:-p\d+(?:-q\d+-\d+)?)?|-writing|-s\d+(?:-q\d+-\d+)?)$/);
       if (m) base = m[1];
     }
     var ids = linkedIds || [];
@@ -483,9 +491,10 @@ window.YYSD = (function () {
 
   function makeGroupItem(parent, num, qFrom, qTo) {
     if (!parent || !num || !qFrom || !qTo) return null;
-    var part = makePartItem(parent, "s", num);
+    var kind = parent.subject === "cambridge-reading" ? "p" : "s";
+    var part = makePartItem(parent, kind, num);
     if (!part) return null;
-    part.id = parent.id + "-s" + num + "-q" + qFrom + "-" + qTo;
+    part.id = parent.id + "-" + kind + num + "-q" + qFrom + "-" + qTo;
     part.title = part.title + " Q" + qFrom + "–" + qTo;
     part.qFrom = qFrom;
     part.qTo = qTo;
@@ -1253,6 +1262,7 @@ window.YYSD = (function () {
     cambridgeCdtQs: cambridgeCdtQs,
     expandAssignableParts: expandAssignableParts, partSearchText: partSearchText,
     loadListeningTaxonomy: loadListeningTaxonomy,
+    loadReadingTaxonomy: loadReadingTaxonomy,
     vocabTopic: vocabTopic,
     vocabBookStats: vocabBookStats, vocabProgress: vocabProgress,
     vocabListRanges: vocabListRanges, vocabBooksForZone: vocabBooksForZone, vocabBookCardHTML: vocabBookCardHTML,
