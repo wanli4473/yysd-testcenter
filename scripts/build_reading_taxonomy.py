@@ -145,7 +145,8 @@ def main() -> None:
     for rec in scene_rows:
         key = (rec["volume"], rec["test"], rec["part"])
         sc = rec["scene"]
-        if sc:
+        # ponytail: first sheet wins; Excel duplicates used to overwrite
+        if sc and key not in scene_of:
             scene_of[key] = sc
     for rec in type_rows:
         key = (rec["volume"], rec["test"], rec["part"])

@@ -68,6 +68,17 @@ assert(rtax.parts && rtax.parts.length > 150, "reading taxonomy scene parts");
 assert(rtax.types && rtax.types.indexOf("判断题") >= 0, "reading taxonomy types");
 assert(rtax.scenes && rtax.scenes.indexOf("社会人文") >= 0, "reading taxonomy scenes");
 assert(rtax.groups[0].id.indexOf("-reading-p") > 0, "reading group id shape");
+function taxById(arr, id) {
+  for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i];
+}
+var c14mcq = taxById(tax.groups, "cambridge-14-test-2-s3-q21-24");
+assert(c14mcq && c14mcq.qType === "单选题", "c14 t2 p3 q21-24 单选题");
+assert(taxById(rtax.parts, "cambridge-19-test-2-reading-p1").scene === "历史发展", "c19 t2 p1 scene");
+assert(taxById(rtax.parts, "cambridge-19-test-3-reading-p1").scene === "历史发展", "c19 t3 p1 scene");
+assert(taxById(rtax.parts, "cambridge-15-test-4-reading-p2").scene === "语言教育", "c15 t4 p2 scene");
+assert(taxById(rtax.parts, "cambridge-14-test-3-reading-p1").scene === "语言教育", "c14 t3 p1 scene");
+assert(taxById(rtax.parts, "cambridge-14-test-3-reading-p3").scene === "语言教育", "c14 t3 p3 scene");
+assert(taxById(rtax.parts, "cambridge-12-test-3-reading-p3").scene === "社会人文", "c12 t3 p3 scene");
 
 var start = cfg.indexOf("function cambridgeCdtQs");
 var end = cfg.indexOf("\n  function makePartItem");
