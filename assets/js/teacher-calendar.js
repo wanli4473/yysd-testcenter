@@ -700,7 +700,7 @@
           return true;
         });
       }
-      rows = rows.slice(0, searching ? 120 : 80);
+      rows = rows.slice(0, searching ? 240 : 200);
       html = rows.map(function (row) {
         var checked = selectedExercises[row.id] ? " checked" : "";
         var title = exerciseCat === "qtype" ? groupLabel(row) : partSceneLabel(row);
