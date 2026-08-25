@@ -3637,7 +3637,7 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
 
 /* —— 教师新建任务：双栏作业台（仅 #create-modal） —— */
 #create-modal .cal-modal__panel--desk {
-  width: min(1120px, calc(100vw - 32px));
+  width: min(1180px, calc(100vw - 32px));
   height: min(88vh, 900px);
   max-height: min(88vh, 900px);
   overflow: hidden;
@@ -3655,11 +3655,11 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
 #create-modal .assign-desk > .cal-modal__head {
   flex: 0 0 auto;
   margin: 0;
-  padding: 16px 20px 12px;
+  padding: 16px 22px 10px;
 }
 #create-modal .assign-desk__body {
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
 }
@@ -3669,13 +3669,18 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
 #create-modal .assign-desk__meta {
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-height: 0;
   overflow: auto;
-  padding: 4px 20px 16px;
+  padding: 8px 22px 16px;
   border-right: 1px solid var(--border);
 }
 #create-modal .assign-desk--meta-only .assign-desk__meta {
   border-right: 0;
+}
+#create-modal .assign-desk__meta .cal-form__row {
+  grid-template-columns: 1fr;
+  gap: 0;
 }
 #create-modal .assign-desk__students {
   flex: 1;
@@ -3684,9 +3689,19 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
   flex-direction: column;
   margin: 0;
 }
+#create-modal .assign-desk__students .cal-picker-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+}
+#create-modal .assign-desk__students .cal-picker-toolbar input[type="search"] {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
 #create-modal .assign-desk__students .cal-check-list {
   flex: 1;
-  min-height: 140px;
+  min-height: 120px;
   max-height: none;
 }
 #create-modal .assign-desk__work {
@@ -3694,14 +3709,21 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  min-inline-size: 0;
   overflow: hidden;
   margin: 0;
   border: 0;
   border-radius: 0;
-  padding: 4px 20px 12px;
+  background: transparent;
+  padding: 8px 22px 12px;
 }
 #create-modal .assign-desk__work > legend {
-  padding: 0;
+  float: none;
+  width: auto;
+  padding: 0 0 8px;
+}
+#create-modal .assign-desk__work > * {
+  flex-shrink: 0;
 }
 #create-modal .assign-desk__work .cal-ex-cats {
   gap: 8px;
@@ -3723,7 +3745,7 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
   display: none;
 }
 #create-modal .assign-filter-label {
-  flex: 0 0 3.25em;
+  flex: 0 0 5.5em;
   padding-top: 7px;
   font-size: 12px;
   font-weight: 600;
@@ -3735,8 +3757,8 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
   min-width: 0;
 }
 #create-modal .assign-desk__work .cal-check-list--tall {
-  flex: 1;
-  min-height: 280px;
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: none;
 }
 #create-modal .assign-desk__upload {
@@ -3756,12 +3778,12 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
 #create-modal .assign-desk > .auth-msg {
   flex: 0 0 auto;
   margin: 0;
-  padding: 0 20px;
+  padding: 0 22px;
 }
 #create-modal .assign-desk > .cal-form__foot {
   flex: 0 0 auto;
   margin: 0;
-  padding: 12px 20px;
+  padding: 12px 22px;
   border-top: 1px solid var(--border);
   justify-content: space-between;
   align-items: center;
@@ -3794,6 +3816,7 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
   #create-modal .assign-desk__meta {
     border-right: 0;
     overflow: visible;
+    height: auto;
   }
   #create-modal .assign-desk__students .cal-check-list {
     min-height: 120px;
@@ -3804,7 +3827,7 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
     min-height: 52vh;
   }
   #create-modal .assign-desk__work .cal-check-list--tall {
-    min-height: 220px;
+    min-height: 180px;
     max-height: 40vh;
   }
 }
