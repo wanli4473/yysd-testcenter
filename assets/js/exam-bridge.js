@@ -100,7 +100,9 @@
     if (!part && location.search) {
       try { part = Number(new URLSearchParams(location.search).get("assignPart") || 0); } catch (e) { part = 0; }
     }
-    if (!part || !window.TEST) return;
+    // ponytail: papers use const TEST — not on window; pageGet evals the page scope
+    var TEST = pageGet("TEST");
+    if (!part || !TEST) return;
     function clipBlocks(blocks) {
       return (blocks || []).filter(function (s) { return +s.id === part; }).map(function (s) {
         if (!range) return s;
