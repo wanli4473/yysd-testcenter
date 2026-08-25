@@ -36,7 +36,7 @@ assert(/cdtPackForCat/.test(teach) && /ensureBrowseDefaults/.test(teach), "teach
 assert(/cat === "qtype" \|\| cat === "scene"/.test(teach) || /cat === "part" \|\| cat === "qtype"/.test(teach), "qtype/scene drill pack");
 assert(/isTaxonomyBrowse/.test(teach) && /loadListeningTaxonomy/.test(teach), "teacher taxonomy browse");
 assert(/assign-desk/.test(thtml) && /cal-modal__panel--desk/.test(thtml), "assign desk layout");
-assert(!/id="f-desc"/.test(thtml) && /assign-desk__stu-acts/.test(thtml), "no desc field; student acts row");
+assert(!/id="f-desc"/.test(thtml) && /assign-desk__students-body/.test(thtml), "no desc field; student body wrap");
 assert(/stampBrowseLabels/.test(teach) && /assign-desk--meta-only/.test(teach), "assign desk type toggle");
 assert(/matchVolTest/.test(teach) && /cambridgeVolumes/.test(teach), "vol/test filter helpers");
 assert(/ensureVocabBrowseDefaults/.test(teach) && /data-ex-vbook/.test(teach), "teacher vocab book browse");
