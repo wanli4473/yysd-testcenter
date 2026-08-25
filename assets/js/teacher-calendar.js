@@ -1219,7 +1219,7 @@
 
     var body = {
       title: document.getElementById("f-title").value.trim(),
-      description: document.getElementById("f-desc").value.trim(),
+      description: "",
       eventType: type,
       startTime: startTime,
       dueTime: dueTime,
