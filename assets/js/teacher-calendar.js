@@ -312,7 +312,7 @@
         var types = taxonomy.types || [];
         if (!pickQType || types.indexOf(pickQType) < 0) pickQType = types[0] || "";
         var tests = taxonomyTests(pickVol);
-        if (!pickTest || tests.indexOf(pickTest) < 0) pickTest = tests[0] || "";
+        if (pickTest && tests.indexOf(pickTest) < 0) pickTest = "";
       } else {
         var scenes = taxonomy.scenes || [];
         if (!pickScene || scenes.indexOf(pickScene) < 0) pickScene = scenes[0] || "";
@@ -342,7 +342,8 @@
     if (!host) return;
     host.innerHTML = items.map(function (v) {
       var on = String(v) === String(active);
-      var label = v ? ((prefix || "") + v) : (attr === "ex-vol" ? "全部册" : "全部");
+      var label = v ? ((prefix || "") + v)
+        : (attr === "ex-vol" ? "全部册" : (attr === "ex-test" ? "全部 Tests" : "全部"));
       return '<button type="button" class="chip chip--sub' + (on ? " is-active" : "") +
         '" data-' + attr + '="' + esc(v) + '">' + esc(label) + "</button>";
     }).join("");
@@ -538,7 +539,7 @@
       if (testHost) {
         testHost.hidden = false;
         testHost.setAttribute("aria-label", "Test");
-        renderChipRow(testHost, taxonomyTests(pickVol), "ex-test", pickTest, "Test ");
+        renderChipRow(testHost, [""].concat(taxonomyTests(pickVol)), "ex-test", pickTest, "Test ");
       }
       if (skillBar) {
         skillBar.hidden = false;

@@ -38,6 +38,7 @@ assert(/isTaxonomyBrowse/.test(teach) && /loadListeningTaxonomy/.test(teach), "t
 assert(/assign-desk/.test(thtml) && /cal-modal__panel--desk/.test(thtml), "assign desk layout");
 assert(!/id="f-desc"/.test(thtml) && /assign-desk__students-body/.test(thtml), "no desc field; student body wrap");
 assert(/全部册/.test(teach) && /concat\(vols\)/.test(teach), "all-volumes chip");
+assert(/全部 Tests/.test(teach), "all-tests chip");
 assert(/matchVolTest/.test(teach) && /cambridgeVolumes/.test(teach), "vol/test filter helpers");
 assert(/ensureVocabBrowseDefaults/.test(teach) && /data-ex-vbook/.test(teach), "teacher vocab book browse");
 assert(/vocabRangesForBook/.test(teach) && /listsInVocabRange/.test(teach), "vocab range filter");
