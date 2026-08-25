@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260825qtype1";
+  var CONTENT_VER = "20260825c12";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -273,7 +273,7 @@ window.YYSD = (function () {
   function manifestUrl() {
     // pages at root use "library/...", pages one level deep use "../library/..."
     return (location.pathname.replace(/\/[^/]*$/, "/").endsWith("/admin/") ? "../" : "")
-      + "library/manifest.json";
+      + "library/manifest.json?v=" + encodeURIComponent(CONTENT_VER);
   }
 
   var _manifestPromise;
