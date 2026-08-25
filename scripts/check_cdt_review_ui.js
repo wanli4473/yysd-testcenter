@@ -19,6 +19,6 @@ console.assert(js.indexOf("injectReviewStyles") >= 0, "exam-cdt missing injectRe
 console.assert(js.indexOf("polishResultDom") >= 0, "exam-cdt missing polishResultDom");
 console.assert(js.indexOf("cdt-review.css") >= 0, "exam-cdt must load cdt-review.css");
 console.assert(js.indexOf("location.origin") >= 0, "review css href must be origin-absolute for iframe");
-console.assert(html.indexOf("exam-cdt.js?v=20260805p3scroll3") >= 0, "exam.html cache bump for exam-cdt");
+console.assert(html.indexOf("exam-cdt.js?v=20260825skip1") >= 0, "exam.html cache bump for exam-cdt");
 console.assert(html.indexOf("exam-cdt.css?v=20260801load1") >= 0, "exam.html cache bump for exam-cdt.css");
 console.log("check_cdt_review_ui: ok");

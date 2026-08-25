@@ -16,7 +16,9 @@ must("assets/js/exam-cdt.js", /function showSectionsGate/, "showSectionsGate");
 must("assets/js/exam-cdt.js", /bridge\.dataset\.sections/, "pass sections to bridge");
 must("assets/js/exam-cdt.js", /function applyDrillPartsFilter/, "footer filter");
 must("assets/js/exam-bridge.js", /function parseSectionsAttr/, "bridge parseSectionsAttr");
-must("assets/js/exam-bridge.js", /if \(cdtShell\) return;[\s\S]*bootAssignedPart|cdtShell\) return/, "CDT skips assignPart autostart");
+must("assets/js/exam-cdt.js", /function isAssignedStudentDrill/, "assigned student drill skip");
+must("assets/js/exam-cdt.js", /skipAssignedGatesToStart/, "skip assigned gates");
+must("assets/js/exam-bridge.js", /if \(!range\) return s/, "clip whole part when no q range");
 // tighter: bootAssignedPart early-return under cdtShell
 var bridge = fs.readFileSync(path.join(root, "assets/js/exam-bridge.js"), "utf8");
 if (!/function bootAssignedPart\(\)[\s\S]{0,200}if \(cdtShell\) return;/.test(bridge)) {

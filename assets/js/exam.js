@@ -656,20 +656,28 @@
   function injectExamBridge() {
     if (!item || item.zone !== "mock") return;
     var doc = frame.contentDocument;
-    if (!doc || !doc.body || doc.getElementById("yysd-exam-bridge-js")) return;
+    if (!doc || !doc.body) return;
+    var existing = doc.getElementById("yysd-exam-bridge-js");
+    if (existing) {
+      if (cdtWanted && window.YYSD_CDT && YYSD_CDT.onFrameReady) YYSD_CDT.onFrameReady();
+      return;
+    }
 
     var v = encodeURIComponent(Y.CONTENT_VER || "1");
     var base = new URL("./", location.href).href;
 
     var script = doc.createElement("script");
     script.id = "yysd-exam-bridge-js";
-    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt24" : "");
+    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt25" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
     if (cdtWanted) {
       script.dataset.cdt = "1";
       var pack = (window.YYSD_CDT && YYSD_CDT.getPack && YYSD_CDT.getPack()) || cdtPack || "exam";
       script.dataset.pack = pack;
+      script.addEventListener("load", function () {
+        if (window.YYSD_CDT && YYSD_CDT.onFrameReady) YYSD_CDT.onFrameReady();
+      });
     }
     if (item.partNum) {
       script.dataset.assignPart = String(item.partNum);
@@ -702,9 +710,6 @@
     injectVocabBridge();
     injectCdtQux();
     injectExamBridge();
-    if (window.YYSD_CDT && YYSD_CDT.isActive && YYSD_CDT.isActive()) {
-      YYSD_CDT.onFrameReady();
-    }
   }
 
   function practiceDraftElapsed() {

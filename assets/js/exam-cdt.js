@@ -26,6 +26,7 @@
     suite: false,
     resumeDraft: false,
     drillSections: null, // number[] | null = all (exam / writing / resume)
+    autoStartAssigned: false,
     audioCtx: null,
     paperBound: false,
     parentTimerStarted: false,
@@ -221,6 +222,47 @@
     } catch (e) { return 0; }
   }
 
+  function assignedPartNum() {
+    return urlAssignPart() || (state.item && state.item.partNum) || 0;
+  }
+
+  function assignedQRange() {
+    var it = state.item || {};
+    var from = Number(it.qFrom || 0);
+    var to = Number(it.qTo || 0);
+    if (from && to) return { from: from, to: to };
+    try {
+      var qs = new URLSearchParams(location.search);
+      from = Number(qs.get("qFrom") || 0);
+      to = Number(qs.get("qTo") || 0);
+    } catch (e) { return null; }
+    return (from && to) ? { from: from, to: to } : null;
+  }
+
+  // ponytail: student calendar homework (?event=) + drill slice; self-study / teacher try has no event
+  function isAssignedStudentDrill() {
+    try {
+      if (!(new URLSearchParams(location.search).get("event") || "").replace(/\D/g, "")) return false;
+    } catch (e) { return false; }
+    if (state.pack !== "drill") return false;
+    if (isWriting(state.item)) return false;
+    return assignedPartNum() > 0;
+  }
+
+  function lockAssignedDrillSlice() {
+    var part = assignedPartNum();
+    if (part) state.drillSections = [part];
+  }
+
+  function skipAssignedGatesToStart() {
+    if (state.started) return;
+    var gate = $("cdt-gate");
+    if (gate) gate.setAttribute("hidden", "");
+    document.body.classList.remove("viewer--cdt-gating");
+    if (state.frameReady) startExamFromGate();
+    else state.autoStartAssigned = true;
+  }
+
   function populateSectionsPanel() {
     var host = $("cdt-gate-sec-list");
     if (!host) return;
@@ -294,6 +336,12 @@
     state.parts = buildParts(state.item).filter(function (p, idx) {
       return ids.indexOf(idx + 1) !== -1;
     });
+    var q = assignedQRange();
+    if (q) {
+      state.parts = state.parts.map(function (p) {
+        return { label: p.label, nums: p.nums.filter(function (n) { return n >= q.from && n <= q.to; }) };
+      }).filter(function (p) { return p.nums.length; });
+    }
     if (!state.parts.length) state.parts = buildParts(state.item);
     state.total = flattenNums(state.parts).length;
     state.current = 0;
@@ -347,6 +395,11 @@
             : "A saved draft was found for this paper. Continue or start over?";
         }
         showGatePanel("resume");
+        return;
+      }
+      if (isAssignedStudentDrill()) {
+        lockAssignedDrillSlice();
+        skipAssignedGatesToStart();
         return;
       }
       showSectionsGate();
@@ -1541,12 +1594,22 @@
         var d = JSON.parse(localStorage.getItem("yysd:draft:" + state.item.id) || "null");
         state.drillSections = d && Array.isArray(d.sections) && d.sections.length ? d.sections : null;
       } catch (e) { state.drillSections = null; }
-      enterDrillGates();
+      if (isAssignedStudentDrill()) {
+        if (!state.drillSections || !state.drillSections.length) lockAssignedDrillSlice();
+        skipAssignedGatesToStart();
+      } else {
+        enterDrillGates();
+      }
     });
     var resumeNew = $("cdt-gate-resume-new");
     if (resumeNew) resumeNew.addEventListener("click", function () {
       clearDrillDraft();
-      showSectionsGate();
+      if (isAssignedStudentDrill()) {
+        lockAssignedDrillSlice();
+        skipAssignedGatesToStart();
+      } else {
+        showSectionsGate();
+      }
     });
 
     var secToggle = $("cdt-gate-sec-toggle");
@@ -1765,6 +1828,7 @@
     applyBgColor(state.bgColor);
     // refresh section list once TEST is available in iframe
     if (state.gateStep === "sections" && !state.started) populateSectionsPanel();
+    if (state.autoStartAssigned && !state.started) skipAssignedGatesToStart();
     if (state.started) {
       applyCdtPaperSkin();
       bindPaperNav();

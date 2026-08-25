@@ -50,6 +50,8 @@ assert(/event/.test(report) && /rpt-retry/.test(report), "report retry keeps eve
 assert(/keep 52px chrome height/.test(css) || /height: 52px/.test(css), "mobile header stays 52px");
 
 assert(/function parseGroupId/.test(cfg), "parseGroupId");
+assert(/function isAssignedStudentDrill/.test(cdt) && /skipAssignedGatesToStart/.test(cdt), "assigned drill skips section gate");
+assert(/if \(!range\) return s/.test(bridge), "clip whole part when no q range");
 assert(/function clipAssignedGroup/.test(bridge), "clip assigned q-range group");
 assert(/TEST\.passages = clipBlocks/.test(bridge), "clip reading passages");
 assert(/assignQFrom/.test(exam), "exam.js passes qFrom");

@@ -100,9 +100,10 @@
     if (!part && location.search) {
       try { part = Number(new URLSearchParams(location.search).get("assignPart") || 0); } catch (e) { part = 0; }
     }
-    if (!range || !part || !window.TEST) return;
+    if (!part || !window.TEST) return;
     function clipBlocks(blocks) {
       return (blocks || []).filter(function (s) { return +s.id === part; }).map(function (s) {
+        if (!range) return s;
         var groups = (s.groups || []).map(function (g) {
           return clipGroupToRange(g, range.from, range.to);
         }).filter(Boolean);
