@@ -47,6 +47,7 @@ assert(/function parseGroupId/.test(cfg), "parseGroupId");
 assert(/function clipAssignedGroup/.test(bridge), "clip assigned q-range group");
 assert(/assignQFrom/.test(exam), "exam.js passes qFrom");
 assert(/loadListeningTaxonomy/.test(cfg), "config loads listening taxonomy");
+assert(/replace\("manifest\.json", "listening-taxonomy\.json"\)/.test(cfg), "taxonomy url keeps ?v=");
 
 var tax = JSON.parse(fs.readFileSync("library/listening-taxonomy.json", "utf8"));
 assert(tax.groups && tax.groups.length > 400, "taxonomy groups");

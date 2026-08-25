@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260825c12";
+  var CONTENT_VER = "20260825qtype2";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -281,7 +281,7 @@ window.YYSD = (function () {
 
   function loadListeningTaxonomy() {
     if (_taxPromise) return _taxPromise;
-    _taxPromise = fetch(manifestUrl().replace(/manifest\.json$/, "listening-taxonomy.json")).then(function (r) {
+    _taxPromise = fetch(manifestUrl().replace("manifest.json", "listening-taxonomy.json")).then(function (r) {
       if (!r.ok) throw new Error("listening-taxonomy.json HTTP " + r.status);
       return r.json();
     }).catch(function (err) {
