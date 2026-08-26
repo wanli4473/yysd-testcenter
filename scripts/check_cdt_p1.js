@@ -56,7 +56,8 @@ assert(/function clipAssignedGroup/.test(bridge), "clip assigned q-range group")
 assert(/TEST\.passages = clipBlocks/.test(bridge), "clip reading passages");
 var clipSlice = bridge.slice(bridge.indexOf("function clipAssignedGroup"), bridge.indexOf("var posted"));
 assert(/pageGet\("TEST"\)/.test(clipSlice) && !/window\.TEST/.test(clipSlice), "clip uses pageGet TEST");
-assert(/cdt26/.test(exam), "exam-bridge cache cdt26");
+assert(/cdt27/.test(exam), "exam-bridge cache cdt27");
+assert(/function windowAssignedAudio/.test(bridge) && /assignedAudioWindow/.test(bridge), "q-range audio window");
 assert(/assignQFrom/.test(exam), "exam.js passes qFrom");
 assert(/loadListeningTaxonomy/.test(cfg) && /loadReadingTaxonomy/.test(cfg), "config loads taxonomies");
 assert(/replace\("manifest\.json", file\)/.test(cfg), "taxonomy url keeps ?v=");
@@ -128,5 +129,18 @@ var rItem = makeGroupItem({ id: "cambridge-21-test-1-reading", subject: "cambrid
 assert(rItem && rItem.id === "cambridge-21-test-1-reading-p1-q1-7" && rItem.partKind === "p", "makeGroupItem reading");
 var lItem = makeGroupItem({ id: "cambridge-21-test-1", subject: "cambridge-listening", title: "剑21" }, 1, 1, 6);
 assert(lItem && lItem.id === "cambridge-21-test-1-s1-q1-6" && lItem.partKind === "s", "makeGroupItem listening");
+
+var c9 = fs.readFileSync("library/mock/cambridge-listening/cambridge-9-test-4.html", "utf8");
+function c9clip(title, start, end) {
+  var i = c9.indexOf('"title": "' + title + '"');
+  assert(i > 0, "c9 " + title);
+  var slice = c9.slice(i, i + 200);
+  assert(slice.indexOf('"audioStart": ' + start) >= 0, title + " start");
+  assert(slice.indexOf('"audioEnd": ' + end) >= 0, title + " end");
+}
+c9clip("Questions 11–13", "0", "161.8");
+c9clip("Questions 14–18", "161.8", "292.5");
+c9clip("Questions 19 and 20", "292.5", "378.5");
+assert(c9.split("audioStart").length === 4, "c9 t4 s2 three audio clips");
 
 console.log("ok: cdt p1 guards");

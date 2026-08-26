@@ -115,6 +115,123 @@
     if (TEST.sections) TEST.sections = clipBlocks(TEST.sections);
     if (TEST.passages) TEST.passages = clipBlocks(TEST.passages);
   }
+
+  function assignedAudioWindow() {
+    var range = assignQRange();
+    if (!range) return null;
+    var TEST = pageGet("TEST");
+    var sections = (TEST && TEST.sections) || [];
+    for (var i = 0; i < sections.length; i++) {
+      var groups = sections[i].groups || [];
+      for (var j = 0; j < groups.length; j++) {
+        var g = groups[j];
+        if (g.audioStart == null || g.audioEnd == null) continue;
+        var qs = g.questions || [];
+        var hit = !qs.length && groups.length === 1;
+        for (var k = 0; k < qs.length; k++) {
+          if (qs[k].no >= range.from && qs[k].no <= range.to) { hit = true; break; }
+        }
+        if (!hit) continue;
+        var a = Number(g.audioStart);
+        var b = Number(g.audioEnd);
+        if (b > a) return { start: a, end: b };
+      }
+    }
+    return null;
+  }
+
+  function fmtClip(s) {
+    s = Math.max(0, Math.floor(Number(s) || 0));
+    var m = Math.floor(s / 60);
+    var n = s % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (n < 10 ? "0" : "") + n;
+  }
+
+  // ponytail: same MP3, clamp playhead; crop files if we ship hundreds of clips
+  function windowAssignedAudio() {
+    var w0 = assignedAudioWindow();
+    if (!w0) return;
+    var player = document.getElementById("player");
+    if (!player) return;
+
+    var load = window.loadSection;
+    if (typeof load === "function" && !load._yysdClip) {
+      window.loadSection = function (id, autoplay) {
+        var r = load.call(this, id, false);
+        var w = assignedAudioWindow();
+        if (!w) {
+          if (autoplay) player.play().catch(function () {});
+          return r;
+        }
+        player.pause();
+        function go() {
+          try { player.currentTime = w.start; } catch (e) { /* not ready */ }
+          if (autoplay) player.play().catch(function () {});
+        }
+        if (player.readyState >= 1) go();
+        else player.addEventListener("loadedmetadata", go, { once: true });
+        return r;
+      };
+      window.loadSection._yysdClip = true;
+    }
+
+    if (!player._yysdClipBound) {
+      player._yysdClipBound = true;
+      player.addEventListener("timeupdate", function () {
+        var w = assignedAudioWindow();
+        if (!w) return;
+        if (player.currentTime < w.start - 0.05) player.currentTime = w.start;
+        if (player.currentTime >= w.end) {
+          player.pause();
+          player.currentTime = w.end;
+          if (cdtPack() === "drill") unlockCdtListening();
+        }
+      });
+      player.addEventListener("play", function () {
+        var w = assignedAudioWindow();
+        if (!w) return;
+        if (player.currentTime >= w.end - 0.12 || player.currentTime < w.start) {
+          player.currentTime = w.start;
+        }
+      });
+    }
+
+    if (typeof window.paintAudio === "function" && !window.paintAudio._yysdClip) {
+      window.paintAudio = function () {
+        var w = assignedAudioWindow();
+        if (!w) {
+          var d0 = player.duration || 0;
+          var c0 = player.currentTime || 0;
+          var fill0 = document.getElementById("aFill");
+          var time0 = document.getElementById("aTime");
+          if (fill0) fill0.style.width = (d0 ? (c0 / d0) * 100 : 0) + "%";
+          if (time0) time0.textContent = fmtClip(c0) + " / " + fmtClip(d0);
+          return;
+        }
+        var d = Math.max(0, w.end - w.start);
+        var c = Math.max(0, Math.min(d, (player.currentTime || 0) - w.start));
+        var fill = document.getElementById("aFill");
+        var time = document.getElementById("aTime");
+        if (fill) fill.style.width = (d ? (c / d) * 100 : 0) + "%";
+        if (time) time.textContent = fmtClip(c) + " / " + fmtClip(d);
+      };
+      window.paintAudio._yysdClip = true;
+    }
+
+    if (typeof window.seekAudio === "function" && !window.seekAudio._yysdClip) {
+      var seek = window.seekAudio;
+      window.seekAudio = function (e) {
+        var w = assignedAudioWindow();
+        if (!w) return seek.apply(this, arguments);
+        var bar = document.getElementById("aProg");
+        if (!bar) return;
+        var r = bar.getBoundingClientRect();
+        var d = w.end - w.start;
+        player.currentTime = w.start + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * d;
+      };
+      window.seekAudio._yysdClip = true;
+    }
+  }
   var posted = false;
 
   function resolveExamId() {
@@ -1338,6 +1455,7 @@
     ensureBandHelpers();
     clipAssignedGroup();
     hookStartTest();
+    windowAssignedAudio();
     hookSubmitTest();
     hookBackToCover();
     bootAssignedPart();
