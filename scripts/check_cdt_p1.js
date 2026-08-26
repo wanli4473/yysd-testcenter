@@ -56,8 +56,9 @@ assert(/function clipAssignedGroup/.test(bridge), "clip assigned q-range group")
 assert(/TEST\.passages = clipBlocks/.test(bridge), "clip reading passages");
 var clipSlice = bridge.slice(bridge.indexOf("function clipAssignedGroup"), bridge.indexOf("var posted"));
 assert(/pageGet\("TEST"\)/.test(clipSlice) && !/window\.TEST/.test(clipSlice), "clip uses pageGet TEST");
-assert(/cdt27/.test(exam), "exam-bridge cache cdt27");
+assert(/cdt28/.test(exam), "exam-bridge cache cdt28");
 assert(/function windowAssignedAudio/.test(bridge) && /assignedAudioWindow/.test(bridge), "q-range audio window");
+assert(/removeEventListener\("timeupdate", origPaint\)/.test(bridge), "unhook paper paintAudio");
 assert(/assignQFrom/.test(exam), "exam.js passes qFrom");
 assert(/loadListeningTaxonomy/.test(cfg) && /loadReadingTaxonomy/.test(cfg), "config loads taxonomies");
 assert(/replace\("manifest\.json", file\)/.test(cfg), "taxonomy url keeps ?v=");

@@ -147,6 +147,23 @@
     return (m < 10 ? "0" : "") + m + ":" + (n < 10 ? "0" : "") + n;
   }
 
+  function paintClipBar(player) {
+    var w = assignedAudioWindow();
+    var fill = document.getElementById("aFill");
+    var time = document.getElementById("aTime");
+    var d;
+    var c;
+    if (w) {
+      d = Math.max(0, w.end - w.start);
+      c = Math.max(0, Math.min(d, (player.currentTime || 0) - w.start));
+    } else {
+      d = player.duration || 0;
+      c = player.currentTime || 0;
+    }
+    if (fill) fill.style.width = (d ? (c / d) * 100 : 0) + "%";
+    if (time) time.textContent = fmtClip(c) + " / " + fmtClip(d);
+  }
+
   // ponytail: same MP3, clamp playhead; crop files if we ship hundreds of clips
   function windowAssignedAudio() {
     var w0 = assignedAudioWindow();
@@ -154,7 +171,7 @@
     var player = document.getElementById("player");
     if (!player) return;
 
-    var load = window.loadSection;
+    var load = window.loadSection || pageGet("loadSection");
     if (typeof load === "function" && !load._yysdClip) {
       window.loadSection = function (id, autoplay) {
         var r = load.call(this, id, false);
@@ -166,6 +183,7 @@
         player.pause();
         function go() {
           try { player.currentTime = w.start; } catch (e) { /* not ready */ }
+          paintClipBar(player);
           if (autoplay) player.play().catch(function () {});
         }
         if (player.readyState >= 1) go();
@@ -173,19 +191,32 @@
         return r;
       };
       window.loadSection._yysdClip = true;
+      try { window.eval("loadSection = window.loadSection"); } catch (eL) { /* ignore */ }
     }
+
+    // papers bind timeupdate to the original paintAudio; replacing window.paintAudio does not unhook it
+    var origPaint = pageGet("paintAudio");
+    if (origPaint && !player._yysdPaintOff) {
+      player.removeEventListener("timeupdate", origPaint);
+      player._yysdPaintOff = true;
+    }
+    window.paintAudio = function () { paintClipBar(player); };
+    window.paintAudio._yysdClip = true;
+    try { window.eval("paintAudio = window.paintAudio"); } catch (eP) { /* ignore */ }
 
     if (!player._yysdClipBound) {
       player._yysdClipBound = true;
       player.addEventListener("timeupdate", function () {
         var w = assignedAudioWindow();
-        if (!w) return;
-        if (player.currentTime < w.start - 0.05) player.currentTime = w.start;
-        if (player.currentTime >= w.end) {
-          player.pause();
-          player.currentTime = w.end;
-          if (cdtPack() === "drill") unlockCdtListening();
+        if (w) {
+          if (player.currentTime < w.start - 0.05) player.currentTime = w.start;
+          if (player.currentTime >= w.end) {
+            player.pause();
+            player.currentTime = w.end;
+            if (cdtPack() === "drill") unlockCdtListening();
+          }
         }
+        paintClipBar(player);
       });
       player.addEventListener("play", function () {
         var w = assignedAudioWindow();
@@ -196,30 +227,8 @@
       });
     }
 
-    if (typeof window.paintAudio === "function" && !window.paintAudio._yysdClip) {
-      window.paintAudio = function () {
-        var w = assignedAudioWindow();
-        if (!w) {
-          var d0 = player.duration || 0;
-          var c0 = player.currentTime || 0;
-          var fill0 = document.getElementById("aFill");
-          var time0 = document.getElementById("aTime");
-          if (fill0) fill0.style.width = (d0 ? (c0 / d0) * 100 : 0) + "%";
-          if (time0) time0.textContent = fmtClip(c0) + " / " + fmtClip(d0);
-          return;
-        }
-        var d = Math.max(0, w.end - w.start);
-        var c = Math.max(0, Math.min(d, (player.currentTime || 0) - w.start));
-        var fill = document.getElementById("aFill");
-        var time = document.getElementById("aTime");
-        if (fill) fill.style.width = (d ? (c / d) * 100 : 0) + "%";
-        if (time) time.textContent = fmtClip(c) + " / " + fmtClip(d);
-      };
-      window.paintAudio._yysdClip = true;
-    }
-
-    if (typeof window.seekAudio === "function" && !window.seekAudio._yysdClip) {
-      var seek = window.seekAudio;
+    var seek = window.seekAudio || pageGet("seekAudio");
+    if (typeof seek === "function" && !seek._yysdClip) {
       window.seekAudio = function (e) {
         var w = assignedAudioWindow();
         if (!w) return seek.apply(this, arguments);
@@ -228,9 +237,12 @@
         var r = bar.getBoundingClientRect();
         var d = w.end - w.start;
         player.currentTime = w.start + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * d;
+        paintClipBar(player);
       };
       window.seekAudio._yysdClip = true;
+      try { window.eval("seekAudio = window.seekAudio"); } catch (eS) { /* ignore */ }
     }
+    paintClipBar(player);
   }
   var posted = false;
 
