@@ -44,7 +44,7 @@ MANIFEST = os.path.join(LIB_DIR, "manifest.json")
 
 # zone -> list of valid subjects (first = default for that zone)
 ZONE_SUBJECTS = {
-    "study":    ["grammar", "vocab", "vocab-cet4",
+    "study":    ["grammar", "vocab", "vocab-cet4", "vocab-cet4-lite",
                  "vocab-special-listening", "vocab-special-reading", "vocab-special-writing",
                  "vocab-themes"],
     "practice": ["changnanju", "shuzi-tingxie", "jingting", "ielts"],
@@ -196,6 +196,19 @@ def main():
             n += 1
         seen.add(e["id"])
         items.append(e)
+
+    # ponytail: refuse to write a manifest that drops a vocab book whose HTML is on disk
+    lite_dir = os.path.join(LIB_DIR, "study", "vocab-cet4-lite")
+    if os.path.isdir(lite_dir):
+        html_n = len([n for n in os.listdir(lite_dir) if n.lower().endswith((".html", ".htm"))])
+        sub_n = sum(1 for e in items if e.get("subject") == "vocab-cet4-lite")
+        if html_n and sub_n != html_n:
+            print(
+                "cet4-lite not indexed: %d html in %s, %d manifest items with subject vocab-cet4-lite"
+                % (html_n, lite_dir, sub_n),
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
     manifest = {
         "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),

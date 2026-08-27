@@ -11,6 +11,7 @@ on:
       - "scripts/build_manifest.py"
       - "scripts/verify_cambridge_mock_pages.py"
       - "scripts/verify_vocab_wrongword_hooks.py"
+      - "scripts/check_cet4_lite.js"
       - ".github/workflows/build-manifest.yml"
   workflow_dispatch: {}
 
@@ -48,6 +49,9 @@ jobs:
 
       - name: Rebuild manifest
         run: python scripts/build_manifest.py
+
+      - name: Verify cet4-lite still indexed
+        run: node scripts/check_cet4_lite.js
 
       - name: Commit updated manifest
         run: |
