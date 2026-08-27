@@ -267,11 +267,15 @@ const TEST = {
     {
       "id": 1,
       "audio": "cam8_test1_audio1.mp3",
+      "audioClips": [{"qFrom": 1, "qTo": 2, "audioStart": 0, "audioEnd": 218},{"qFrom": 3, "qTo": 10, "audioStart": 218, "audioEnd": 382}],
       "groups": [
         {
           "kind": "mcq",
           "title": "Questions 1 and 2",
+          "audioStart": 0,
+          "audioEnd": 218,
           "instruction": "Choose the correct letter, A, B or C.",
+          "exampleHtml": "<div class=\"note-box\" style=\"margin:0 0 14px\"><div style=\"font-style:italic;margin-bottom:8px\">Example</div><div>In the library George found</div><div style=\"margin-top:6px\">A &nbsp;a book.&emsp;<u>B &nbsp;a brochure.</u>&emsp;C &nbsp;a newspaper.</div></div>",
           "questions": [
             {
               "id": "L1",
@@ -305,7 +309,7 @@ const TEST = {
         },
         {
           "kind": "note",
-          "title": "Questions 3–10",
+          "title": "Questions 3–5",
           "instruction": "Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
           "noteTitle": "SUMMER MUSIC FESTIVAL BOOKING FORM",
           "lines": [
@@ -315,7 +319,7 @@ const TEST = {
             },
             {
               "plain": true,
-              "html": "ADDRESS: <Q n=\"3\"> Westsea"
+              "html": "ADDRESS: <Q n=\"3\">, Westsea"
             },
             {
               "plain": true,
@@ -324,42 +328,6 @@ const TEST = {
             {
               "plain": true,
               "html": "TELEPHONE: <Q n=\"5\">"
-            },
-            {
-              "plain": true,
-              "html": "<strong>Date:</strong> 5 June &nbsp;|&nbsp; <strong>Event:</strong> Instrumental group – Guitarrini"
-            },
-            {
-              "plain": true,
-              "html": "Price per ticket: £7.50 &nbsp;|&nbsp; No. of tickets: 2"
-            },
-            {
-              "plain": true,
-              "html": "<strong>Date:</strong> 17 June &nbsp;|&nbsp; <strong>Event:</strong> Singer (price includes <Q n=\"6\"> in the garden)"
-            },
-            {
-              "plain": true,
-              "html": "Price per ticket: £6 &nbsp;|&nbsp; No. of tickets: 2"
-            },
-            {
-              "plain": true,
-              "html": "<strong>Date:</strong> 22 June &nbsp;|&nbsp; <strong>Event:</strong> <Q n=\"7\"> (Anna Ventura)"
-            },
-            {
-              "plain": true,
-              "html": "Price per ticket: £7.00 &nbsp;|&nbsp; No. of tickets: 1"
-            },
-            {
-              "plain": true,
-              "html": "<strong>Date:</strong> 23 June &nbsp;|&nbsp; <strong>Event:</strong> Spanish Dance &amp; Guitar Concert"
-            },
-            {
-              "plain": true,
-              "html": "Price per ticket: £<Q n=\"8\"> &nbsp;|&nbsp; No. of tickets: <Q n=\"9\">"
-            },
-            {
-              "plain": true,
-              "html": "NB Children / Students / Senior Citizens have <Q n=\"10\"> discount on all tickets."
             }
           ],
           "questions": [
@@ -386,7 +354,47 @@ const TEST = {
                 "01674 553242"
               ],
               "explain": "答案：01674 553242。"
-            },
+            }
+          ]
+        },
+        {
+          "kind": "table",
+          "title": "Questions 6–10",
+          "instruction": "Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+          "columns": [
+            "Date",
+            "Event",
+            "Price per ticket",
+            "No. of tickets"
+          ],
+          "rows": [
+            [
+              "5 June",
+              "Instrumental group – Guitarrini",
+              "£7.50",
+              "2"
+            ],
+            [
+              "17 June",
+              "Singer (price includes <Q n=\"6\"> in the garden)",
+              "£6",
+              "2"
+            ],
+            [
+              "22 June",
+              "<Q n=\"7\"> (Anna Ventura)",
+              "£7.00",
+              "1"
+            ],
+            [
+              "23 June",
+              "Spanish Dance &amp; Guitar Concert",
+              "£<Q n=\"8\">",
+              "<Q n=\"9\">"
+            ]
+          ],
+          "afterHtml": "NB Children / Students / Senior Citizens have <Q n=\"10\"> discount on all tickets.",
+          "questions": [
             {
               "id": "L6",
               "no": 6,
@@ -442,10 +450,13 @@ const TEST = {
     {
       "id": 2,
       "audio": "cam8_test1_audio2.mp3",
+      "audioClips": [{"qFrom": 11, "qTo": 15, "audioStart": 0, "audioEnd": 156},{"qFrom": 16, "qTo": 18, "audioStart": 156, "audioEnd": 237},{"qFrom": 19, "qTo": 20, "audioStart": 237, "audioEnd": 318}],
       "groups": [
         {
           "kind": "note",
           "title": "Questions 11–15",
+          "audioStart": 0,
+          "audioEnd": 156,
           "instruction": "Complete the sentences below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
           "noteTitle": "The Dinosaur Museum",
           "lines": [
@@ -520,6 +531,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 16–18",
+          "audioStart": 156,
+          "audioEnd": 237,
           "instruction": "Choose THREE letters, A–G. Which THREE things can students have with them in the museum?",
           "box": {
             "A": "food",
@@ -556,6 +569,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 19 and 20",
+          "audioStart": 237,
+          "audioEnd": 318,
           "instruction": "Choose TWO letters, A–E. Which TWO activities can students do after the tour at present?",
           "box": {
             "A": "build model dinosaurs",
@@ -586,10 +601,13 @@ const TEST = {
     {
       "id": 3,
       "audio": "cam8_test1_audio3.mp3",
+      "audioClips": [{"qFrom": 21, "qTo": 24, "audioStart": 0, "audioEnd": 185},{"qFrom": 25, "qTo": 27, "audioStart": 185, "audioEnd": 318},{"qFrom": 28, "qTo": 30, "audioStart": 318, "audioEnd": 451}],
       "groups": [
         {
           "kind": "mcq",
           "title": "Questions 21–24",
+          "audioStart": 0,
+          "audioEnd": 185,
           "instruction": "Choose the correct letter, A, B or C.",
           "questions": [
             {
@@ -653,6 +671,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 25–27",
+          "audioStart": 185,
+          "audioEnd": 318,
           "instruction": "Choose THREE letters, A–G. Which THREE topics does Sandra agree to include in the proposal?",
           "box": {
             "A": "climate change",
@@ -689,6 +709,8 @@ const TEST = {
         {
           "kind": "note",
           "title": "Questions 28–30",
+          "audioStart": 318,
+          "audioEnd": 451,
           "instruction": "Complete the sentences below. Write ONE WORD AND/OR A NUMBER for each answer.",
           "lines": [
             {
@@ -737,10 +759,13 @@ const TEST = {
     {
       "id": 4,
       "audio": "cam8_test1_audio4.mp3",
+      "audioClips": [{"qFrom": 31, "qTo": 40, "audioStart": 0, "audioEnd": 393}],
       "groups": [
         {
           "kind": "note",
           "title": "Questions 31–40",
+          "audioStart": 0,
+          "audioEnd": 393,
           "instruction": "Complete the notes below. Write ONE WORD ONLY for each answer.",
           "noteTitle": "Geography",
           "lines": [
@@ -794,15 +819,40 @@ const TEST = {
             },
             {
               "bullet": true,
-              "html": "a) maps – easy to carry; can show physical features of large and small areas; BUT a two-dimensional map will always have some <Q n=\"38\">"
+              "html": "a) maps"
+            },
+            {
+              "dash": true,
+              "sub": true,
+              "html": "easy to carry"
+            },
+            {
+              "dash": true,
+              "sub": true,
+              "html": "can show physical features of large and small areas"
+            },
+            {
+              "dash": true,
+              "sub": true,
+              "html": "BUT a two-dimensional map will always have some <Q n=\"38\">"
             },
             {
               "bullet": true,
-              "html": "b) aerial photos – can show vegetation problems, <Q n=\"39\"> density, ocean floor etc."
+              "html": "b) aerial photos"
+            },
+            {
+              "dash": true,
+              "sub": true,
+              "html": "can show vegetation problems, <Q n=\"39\"> density, ocean floor etc."
             },
             {
               "bullet": true,
-              "html": "c) Landsat pictures sent to receiving stations – used for monitoring <Q n=\"40\"> conditions etc."
+              "html": "c) Landsat pictures sent to receiving stations"
+            },
+            {
+              "dash": true,
+              "sub": true,
+              "html": "used for monitoring <Q n=\"40\"> conditions etc."
             }
           ],
           "questions": [
@@ -954,10 +1004,10 @@ function groupHtml(g){
     const cols = g.cols || g.columns || [];
     const head=`<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
     const rows=g.rows.map(r=>`<tr>${r.map(cell=>{ const html=cell.split('|')[0]; return `<td>${expandQ(html)}</td>`; }).join('')}</tr>`).join('');
-    body=`${(g.tableTitle||g.noteTitle)?`<div class="note-title">${g.tableTitle||g.noteTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
+    body=`${(g.tableTitle||g.noteTitle)?`<div class="note-title">${g.tableTitle||g.noteTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`+(g.afterHtml?`<div class="note-li" style="margin-top:12px">${expandQ(g.afterHtml)}</div>`:'');
   }
   else if(g.kind==='mcq'){
-    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+g.questions.map(q=>{
+    body=(g.heading?`<div class="note-title">${g.heading}</div>`:'')+(g.exampleHtml||'')+g.questions.map(q=>{
       const opts=Object.entries(q.options).map(([k,v])=>`<label><input type="radio" name="${q.id}" value="${k}"> <span><strong>${k}</strong> &nbsp;${v}</span></label>`).join('');
       return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div>${opts}</div>`;
     }).join('');

@@ -116,11 +116,27 @@
     if (TEST.passages) TEST.passages = clipBlocks(TEST.passages);
   }
 
+  function clipOk(a, b) {
+    a = Number(a); b = Number(b);
+    return (b > a) ? { start: a, end: b } : null;
+  }
+
   function assignedAudioWindow() {
     var range = assignQRange();
     if (!range) return null;
     var TEST = pageGet("TEST");
     var sections = (TEST && TEST.sections) || [];
+    var covering = null;
+    for (var i = 0; i < sections.length; i++) {
+      var clips = sections[i].audioClips || [];
+      for (var c = 0; c < clips.length; c++) {
+        var clip = clips[c];
+        var w = clipOk(clip.audioStart, clip.audioEnd);
+        if (!w) continue;
+        if (Number(clip.qFrom) === range.from && Number(clip.qTo) === range.to) return w;
+        if (!covering && Number(clip.qFrom) <= range.from && Number(clip.qTo) >= range.to) covering = w;
+      }
+    }
     for (var i = 0; i < sections.length; i++) {
       var groups = sections[i].groups || [];
       for (var j = 0; j < groups.length; j++) {
@@ -132,12 +148,11 @@
           if (qs[k].no >= range.from && qs[k].no <= range.to) { hit = true; break; }
         }
         if (!hit) continue;
-        var a = Number(g.audioStart);
-        var b = Number(g.audioEnd);
-        if (b > a) return { start: a, end: b };
+        var gw = clipOk(g.audioStart, g.audioEnd);
+        if (gw) return gw;
       }
     }
-    return null;
+    return covering;
   }
 
   function fmtClip(s) {

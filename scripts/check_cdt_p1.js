@@ -56,8 +56,9 @@ assert(/function clipAssignedGroup/.test(bridge), "clip assigned q-range group")
 assert(/TEST\.passages = clipBlocks/.test(bridge), "clip reading passages");
 var clipSlice = bridge.slice(bridge.indexOf("function clipAssignedGroup"), bridge.indexOf("var posted"));
 assert(/pageGet\("TEST"\)/.test(clipSlice) && !/window\.TEST/.test(clipSlice), "clip uses pageGet TEST");
-assert(/cdt28/.test(exam), "exam-bridge cache cdt28");
+assert(/cdt29/.test(exam), "exam-bridge cache cdt29");
 assert(/function windowAssignedAudio/.test(bridge) && /assignedAudioWindow/.test(bridge), "q-range audio window");
+assert(/audioClips/.test(bridge) && /clip\.qFrom/.test(bridge), "audioClips exact q-range lookup");
 assert(/removeEventListener\("timeupdate", origPaint\)/.test(bridge), "unhook paper paintAudio");
 assert(/assignQFrom/.test(exam), "exam.js passes qFrom");
 assert(/loadListeningTaxonomy/.test(cfg) && /loadReadingTaxonomy/.test(cfg), "config loads taxonomies");
@@ -142,6 +143,6 @@ function c9clip(title, start, end) {
 c9clip("Questions 11–13", "0", "161.8");
 c9clip("Questions 14–18", "161.8", "292.5");
 c9clip("Questions 19 and 20", "292.5", "378.5");
-assert(c9.split("audioStart").length === 4, "c9 t4 s2 three audio clips");
+assert(c9.indexOf('"qFrom": 11, "qTo": 13, "audioStart": 0, "audioEnd": 161.8') >= 0, "c9 t4 s2 audioClips");
 
 console.log("ok: cdt p1 guards");

@@ -261,9 +261,9 @@ const TEST = {
   meta:{ volume:14, testNo:1 },
   durationMin:32,
   sections:[
-    { id:1, audio:'ielts14_test1_audio1.mp3',
+    { id:1, audio:'ielts14_test1_audio1.mp3', audioClips:[{qFrom:1,qTo:10,audioStart:0,audioEnd:478.6}],
       groups:[
-        { kind:'note', title:'Questions 1–10',
+        { kind:'note', title:'Questions 1–10', audioStart:0, audioEnd:478.6,
           instruction:'Complete the form below. Write ONE WORD AND/OR A NUMBER for each answer.',
           noteTitle:'CRIME REPORT FORM',
           lines:[
@@ -301,19 +301,19 @@ const TEST = {
             {id:'L10',no:10,answer:['87954 82361','8795482361'],explain:`案件编号。答案：87954 82361。`},
           ]}
       ]},
-    { id:2, audio:'ielts14_test1_audio2.mp3',
+    { id:2, audio:'ielts14_test1_audio2.mp3', audioClips:[{qFrom:11,qTo:12,audioStart:0,audioEnd:83},{qFrom:13,qTo:14,audioStart:83,audioEnd:166},{qFrom:15,qTo:20,audioStart:166,audioEnd:360}],
       groups:[
-        { kind:'multi', title:'Questions 11 and 12',
+        { kind:'multi', title:'Questions 11 and 12', audioStart:0, audioEnd:83,
           instruction:'Choose TWO letters, A–E. Which TWO pieces of advice for the first week of an apprenticeship does the manager give?',
           box:{A:`get to know colleagues`,B:`learn from any mistakes`,C:`ask lots of questions`,D:`react positively to feedback`,E:`enjoy new challenges`},
           groupId:'L11_12', answerSet:['C','D'],
           questions:[{id:'L11',no:11,explain:`选两项（顺序不限）：C 与 D。`},{id:'L12',no:12,explain:`同上，正确两项为 C 与 D。`}]},
-        { kind:'multi', title:'Questions 13 and 14',
+        { kind:'multi', title:'Questions 13 and 14', audioStart:83, audioEnd:166,
           instruction:'Choose TWO letters, A–E. Which TWO things does the manager say mentors can help with?',
           box:{A:`confidence-building`,B:`making career plans`,C:`completing difficult tasks`,D:`making a weekly timetable`,E:`reviewing progress`},
           groupId:'L13_14', answerSet:['A','E'],
           questions:[{id:'L13',no:13,explain:`选两项（顺序不限）：A 与 E。`},{id:'L14',no:14,explain:`同上，正确两项为 A 与 E。`}]},
-        { kind:'match', title:'Questions 15–20',
+        { kind:'match', title:'Questions 15–20', audioStart:166, audioEnd:360,
           instruction:'What does the manager say about each of the following aspects of the company policy for apprentices? Write the correct letter, A, B or C, next to Questions 15–20.',
           boxTitle:'Company policy',
           box:{A:`It is encouraged.`,B:`There are some restrictions.`,C:`It is against the rules.`},
@@ -327,9 +327,9 @@ const TEST = {
             {id:'L20',no:20,q:`Bringing food to work`,answer:['C'],explain:`答案：C — 违反规定。`},
           ]}
       ]},
-    { id:3, audio:'ielts14_test1_audio3.mp3',
+    { id:3, audio:'ielts14_test1_audio3.mp3', audioClips:[{qFrom:21,qTo:25,audioStart:0,audioEnd:235},{qFrom:26,qTo:30,audioStart:235,audioEnd:389}],
       groups:[
-        { kind:'mcq', title:'Questions 21–25',
+        { kind:'mcq', title:'Questions 21–25', audioStart:0, audioEnd:235,
           instruction:'Choose the correct letter, A, B or C.',
           heading:'Coastal cities presentation',
           questions:[
@@ -339,7 +339,7 @@ const TEST = {
             {id:'L24',no:24,q:`What do Rob and Carla think that the authorities in Miami should do immediately?`,options:{A:`take measures to restore ecosystems`,B:`pay for a new flood prevention system`,C:`stop disposing of waste materials into the ocean`},answer:['B'],explain:`答案：B — 出资建新的防洪系统。`},
             {id:'L25',no:25,q:`What do they agree should be the priority for international action?`,options:{A:`greater coordination of activities`,B:`more sharing of information`,C:`agreement on shared policies`},answer:['A'],explain:`答案：A — 加强行动协调。`},
           ]},
-        { kind:'match', title:'Questions 26–30',
+        { kind:'match', title:'Questions 26–30', audioStart:235, audioEnd:389,
           instruction:'What decision do the students make about each of the following parts of their presentation? Choose FIVE answers from the box and write the correct letter, A–G, next to Questions 26–30.',
           boxTitle:'Decisions',
           box:{A:`use visuals`,B:`keep it short`,C:`involve other students`,D:`check the information is accurate`,E:`provide a handout`,F:`focus on one example`,G:`do online research`},
@@ -352,9 +352,9 @@ const TEST = {
             {id:'L30',no:30,q:`International implications`,answer:['C'],explain:`答案：C — 让其他同学参与。`},
           ]}
       ]},
-    { id:4, audio:'ielts14_test1_audio4.mp3',
+    { id:4, audio:'ielts14_test1_audio4.mp3', audioClips:[{qFrom:31,qTo:40,audioStart:0,audioEnd:437}],
       groups:[
-        { kind:'note', title:'Questions 31–40',
+        { kind:'note', title:'Questions 31–40', audioStart:0, audioEnd:437,
           instruction:'Complete the notes below. Write ONE WORD ONLY for each answer.',
           noteTitle:'Marine renewable energy (ocean energy)',
           lines:[
@@ -368,8 +368,11 @@ const TEST = {
             {bullet:true, html:`movement of sand, etc. on the <Q n="34"> of the ocean may be affected`},
             {h:`Tidal energy`},
             {bullet:true, html:`Tides are more <Q n="35"> than waves`},
-            {bullet:true, html:`Planned tidal lagoon in Wales: will be created in a <Q n="36"> at Swansea`},
-            {bullet:true, html:`stored water is released through <Q n="37"> driving the turbines in the reverse direction`},
+            {plain:true, html:`Planned tidal lagoon in Wales:`},
+            {bullet:true, html:`will be created in a <Q n="36"> at Swansea`},
+            {bullet:true, html:`breakwater (dam) containing 16 turbines`},
+            {bullet:true, html:`rising tide forces water through turbines, generating electricity`},
+            {bullet:true, html:`stored water is released through <Q n="37">, driving the turbines in the reverse direction`},
             {bullet:true, html:`Advantages: not dependent on weather; no <Q n="38"> is required to make it work; likely to create a number of <Q n="39">`},
             {bullet:true, html:`Problem: may harm fish and birds, e.g. by affecting <Q n="40"> and building up silt`},
           ],

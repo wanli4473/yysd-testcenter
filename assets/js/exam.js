@@ -668,7 +668,7 @@
 
     var script = doc.createElement("script");
     script.id = "yysd-exam-bridge-js";
-    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt28" : "");
+    script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt29" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
     if (cdtWanted) {

@@ -261,10 +261,10 @@ const TEST = {
   meta:{ volume:11, testNo:4 },
   durationMin:32,
   sections:[
-    { id:1, audio:'ielts11_test4_audio1.mp3',
+    { id:1, audio:'ielts11_test4_audio1.mp3', audioClips:[{qFrom:1,qTo:7,audioStart:0,audioEnd:361.1},{qFrom:8,qTo:10,audioStart:361.1,audioEnd:448.9}],
       groups:[
         { kind:'table',
-          title:'Questions 1–7',
+          title:'Questions 1–7', audioStart:0, audioEnd:361.1,
           instruction:'Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.',
           tableTitle:'Summer Festival',
           cols:['Event','Cost','Venue','Notes'],
@@ -284,7 +284,7 @@ const TEST = {
           ]
         },
         { kind:'match',
-          title:'Questions 8–10',
+          title:'Questions 8–10', audioStart:361.1, audioEnd:448.9,
           instruction:'Who is each play suitable for? Write the correct letter, A, B or C, next to Questions 8–10.',
           boxTitle:'Audience',
           box:{ A:'mainly for children', B:'mainly for adults', C:'suitable for people of all ages' },
@@ -297,10 +297,10 @@ const TEST = {
         }
       ]
     },
-    { id:2, audio:'ielts11_test4_audio2.mp3',
+    { id:2, audio:'ielts11_test4_audio2.mp3', audioClips:[{qFrom:11,qTo:16,audioStart:0,audioEnd:178.2},{qFrom:17,qTo:20,audioStart:178.2,audioEnd:321.1}],
       groups:[
         { kind:'match',
-          title:'Questions 11–16',
+          title:'Questions 11–16', audioStart:0, audioEnd:178.2,
           instruction:'What does the speaker say about each of the following collections? Choose SIX answers from the box and write the correct letter, A–G, next to Questions 11–16.',
           boxTitle:'Comments',
           box:{ A:'was given by one person', B:'was recently publicised in the media', C:'includes some items given by members of the public', D:'includes some items given by the artists', E:'includes the most popular exhibits in the museum', F:'is the largest of its kind in the country', G:'has had some of its contents relocated' },
@@ -315,55 +315,9 @@ const TEST = {
           ]
         },
         { kind:'map',
-          title:'Questions 17–20',
+          title:'Questions 17–20', audioStart:178.2, audioEnd:321.1,
           instruction:'Label the map below. Write the correct letter, A–H, next to Questions 17–20.',
-          mapTitle:'Basement of museum',
-          svg:`<svg viewBox="0 0 920 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;height:auto;background:#fff;font-family:Arial,sans-serif">
-<text x="460" y="28" text-anchor="middle" font-size="20" font-weight="700">Basement of museum</text>
-<polygon points="40,55 885,55 885,250 620,250 620,440 40,440" fill="#fff" stroke="#111" stroke-width="3"/>
-<!-- left column -->
-<line x1="150" y1="55" x2="150" y2="440" stroke="#111" stroke-width="2"/>
-<line x1="40" y1="150" x2="150" y2="150" stroke="#111" stroke-width="2"/>
-<line x1="40" y1="230" x2="150" y2="230" stroke="#111" stroke-width="2"/>
-<line x1="40" y1="310" x2="150" y2="310" stroke="#111" stroke-width="2"/>
-<!-- D room top -->
-<line x1="300" y1="55" x2="300" y2="250" stroke="#111" stroke-width="2"/>
-<line x1="150" y1="150" x2="300" y2="150" stroke="#111" stroke-width="2"/>
-<!-- E F G dividers -->
-<line x1="510" y1="55" x2="510" y2="250" stroke="#111" stroke-width="2"/>
-<line x1="700" y1="55" x2="700" y2="250" stroke="#111" stroke-width="2"/>
-<!-- H room -->
-<line x1="330" y1="250" x2="330" y2="440" stroke="#111" stroke-width="2"/>
-<line x1="330" y1="250" x2="620" y2="250" stroke="#111" stroke-width="2"/>
-<!-- stairs -->
-<g stroke="#111" stroke-width="1.4"><rect x="250" y="402" width="60" height="36" fill="#fff"/>
-<line x1="250" y1="411" x2="310" y2="411"/><line x1="250" y1="420" x2="310" y2="420"/><line x1="250" y1="429" x2="310" y2="429"/></g>
-<text x="280" y="462" text-anchor="middle" font-size="15">stairs</text>
-<text x="95" y="378" text-anchor="middle" font-size="15">toilets</text>
-<text x="232" y="300" text-anchor="middle" font-size="15">sitting</text>
-<text x="232" y="318" text-anchor="middle" font-size="15">area</text>
-<!-- sofa blobs -->
-<g fill="none" stroke="#999" stroke-width="3">
-<path d="M300 200 q-14 -10 -2 -20 q14 -6 16 8 q2 12 -14 12 z"/>
-<path d="M340 195 q14 -12 22 0 q4 12 -12 14 q-16 0 -10 -14 z"/>
-<path d="M315 235 q-12 -10 0 -18 q14 -4 14 9 q0 12 -14 9 z"/>
-<path d="M300 300 q-12 -8 0 -17 q13 -4 13 8 q0 12 -13 9 z"/>
-<path d="M345 295 q4 -16 16 -8 q8 8 0 18 q-12 6 -16 -10 z"/>
-<path d="M305 340 q-10 -10 2 -17 q12 -3 11 8 q0 12 -13 9 z"/>
-<path d="M165 360 q-6 -22 12 -16 q12 6 4 22 q-10 8 -16 -6 z"/>
-</g>
-<!-- letters -->
-<g font-size="19" font-weight="700" text-anchor="middle">
-<circle cx="95" cy="103" r="15" fill="#fff" stroke="#111" stroke-width="2"/><text x="95" y="110">C</text>
-<circle cx="95" cy="190" r="15" fill="#fff" stroke="#111" stroke-width="2"/><text x="95" y="197">B</text>
-<circle cx="95" cy="270" r="15" fill="#fff" stroke="#111" stroke-width="2"/><text x="95" y="277">A</text>
-<circle cx="225" cy="103" r="15" fill="#fff" stroke="#111" stroke-width="2"/><text x="225" y="110">D</text>
-<circle cx="405" cy="150" r="15" fill="#fff" stroke="#111" stroke-width="2"/><text x="405" y="157">E</text>
-<circle cx="600" cy="150" r="15" fill="#fff" stroke="#111" stroke-width="2"/><text x="600" y="157">F</text>
-<circle cx="790" cy="150" r="15" fill="#fff" stroke="#111" stroke-width="2"/><text x="790" y="157">G</text>
-<circle cx="475" cy="345" r="15" fill="#fff" stroke="#111" stroke-width="2"/><text x="475" y="352">H</text>
-</g>
-</svg>`,
+          image:'ielts11_test4_map.png?v=20260822c11lis1',
           letters:['A','B','C','D','E','F','G','H'],
           questions:[
             { id:'L17', no:17, q:'restaurant', answer:['F'], explain:'答案：F。' },
@@ -374,10 +328,10 @@ const TEST = {
         }
       ]
     },
-    { id:3, audio:'ielts11_test4_audio3.mp3',
+    { id:3, audio:'ielts11_test4_audio3.mp3', audioClips:[{qFrom:21,qTo:22,audioStart:0,audioEnd:71.7},{qFrom:23,qTo:24,audioStart:71.7,audioEnd:143.3},{qFrom:25,qTo:26,audioStart:143.3,audioEnd:215},{qFrom:27,qTo:30,audioStart:215,audioEnd:395}],
       groups:[
         { kind:'multi',
-          title:'Questions 21 and 22',
+          title:'Questions 21 and 22', audioStart:0, audioEnd:71.7,
           instruction:`Choose TWO letters, A–E. Which TWO characteristics were shared by the subjects of Joanna's psychology study?`,
           box:{ A:'They had all won prizes for their music.', B:'They had all made music recordings.', C:'They were all under 27 years old.', D:'They had all toured internationally.', E:'They all played a string instrument.' },
           answerSet:['C','D'],
@@ -387,7 +341,7 @@ const TEST = {
           ]
         },
         { kind:'multi',
-          title:'Questions 23 and 24',
+          title:'Questions 23 and 24', audioStart:71.7, audioEnd:143.3,
           instruction:'Choose TWO letters, A–E. Which TWO points does Joanna make about her use of telephone interviews?',
           box:{ A:'It meant rich data could be collected.', B:'It allowed the involvement of top performers.', C:'It led to a stressful atmosphere at times.', D:'It meant interview times had to be limited.', E:'It caused some technical problems.' },
           answerSet:['A','B'],
@@ -397,7 +351,7 @@ const TEST = {
           ]
         },
         { kind:'multi',
-          title:'Questions 25 and 26',
+          title:'Questions 25 and 26', audioStart:143.3, audioEnd:215,
           instruction:'Choose TWO letters, A–E. Which TWO topics did Joanna originally intend to investigate in her research?',
           box:{ A:'regulations concerning concert dress', B:'audience reactions to the dress of performers', C:'changes in performer attitudes to concert dress', D:'how choice of dress relates to performer roles', E:'links between musical instrument and dress choice' },
           answerSet:['B','D'],
@@ -407,7 +361,7 @@ const TEST = {
           ]
         },
         { kind:'mcq',
-          title:'Questions 27–30',
+          title:'Questions 27–30', audioStart:215, audioEnd:395,
           instruction:'Choose the correct letter, A, B or C.',
           questions:[
             { id:'L27', no:27, q:'Joanna concentrated on women performers because',
@@ -426,10 +380,10 @@ const TEST = {
         }
       ]
     },
-    { id:4, audio:'ielts11_test4_audio4.mp3',
+    { id:4, audio:'ielts11_test4_audio4.mp3', audioClips:[{qFrom:31,qTo:40,audioStart:0,audioEnd:443}],
       groups:[
         { kind:'note',
-          title:'Questions 31–40',
+          title:'Questions 31–40', audioStart:0, audioEnd:443,
           instruction:'Complete the notes below. Write ONE WORD ONLY for each answer.',
           noteTitle:'The use of soil to reduce carbon dioxide (CO₂) in the atmosphere',
           lines:[

@@ -116,6 +116,11 @@
   .map-wrap { border:1px solid #d8e0ea; border-radius:10px; background:#fafcff; padding:14px 16px; margin-bottom:16px; text-align:center; }
   .map-img { max-width:100%; height:auto; border-radius:8px; }
   .map-missing { color:#8a6d1b; background:#fff7e0; border:1px dashed #e0c879; border-radius:8px; padding:18px; font-size:14px; }
+  .flowchart { max-width:440px; margin:0 auto 14px; }
+  .fc-title { font-weight:700; text-align:center; margin:0 0 14px; font-size:16px; color:#223; }
+  .fc-step { display:flex; flex-direction:column; align-items:center; }
+  .fc-box { border:1.5px solid #223; border-radius:2px; padding:12px 16px 10px; width:100%; text-align:center; background:#fff; }
+  .fc-arrow { font-size:18px; line-height:1; margin:2px 0 6px; color:#223; }
 
   .submit-btn { display:block; width:100%; background:linear-gradient(135deg,#1e8449,#27ae60); color:#fff; border:none; padding:16px; font-size:19px; border-radius:12px; cursor:pointer; margin-top:28px; font-weight:700; box-shadow:0 4px 14px rgba(39,174,96,.3); }
   .submit-btn:hover { transform:translateY(-2px); }
@@ -267,10 +272,13 @@ const TEST = {
     {
       "id": 1,
       "audio": "cam8_test4_audio1.mp3",
+      "audioClips": [{"qFrom": 1, "qTo": 10, "audioStart": 0, "audioEnd": 350}],
       "groups": [
         {
           "kind": "note",
           "title": "Questions 1–10",
+          "audioStart": 0,
+          "audioEnd": 350,
           "instruction": "Complete the notes below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
           "noteTitle": "West Bay Hotel – details of job",
           "lines": [
@@ -411,10 +419,13 @@ const TEST = {
     {
       "id": 2,
       "audio": "cam8_test4_audio2.mp3",
+      "audioClips": [{"qFrom": 11, "qTo": 13, "audioStart": 0, "audioEnd": 138},{"qFrom": 14, "qTo": 20, "audioStart": 138, "audioEnd": 295}],
       "groups": [
         {
           "kind": "mcq",
           "title": "Questions 11–13",
+          "audioStart": 0,
+          "audioEnd": 138,
           "instruction": "Choose the correct letter, A, B or C.",
           "questions": [
             {
@@ -464,6 +475,8 @@ const TEST = {
         {
           "kind": "map",
           "title": "Questions 14–20",
+          "audioStart": 138,
+          "audioEnd": 295,
           "instruction": "Label the map below. Write the correct letter, A–I, next to questions 14–20.",
           "mapTitle": "Red Hill Improvement Plan",
           "image": "cambridge-8-test-4-red-hill-map.png",
@@ -549,10 +562,13 @@ const TEST = {
     {
       "id": 3,
       "audio": "cam8_test4_audio3.mp3",
+      "audioClips": [{"qFrom": 21, "qTo": 22, "audioStart": 0, "audioEnd": 80.9},{"qFrom": 23, "qTo": 24, "audioStart": 80.9, "audioEnd": 161.8},{"qFrom": 25, "qTo": 26, "audioStart": 161.8, "audioEnd": 242.8},{"qFrom": 27, "qTo": 30, "audioStart": 242.8, "audioEnd": 391.1}],
       "groups": [
         {
           "kind": "multi",
           "title": "Questions 21 and 22",
+          "audioStart": 0,
+          "audioEnd": 80.9,
           "instruction": "Choose TWO letters, A–E. In which TWO ways is Dan financing his course?",
           "box": {
             "A": "He is receiving money from the government.",
@@ -581,6 +597,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 23 and 24",
+          "audioStart": 80.9,
+          "audioEnd": 161.8,
           "instruction": "Choose TWO letters, A–E. Which TWO reasons does Jeannie give for deciding to leave some college clubs?",
           "box": {
             "A": "She is not sufficiently challenged.",
@@ -609,6 +627,8 @@ const TEST = {
         {
           "kind": "mcq",
           "title": "Questions 25 and 26",
+          "audioStart": 161.8,
+          "audioEnd": 242.8,
           "instruction": "Choose the correct letter, A, B or C.",
           "questions": [
             {
@@ -644,24 +664,39 @@ const TEST = {
         {
           "kind": "note",
           "title": "Questions 27–30",
-          "instruction": "Complete the flow-chart below. Choose NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
-          "noteTitle": "Planning an essay",
+          "audioStart": 242.8,
+          "audioEnd": 391.1,
+          "instruction": "Complete the flow-chart below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+          "noteTitle": "Advice on exam preparation",
+          "flow": true,
           "lines": [
             {
               "plain": true,
-              "html": "Work out your <Q n=\"27\"> and write them down"
+              "html": "Make sure you know the exam requirements"
             },
             {
               "plain": true,
-              "html": "Draw up a <Q n=\"28\">"
+              "html": "Find some past papers"
             },
             {
               "plain": true,
-              "html": "Break the work down into (small) <Q n=\"29\">"
+              "html": "Work out your <Q n=\"27\"> for revision and write them on a card"
             },
             {
               "plain": true,
-              "html": "Write a (single) <Q n=\"30\"> at a time"
+              "html": "Make a <Q n=\"28\"> and keep it in view"
+            },
+            {
+              "plain": true,
+              "html": "Divide revision into <Q n=\"29\"> for each day"
+            },
+            {
+              "plain": true,
+              "html": "Write one <Q n=\"30\"> about each topic"
+            },
+            {
+              "plain": true,
+              "html": "Practise writing some exam answers"
             }
           ],
           "questions": [
@@ -706,10 +741,13 @@ const TEST = {
     {
       "id": 4,
       "audio": "cam8_test4_audio4.mp3",
+      "audioClips": [{"qFrom": 31, "qTo": 36, "audioStart": 0, "audioEnd": 179.5},{"qFrom": 37, "qTo": 40, "audioStart": 179.5, "audioEnd": 359}],
       "groups": [
         {
           "kind": "match",
           "title": "Questions 31–36",
+          "audioStart": 0,
+          "audioEnd": 179.5,
           "instruction": "Australian Aboriginal Rock Paintings – Which painting styles have the following features? Write the correct letter, A, B or C.",
           "boxTitle": "Painting Styles",
           "box": {
@@ -778,6 +816,8 @@ const TEST = {
         {
           "kind": "note",
           "title": "Questions 37–40",
+          "audioStart": 179.5,
+          "audioEnd": 359,
           "instruction": "Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.",
           "noteTitle": "Rainbow Serpent Project",
           "lines": [
@@ -797,8 +837,19 @@ const TEST = {
               "html": "traditional activities were affected, especially <Q n=\"39\">"
             },
             {
+              "h": "Rainbow Serpent image"
+            },
+            {
               "bullet": true,
-              "html": "<Q n=\"40\">"
+              "html": "similar to a sea horse"
+            },
+            {
+              "bullet": true,
+              "html": "unusual because it appeared in inland areas"
+            },
+            {
+              "bullet": true,
+              "html": "symbolises <Q n=\"40\"> in Aboriginal culture"
             }
           ],
           "questions": [
@@ -834,9 +885,9 @@ const TEST = {
               "id": "L40",
               "no": 40,
               "answer": [
-                "40"
+                "creation"
               ],
-              "explain": "答案：40。"
+              "explain": "答案：creation。"
             }
           ]
         }
@@ -889,6 +940,10 @@ function groupHtml(g){
   let body='';
   if(g.kind==='note'){
     const fig=(g.image?`<div class="map-wrap" style="margin-bottom:16px;"><img class="map-img" src="${g.image}" alt="${g.noteTitle||'map'}" style="max-width:100%;height:auto;"></div>`:'');
+    if(g.flow){
+      const steps=g.lines.map((l,i)=>`<div class="fc-step"><div class="fc-box">${expandQ(l.html)}</div>${i<g.lines.length-1?'<div class="fc-arrow">↓</div>':''}</div>`).join('');
+      body=fig+`<div class="flowchart">${g.noteTitle?`<div class="fc-title">${g.noteTitle}</div>`:''}${steps}</div>`;
+    } else
     body=fig+`<div class="note-box">${g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:''}`+
       g.lines.map(l=>{
         if(l.h) return `<div class="note-h">${l.h}</div>`;

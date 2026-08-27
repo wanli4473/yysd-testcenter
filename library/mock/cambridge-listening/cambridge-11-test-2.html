@@ -267,10 +267,13 @@ const TEST = {
     {
       "id": 1,
       "audio": "ielts11_test2_audio1.mp3",
+      "audioClips": [{"qFrom": 1, "qTo": 10, "audioStart": 0, "audioEnd": 462}],
       "groups": [
         {
           "kind": "note",
           "title": "Questions 1–10",
+          "audioStart": 0,
+          "audioEnd": 462,
           "instruction": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
           "noteTitle": "Enquiry about joining Youth Council",
           "lines": [
@@ -308,11 +311,15 @@ const TEST = {
             },
             {
               "bullet": true,
-              "html": "Will come to talk to the Elections Officer next Monday at <Q n=\"8\"> pm"
+              "html": "On Youth Council, wants to work with young people who are <Q n=\"8\">"
             },
             {
               "bullet": true,
-              "html": "Mobile number: <Q n=\"9\"> <Q n=\"10\">"
+              "html": "Will come to talk to the Elections Officer next Monday at <Q n=\"9\"> pm"
+            },
+            {
+              "bullet": true,
+              "html": "Mobile number: <Q n=\"10\">"
             }
           ],
           "questions": [
@@ -328,9 +335,10 @@ const TEST = {
               "id": "L2",
               "no": 2,
               "answer": [
+                "Buckleigh",
                 "Buckley"
               ],
-              "explain": "答案：Buckley。"
+              "explain": "答案：Buckleigh。"
             },
             {
               "id": "L3",
@@ -377,27 +385,31 @@ const TEST = {
               "id": "L8",
               "no": 8,
               "answer": [
-                "4.30",
-                "4:30",
-                "half past four"
+                "disabled"
               ],
-              "explain": "答案：4.30 / 4:30 / half past four。"
+              "explain": "答案：disabled。"
             },
             {
               "id": "L9",
               "no": 9,
               "answer": [
-                "07788"
+                "4.30",
+                "4:30",
+                "half past four",
+                "4.30 pm",
+                "4.30pm"
               ],
-              "explain": "答案：07788。"
+              "explain": "答案：4.30。"
             },
             {
               "id": "L10",
               "no": 10,
               "answer": [
-                "136711"
+                "07788 136711",
+                "07788136711",
+                "07788-136711"
               ],
-              "explain": "答案：136711。"
+              "explain": "答案：07788 136711。"
             }
           ]
         }
@@ -406,10 +418,13 @@ const TEST = {
     {
       "id": 2,
       "audio": "ielts11_test2_audio2.mp3",
+      "audioClips": [{"qFrom": 11, "qTo": 12, "audioStart": 0, "audioEnd": 81.7},{"qFrom": 13, "qTo": 14, "audioStart": 81.7, "audioEnd": 163.3},{"qFrom": 15, "qTo": 16, "audioStart": 163.3, "audioEnd": 245},{"qFrom": 17, "qTo": 20, "audioStart": 245, "audioEnd": 389}],
       "groups": [
         {
           "kind": "multi",
           "title": "Questions 11 and 12",
+          "audioStart": 0,
+          "audioEnd": 81.7,
           "instruction": "Choose TWO letters, A–E. Which TWO changes have been made so far during the refurbishment of the theatre?",
           "box": {
             "A": "Some rooms now have a different use.",
@@ -438,6 +453,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 13 and 14",
+          "audioStart": 81.7,
+          "audioEnd": 163.3,
           "instruction": "Choose TWO letters, A–E. Which TWO facilities does the theatre currently offer to the public?",
           "box": {
             "A": "rooms for hire",
@@ -466,6 +483,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 15 and 16",
+          "audioStart": 163.3,
+          "audioEnd": 245,
           "instruction": "Choose TWO letters, A–E. Which TWO workshops does the theatre currently offer?",
           "box": {
             "A": "sound",
@@ -494,9 +513,10 @@ const TEST = {
         {
           "kind": "map",
           "title": "Questions 17–20",
-          "instruction": "Label the map below. Write the correct letter, A–I, next to Questions 17–20.",
-          "mapTitle": "Ground floor plan of theatre",
-          "svg": "<svg viewBox=\"0 0 900 680\" xmlns=\"http://www.w3.org/2000/svg\" style=\"width:100%;height:auto;background:#fff;font-family:Arial,sans-serif\">\n  <defs><marker id=\"arrTheatre\" markerWidth=\"8\" markerHeight=\"8\" refX=\"7\" refY=\"3\" orient=\"auto\"><path d=\"M0 0L7 3 0 6z\" fill=\"#333\"/></marker></defs>\n  <text x=\"450\" y=\"38\" text-anchor=\"middle\" font-size=\"34\" font-weight=\"700\" fill=\"#444\">Ground floor plan of theatre</text>\n  <rect x=\"80\" y=\"80\" width=\"740\" height=\"520\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"4\"/>\n  <rect x=\"92\" y=\"90\" width=\"716\" height=\"70\" fill=\"#888\" stroke=\"#444\" stroke-width=\"2\"/>\n  <rect x=\"92\" y=\"160\" width=\"70\" height=\"300\" fill=\"#888\" stroke=\"#444\" stroke-width=\"2\"/>\n  <rect x=\"160\" y=\"425\" width=\"610\" height=\"45\" fill=\"#888\" stroke=\"#444\" stroke-width=\"2\"/>\n  <rect x=\"162\" y=\"150\" width=\"165\" height=\"82\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"244\" y=\"202\" text-anchor=\"middle\" font-size=\"30\" fill=\"#555\">A</text>\n  <rect x=\"335\" y=\"150\" width=\"160\" height=\"82\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"415\" y=\"202\" text-anchor=\"middle\" font-size=\"30\" fill=\"#555\">B</text>\n  <path d=\"M242 150q18-45 36 0\" fill=\"none\" stroke=\"#444\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/><path d=\"M370 150q18-45 36 0\" fill=\"none\" stroke=\"#444\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/>\n  <path d=\"M162 232H502V150H820V315H505V390H162Z\" fill=\"none\" stroke=\"#444\" stroke-width=\"3\"/>\n  <rect x=\"512\" y=\"320\" width=\"165\" height=\"80\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"594\" y=\"372\" text-anchor=\"middle\" font-size=\"30\" fill=\"#555\">C</text>\n  <rect x=\"682\" y=\"320\" width=\"128\" height=\"100\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"746\" y=\"372\" text-anchor=\"middle\" font-size=\"30\" fill=\"#555\">D</text>\n  <path d=\"M600 400q22-58 44 0\" fill=\"none\" stroke=\"#444\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/><path d=\"M710 420q20-58 40 0\" fill=\"none\" stroke=\"#444\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/>\n  <rect x=\"88\" y=\"425\" width=\"28\" height=\"28\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"4\"/><circle cx=\"102\" cy=\"439\" r=\"13\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"30\" y=\"492\" font-size=\"21\" fill=\"#555\">water</text><text x=\"30\" y=\"515\" font-size=\"21\" fill=\"#555\">cooler</text><path d=\"M75 470L95 450\" stroke=\"#444\" stroke-width=\"3\" marker-end=\"url(#arrTheatre)\"/>\n  <rect x=\"92\" y=\"470\" width=\"210\" height=\"90\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"197\" y=\"525\" text-anchor=\"middle\" font-size=\"30\" fill=\"#555\">E</text><path d=\"M170 470q18 58 36 0\" fill=\"none\" stroke=\"#444\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/>\n  <rect x=\"585\" y=\"470\" width=\"100\" height=\"90\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"635\" y=\"525\" text-anchor=\"middle\" font-size=\"30\" fill=\"#555\">F</text><path d=\"M620 470q18 58 36 0\" fill=\"none\" stroke=\"#444\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/>\n  <rect x=\"690\" y=\"470\" width=\"130\" height=\"130\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"755\" y=\"542\" text-anchor=\"middle\" font-size=\"30\" fill=\"#555\">G</text><path d=\"M720 470q18 58 36 0\" fill=\"none\" stroke=\"#444\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/>\n  <path d=\"M300 470q20 60 40 0M480 470q20 60 40 0\" fill=\"none\" stroke=\"#444\" stroke-dasharray=\"4 4\" stroke-width=\"2\"/><text x=\"420\" y=\"530\" text-anchor=\"middle\" font-size=\"22\" fill=\"#555\">double doors</text><text x=\"420\" y=\"585\" text-anchor=\"middle\" font-size=\"22\" fill=\"#555\">foyer</text>\n  <rect x=\"355\" y=\"595\" width=\"110\" height=\"12\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"410\" y=\"630\" text-anchor=\"middle\" font-size=\"22\" fill=\"#555\">entrance</text>\n  <rect x=\"695\" y=\"595\" width=\"70\" height=\"12\" fill=\"#fff\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"730\" y=\"630\" text-anchor=\"middle\" font-size=\"22\" fill=\"#555\">entrance</text>\n  <line x1=\"80\" y1=\"640\" x2=\"820\" y2=\"640\" stroke=\"#444\" stroke-width=\"3\"/><line x1=\"80\" y1=\"675\" x2=\"820\" y2=\"675\" stroke=\"#444\" stroke-width=\"3\"/><text x=\"300\" y=\"665\" font-size=\"24\" fill=\"#555\">road</text>\n</svg>",
+          "audioStart": 245,
+          "audioEnd": 389,
+          "instruction": "Label the map below. Write the correct letter, A–G, next to Questions 17–20.",
+          "mapTitle": "",
           "letters": [
             "A",
             "B",
@@ -504,9 +524,7 @@ const TEST = {
             "D",
             "E",
             "F",
-            "G",
-            "H",
-            "I"
+            "G"
           ],
           "questions": [
             {
@@ -545,17 +563,21 @@ const TEST = {
               ],
               "explain": "答案：F。"
             }
-          ]
+          ],
+          "image": "ielts11_test2_map.png?v=20260822c11lis1"
         }
       ]
     },
     {
       "id": 3,
       "audio": "ielts11_test2_audio3.mp3",
+      "audioClips": [{"qFrom": 21, "qTo": 26, "audioStart": 0, "audioEnd": 244},{"qFrom": 27, "qTo": 28, "audioStart": 244, "audioEnd": 329.5},{"qFrom": 29, "qTo": 30, "audioStart": 329.5, "audioEnd": 415}],
       "groups": [
         {
           "kind": "mcq",
           "title": "Questions 21–26",
+          "audioStart": 0,
+          "audioEnd": 244,
           "instruction": "Choose the correct letter, A, B or C.",
           "questions": [
             {
@@ -647,6 +669,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 27 and 28",
+          "audioStart": 244,
+          "audioEnd": 329.5,
           "instruction": "Choose TWO letters, A–E. Which TWO problems affecting organisms in the splash zone are mentioned?",
           "box": {
             "A": "lack of water",
@@ -675,6 +699,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 29 and 30",
+          "audioStart": 329.5,
+          "audioEnd": 415,
           "instruction": "Choose TWO letters, A–E. Which TWO reasons for possible error will they include in their report?",
           "box": {
             "A": "inaccurate records of the habitat of organisms",
@@ -705,10 +731,13 @@ const TEST = {
     {
       "id": 4,
       "audio": "ielts11_test2_audio4.mp3",
+      "audioClips": [{"qFrom": 31, "qTo": 40, "audioStart": 0, "audioEnd": 388}],
       "groups": [
         {
           "kind": "note",
           "title": "Questions 31–40",
+          "audioStart": 0,
+          "audioEnd": 388,
           "instruction": "Complete the notes below. Write ONE WORD ONLY for each answer.",
           "noteTitle": "DESIGNING A PUBLIC BUILDING: THE TAYLOR CONCERT HALL",
           "lines": [

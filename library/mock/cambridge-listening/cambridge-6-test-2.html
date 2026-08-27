@@ -170,7 +170,7 @@
   <div class="cover-hero">
     <div class="cover-badge"><div class="lbl">CAMBRIDGE IELTS</div><div class="num">6</div></div>
     <div>
-      <h2>剑桥雅思 7 · Test 3</h2>
+      <h2>剑桥雅思 6 · Test 2</h2>
       <div class="sub">官方真题 · 自动批改并给出雅思预估分。请选择科目开始测试。</div>
     </div>
   </div>
@@ -267,10 +267,13 @@ const TEST = {
     {
       "id": 1,
       "audio": "ielts6_test2_audio1.mp3",
+      "audioClips": [{"qFrom": 1, "qTo": 5, "audioStart": 0, "audioEnd": 250},{"qFrom": 6, "qTo": 10, "audioStart": 250, "audioEnd": 361}],
       "groups": [
         {
           "kind": "note",
           "title": "Questions 1–5",
+          "audioStart": 0,
+          "audioEnd": 250,
           "instruction": "Complete the notes below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
           "noteTitle": "CHILDREN'S ART AND CRAFT WORKSHOPS",
           "lines": [
@@ -351,13 +354,15 @@ const TEST = {
         {
           "kind": "table",
           "title": "Questions 6–10",
+          "audioStart": 250,
+          "audioEnd": 361,
           "instruction": "Complete the table below. Write NO MORE THAN TWO WORDS for each answer.",
           "tableTitle": "Next two workshops",
           "cols": [
             "Date",
-            "Workshop",
-            "Materials needed",
-            "Comments"
+            "Workshop title",
+            "Children advised to wear:",
+            "Please bring (if possible):"
           ],
           "rows": [
             [
@@ -368,9 +373,9 @@ const TEST = {
             ],
             [
               "23/11",
-              "<Q n=\"9\">",
-              "<Q n=\"10\">",
-              "(Nothing special)"
+              "'<Q n=\"9\">'",
+              "(Nothing special)",
+              "<Q n=\"10\">"
             ]
           ],
           "questions": [
@@ -422,10 +427,13 @@ const TEST = {
     {
       "id": 2,
       "audio": "ielts6_test2_audio2.mp3",
+      "audioClips": [{"qFrom": 11, "qTo": 14, "audioStart": 0, "audioEnd": 88},{"qFrom": 15, "qTo": 17, "audioStart": 88, "audioEnd": 176},{"qFrom": 18, "qTo": 20, "audioStart": 176, "audioEnd": 288}],
       "groups": [
         {
           "kind": "note",
           "title": "Questions 11–14",
+          "audioStart": 0,
+          "audioEnd": 88,
           "instruction": "Complete the sentences below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
           "noteTitle": "TRAIN INFORMATION",
           "lines": [
@@ -486,6 +494,8 @@ const TEST = {
         {
           "kind": "table",
           "title": "Questions 15–17",
+          "audioStart": 88,
+          "audioEnd": 176,
           "instruction": "Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
           "cols": [
             "Type of ticket",
@@ -506,7 +516,7 @@ const TEST = {
             ],
             [
               "<Q n=\"16\">",
-              "buy at least six days ahead; limited numbers; <Q n=\"17\"> essential"
+              "buy at least six days ahead<br>limited numbers<br><Q n=\"17\"> essential"
             ]
           ],
           "questions": [
@@ -540,6 +550,8 @@ const TEST = {
         {
           "kind": "multi",
           "title": "Questions 18–20",
+          "audioStart": 176,
+          "audioEnd": 288,
           "instruction": "Choose THREE letters, A–G. Which THREE attractions can you visit at present by train from Trebirch?",
           "box": {
             "A": "a science museum",
@@ -578,60 +590,34 @@ const TEST = {
     {
       "id": 3,
       "audio": "ielts6_test2_audio3.mp3",
+      "audioClips": [{"qFrom": 21, "qTo": 30, "audioStart": 0, "audioEnd": 325}],
       "groups": [
         {
-          "kind": "note",
-          "title": "Questions 21–30",
-          "instruction": "Complete the tables below. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
-          "noteTitle": "Progress Review / Future Planning",
-          "image": "cambridge-6-test-2-progress-review.png",
-          "lines": [
-            {
-              "h": "Progress Review"
-            },
-            {
-              "plain": true,
-              "html": "Investigate software — Read IT <Q n=\"21\">"
-            },
-            {
-              "plain": true,
-              "html": "Spoken to Jane Prince, Head of the <Q n=\"22\">"
-            },
-            {
-              "plain": true,
-              "html": "Prepare a <Q n=\"23\"> for survey"
-            },
-            {
-              "plain": true,
-              "html": "Add questions in section three on <Q n=\"24\">"
-            },
-            {
-              "plain": true,
-              "html": "Ericsson's essays on managing the <Q n=\"25\">"
-            },
-            {
-              "h": "Future Planning"
-            },
-            {
-              "plain": true,
-              "html": "Chapter 1 title: Context <Q n=\"26\">"
-            },
-            {
-              "plain": true,
-              "html": "Add statistics on the <Q n=\"27\"> in various zones"
-            },
-            {
-              "plain": true,
-              "html": "Include references to works dated after <Q n=\"28\">"
-            },
-            {
-              "plain": true,
-              "html": "Timing: by the <Q n=\"29\">"
-            },
-            {
-              "plain": true,
-              "html": "Before starting the <Q n=\"30\">"
-            }
+          "kind": "table",
+          "title": "Questions 21–25",
+          "instruction": "Complete the table below. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+          "tableTitle": "Dissertation Tutorial Record (Education)",
+          "cols": [
+            "Targets previously agreed",
+            "Work completed",
+            "Further action suggested"
+          ],
+          "rows": [
+            [
+              "Investigate suitable data analysis software",
+              "Read IT <Q n=\"21\"><br>Spoken to Jane Prince, Head of the <Q n=\"22\">",
+              "Sign up for some software practice sessions"
+            ],
+            [
+              "Prepare a <Q n=\"23\"> for survey",
+              "Completed and sent for review",
+              "Add questions in section three on <Q n=\"24\">"
+            ],
+            [
+              "Further reading about discipline",
+              "Read Banerjee<br>N.B. Couldn't find Ericsson's essays on managing the <Q n=\"25\">",
+              "Obtain from library through special loans service"
+            ]
           ],
           "questions": [
             {
@@ -676,7 +662,31 @@ const TEST = {
                 "classroom"
               ],
               "explain": "答案：classroom。"
-            },
+            }
+          ]
+        },
+        {
+          "kind": "table",
+          "title": "Questions 26–30",
+          "instruction": "Complete the table below. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+          "cols": [
+            "New Targets",
+            "Specific suggestions",
+            "Timing"
+          ],
+          "rows": [
+            [
+              "Do further work on Chapter 1<br>(Give the title: Context <Q n=\"26\">)",
+              "Add statistics on the <Q n=\"27\"> in various zones<br>Include more references to works dated after <Q n=\"28\">",
+              "By the <Q n=\"29\">"
+            ],
+            [
+              "Prepare list of main sections for Chapter 2",
+              "Use index cards to help in organisation",
+              "Before starting the <Q n=\"30\">"
+            ]
+          ],
+          "questions": [
             {
               "id": "L26",
               "no": 26,
@@ -725,10 +735,13 @@ const TEST = {
     {
       "id": 4,
       "audio": "ielts6_test2_audio4.mp3",
+      "audioClips": [{"qFrom": 31, "qTo": 37, "audioStart": 0, "audioEnd": 179.5},{"qFrom": 38, "qTo": 40, "audioStart": 179.5, "audioEnd": 359}],
       "groups": [
         {
           "kind": "mcq",
           "title": "Questions 31–37",
+          "audioStart": 0,
+          "audioEnd": 179.5,
           "instruction": "Choose the correct letter, A, B or C.",
           "questions": [
             {
@@ -834,11 +847,13 @@ const TEST = {
         {
           "kind": "note",
           "title": "Questions 38–40",
+          "audioStart": 179.5,
+          "audioEnd": 359,
           "instruction": "Complete the sentences below. Write NO MORE THAN THREE WORDS for each answer.",
           "lines": [
             {
               "plain": true,
-              "html": "38 The first motion picture was called <Q n=\"38\">"
+              "html": "38 The first motion picture was called The <Q n=\"38\">"
             },
             {
               "plain": true,
@@ -915,7 +930,7 @@ function startTest(m){
 }
 
 function renderPaper(){
-  document.getElementById('testTitle').textContent=`剑桥雅思7 · Test 3 — 听力`;
+  document.getElementById('testTitle').textContent=`剑桥雅思6 · Test 2 — 听力`;
   document.getElementById('testModeTag').textContent= mode==='practice'?'练习模式':'模考模式';
   document.getElementById('questionsHolder').innerHTML = currentPaper.map(sectionHtml).join('');
 }
@@ -1053,7 +1068,7 @@ function submitTest(){
 
   document.getElementById('testArea').style.display='none';
   document.getElementById('resultArea').style.display='block';
-  document.getElementById('resTitle').textContent='剑桥雅思7 · Test 3 — 听力';
+  document.getElementById('resTitle').textContent='剑桥雅思6 · Test 2 — 听力';
   document.getElementById('resMeta').textContent=`${mode==='practice'?'练习模式':'模考模式'} · 用时 ${fmt(elapsed)} · 完成时间 ${new Date().toLocaleString('zh-CN')}`;
   document.getElementById('resCorrect').textContent=`${correct}/${total}`;
   document.getElementById('resPct').textContent=pct+'%';
