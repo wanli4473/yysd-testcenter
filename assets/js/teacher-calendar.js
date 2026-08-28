@@ -437,6 +437,96 @@
   function closeCreate() { createModal.hidden = true; }
   function closeDetail() { detailModal.hidden = true; detailEventId = null; }
 
+  function studentPrintName(s) {
+    if (s && s.displayName) return s.displayName;
+    return (s && s.phone) || "学生";
+  }
+
+  function exercisePrintLabel(xid, attachmentName) {
+    if (!xid && attachmentName) return "上传练习：" + attachmentName;
+    if (String(xid).indexOf("upload-") === 0) return "上传练习：" + (attachmentName || xid);
+    var vLabel = vocabAssignLabel(xid);
+    if (vLabel) return vLabel;
+    var it = catalog.filter(function (c) { return c.id === xid; })[0]
+      || (Y.resolveItem ? Y.resolveItem(catalog, xid) : null);
+    var kind = Y.drillKindLabel ? Y.drillKindLabel(xid) : "";
+    var title = it ? Y.displayTitle(it) : String(xid || "");
+    return kind ? title + " · " + kind : title;
+  }
+
+  function snapshotAssignPrint(body, file) {
+    var ids = body.targetStudentIds || [];
+    var people = ids.map(function (id) {
+      var s = null;
+      var i;
+      for (i = 0; i < students.length; i++) {
+        if (Number(students[i].id) === Number(id)) { s = students[i]; break; }
+      }
+      return { name: studentPrintName(s) };
+    }).sort(function (a, b) {
+      return (a.name || "").localeCompare(b.name || "", "zh");
+    });
+    var names = file
+      ? ["上传练习：" + file.name]
+      : (body.linkedExerciseIds || []).map(function (xid) {
+        return exercisePrintLabel(xid, body.htmlFileName);
+      }).filter(Boolean);
+    var teacher = T.getTeacher() || {};
+    return {
+      title: body.title || "作业",
+      due: body.dueTime,
+      teacher: teacher.name || teacher.phone || "教师",
+      students: people,
+      exercises: names
+    };
+  }
+
+  function printAssignList(job) {
+    if (!job || !job.students.length) return;
+    var due = "未设置截止日期";
+    if (job.due) {
+      try {
+        due = new Date(job.due).toLocaleString("zh-CN", {
+          hour12: false, year: "numeric", month: "numeric", day: "numeric",
+          hour: "2-digit", minute: "2-digit"
+        });
+      } catch (e) { due = String(job.due); }
+    }
+    var ex = job.exercises.length
+      ? "<ul>" + job.exercises.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>"
+      : "<p>未关联练习</p>";
+    var last = job.students.length - 1;
+    var pages = job.students.map(function (s, i) {
+      return '<section class="page' + (i === last ? " is-last" : "") + '">' +
+        "<h1>" + esc(s.name) + "</h1>" +
+        '<p class="meta">布置教师 ' + esc(job.teacher) + "</p>" +
+        "<p><b>任务</b> " + esc(job.title) + "</p>" +
+        "<p><b>截止日期</b> " + esc(due) + "</p>" +
+        "<p><b>练习</b></p>" + ex +
+        "</section>";
+    }).join("");
+    var html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" +
+      esc(job.title) + " · 任务列表</title><style>" +
+      "body{font:16px/1.55 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;color:#1c1e1a;margin:0}" +
+      ".page{padding:36px 40px;page-break-after:always}" +
+      ".page.is-last{page-break-after:auto}" +
+      "h1{font-size:22px;margin:0 0 8px}" +
+      ".meta{color:#5c6358;margin:0 0 18px}" +
+      "p{margin:0 0 8px}" +
+      "ul{margin:0;padding-left:1.2em}" +
+      "@media print{body{margin:0}.page{padding:12px 0}}" +
+      "</style></head><body>" + pages + "</body></html>";
+    var w = window.open("", "_blank");
+    if (!w) {
+      alert("浏览器拦截了打印窗口，请允许弹窗后重试");
+      return;
+    }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    w.print();
+  }
+
   function syncTypeUi() {
     var type = document.getElementById("f-type").value;
     var ex = document.getElementById("exercise-fieldset");
@@ -1222,8 +1312,10 @@
         .then(function () {
           var n = targetStudentIds.length;
           showMsg("已发给 " + n + " 名学生 · 他们打开待办即可看到", true);
+          var job = type === "ASSIGNMENT" ? snapshotAssignPrint(body, file) : null;
           closeCreate();
           load();
+          if (job && confirm("是否需要打印学生任务列表？")) printAssignList(job);
         })
         .catch(function (e) { showMsg(e.message, false); });
     }

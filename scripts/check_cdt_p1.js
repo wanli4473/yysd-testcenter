@@ -66,6 +66,9 @@ assert(/replace\("manifest\.json", file\)/.test(cfg), "taxonomy url keeps ?v=");
 assert(/function rememberTaxonomy/.test(cfg) && /function drillKindLabel/.test(cfg), "taxonomy kind lookup");
 assert(/cal-ex-kind/.test(cal) && /drillKindLabel/.test(cal), "student list shows drill kind");
 assert(/drillKindLabel/.test(teach), "teacher detail shows drill kind");
+assert(/是否需要打印学生任务列表/.test(teach), "print prompt after assignment");
+assert(/function printAssignList/.test(teach) && /page-break-after/.test(teach), "one printed page per student");
+assert(/eventType === "ASSIGNMENT"/.test(teach) || /type === "ASSIGNMENT" \? snapshotAssignPrint/.test(teach), "print only for ASSIGNMENT");
 
 var tax = JSON.parse(fs.readFileSync("library/listening-taxonomy.json", "utf8"));
 assert(tax.groups && tax.groups.length > 400, "taxonomy groups");
