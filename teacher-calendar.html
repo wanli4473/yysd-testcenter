@@ -8,7 +8,7 @@
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/style.css?v=20260825kind1">
   <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260825calnavy3">
-  <link rel="stylesheet" href="assets/css/teacher-desk.css?v=20260828desk2">
+  <link rel="stylesheet" href="assets/css/teacher-desk.css?v=20260828desk3">
 </head>
 <body class="home-minimal teacher-page teacher-layout shell-compact-nav page-premium">
 
@@ -78,6 +78,19 @@
         </div>
         <div class="assign-desk__body">
           <section class="assign-desk__meta">
+            <fieldset class="cal-fieldset assign-desk__students">
+              <legend>目标学生</legend>
+              <div class="assign-desk__students-body">
+                <div class="cal-picker-toolbar">
+                  <input type="search" id="student-q" placeholder="搜索姓名或手机号" autocomplete="off">
+                  <div class="assign-desk__stu-acts">
+                    <button type="button" class="btn btn--ghost btn--sm" id="select-all-students">全选</button>
+                    <button type="button" class="btn btn--ghost btn--sm" id="clear-students">清空</button>
+                  </div>
+                </div>
+                <div class="cal-check-list" id="student-list"></div>
+              </div>
+            </fieldset>
             <label class="auth-field">
               <span>标题</span>
               <input type="text" id="f-title" maxlength="80" required placeholder="如：本周剑桥听力 Test 1">
@@ -100,26 +113,13 @@
                 <input type="datetime-local" id="f-due">
               </label>
             </div>
-            <fieldset class="cal-fieldset assign-desk__students">
-              <legend>目标学生</legend>
-              <div class="assign-desk__students-body">
-                <div class="cal-picker-toolbar">
-                  <input type="search" id="student-q" placeholder="搜索姓名或手机号" autocomplete="off">
-                  <div class="assign-desk__stu-acts">
-                    <button type="button" class="btn btn--ghost btn--sm" id="select-all-students">全选</button>
-                    <button type="button" class="btn btn--ghost btn--sm" id="clear-students">清空</button>
-                  </div>
-                </div>
-                <div class="cal-check-list" id="student-list"></div>
-              </div>
-            </fieldset>
           </section>
 
           <fieldset class="cal-fieldset assign-desk__work" id="exercise-fieldset">
             <legend>关联练习</legend>
             <div class="cal-ex-cats" id="exercise-cats" role="tablist" aria-label="作业类型">
               <button type="button" class="chip is-active" data-ex-cat="vocab">单词</button>
-              <button type="button" class="chip" data-ex-cat="part">补弱练习</button>
+              <button type="button" class="chip" data-ex-cat="part">剑雅单项</button>
               <button type="button" class="chip" data-ex-cat="qtype">听力题型练习</button>
               <button type="button" class="chip" data-ex-cat="scene">听力场景练习</button>
               <button type="button" class="chip" data-ex-cat="rqtype">阅读题型练习</button>
@@ -129,6 +129,10 @@
             </div>
             <p class="profile-hint" id="exercise-cat-hint">先选作业类型，再按下钻勾选。</p>
             <div class="cal-ex-browse" id="exercise-browse" hidden>
+              <div class="assign-filter-row">
+                <span class="assign-filter-label">分类</span>
+                <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-skill-filter" hidden role="tablist" aria-label="技能"></div>
+              </div>
               <div class="assign-filter-row">
                 <span class="assign-filter-label">册</span>
                 <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-vol-filter" role="tablist" aria-label="剑桥册"></div>
@@ -140,10 +144,6 @@
               <div class="assign-filter-row">
                 <span class="assign-filter-label">Test</span>
                 <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-test-filter" role="tablist" aria-label="Test"></div>
-              </div>
-              <div class="assign-filter-row">
-                <span class="assign-filter-label">分类</span>
-                <div class="cal-ex-cats cal-ex-cats--sub" id="exercise-skill-filter" hidden role="tablist" aria-label="技能"></div>
               </div>
             </div>
             <div class="cal-picker-toolbar cal-picker-toolbar--ex">
@@ -202,6 +202,6 @@
   <script src="assets/js/teacher-auth.js?v=20260821gate1"></script>
   <script src="assets/js/teacher-mode.js?v=20260821gate1"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/teacher-calendar.js?v=20260825kind1"></script>
+  <script src="assets/js/teacher-calendar.js?v=20260828part1"></script>
 </body>
 </html>

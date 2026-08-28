@@ -33,7 +33,7 @@
 
   var CAT_HINT = {
     vocab: "单词检测：可跨词书勾选多个 List；学生逐个 List 闯关，全部通过才算完成。",
-    part: "补弱：先选册与 Test，再勾 Section / Passage（练习规则，可续做）。",
+    part: "剑雅单项：先选册与 Test，再勾 Section / Passage（练习规则，可续做）。",
     qtype: "听力题型练习：选题型与册，再勾题组（只出该组题，音频仍是整段 Part）。",
     scene: "听力场景练习：选场景与册，再勾 Part（整段练习规则）。",
     rqtype: "阅读题型练习：选题型与册，再勾题组（只出该组题，文章仍是整篇 Passage）。",

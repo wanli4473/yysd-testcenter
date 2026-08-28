@@ -3,7 +3,11 @@
 .teacher-page {
   --desk-navy: #102a4c;
   --desk-ink: #1a2332;
-  --desk-muted: #5c6570;
+  --desk-muted: #3a4554;
+  --text-muted: #3a4554;
+  --text-faint: #4b5563;
+  --minimal-muted: #3a4554;
+  --minimal-faint: #4b5563;
   --desk-line: #e2e5ea;
   --desk-bg: #f3f4f6;
   --desk-card: #fff;
@@ -585,6 +589,51 @@
 }
 .teacher-page .cal-modal__panel {
   border-radius: 10px;
+}
+
+/* —— 系统字对比：标签用墨色，说明/占位用更深的灰 —— */
+.teacher-page .auth-field > span,
+.teacher-page .assign-filter-label,
+.teacher-page .cal-fieldset > legend,
+.teacher-page .minimal-page-head h1,
+.teacher-page legend,
+.teacher-page #create-modal .assign-filter-label,
+.teacher-page #create-modal .auth-field > span,
+.teacher-page #create-modal legend {
+  color: var(--desk-ink);
+}
+.teacher-page .profile-hint,
+.teacher-page .cal-todo-row__tags,
+.teacher-page .cal-ex-kind,
+.teacher-page .cal-check small,
+.teacher-page .assign-desk__summary,
+.teacher-page .assign-desk__upload,
+.teacher-page .minimal-page-desc,
+.teacher-page .stu-day-item__meta,
+.teacher-page #create-modal .assign-desk__summary,
+.teacher-page #create-modal .assign-desk__upload {
+  color: var(--desk-muted);
+}
+.teacher-page ::placeholder {
+  color: var(--desk-muted);
+  opacity: 1;
+}
+.teacher-page input,
+.teacher-page select,
+.teacher-page textarea {
+  color: var(--desk-ink);
+}
+.teacher-page .chip:not(.is-active),
+.teacher-page .chip--sub:not(.is-active),
+.teacher-page .cal-check,
+.teacher-page .btn--ghost {
+  color: var(--desk-ink);
+}
+.teacher-page .teacher-filter {
+  color: var(--desk-muted);
+}
+.teacher-page .teacher-filter.is-active {
+  color: var(--desk-navy);
 }
 
 /* —— 诊断页金边 → 海军蓝 —— */

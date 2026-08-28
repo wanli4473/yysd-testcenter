@@ -27,7 +27,7 @@ assert(/cambridgeCdtQs/.test(cal), "calendar uses cambridgeCdtQs");
 assert(/cambridgeCdtQs/.test(dash), "dashboard uses cambridgeCdtQs");
 assert(/function cambridgeCdtQs/.test(cfg), "config cambridgeCdtQs");
 assert(/data-ex-cat="skill"/.test(thtml), "teacher skill mock cat");
-assert(/data-ex-cat="part"/.test(thtml) && /补弱练习/.test(thtml), "teacher part cat renamed");
+assert(/data-ex-cat="part"/.test(thtml) && /剑雅单项/.test(thtml), "teacher part cat renamed");
 assert(/data-ex-cat="qtype"/.test(thtml) && /听力题型练习/.test(thtml), "teacher qtype cat");
 assert(/data-ex-cat="scene"/.test(thtml) && /听力场景练习/.test(thtml), "teacher scene cat");
 assert(/data-ex-cat="rqtype"/.test(thtml) && /阅读题型练习/.test(thtml), "teacher reading qtype cat");
