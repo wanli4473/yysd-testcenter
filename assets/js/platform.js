@@ -120,30 +120,27 @@
   document.addEventListener("DOMContentLoaded", function () {
     // 主控台仅允许总部站 youyisida.com（slug=yysd）
     if (A.isHqSite && !A.isHqSite()) {
-      document.body.innerHTML =
-        '<main style="max-width:420px;margin:18vh auto;padding:1.5rem;text-align:center;font-family:system-ui,sans-serif">' +
-        "<h1 style=\"font-size:1.25rem;margin:0 0 .75rem\">无权限，请联系管理员</h1>" +
-        "<p style=\"color:#666;line-height:1.6;margin:0 0 1.25rem\">平台主控台仅可在优益思达总部网站使用。</p>" +
-        '<p><a href="index.html">返回首页</a></p></main>';
+      msg("平台主控台仅可在优益思达总部网站使用。");
       return;
     }
     if (!A.getToken()) {
-      location.replace("login.html?next=" + encodeURIComponent("platform.html"));
+      location.replace((window.YYSD_TEACHER ? "teacher-login.html" : "login.html") +
+        "?next=" + encodeURIComponent("platform.html"));
       return;
     }
-    document.getElementById("plat-logout").addEventListener("click", function () {
-      A.logout();
-    });
+    var logoutBtn = document.getElementById("logout-btn") || document.getElementById("plat-logout");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", function () {
+        if (window.YYSD_TEACHER && YYSD_TEACHER.getToken && YYSD_TEACHER.getToken()) YYSD_TEACHER.logout();
+        else A.logout();
+      });
+    }
 
     function gateThenLoad() {
       return A.api("/api/auth/me").then(function (d) {
         var u = d.user || {};
         if (!u.isPlatformAdmin) {
-          document.body.innerHTML =
-            '<main style="max-width:420px;margin:18vh auto;padding:1.5rem;text-align:center;font-family:system-ui,sans-serif">' +
-            "<h1 style=\"font-size:1.25rem;margin:0 0 .75rem\">无权限，请联系管理员</h1>" +
-            "<p style=\"color:#666;line-height:1.6;margin:0 0 1.25rem\">当前账号无法进入平台主控台。</p>" +
-            '<p><a href="index.html">返回首页</a></p></main>';
+          msg("当前账号无法进入平台主控台。");
           return null;
         }
         A.setUser({
@@ -331,12 +328,8 @@
       }).catch(function (e) { msg(e.message || "保存失败"); });
     });
 
-    gateThenLoad().catch(function () {
-      document.body.innerHTML =
-        '<main style="max-width:420px;margin:18vh auto;padding:1.5rem;text-align:center;font-family:system-ui,sans-serif">' +
-        "<h1 style=\"font-size:1.25rem;margin:0 0 .75rem\">无权限，请联系管理员</h1>" +
-        "<p style=\"color:#666;line-height:1.6;margin:0 0 1.25rem\">无法进入平台主控台。</p>" +
-        '<p><a href="index.html">返回首页</a></p></main>';
+    gateThenLoad().catch(function (e) {
+      msg((e && e.message) || "无法进入平台主控台");
     });
   });
 })();

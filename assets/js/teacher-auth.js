@@ -49,7 +49,7 @@ window.YYSD_TEACHER = (function () {
       n === "teacher-student-report.html" ||
       n === "teacher-vocab-challenge.html" ||
       n === "teacher-mode-picker.html" ||
-      n === "admin-assign.html" || isPublicPage();
+      n === "admin-assign.html" || n === "platform.html" || isPublicPage();
   }
 
   function setAuthCookie(on) {
@@ -168,6 +168,17 @@ window.YYSD_TEACHER = (function () {
   function guardPage() {
     if (!isTeacherPage()) return true;
     if (isPublicPage()) return true;
+    if (pageName() === "platform.html") {
+      if (getToken()) {
+        setAuthCookie(true);
+        return true;
+      }
+      try {
+        if (localStorage.getItem(STUDENT_TOKEN_KEY)) return true;
+      } catch (e) {}
+      location.replace("teacher-login.html?next=" + encodeURIComponent(location.pathname + location.search));
+      return false;
+    }
     if (!getToken()) {
       location.replace("teacher-login.html?next=" + encodeURIComponent(location.pathname + location.search));
       return false;

@@ -10,7 +10,9 @@ function read(rel) {
 
 ["vocab-challenge.html", "teacher-vocab-challenge.html",
   "assets/js/vocab-challenge-ui.js", "assets/js/teacher-vocab-challenge.js",
-  "server/schedules/gaozhong-ebbinghaus-schedule.json", "server/vocab-challenge-schedule.js"].forEach(function (f) {
+  "server/schedules/gaozhong-ebbinghaus-schedule.json",
+  "server/schedules/cet4-lite-ebbinghaus-schedule.json",
+  "server/vocab-challenge-schedule.js"].forEach(function (f) {
   assert.ok(fs.existsSync(path.join(root, f)), "missing " + f);
 });
 
@@ -32,6 +34,8 @@ var spellSrc = fs.readFileSync(path.join(root, "assets/js/english-spell-input.js
 assert.ok(spellSrc.indexOf("insertCompositionText") >= 0, "block IME composition");
 assert.ok(spellSrc.indexOf("[^a-zA-Z0-9' ()-]") >= 0, "spell input allows digits/parens/space");
 assert.ok(spellSrc.indexOf("function matches") >= 0, "spell matches helper");
+assert.ok(spellSrc.indexOf("function toUS") >= 0, "client UK/US fold");
+assert.ok(read("server/vocab-grade.js").indexOf("function toUS") >= 0, "server UK/US fold");
 assert.ok(fs.existsSync(path.join(root, "assets/js/english-ime-gate.js")), "english ime gate");
 assert.ok(html.indexOf("english-ime-gate.js") >= 0, "challenge loads ime gate");
 assert.ok(ui.indexOf("requireImeGate") >= 0 && ui.indexOf("onImeViolation") >= 0, "challenge ime gate wired");
@@ -78,6 +82,8 @@ assert.ok(read("server/vocab-challenge-schedule.js").indexOf("buildPlanSummary")
 assert.ok(read("server/vocab-challenge.js").indexOf("ebbinghausPlan") >= 0, "lists returns ebb plan");
 assert.ok(ui.indexOf("scheduled_review") >= 0, "review phase ui");
 assert.ok(ui.indexOf("（干扰项）") < 0, "no fake distractor labels");
+assert.ok(ui.indexOf("桌子 / 课桌") < 0, "no generic filler glosses");
+assert.ok(ui.indexOf("optionBank") >= 0, "uses list option bank");
 assert.ok(ui.indexOf("saveQuizDraft") >= 0, "resume draft");
 assert.ok(ui.indexOf("displayProgressDay") >= 0, "cap progress day at 78");
 assert.ok(ui.indexOf("vl-btn-abort") >= 0, "abort is secondary");
@@ -86,6 +92,8 @@ assert.ok(read("server/vocab-challenge.js").indexOf("resumeSameAttempt") >= 0, "
 var teacher = read("assets/js/teacher-vocab-challenge.js");
 assert.ok(teacher.indexOf("formatProgress") >= 0, "teacher progress day");
 assert.ok(teacher.indexOf("formatTodayTasks") >= 0, "teacher today tasks");
+assert.ok(teacher.indexOf("布置四级精简") >= 0, "teacher lite assign");
+assert.ok(teacher.indexOf("取消布置") >= 0, "teacher unassign");
 
 assert.ok(zone.indexOf("vocab-challenge.html") >= 0, "zone links challenge");
 assert.ok(zone.indexOf("单词闯关") >= 0, "zone label");
@@ -97,6 +105,12 @@ assert.ok(read("teacher-student-diagnostic.html").indexOf("zone.html") < 0, "tea
 assert.ok(teacher.indexOf("联系管理员绑定") >= 0, "empty roster tells non-admin to ask");
 assert.ok(teacher.indexOf('href="admin-assign.html"') >= 0, "empty roster admin link");
 assert.ok(read("assets/js/tenant-boot.js").indexOf('mode !== "site"') >= 0, "tenant-boot blocks student pages");
+var platHtml = read("platform.html");
+assert.ok(platHtml.indexOf("teacher-page") >= 0 && platHtml.indexOf("teacher-side") >= 0, "platform console uses teacher shell");
+assert.ok(read("assets/js/teacher-auth.js").indexOf('n === "platform.html"') >= 0, "teacher-auth treats platform as teacher page");
+assert.ok(authJs.indexOf('pageName() === "platform.html") return teacher') >= 0, "platform prefers teacher JWT");
+assert.ok(modeJs.indexOf('pageName() === "platform.html"') >= 0, "teacher-mode does not bounce platform");
+assert.ok(read("assets/js/platform.js").indexOf("document.body.innerHTML") < 0, "platform keeps teacher shell on gate fail");
 
 var eng = read("server/vocab-challenge.js");
 assert.ok(eng.indexOf("JSON.stringify(w)") >= 0, "word_json stores full word");

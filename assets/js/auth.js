@@ -279,11 +279,17 @@ window.YYSD_AUTH = (function () {
 
   function getToken() {
     try {
-      var student = localStorage.getItem(TOKEN_KEY);
+      var teacher = localStorage.getItem(TEACHER_TOKEN_KEY) || "";
+      var student = localStorage.getItem(TOKEN_KEY) || "";
+      // ponytail: leftover student/preview JWT was beating teacher JWT on platform.html
+      if (pageName() === "platform.html") return teacher || student;
+      if (isTeacherPage() && localStorage.getItem("yysd:teacher:mode") !== "site") {
+        return teacher || student;
+      }
       if (student) return student;
       // ponytail: site-mode student APIs must not fall back to teacher JWT
       if (localStorage.getItem("yysd:teacher:mode") === "site") return "";
-      return localStorage.getItem(TEACHER_TOKEN_KEY) || "";
+      return teacher;
     } catch (e) { return ""; }
   }
 
@@ -947,7 +953,7 @@ window.YYSD_AUTH = (function () {
       if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return;
       if (document.querySelector("script[data-teacher-mode]")) return;
       var s = document.createElement("script");
-      s.src = "assets/js/teacher-mode.js?v=20260828plat1";
+      s.src = "assets/js/teacher-mode.js?v=20260828plat3";
       s.setAttribute("data-teacher-mode", "1");
       document.body.appendChild(s);
     } catch (e) {}
