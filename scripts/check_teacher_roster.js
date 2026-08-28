@@ -20,6 +20,7 @@ assert(js.indexOf("hasOverdue") >= 0, "overdue badge");
 assert(js.indexOf("localeCompare") >= 0 && js.indexOf("\"zh\"") >= 0, "name sort");
 assert(js.indexOf("dayKeyOf(ev.createdAt)") >= 0, "calendar falls on createdAt");
 assert(js.indexOf("latestAssignDay") >= 0, "default latest assign day");
+assert(js.indexOf("data-cal-year") >= 0 && js.indexOf("data-cal-month") >= 0, "year/month selects");
 
 var server = read("server/server.js");
 assert(server.indexOf("Number(ev.createdBy) === Number(req.user.sub)") >= 0, "only this teacher's assignments");

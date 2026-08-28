@@ -249,6 +249,58 @@
     return null;
   }
 
+  function yearChoices() {
+    var nowY = new Date().getFullYear();
+    var minY = nowY - 5;
+    var maxY = nowY;
+    events.forEach(function (ev) {
+      var k = dayKeyOf(ev.createdAt);
+      if (!k) return;
+      var yy = Number(k.slice(0, 4));
+      if (yy && yy < minY) minY = yy;
+      if (yy && yy > maxY) maxY = yy;
+    });
+    var cy = monthCursor.getFullYear();
+    if (cy < minY) minY = cy;
+    if (cy > maxY) maxY = cy;
+    var out = [];
+    var yy;
+    for (yy = maxY; yy >= minY; yy--) out.push(yy);
+    return out;
+  }
+
+  function syncDayToMonth() {
+    var y = monthCursor.getFullYear();
+    var mo = monthCursor.getMonth();
+    var prefix = y + "-" + pad(mo + 1) + "-";
+    if (selectedDay && selectedDay.indexOf(prefix) === 0) return;
+    var latest = "";
+    var latestTs = 0;
+    events.forEach(function (ev) {
+      var k = dayKeyOf(ev.createdAt);
+      if (!k || k.indexOf(prefix) !== 0) return;
+      var ts = Date.parse(ev.createdAt || "") || 0;
+      if (ts >= latestTs) {
+        latestTs = ts;
+        latest = k;
+      }
+    });
+    if (latest) {
+      selectedDay = latest;
+      return;
+    }
+    var t = todayKey();
+    selectedDay = t.indexOf(prefix) === 0 ? t : prefix + "01";
+  }
+
+  function applyMonth(y, m) {
+    monthCursor = new Date(Number(y), Number(m), 1);
+    monthCursor.setHours(0, 0, 0, 0);
+    syncDayToMonth();
+    renderCal();
+    renderDay();
+  }
+
   function renderCal() {
     var y = monthCursor.getFullYear();
     var m = monthCursor.getMonth();
@@ -277,12 +329,23 @@
           '<div class="cal-month__chips">' + chips + "</div></div>"
       );
     }
+    var yearOpts = yearChoices().map(function (yy) {
+      return '<option value="' + yy + '"' + (yy === y ? " selected" : "") + ">" + yy + " 年</option>";
+    }).join("");
+    var monthOpts = "";
+    var mi;
+    for (mi = 0; mi < 12; mi++) {
+      monthOpts += '<option value="' + mi + '"' + (mi === m ? " selected" : "") + ">" + (mi + 1) + " 月</option>";
+    }
     calEl.innerHTML =
       '<div class="cal-month">' +
         '<div class="cal-month__nav">' +
-          '<button type="button" class="btn btn--ghost btn--sm" data-nav-dir="-1">‹</button>' +
-          "<strong>" + y + " 年 " + (m + 1) + " 月</strong>" +
-          '<button type="button" class="btn btn--ghost btn--sm" data-nav-dir="1">›</button>' +
+          '<button type="button" class="btn btn--ghost btn--sm" data-nav-dir="-1" aria-label="上个月">‹</button>' +
+          '<label class="cal-month__pick"><span class="visually-hidden">年份</span>' +
+            '<select data-cal-year>' + yearOpts + "</select></label>" +
+          '<label class="cal-month__pick"><span class="visually-hidden">月份</span>' +
+            '<select data-cal-month>' + monthOpts + "</select></label>" +
+          '<button type="button" class="btn btn--ghost btn--sm" data-nav-dir="1" aria-label="下个月">›</button>' +
         "</div>" +
         '<div class="cal-month__weekdays">' +
           "<span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>" +
@@ -440,8 +503,7 @@
     calEl.addEventListener("click", function (e) {
       var nav = e.target.closest("[data-nav-dir]");
       if (nav) {
-        monthCursor.setMonth(monthCursor.getMonth() + Number(nav.getAttribute("data-nav-dir")));
-        renderCal();
+        applyMonth(monthCursor.getFullYear(), monthCursor.getMonth() + Number(nav.getAttribute("data-nav-dir")));
         return;
       }
       var cell = e.target.closest("[data-day]");
@@ -449,6 +511,12 @@
       selectedDay = cell.getAttribute("data-day") || selectedDay;
       renderCal();
       renderDay();
+    });
+    calEl.addEventListener("change", function (e) {
+      if (!e.target.closest("[data-cal-year], [data-cal-month]")) return;
+      var yEl = calEl.querySelector("[data-cal-year]");
+      var mEl = calEl.querySelector("[data-cal-month]");
+      applyMonth(yEl && yEl.value, mEl && mEl.value);
     });
   }
   if (dayEl) {
