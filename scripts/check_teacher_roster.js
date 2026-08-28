@@ -29,7 +29,9 @@ assert(js.indexOf("teacher.html?student=") >= 0, "bento links to student page");
 assert(js.indexOf("hasOverdue") >= 0, "overdue badge");
 assert(js.indexOf("localeCompare") >= 0 && js.indexOf("\"zh\"") >= 0, "name sort");
 assert(js.indexOf("dayKeyOf(ev.createdAt)") >= 0, "calendar falls on createdAt");
+assert(js.indexOf("practicesOnDay") < 0, "calendar is assignment-only");
 assert(js.indexOf("latestAssignDay") >= 0, "default latest assign day");
+assert(js.indexOf("linkedExerciseIds") >= 0, "assigned attempt matched without event id");
 assert(js.indexOf("data-cal-year") >= 0 && js.indexOf("data-cal-month") >= 0, "year/month selects");
 
 var server = read("server/server.js");
@@ -105,5 +107,25 @@ var practices = scores.filter(function (s) {
 assert(practices.length === 1 && practices[0].zone === "mock", "July homework done in Aug is not Aug self-practice");
 assert(monthAssign.filter(function (a) { return a.status === "COMPLETED"; }).length === 1, "completion only counts assigned homework");
 assert(practices[0].zone === "mock", "mocks counted separately");
+
+var ev = { id: 9, linkedExerciseIds: ["cambridge-12-test-1"] };
+var attemptRows = [
+  { assignmentEventId: "9", id: "other", title: "by-event" },
+  { id: "cambridge-12-test-1", title: "legacy-linked" }
+];
+function scoreForEvent(event, list) {
+  var i, j;
+  for (i = 0; i < list.length; i++) {
+    if (String(list[i].assignmentEventId || "") === String(event.id)) return list[i];
+  }
+  for (j = 0; j < (event.linkedExerciseIds || []).length; j++) {
+    for (i = 0; i < list.length; i++) {
+      if (String(list[i].id) === String(event.linkedExerciseIds[j])) return list[i];
+    }
+  }
+  return null;
+}
+assert(scoreForEvent(ev, attemptRows).title === "by-event", "prefer assignmentEventId");
+assert(scoreForEvent(ev, attemptRows.slice(1)).title === "legacy-linked", "legacy assigned attempt still attaches");
 
 console.log("ok: teacher roster 我的学生");

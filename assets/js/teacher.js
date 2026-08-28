@@ -268,8 +268,16 @@
 
   function scoreForEvent(ev) {
     var id = String(ev.id);
-    for (var i = 0; i < scores.length; i++) {
+    var i;
+    for (i = 0; i < scores.length; i++) {
       if (String(scores[i].assignmentEventId || "") === id) return scores[i];
+    }
+    var linked = ev.linkedExerciseIds || [];
+    var j;
+    for (j = 0; j < linked.length; j++) {
+      for (i = 0; i < scores.length; i++) {
+        if (String(scores[i].id) === String(linked[j])) return scores[i];
+      }
     }
     return null;
   }
@@ -378,6 +386,15 @@
         '<div class="cal-month__grid">' + cells.join("") + "</div></div>";
   }
 
+  function attemptButton(row) {
+    if (!row) return "";
+    var hasEssay = !!(row.writingTask1 || row.writingTask2);
+    var wrongN = (row.wrong && row.wrong.length) || 0;
+    var btnLabel = hasEssay ? "查看作文" : (wrongN ? ("查看错题 (" + wrongN + ")") : "查看详情");
+    return '<button type="button" class="btn btn--ghost btn--sm" data-attempt="' +
+      Y.esc(String(row.attemptId || "")) + '">' + btnLabel + "</button>";
+  }
+
   function renderDay() {
     var dayEvents = eventsOnDay(selectedDay);
     var heading = prettyDay(selectedDay);
@@ -398,21 +415,13 @@
         meta.push("进度 " + (ev.exerciseDone || 0) + " / " + ev.exerciseTotal);
       }
       if (ev.dueTime) meta.push("截止 " + fmtDate(ev.dueTime));
-      var btn = "";
-      if (row) {
-        var hasEssay = !!(row.writingTask1 || row.writingTask2);
-        var wrongN = (row.wrong && row.wrong.length) || 0;
-        var btnLabel = hasEssay ? "查看作文" : (wrongN ? ("查看错题 (" + wrongN + ")") : "查看详情");
-        btn = '<button type="button" class="btn btn--ghost btn--sm" data-attempt="' +
-          Y.esc(String(row.attemptId || "")) + '">' + btnLabel + "</button>";
-      }
       return '<article class="stu-day-item ' + chipStatusClass(st) + '">' +
         "<header><b>" + Y.esc(ev.title) + "</b>" +
         '<span class="cal-status-pill ' +
           (st === "COMPLETED" ? "cal-status--done" : st === "OVERDUE" ? "cal-status--overdue" : "cal-status--pending") +
           '">' + Y.esc(STATUS_LABEL[st] || st) + "</span></header>" +
         (meta.length ? '<p class="stu-day-item__meta">' + Y.esc(meta.join(" · ")) + "</p>" : "") +
-        btn + "</article>";
+        attemptButton(row) + "</article>";
     }).join("");
     dayEl.innerHTML = '<div class="stu-day-panel"><h2>' + Y.esc(heading) + " 布置的作业</h2>" + rows + "</div>";
   }
