@@ -212,6 +212,11 @@
 
   function boot() {
     if (pageName() === "teacher-mode-picker.html") return;
+    if (pageName() === "teacher-student-report.html") return;
+    if (pageName() === "platform.html") {
+      if (document.body.classList.contains("teacher-page")) mountAdminSwitch();
+      return;
+    }
 
     if (document.body.classList.contains("teacher-page")) {
       if (hasTeacherToken() && !hasChosenMode()) {

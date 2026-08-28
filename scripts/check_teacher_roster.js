@@ -79,6 +79,8 @@ assert(server.indexOf("/api/teacher/students/:userId/report") >= 0, "report API"
 assert(server.indexOf("function monthKeyOf") >= 0, "month bucket helper");
 assert(read("assets/js/teacher-student-report.js").indexOf("本月无记录") >= 0, "empty month copy");
 assert(read("teacher-student-report.html").indexOf("打印 / 存 PDF") >= 0, "print to PDF");
+assert(read("teacher-student-report.html").indexOf("teacher-mode.js") < 0, "report page must not boot teacher-mode redirect");
+assert(read("assets/js/teacher-mode.js").indexOf("teacher-student-report.html") >= 0, "mode boot skips report page");
 assert(read("assets/js/teacher-auth.js").indexOf("teacher-student-report.html") >= 0, "report page gated");
 assert(read("assets/js/tenant-boot.js").indexOf("teacher-student-report.html") >= 0, "tenant boot allows report");
 
