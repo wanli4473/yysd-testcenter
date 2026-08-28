@@ -8,6 +8,16 @@
   --desk-bg: #f3f4f6;
   --desk-card: #fff;
   --desk-hover: #eef1f5;
+  --desk-amber: #d97706;
+  --desk-amber-bg: #fef3c7;
+  --desk-amber-ink: #92400e;
+  --desk-ok: #2e7d50;
+  --desk-ok-bg: #e8f5ee;
+  --desk-bad: #b42318;
+  --desk-bad-bg: #fdf6f6;
+  --brand-gold: var(--desk-navy);
+  --brand-gold-light: #fff;
+  --diag-gold: var(--desk-navy);
   font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", system-ui, sans-serif;
   background: var(--desk-bg);
   color: var(--desk-ink);
@@ -26,6 +36,7 @@
   --ring: var(--desk-navy);
 }
 
+/* —— 顶栏 / 壳对齐 —— */
 .teacher-page .minimal-topbar {
   background: #fff;
   backdrop-filter: none;
@@ -33,57 +44,94 @@
   border-bottom: 1px solid var(--desk-line);
   box-shadow: none;
 }
-.teacher-page .minimal-brand__text span { color: var(--desk-muted); }
-.teacher-page .minimal-eyebrow { display: none; }
-.teacher-page .minimal-page-head {
-  padding: 16px 0 12px;
+.teacher-page .minimal-topbar__inner {
+  min-height: 52px;
+  gap: 16px;
 }
-.teacher-page.page-premium .teacher-content .minimal-page-head h1,
-.teacher-page .minimal-page-head h1 {
-  font-family: inherit;
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-  color: var(--desk-navy);
+.teacher-page .minimal-shell {
+  width: min(1280px, calc(100% - 48px));
 }
-.teacher-page .minimal-page-desc {
-  font-size: 13px;
-  color: var(--desk-muted);
-  margin: 4px 0 8px;
-}
-.teacher-page .teacher-head-avatar {
-  width: 44px;
-  height: 44px;
-  font-size: 13px;
-  margin-top: 0;
-}
-.teacher-page .teacher-head-row { align-items: center; gap: 12px; }
-
 .teacher-page .teacher-shell {
   background: transparent;
-  border-top-color: var(--desk-line);
-  max-width: 1320px;
+  border-top: 0;
+  max-width: 1280px;
+  width: min(1280px, calc(100% - 48px));
+  min-height: calc(100vh - 52px);
 }
+.teacher-page .minimal-brand__logo {
+  width: auto;
+  height: 28px;
+  border-radius: 4px;
+  filter: none;
+}
+.teacher-page .minimal-brand__text b {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.teacher-page .minimal-brand__text span {
+  color: var(--desk-muted);
+  font-size: 11px;
+  margin-top: 1px;
+}
+.teacher-page [hidden] { display: none !important; }
+.teacher-page.shell-compact-nav .minimal-nav > .nav-mobile-only {
+  display: none !important;
+}
+.teacher-page .minimal-nav a {
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--desk-muted);
+}
+.teacher-page .minimal-nav a:hover {
+  background: var(--desk-hover);
+  color: var(--desk-navy);
+}
+.teacher-page .nav-auth__avatar {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+  font-size: 10px;
+}
+.teacher-page .nav-auth__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--desk-ink);
+}
+.teacher-page .btn--ghost.btn--sm {
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+/* —— 侧栏 —— */
 .teacher-page .teacher-side {
+  position: sticky;
+  top: 52px;
+  align-self: start;
+  height: calc(100vh - 52px);
+  overflow: auto;
   background: #fff;
   border: 0;
   border-right: 1px solid var(--desk-line);
   border-radius: 0;
   box-shadow: none;
-  padding: 20px 12px 32px;
+  padding: 16px 10px 24px;
 }
 .teacher-page .teacher-side__label {
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--desk-muted);
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 700;
+  margin: 0 8px 8px;
 }
 .teacher-page .teacher-side__link {
   border-radius: 6px;
   color: var(--desk-ink);
   font-weight: 600;
   font-size: 13px;
-  padding: 8px 10px;
+  padding: 7px 10px;
 }
 .teacher-page .teacher-side__link:hover {
   background: var(--desk-hover);
@@ -98,34 +146,163 @@
   box-shadow: none;
 }
 
+/* —— 页头 —— */
+.teacher-page .minimal-eyebrow { display: none; }
+.teacher-page .minimal-page-head {
+  padding: 14px 0 12px;
+  margin-bottom: 12px;
+  border-bottom-color: var(--desk-line);
+}
+.teacher-page.page-premium .teacher-content .minimal-page-head h1,
+.teacher-page .minimal-page-head h1 {
+  font-family: inherit;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--desk-navy);
+  margin: 0 0 4px;
+}
+.teacher-page .minimal-page-desc {
+  font-size: 13px;
+  color: var(--desk-muted);
+  margin: 0;
+}
+.teacher-page .minimal-crumb {
+  font-size: 12px;
+  margin-bottom: 8px;
+  color: var(--desk-muted);
+}
+.teacher-page .minimal-crumb a {
+  color: var(--desk-muted);
+  font-weight: 500;
+}
+.teacher-page .minimal-crumb a:hover { color: var(--desk-navy); }
+.teacher-page .crumb-sep {
+  color: var(--desk-muted);
+  font-size: 12px;
+  opacity: 1;
+  margin: 0 6px;
+}
+.teacher-page #roster-head .minimal-crumb { display: none; }
+
+.teacher-page .teacher-head-row { align-items: center; gap: 12px; }
+.teacher-page .teacher-head-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 13px;
+  margin-top: 0;
+  color: #fff;
+}
+.teacher-page .profile-avatar { color: #fff; }
+.teacher-page .teacher-head-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.teacher-page .profile-avatar__btn {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--desk-muted);
+  box-shadow: none;
+  line-height: 1.2;
+}
+.teacher-page .profile-avatar__btn:hover {
+  color: var(--desk-navy);
+  background: none;
+}
+.teacher-page #teacher-avatar-msg {
+  min-height: 0;
+  font-size: 12px;
+}
+
+/* —— 控件 —— */
 .teacher-page .btn--primary,
 .teacher-page.page-premium .btn--primary {
   background: var(--desk-navy);
   border-color: var(--desk-navy);
   color: #fff;
+  border-radius: 6px;
 }
 .teacher-page .btn--primary:hover,
 .teacher-page.page-premium .btn--primary:hover {
   filter: brightness(1.08);
 }
-
-.teacher-page .teacher-search input,
-.teacher-page .teacher-filter,
-.teacher-page .stu-home .cal-month__pick select {
-  border-color: var(--desk-line);
+.teacher-page .btn--ghost {
   border-radius: 6px;
-  background: #fff;
+  border-color: var(--desk-line);
+  color: var(--desk-ink);
 }
-.teacher-page .teacher-search input:focus {
+.teacher-page .pressable:active { transform: scale(0.98); }
+.teacher-page :focus-visible {
+  outline: 2px solid var(--desk-navy);
+  outline-offset: 2px;
+}
+.teacher-page .teacher-search input:focus,
+.teacher-page .stu-home .cal-month__pick select:focus {
+  outline: none;
   border-color: var(--desk-navy);
   box-shadow: 0 0 0 3px rgba(16, 42, 76, 0.12);
 }
 
+.teacher-page .teacher-search {
+  max-width: 280px;
+}
+.teacher-page .teacher-search input,
+.teacher-page .teacher-filter,
+.teacher-page .stu-home .cal-month__pick select,
+.teacher-page .auth-field select,
+.teacher-page .auth-field input,
+.teacher-page .cal-picker-toolbar input {
+  border-color: var(--desk-line);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+}
+.teacher-page .teacher-search input {
+  padding: 7px 10px;
+  height: 32px;
+}
+.teacher-page #roster-main .teacher-toolbar {
+  border-bottom: 0;
+  padding-bottom: 0;
+  margin-bottom: 10px;
+}
+
+.teacher-page.page-premium .teacher-filter {
+  padding: 8px 12px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.teacher-page.page-premium .teacher-filter.is-active {
+  color: var(--desk-navy);
+}
+.teacher-page.page-premium .teacher-filter.is-active::after {
+  background: var(--desk-navy);
+  height: 2px;
+  border-radius: 0;
+  left: 8px;
+  right: 8px;
+}
+
+.teacher-page .chip.is-active,
+.teacher-page.page-premium .chip.is-active {
+  background: var(--desk-navy);
+  border-color: var(--desk-navy);
+  color: #fff;
+}
+
+/* —— 花名册行 —— */
 .teacher-page.page-premium .teacher-students,
 .teacher-page .teacher-students {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 .teacher-page.page-premium .teacher-student-card,
 .teacher-page .teacher-student-card {
@@ -133,10 +310,11 @@
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
-  padding: 10px 12px;
+  width: 100%;
+  padding: 8px 12px;
   min-height: 0;
   text-align: left;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid var(--desk-line);
   box-shadow: none;
   transform: none;
@@ -151,42 +329,256 @@
 }
 .teacher-page.page-premium .teacher-student-card .profile-avatar,
 .teacher-page .teacher-student-card .profile-avatar {
-  width: 36px;
-  height: 36px;
-  font-size: 13px;
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
   flex: 0 0 auto;
 }
 .teacher-page.page-premium .teacher-student-card b {
+  flex: 1;
   font-size: 14px;
   font-weight: 650;
+  min-width: 0;
 }
 .teacher-page.page-premium .teacher-student-card.is-overdue {
-  border-color: #b42318;
+  border-color: var(--desk-bad);
   box-shadow: none;
-  background: #fdf6f6;
+  background: var(--desk-bad-bg);
+}
+.teacher-page .teacher-student-card__late,
+.teacher-page.page-premium .teacher-student-card__late {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+  padding: 1px 7px;
+  border-radius: 3px;
+  background: rgba(180, 35, 24, 0.1);
+  color: var(--desk-bad);
 }
 
-.teacher-page .cal-month {
-  background: #fff;
-  border: 1px solid var(--desk-line);
-  border-radius: 8px;
-  padding: 12px;
+.teacher-page .teacher-empty h3 {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--desk-ink);
+  margin: 0 0 4px;
 }
+.teacher-page .teacher-empty p,
+.teacher-page .teacher-empty-row {
+  font-size: 13px;
+  color: var(--desk-muted);
+  margin: 0;
+}
+
+/* —— 月历 —— */
+.teacher-page .cal-month,
 .teacher-page.page-premium .cal-month {
   background: #fff;
   border: 1px solid var(--desk-line);
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px;
 }
-.teacher-page .cal-month__cell {
-  min-height: 72px;
+.teacher-page .stu-home .cal-month__nav {
+  justify-content: flex-start;
+  gap: 0;
+  margin-bottom: 10px;
+  width: max-content;
+  max-width: 100%;
+  padding: 3px;
+  border: 1px solid var(--desk-line);
+  border-radius: 6px;
+  background: var(--desk-hover);
+}
+.teacher-page .stu-home .cal-month__nav .btn {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--desk-ink);
+  font-size: 16px;
+  line-height: 1;
+}
+.teacher-page .stu-home .cal-month__nav .btn:hover {
+  background: #fff;
+}
+.teacher-page .stu-home .cal-month__pick {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.teacher-page.page-premium .stu-home .cal-month__pick select,
+.teacher-page .stu-home .cal-month__pick select {
+  width: auto;
+  height: 28px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+}
+.teacher-page .stu-home .cal-month__pick select:hover,
+.teacher-page .stu-home .cal-month__pick select:focus {
+  background: #fff;
+}
+
+.teacher-page .cal-month__weekdays span,
+.teacher-page.page-premium .cal-month__weekdays span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--desk-muted);
+}
+.teacher-page.page-premium .cal-month__grid {
+  gap: 4px;
+}
+.teacher-page .cal-month__cell,
+.teacher-page.page-premium .cal-month__cell,
+.teacher-page.page-premium .stu-home .cal-month__cell {
+  min-height: 56px;
   border-radius: 4px;
   border-color: var(--desk-line);
+  animation: none;
+  box-shadow: none;
+  background: #fff;
 }
-.teacher-page.page-premium .stu-home .cal-month__cell {
-  min-height: 68px;
+.teacher-page.page-premium .cal-month__cell.has-events::before {
+  display: none;
 }
-.teacher-page .stu-day-panel {
+.teacher-page .cal-month__cell.is-empty,
+.teacher-page.page-premium .cal-month__cell.is-empty {
+  border-color: transparent;
+  background: transparent;
+}
+.teacher-page .cal-month__day,
+.teacher-page.page-premium .cal-month__day {
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.teacher-page.page-premium .cal-month__cell.is-today,
+.teacher-page.page-premium .stu-home .cal-month__cell.is-today,
+.teacher-page.page-premium .cal-week__day.is-today {
+  background: rgba(16, 42, 76, 0.04);
+  border-color: var(--desk-line);
+  box-shadow: none;
+}
+.teacher-page.page-premium .stu-home .cal-month__cell.is-selected {
+  background: rgba(16, 42, 76, 0.08);
+  border-color: var(--desk-navy);
+  box-shadow: inset 2px 0 0 var(--desk-navy);
+}
+.teacher-page.page-premium .cal-month__cell:hover {
+  border-color: var(--desk-navy);
+  box-shadow: none;
+}
+
+.teacher-page.page-premium .stu-home .cal-month__chip,
+.teacher-page .cal-month__chip {
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.25;
+  padding: 1px 4px;
+  border-radius: 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.teacher-page.page-premium .stu-home .cal-month__chip.is-done {
+  background: var(--desk-ok-bg);
+  color: var(--desk-ok);
+  opacity: 1;
+  text-decoration: none;
+  box-shadow: none;
+}
+.teacher-page.page-premium .stu-home .cal-month__chip.is-pending {
+  background: var(--desk-amber-bg);
+  color: var(--desk-amber-ink);
+}
+.teacher-page.page-premium .stu-home .cal-month__chip.is-overdue {
+  background: rgba(180, 35, 24, 0.12);
+  color: var(--desk-bad);
+  box-shadow: none;
+}
+.teacher-page .cal-month__chip.is-done {
+  opacity: 1;
+  text-decoration: none;
+}
+
+/* —— 当天作业 —— */
+.teacher-page .stu-home__day {
+  position: sticky;
+  top: 64px;
+}
+.teacher-page .stu-day-panel,
+.teacher-page.page-premium .stu-day-panel {
+  border-radius: 8px;
+  box-shadow: none;
+  border-color: var(--desk-line);
+  padding: 14px 16px 16px;
+}
+.teacher-page.page-premium .stu-day-panel h2 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--desk-navy);
+  margin: 0 0 10px;
+}
+.teacher-page.page-premium .stu-day-item {
+  padding: 10px 0 10px 10px;
+}
+.teacher-page.page-premium .stu-day-item.is-done { border-left: 3px solid var(--desk-ok); }
+.teacher-page.page-premium .stu-day-item.is-pending { border-left: 3px solid var(--desk-amber); }
+.teacher-page.page-premium .stu-day-item.is-overdue { border-left: 3px solid var(--desk-bad); }
+.teacher-page .cal-status-pill {
+  font-size: 11px;
+  font-weight: 650;
+  padding: 1px 7px;
+  border-radius: 3px;
+  letter-spacing: 0;
+}
+.teacher-page .cal-status-pill.cal-status--done {
+  background: var(--desk-ok-bg);
+  color: var(--desk-ok);
+}
+.teacher-page .cal-status-pill.cal-status--pending {
+  background: var(--desk-amber-bg);
+  color: var(--desk-amber-ink);
+}
+.teacher-page .cal-status-pill.cal-status--overdue {
+  background: rgba(180, 35, 24, 0.12);
+  color: var(--desk-bad);
+}
+
+/* —— 任务发布台残留营销体 —— */
+.teacher-page.page-premium .cal-month__nav strong,
+.teacher-page.page-premium .cal-todo-row__main h3 {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--desk-navy);
+}
+.teacher-page .cal-tag--assignment,
+.teacher-page.page-premium .cal-tag--suite,
+.teacher-page .cal-month__chip.cal-tag--assignment {
+  background: rgba(16, 42, 76, 0.08);
+  color: var(--desk-navy);
+  border-color: transparent;
+}
+.teacher-page .cal-progress__fill {
+  background: var(--desk-navy);
+}
+.teacher-page .cal-progress__track { background: var(--desk-line); }
+.teacher-page .teacher-stat,
+.teacher-page.page-premium .teacher-stat,
+.teacher-page .teacher-card,
+.teacher-page.page-premium .teacher-card,
+.teacher-page .cal-todo-row,
+.teacher-page.page-premium .cal-todo-row {
   border-radius: 8px;
   box-shadow: none;
   border-color: var(--desk-line);
@@ -195,18 +587,33 @@
   border-radius: 10px;
 }
 
-.teacher-page .teacher-stat,
-.teacher-page.page-premium .teacher-stat,
-.teacher-page .teacher-card,
-.teacher-page.page-premium .teacher-card {
-  border-radius: 8px;
-  box-shadow: none;
-  border-color: var(--desk-line);
+/* —— 诊断页金边 → 海军蓝 —— */
+.teacher-page .diag-exam-bar { border-bottom-color: var(--desk-navy); }
+.teacher-page .diag-thermo__fill--excellent { background: var(--desk-navy); }
+
+/* —— 页脚 —— */
+.teacher-page .minimal-footer,
+.teacher-page .minimal-footer--rich {
+  padding: 14px 0 20px;
+  background: transparent;
+  border-top: 1px solid var(--desk-line);
+}
+.teacher-page .minimal-footer--rich::after { display: none; }
+.teacher-page .minimal-footer__copy {
+  font-size: 12px;
+  color: var(--desk-muted);
 }
 
 @media (max-width: 899px) {
   .teacher-page .teacher-side {
+    position: static;
+    height: auto;
+    overflow: visible;
     border-right: 0;
     border-bottom: 1px solid var(--desk-line);
+  }
+  .teacher-page .stu-home__day { position: static; }
+  .teacher-page .teacher-shell {
+    width: min(1280px, calc(100% - 32px));
   }
 }

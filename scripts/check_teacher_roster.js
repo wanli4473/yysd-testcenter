@@ -14,7 +14,9 @@ assert(html.indexOf("teacher-desk.css") >= 0, "teacher desk skin linked");
 assert(html.indexOf("assets/js/teacher.js") >= 0, "same teacher.js (no data rewrite)");
 
 var desk = read("assets/css/teacher-desk.css");
-assert(desk.indexOf(".teacher-page") >= 0, "desk scoped to teacher-page");
+assert(desk.indexOf(".teacher-student-card__late") >= 0, "overdue badge desk style");
+assert(html.indexOf("crumb-sep\" aria-hidden=\"true\">★") < 0, "no gold star crumb");
+assert(html.indexOf("Playfair") < 0, "no Playfair on teacher.html");
 assert(read("dashboard.html").indexOf("teacher-desk.css") < 0, "student dashboard unskinned");
 assert(read("server/server.js").indexOf("hasOverdue") >= 0, "roster API intact");
 assert(html.indexOf("data-zone") < 0, "no zone filters");

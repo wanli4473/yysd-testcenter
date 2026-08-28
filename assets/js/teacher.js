@@ -165,8 +165,8 @@
 
   function applyMe(me) {
     me = me || {};
-    var label = me.name ? me.name + "（" + me.phone + "）" : (me.phone || "");
-    if (welcomeEl) welcomeEl.textContent = "欢迎，" + label + "。点进学生查看布置作业完成情况。";
+    var label = me.name || me.phone || "";
+    if (welcomeEl) welcomeEl.textContent = label ? "欢迎，" + label : "";
     renderTeacherAvatar(me.avatarUrl, me.phone);
     T.setTeacher({
       phone: me.phone,
