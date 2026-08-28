@@ -114,33 +114,153 @@
   border-radius: 6px;
 }
 
-/* —— 侧栏 —— */
-.teacher-page .teacher-side {
+/* —— 固定侧栏（sidebar-fixed / 256px） —— */
+.teacher-page {
+  --desk-side: 256px;
+  --desk-side-sm: 64px;
+}
+.teacher-page .minimal-topbar { display: none; }
+.teacher-page .teacher-mobilebar {
+  display: none;
   position: sticky;
-  top: 52px;
-  align-self: start;
-  height: calc(100vh - 52px);
-  overflow: auto;
-  background: #fff;
+  top: 0;
+  z-index: 45;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 16px;
+  background: var(--desk-card);
+  border-bottom: 1px solid var(--desk-line);
+}
+.teacher-page .teacher-mobilebar__title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--desk-ink);
+}
+.teacher-page .teacher-nav-toggle,
+.teacher-page .teacher-nav-collapse {
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  background: var(--desk-card);
+  color: var(--desk-ink);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.teacher-page .teacher-nav-toggle:hover,
+.teacher-page .teacher-nav-collapse:hover {
+  background: var(--desk-hover);
+}
+.teacher-page .teacher-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: rgba(28, 34, 28, 0.4);
+}
+.teacher-page .teacher-shell {
+  display: block;
+  max-width: none;
+  width: 100%;
+  min-height: 100vh;
+  border: 0;
+  background: transparent;
+}
+.teacher-page .teacher-content {
+  margin-left: var(--desk-side);
+  padding: 20px 28px 40px;
+  min-height: 100vh;
+  min-width: 0;
+}
+.teacher-page .minimal-footer {
+  margin-left: var(--desk-side);
+}
+.teacher-page .teacher-side {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--desk-side);
+  max-width: 280px;
+  height: 100vh;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  background: var(--desk-card);
   border: 0;
   border-right: 1px solid var(--desk-line);
   border-radius: 0;
   box-shadow: none;
-  padding: 16px 10px 24px;
+  padding: 0;
+}
+.teacher-page .teacher-side__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 14px 12px 12px;
+  border-bottom: 1px solid var(--desk-line);
+}
+.teacher-page .teacher-side__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+.teacher-page .teacher-side__brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex: 0 0 auto;
+}
+.teacher-page .teacher-side__brand-text {
+  min-width: 0;
+}
+.teacher-page .teacher-side__brand-text b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--desk-ink);
+  line-height: 1.25;
+}
+.teacher-page .teacher-side__brand-text span {
+  display: block;
+  font-size: 11px;
+  color: var(--desk-muted);
+  margin-top: 1px;
+}
+.teacher-page .teacher-nav-collapse {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+}
+.teacher-page .teacher-side__nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 10px;
 }
 .teacher-page .teacher-side__label {
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   color: var(--desk-muted);
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   margin: 0 8px 8px;
 }
 .teacher-page .teacher-side__link {
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--desk-ink);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 13px;
-  padding: 7px 10px;
+  padding: 8px 10px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 .teacher-page .teacher-side__link:hover {
   background: var(--desk-hover);
@@ -153,6 +273,65 @@
   color: #fff;
   border: 0;
   box-shadow: none;
+  font-weight: 600;
+}
+.teacher-page .teacher-side__foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 10px 16px;
+  border-top: 1px solid var(--desk-line);
+}
+.teacher-page .teacher-side__account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.teacher-page.teacher-nav-collapsed .teacher-side { width: var(--desk-side-sm); }
+.teacher-page.teacher-nav-collapsed .teacher-content,
+.teacher-page.teacher-nav-collapsed .minimal-footer { margin-left: var(--desk-side-sm); }
+.teacher-page.teacher-nav-collapsed .teacher-side__brand-text,
+.teacher-page.teacher-nav-collapsed .teacher-side__label,
+.teacher-page.teacher-nav-collapsed .nav-auth__label { display: none; }
+.teacher-page.teacher-nav-collapsed .teacher-side__nav .teacher-side__link {
+  font-size: 13px;
+  text-align: center;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.teacher-page.teacher-nav-collapsed .teacher-nav-collapse { transform: scaleX(-1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-page .teacher-side__link,
+  .teacher-page .teacher-nav-toggle,
+  .teacher-page .teacher-nav-collapse,
+  .teacher-page .teacher-student-card {
+    transition: none;
+  }
+  .teacher-page .teacher-student-card:hover { transform: none; }
+}
+
+@media (max-width: 1023px) {
+  .teacher-page .teacher-mobilebar { display: flex; }
+  .teacher-page .teacher-nav-collapse { display: none; }
+  .teacher-page .teacher-content,
+  .teacher-page .minimal-footer,
+  .teacher-page.teacher-nav-collapsed .teacher-content,
+  .teacher-page.teacher-nav-collapsed .minimal-footer {
+    margin-left: 0;
+  }
+  .teacher-page .teacher-content { padding: 16px 16px 40px; }
+  .teacher-page .teacher-side,
+  .teacher-page.teacher-nav-collapsed .teacher-side {
+    width: var(--desk-side);
+    transform: translateX(-105%);
+    transition: transform 0.15s ease;
+    box-shadow: none;
+  }
+  .teacher-page.teacher-nav-open .teacher-side { transform: none; }
+  .teacher-page.teacher-nav-open .teacher-nav-overlay { display: block; }
+  .teacher-page .stu-home__day { position: static; }
 }
 
 /* —— 页头 —— */
@@ -332,8 +511,8 @@
 .teacher-page.page-premium .teacher-student-card:hover,
 .teacher-page .teacher-student-card:hover {
   border-color: var(--desk-navy);
-  box-shadow: none;
-  transform: none;
+  box-shadow: 0 4px 12px -6px rgba(28, 34, 28, 0.18);
+  transform: translateY(-2px);
   background: var(--desk-hover);
 }
 .teacher-page.page-premium .teacher-student-card .profile-avatar,
@@ -658,16 +837,3 @@
   color: var(--desk-muted);
 }
 
-@media (max-width: 899px) {
-  .teacher-page .teacher-side {
-    position: static;
-    height: auto;
-    overflow: visible;
-    border-right: 0;
-    border-bottom: 1px solid var(--desk-line);
-  }
-  .teacher-page .stu-home__day { position: static; }
-  .teacher-page .teacher-shell {
-    width: min(1280px, calc(100% - 32px));
-  }
-}

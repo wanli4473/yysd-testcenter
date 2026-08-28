@@ -8,34 +8,38 @@
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/style.css?v=20260821tfix1">
   <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260825calnavy3">
-  <link rel="stylesheet" href="assets/css/teacher-desk.css?v=20260828olive1">
+  <link rel="stylesheet" href="assets/css/teacher-desk.css?v=20260828olive2">
 </head>
 <body class="home-minimal teacher-page teacher-layout shell-compact-nav page-premium">
 
-  <header class="minimal-topbar">
-    <div class="minimal-shell minimal-topbar__inner">
-      <a href="teacher.html" class="minimal-brand" aria-label="教师端">
-        <img src="assets/img/logo.svg?v=20260702-logo" alt="" class="minimal-brand__logo">
-        <span class="minimal-brand__text">
-          <b>优益思达国际课程中心</b>
-          <span>教务</span>
-        </span>
-      </a>
-      <nav class="minimal-nav" aria-label="教师快捷">
-        <a class="nav-persist" href="teacher.html" id="nav-auth">个人中心</a>
-        <button type="button" class="btn btn--ghost btn--sm nav-persist" id="logout-btn">退出</button>
-      </nav>
-    </div>
+  <header class="teacher-mobilebar">
+    <button type="button" class="teacher-nav-toggle" data-teacher-nav-toggle aria-controls="teacher-side" aria-expanded="false">菜单</button>
+    <span class="teacher-mobilebar__title">单词闯关</span>
   </header>
+  <div class="teacher-nav-overlay" data-teacher-nav-close hidden></div>
 
   <div class="teacher-shell">
-    <aside class="teacher-side" aria-label="教师导航">
-      <p class="teacher-side__label">教务</p>
-      <a href="teacher.html" class="teacher-side__link">我的学生</a>
-      <a href="teacher-diagnostic.html" class="teacher-side__link">词汇诊断</a>
-      <a href="teacher-vocab-challenge.html" class="teacher-side__link is-active">单词闯关</a>
-      <a href="teacher-calendar.html" class="teacher-side__link">任务日历</a>
-      <a href="admin-assign.html" class="teacher-side__link" data-admin-only hidden>学生分配</a>
+    <aside class="teacher-side" id="teacher-side" aria-label="教师导航">
+      <div class="teacher-side__head">
+        <a href="teacher.html" class="teacher-side__brand">
+          <img src="assets/img/logo.svg?v=20260702-logo" alt="">
+          <span class="teacher-side__brand-text"><b>优益思达</b><span>教务</span></span>
+        </a>
+        <button type="button" class="teacher-nav-collapse" data-teacher-nav-collapse aria-pressed="false" aria-label="收起侧栏">‹</button>
+      </div>
+      <nav class="teacher-side__nav">
+        <p class="teacher-side__label">教务</p>
+        <a href="teacher.html" class="teacher-side__link" title="我的学生">我的学生</a>
+        <a href="teacher-calendar.html" class="teacher-side__link" title="任务日历">任务日历</a>
+        <a href="teacher-diagnostic.html" class="teacher-side__link" title="词汇诊断">词汇诊断</a>
+        <a href="teacher-vocab-challenge.html" class="teacher-side__link is-active" title="单词闯关">单词闯关</a>
+        <a href="admin-assign.html" class="teacher-side__link" title="学生分配" data-admin-only hidden>学生分配</a>
+        <a href="platform.html" class="teacher-side__link" title="平台主控台" data-platform-only hidden>平台主控台</a>
+      </nav>
+      <div class="teacher-side__foot">
+        <a class="teacher-side__link teacher-side__account" href="teacher.html" id="nav-auth">个人中心</a>
+        <button type="button" class="btn btn--ghost btn--sm nav-persist" id="logout-btn">退出</button>
+      </div>
     </aside>
 
     <div class="teacher-content">
@@ -56,6 +60,7 @@
   <script src="assets/js/config.js?v=20260819mode2"></script>
   <script src="assets/js/auth.js?v=20260821prof1"></script>
   <script src="assets/js/teacher-auth.js?v=20260821gate1"></script>
+  <script src="assets/js/teacher-shell.js?v=20260828side1"></script>
   <script src="assets/js/teacher-mode.js?v=20260821gate1"></script>
   <script src="assets/js/teacher-vocab-challenge.js?v=20260821prof1"></script>
 </body>

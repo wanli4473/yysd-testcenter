@@ -10,7 +10,9 @@ function assert(cond, msg) {
 
 var html = read("teacher.html");
 assert(html.indexOf(">我的学生<") >= 0, "teacher.html title 我的学生");
-assert(html.indexOf("teacher-desk.css") >= 0, "teacher desk skin linked");
+assert(html.indexOf("teacher-shell.js") >= 0, "fixed sidebar shell script");
+assert(html.indexOf("data-teacher-nav-toggle") >= 0, "mobile hamburger");
+assert(html.indexOf("id=\"teacher-side\"") >= 0, "sidebar id for drawer");
 assert(html.indexOf("assets/js/teacher.js") >= 0, "same teacher.js (no data rewrite)");
 
 var desk = read("assets/css/teacher-desk.css");
