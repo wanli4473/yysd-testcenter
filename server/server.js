@@ -2027,6 +2027,253 @@ app.get("/api/teacher/students/:userId/calendar", teacherAuthMiddleware, functio
   });
 });
 
+function monthKeyOf(iso) {
+  if (!iso) return "";
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso).slice(0, 7);
+  var m = d.getMonth() + 1;
+  return d.getFullYear() + "-" + (m < 10 ? "0" + m : String(m));
+}
+
+function parseReportMonth(raw) {
+  var s = String(raw || "").trim();
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(s)) return s;
+  var n = new Date();
+  var m = n.getMonth() + 1;
+  return n.getFullYear() + "-" + (m < 10 ? "0" + m : String(m));
+}
+
+function reportKind(score) {
+  var z = String((score && score.zone) || "").toLowerCase();
+  var sub = String((score && score.subject) || "").toLowerCase();
+  if (z === "mock") return "模考";
+  if (z === "vocab" || sub.indexOf("vocab") === 0) return "单词";
+  return "自练";
+}
+
+function reportSkill(score) {
+  var s = String((score && score.subject) || "").toLowerCase();
+  if (s.indexOf("listen") >= 0) return "listening";
+  if (s.indexOf("read") >= 0) return "reading";
+  if (s.indexOf("writ") >= 0) return "writing";
+  if (s.indexOf("speak") >= 0) return "speaking";
+  return "";
+}
+
+function reportScoreForEvent(ev, scores) {
+  var id = String(ev.id);
+  var i;
+  for (i = 0; i < scores.length; i++) {
+    if (String(scores[i].assignmentEventId || "") === id) return scores[i];
+  }
+  if (ev.status !== "COMPLETED") return null;
+  var linked = ev.linkedExerciseIds || [];
+  var j;
+  for (j = 0; j < linked.length; j++) {
+    for (i = 0; i < scores.length; i++) {
+      if (String(scores[i].id) === String(linked[j])) return scores[i];
+    }
+  }
+  return null;
+}
+
+function pushSkill(skills, score) {
+  var key = reportSkill(score);
+  if (!key || !score) return;
+  var pct = null;
+  if (score.score != null && score.total != null && Number(score.total) > 0) {
+    pct = 100 * Number(score.score) / Number(score.total);
+  }
+  var band = score.band != null && isFinite(Number(score.band)) ? Number(score.band) : null;
+  if (pct == null && band == null) return;
+  if (!skills[key]) skills[key] = { n: 0, pctSum: 0, pctN: 0, bandSum: 0, bandN: 0 };
+  skills[key].n += 1;
+  if (pct != null) { skills[key].pctSum += pct; skills[key].pctN += 1; }
+  if (band != null) { skills[key].bandSum += band; skills[key].bandN += 1; }
+}
+
+function finishSkills(skills) {
+  var out = {};
+  ["listening", "reading", "writing", "speaking"].forEach(function (k) {
+    var s = skills[k];
+    if (!s) {
+      out[k] = { n: 0, avgPercent: null, avgBand: null };
+      return;
+    }
+    out[k] = {
+      n: s.n,
+      avgPercent: s.pctN ? Math.round(s.pctSum / s.pctN) : null,
+      avgBand: s.bandN ? Math.round((s.bandSum / s.bandN) * 10) / 10 : null
+    };
+  });
+  return out;
+}
+
+function diagnosticInMonth(studentId, ym) {
+  try {
+    var rows = db.prepare(
+      "SELECT id, end_time, created_at, elapsed_seconds, final_report FROM diagnostic_sessions " +
+      "WHERE student_id = ? AND status = 'completed' ORDER BY id DESC"
+    ).all(studentId);
+    var mist = db.prepare(
+      "SELECT word, meaning, user_answer, correct_answer, question_type FROM diagnostic_mistakes " +
+      "WHERE test_session_id = ? AND student_id = ? ORDER BY id ASC"
+    );
+    return rows.filter(function (s) {
+      return monthKeyOf(s.end_time || s.created_at) === ym;
+    }).slice(0, 24).map(function (s) {
+      var report = {};
+      try { report = JSON.parse(s.final_report || "{}") || {}; } catch (e) { report = {}; }
+      return {
+        id: s.id,
+        title: "词汇诊断",
+        kind: "诊断",
+        status: "COMPLETED",
+        date: s.end_time || s.created_at,
+        durationSec: report.total_time_seconds || s.elapsed_seconds || 0,
+        advice: clipText(report.advice_text || "", 400),
+        mistakes: mist.all(s.id, studentId).slice(0, 200).map(function (m) {
+          return {
+            word: clipText(m.word, 80),
+            meaning: clipText(m.meaning, 200),
+            ua: clipText(m.user_answer, 120),
+            ans: clipText(m.correct_answer, 120),
+            type: clipText(m.question_type, 40)
+          };
+        })
+      };
+    });
+  } catch (e) {
+    return [];
+  }
+}
+
+app.get("/api/teacher/students/:userId/report", teacherAuthMiddleware, function (req, res) {
+  var userId = Number(req.params.userId);
+  if (!userId) return res.status(400).json({ error: "无效的学生 ID" });
+  if (!teacherCanManageStudent(req, userId)) {
+    return res.status(403).json({ error: "该学生未分配给你" });
+  }
+  var user = stmts.findUserById.get(userId);
+  if (!user || (req.user.orgId && user.org_id !== req.user.orgId)) {
+    return res.status(404).json({ error: "学生不存在" });
+  }
+  var ym = parseReportMonth(req.query.month);
+  var scores = stmts.listStudentAttempts.all(userId).map(parseScorePayload);
+  var allMine = calendarEventsForStudent(userId).filter(function (ev) {
+    return ev.eventType === "ASSIGNMENT" && Number(ev.createdBy) === Number(req.user.sub);
+  });
+  var myAssignIds = {};
+  allMine.forEach(function (ev) { myAssignIds[String(ev.id)] = 1; });
+  var assignIndex = teacherAssignmentIndex(req.user.sub);
+  var assignments = allMine.filter(function (ev) {
+    return monthKeyOf(ev.createdAt) === ym;
+  }).map(function (ev) {
+    var score = reportScoreForEvent(ev, scores);
+    return {
+      id: ev.id,
+      title: ev.title,
+      kind: "布置",
+      status: ev.status || "PENDING",
+      dueTime: ev.dueTime || null,
+      createdAt: ev.createdAt,
+      date: ev.createdAt,
+      doneAt: score ? score.date : (ev.completedAt || null),
+      score: score ? score.score : null,
+      total: score ? score.total : null,
+      band: score ? score.band : null,
+      durationSec: score ? score.durationSec : null,
+      wrong: (score && score.wrong) || [],
+      writingTask1: (score && score.writingTask1) || null,
+      writingTask2: (score && score.writingTask2) || null,
+      subject: (score && score.subject) || "",
+      zone: (score && score.zone) || "assignment",
+      exerciseDone: ev.exerciseDone || 0,
+      exerciseTotal: ev.exerciseTotal || 0
+    };
+  });
+  var practices = scores.filter(function (s) {
+    if (monthKeyOf(s.date) !== ym) return false;
+    if (s.assignmentEventId && myAssignIds[String(s.assignmentEventId)]) return false;
+    // ponytail: legacy rows without event id may hide same-paper self-practice
+    if (isTeacherAssignmentAttempt(s, userId, assignIndex)) return false;
+    return true;
+  }).map(function (s) {
+    return {
+      id: s.id,
+      attemptId: s.attemptId,
+      title: s.title || s.id,
+      kind: reportKind(s),
+      status: "COMPLETED",
+      date: s.date,
+      score: s.score,
+      total: s.total,
+      band: s.band,
+      durationSec: s.durationSec,
+      wrong: s.wrong || [],
+      writingTask1: s.writingTask1 || null,
+      writingTask2: s.writingTask2 || null,
+      subject: s.subject || "",
+      zone: s.zone || ""
+    };
+  });
+  var diagnostics = diagnosticInMonth(userId, ym);
+  var assigned = assignments.length;
+  var completed = assignments.filter(function (a) { return a.status === "COMPLETED"; }).length;
+  var overdue = assignments.filter(function (a) { return a.status === "OVERDUE"; }).length;
+  var pending = assignments.filter(function (a) { return a.status === "PENDING"; }).length;
+  var pracPct = 0;
+  var pracPctN = 0;
+  var pracBand = 0;
+  var pracBandN = 0;
+  practices.forEach(function (p) {
+    if (p.score != null && p.total != null && Number(p.total) > 0) {
+      pracPct += 100 * Number(p.score) / Number(p.total);
+      pracPctN += 1;
+    }
+    if (p.band != null && isFinite(Number(p.band))) {
+      pracBand += Number(p.band);
+      pracBandN += 1;
+    }
+  });
+  var skills = {};
+  assignments.forEach(function (a) { pushSkill(skills, a); });
+  practices.forEach(function (p) { pushSkill(skills, p); });
+  var teacherName = "";
+  if (req.user.platformImpersonate) teacherName = "平台客服";
+  else {
+    var teacherRow = stmts.findTeacher.get(req.user.phone);
+    teacherName = (teacherRow && teacherRow.name) || maskPhone(req.user.phone || "");
+  }
+  res.json({
+    ok: true,
+    month: ym,
+    empty: !assigned && !practices.length && !diagnostics.length,
+    student: {
+      id: user.id,
+      phone: maskPhone(user.phone),
+      displayName: user.display_name || "",
+      avatarUrl: user.avatar_url || ""
+    },
+    teacher: { name: teacherName, phone: maskPhone(req.user.phone || "") },
+    summary: {
+      assigned: assigned,
+      completed: completed,
+      overdue: overdue,
+      pending: pending,
+      completionRate: assigned ? Math.round(100 * completed / assigned) : null,
+      practiceCount: practices.length,
+      practiceAvgPercent: pracPctN ? Math.round(pracPct / pracPctN) : null,
+      practiceAvgBand: pracBandN ? Math.round((pracBand / pracBandN) * 10) / 10 : null,
+      diagnosticCount: diagnostics.length
+    },
+    skills: finishSkills(skills),
+    assignments: assignments,
+    practices: practices,
+    diagnostics: diagnostics
+  });
+});
+
 // ---- Calendar / Assignments (Step 1 APIs) ----
 
 app.post("/api/calendar/events", teacherAuthMiddleware, function (req, res) {

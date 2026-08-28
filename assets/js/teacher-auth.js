@@ -46,6 +46,7 @@ window.YYSD_TEACHER = (function () {
     return n === "teacher.html" || n === "teacher-calendar.html" ||
       n === "teacher-diagnostic.html" ||
       n === "teacher-student-diagnostic.html" ||
+      n === "teacher-student-report.html" ||
       n === "teacher-vocab-challenge.html" ||
       n === "teacher-mode-picker.html" ||
       n === "admin-assign.html" || isPublicPage();

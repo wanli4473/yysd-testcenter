@@ -29,6 +29,8 @@
   var studentMain = document.getElementById("student-main");
   var calEl = document.getElementById("stu-cal");
   var dayEl = document.getElementById("stu-day");
+  var reportMonthEl = document.getElementById("report-month");
+  var reportExportBtn = document.getElementById("report-export");
 
   if (yearEl) yearEl.textContent = new Date().getFullYear();
   if (logoutBtn) logoutBtn.addEventListener("click", function () { T.logout(); });
@@ -156,6 +158,29 @@
   }
 
   function todayKey() { return dayKeyOf(new Date().toISOString()); }
+
+  function currentMonthKey() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1);
+  }
+
+  function fillReportMonths() {
+    if (!reportMonthEl || reportMonthEl.options.length) return;
+    var d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    var cur = currentMonthKey();
+    var i;
+    for (i = 0; i < 12; i++) {
+      var key = d.getFullYear() + "-" + pad(d.getMonth() + 1);
+      var opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = d.getFullYear() + "年" + (d.getMonth() + 1) + "月";
+      if (key === cur) opt.selected = true;
+      reportMonthEl.appendChild(opt);
+      d.setMonth(d.getMonth() - 1);
+    }
+  }
 
   function prettyDay(key) {
     var p = String(key || "").split("-");
@@ -469,6 +494,7 @@
 
   function loadStudent(id) {
     setView(true);
+    fillReportMonths();
     calEl.innerHTML = '<div class="state state--brand"><div class="spinner spinner--brand"></div></div>';
     dayEl.innerHTML = "";
     Promise.all([
@@ -530,6 +556,14 @@
   if (attemptModal) {
     attemptModal.addEventListener("click", function (e) {
       if (e.target.getAttribute("data-close-attempt")) closeAttemptDetail();
+    });
+  }
+  if (reportExportBtn) {
+    reportExportBtn.addEventListener("click", function () {
+      var id = viewStudent && viewStudent.id;
+      if (!id) return;
+      var month = (reportMonthEl && reportMonthEl.value) || currentMonthKey();
+      window.open("teacher-student-report.html?student=" + id + "&month=" + encodeURIComponent(month), "_blank");
     });
   }
 })();

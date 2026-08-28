@@ -17,6 +17,7 @@
         "teacher-calendar.html": 1,
         "teacher-diagnostic.html": 1,
         "teacher-student-diagnostic.html": 1,
+        "teacher-student-report.html": 1,
         "teacher-vocab-challenge.html": 1,
         "admin-assign.html": 1,
         "platform.html": 1,

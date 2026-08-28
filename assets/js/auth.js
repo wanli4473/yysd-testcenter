@@ -293,6 +293,7 @@ window.YYSD_AUTH = (function () {
       n === "admin-assign.html" || n === "teacher-login.html" ||
       n === "teacher-register.html" || n === "platform.html" ||
       n === "teacher-diagnostic.html" || n === "teacher-student-diagnostic.html" ||
+      n === "teacher-student-report.html" ||
       n === "teacher-vocab-challenge.html" || n === "teacher-mode-picker.html";
   }
 
@@ -946,7 +947,7 @@ window.YYSD_AUTH = (function () {
       if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return;
       if (document.querySelector("script[data-teacher-mode]")) return;
       var s = document.createElement("script");
-      s.src = "assets/js/teacher-mode.js?v=20260821gate1";
+      s.src = "assets/js/teacher-mode.js?v=20260828plat1";
       s.setAttribute("data-teacher-mode", "1");
       document.body.appendChild(s);
     } catch (e) {}

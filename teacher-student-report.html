@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="assets/js/tenant-boot.js?v=20260828rpt1"></script>
+  <title>学情报告 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <style>
+    :root { --ink: #1c1e1a; --muted: #5c6358; --line: #d5d7cf; --olive: #3a4a36; --paper: #f7f7f3; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.55 -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", sans-serif; color: var(--ink); background: var(--paper); }
+    .rpt-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 12px 20px; background: #fff; border-bottom: 1px solid var(--line); }
+    .rpt-bar a, .rpt-bar button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: #fff; color: var(--ink); text-decoration: none; cursor: pointer; }
+    .rpt-bar button.primary { background: var(--olive); border-color: var(--olive); color: #fff; }
+    .rpt { max-width: 820px; margin: 24px auto 64px; padding: 0 20px; }
+    .rpt-cover { border-bottom: 2px solid var(--olive); padding-bottom: 16px; margin-bottom: 22px; }
+    .rpt-cover .eyebrow { letter-spacing: 0.14em; font-size: 11px; color: var(--olive); font-weight: 700; margin: 0 0 6px; }
+    .rpt-cover h1 { margin: 0 0 8px; font-size: 26px; }
+    .rpt-cover p { margin: 0; color: var(--muted); }
+    .rpt-empty { padding: 48px 0; text-align: center; font-size: 20px; font-weight: 650; }
+    .rpt-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 22px; }
+    .rpt-kpi { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+    .rpt-kpi b { display: block; font-size: 22px; }
+    .rpt-kpi span { color: var(--muted); font-size: 12px; }
+    h2 { font-size: 16px; margin: 28px 0 10px; }
+    .rpt-meter { height: 10px; background: #e4e6de; border-radius: 99px; overflow: hidden; }
+    .rpt-meter > i { display: block; height: 100%; background: var(--olive); border-radius: 99px; }
+    .rpt-skill { display: grid; grid-template-columns: 72px 1fr 64px; gap: 8px; align-items: center; margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { border: 1px solid var(--line); padding: 7px 8px; text-align: left; vertical-align: top; font-size: 13px; }
+    th { background: #eef0e8; font-weight: 650; }
+    .rpt-item { break-inside: avoid; margin: 0 0 16px; padding: 12px 0 0; border-top: 1px solid var(--line); }
+    .rpt-item h3 { margin: 0 0 6px; font-size: 15px; }
+    .rpt-meta { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+    .rpt-wrong { margin: 0; padding-left: 18px; }
+    .rpt-wrong li { margin: 0 0 6px; }
+    .rpt-essay { white-space: pre-wrap; background: #fff; border: 1px solid var(--line); padding: 10px; font: inherit; }
+    .err { color: #8a1f1f; padding: 40px 20px; text-align: center; }
+    @media (max-width: 640px) { .rpt-kpis { grid-template-columns: 1fr 1fr; } }
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .rpt { max-width: none; margin: 0; padding: 0; }
+      .rpt-kpi, table, .rpt-essay { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="rpt-bar no-print">
+    <a id="rpt-back" href="teacher.html">返回学生主页</a>
+    <button type="button" class="primary" id="rpt-print">打印 / 存 PDF</button>
+  </div>
+  <div class="rpt" id="rpt-root"><p>加载中…</p></div>
+  <script src="assets/js/config.js?v=20260819mode2"></script>
+  <script src="assets/js/auth.js?v=20260828rpt1"></script>
+  <script src="assets/js/teacher-auth.js?v=20260828rpt1"></script>
+  <script src="assets/js/teacher-mode.js?v=20260821gate1"></script>
+  <script src="assets/js/teacher-student-report.js?v=20260828rpt1"></script>
+</body>
+</html>
