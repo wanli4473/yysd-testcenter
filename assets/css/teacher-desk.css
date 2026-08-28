@@ -1,27 +1,32 @@
 /* teacher-desk — 教务工作台皮肤。只挂在 .teacher-page，不碰学生端 page-premium。 */
 
 .teacher-page {
-  --desk-navy: #102a4c;
-  --desk-ink: #1a2332;
-  --desk-muted: #3a4554;
-  --text-muted: #3a4554;
-  --text-faint: #4b5563;
-  --minimal-muted: #3a4554;
-  --minimal-faint: #4b5563;
-  --desk-line: #e2e5ea;
-  --desk-bg: #f3f4f6;
-  --desk-card: #fff;
-  --desk-hover: #eef1f5;
-  --desk-amber: #d97706;
-  --desk-amber-bg: #fef3c7;
-  --desk-amber-ink: #92400e;
-  --desk-ok: #2e7d50;
-  --desk-ok-bg: #e8f5ee;
+  /* 军绿主体 + 石色底 + 炭黑字；完成/逾期仍用语义色，不跟军绿抢 */
+  --desk-olive: #3a4a36;
+  --desk-navy: var(--desk-olive);
+  --desk-ink: #1c221c;
+  --desk-muted: #3e4840;
+  --text-muted: #3e4840;
+  --text-faint: #5a6358;
+  --minimal-muted: #3e4840;
+  --minimal-faint: #5a6358;
+  --desk-line: #d4d8ce;
+  --desk-bg: #f1f2ed;
+  --desk-card: #fffcf8;
+  --desk-hover: #e6eae0;
+  --desk-amber: #c2410c;
+  --desk-amber-bg: #ffedd5;
+  --desk-amber-ink: #9a3412;
+  --desk-ok: #1b6b4a;
+  --desk-ok-bg: #e4f2ea;
   --desk-bad: #b42318;
   --desk-bad-bg: #fdf6f6;
-  --brand-gold: var(--desk-navy);
+  --brand-navy: var(--desk-olive);
+  --brand-gold: var(--desk-olive);
   --brand-gold-light: #fff;
-  --diag-gold: var(--desk-navy);
+  --diag-gold: var(--desk-olive);
+  --diag-navy: var(--desk-olive);
+  --diag-navy-2: var(--desk-olive);
   font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", system-ui, sans-serif;
   background: var(--desk-bg);
   color: var(--desk-ink);
@@ -251,7 +256,7 @@
 .teacher-page .stu-home .cal-month__pick select:focus {
   outline: none;
   border-color: var(--desk-navy);
-  box-shadow: 0 0 0 3px rgba(16, 42, 76, 0.12);
+  box-shadow: 0 0 0 3px rgba(58, 74, 54, 0.16);
 }
 
 .teacher-page .teacher-search {
@@ -467,12 +472,12 @@
 .teacher-page.page-premium .cal-month__cell.is-today,
 .teacher-page.page-premium .stu-home .cal-month__cell.is-today,
 .teacher-page.page-premium .cal-week__day.is-today {
-  background: rgba(16, 42, 76, 0.04);
+  background: rgba(58, 74, 54, 0.06);
   border-color: var(--desk-line);
   box-shadow: none;
 }
 .teacher-page.page-premium .stu-home .cal-month__cell.is-selected {
-  background: rgba(16, 42, 76, 0.08);
+  background: rgba(58, 74, 54, 0.10);
   border-color: var(--desk-navy);
   box-shadow: inset 2px 0 0 var(--desk-navy);
 }
@@ -569,7 +574,7 @@
 .teacher-page .cal-tag--assignment,
 .teacher-page.page-premium .cal-tag--suite,
 .teacher-page .cal-month__chip.cal-tag--assignment {
-  background: rgba(16, 42, 76, 0.08);
+  background: rgba(58, 74, 54, 0.10);
   color: var(--desk-navy);
   border-color: transparent;
 }
