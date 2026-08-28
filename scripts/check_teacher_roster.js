@@ -10,7 +10,13 @@ function assert(cond, msg) {
 
 var html = read("teacher.html");
 assert(html.indexOf(">我的学生<") >= 0, "teacher.html title 我的学生");
-assert(html.indexOf("stu-home") >= 0, "student home layout");
+assert(html.indexOf("teacher-desk.css") >= 0, "teacher desk skin linked");
+assert(html.indexOf("assets/js/teacher.js") >= 0, "same teacher.js (no data rewrite)");
+
+var desk = read("assets/css/teacher-desk.css");
+assert(desk.indexOf(".teacher-page") >= 0, "desk scoped to teacher-page");
+assert(read("dashboard.html").indexOf("teacher-desk.css") < 0, "student dashboard unskinned");
+assert(read("server/server.js").indexOf("hasOverdue") >= 0, "roster API intact");
 assert(html.indexOf("data-zone") < 0, "no zone filters");
 assert(html.indexOf("teacher-stats") < 0, "no dump stats");
 

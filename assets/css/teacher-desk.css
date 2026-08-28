@@ -1,0 +1,212 @@
+/* teacher-desk — 教务工作台皮肤。只挂在 .teacher-page，不碰学生端 page-premium。 */
+
+.teacher-page {
+  --desk-navy: #102a4c;
+  --desk-ink: #1a2332;
+  --desk-muted: #5c6570;
+  --desk-line: #e2e5ea;
+  --desk-bg: #f3f4f6;
+  --desk-card: #fff;
+  --desk-hover: #eef1f5;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", system-ui, sans-serif;
+  background: var(--desk-bg);
+  color: var(--desk-ink);
+}
+
+.teacher-page.page-premium {
+  --background: var(--desk-bg);
+  --foreground: var(--desk-ink);
+  --card: var(--desk-card);
+  --muted: var(--desk-hover);
+  --muted-foreground: var(--desk-muted);
+  --primary: var(--desk-navy);
+  --primary-foreground: #fff;
+  --accent: var(--desk-hover);
+  --border: var(--desk-line);
+  --ring: var(--desk-navy);
+}
+
+.teacher-page .minimal-topbar {
+  background: #fff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--desk-line);
+  box-shadow: none;
+}
+.teacher-page .minimal-brand__text span { color: var(--desk-muted); }
+.teacher-page .minimal-eyebrow { display: none; }
+.teacher-page .minimal-page-head {
+  padding: 16px 0 12px;
+}
+.teacher-page.page-premium .teacher-content .minimal-page-head h1,
+.teacher-page .minimal-page-head h1 {
+  font-family: inherit;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--desk-navy);
+}
+.teacher-page .minimal-page-desc {
+  font-size: 13px;
+  color: var(--desk-muted);
+  margin: 4px 0 8px;
+}
+.teacher-page .teacher-head-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 13px;
+  margin-top: 0;
+}
+.teacher-page .teacher-head-row { align-items: center; gap: 12px; }
+
+.teacher-page .teacher-shell {
+  background: transparent;
+  border-top-color: var(--desk-line);
+  max-width: 1320px;
+}
+.teacher-page .teacher-side {
+  background: #fff;
+  border: 0;
+  border-right: 1px solid var(--desk-line);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 20px 12px 32px;
+}
+.teacher-page .teacher-side__label {
+  letter-spacing: 0.08em;
+  color: var(--desk-muted);
+  font-size: 11px;
+}
+.teacher-page .teacher-side__link {
+  border-radius: 6px;
+  color: var(--desk-ink);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.teacher-page .teacher-side__link:hover {
+  background: var(--desk-hover);
+  color: var(--desk-navy);
+}
+.teacher-page.page-premium .teacher-side__link.is-active,
+.teacher-page .teacher-side__link.is-active,
+.teacher-page.page-premium .teacher-side__link[href="teacher-calendar.html"].is-active {
+  background: var(--desk-navy);
+  color: #fff;
+  border: 0;
+  box-shadow: none;
+}
+
+.teacher-page .btn--primary,
+.teacher-page.page-premium .btn--primary {
+  background: var(--desk-navy);
+  border-color: var(--desk-navy);
+  color: #fff;
+}
+.teacher-page .btn--primary:hover,
+.teacher-page.page-premium .btn--primary:hover {
+  filter: brightness(1.08);
+}
+
+.teacher-page .teacher-search input,
+.teacher-page .teacher-filter,
+.teacher-page .stu-home .cal-month__pick select {
+  border-color: var(--desk-line);
+  border-radius: 6px;
+  background: #fff;
+}
+.teacher-page .teacher-search input:focus {
+  border-color: var(--desk-navy);
+  box-shadow: 0 0 0 3px rgba(16, 42, 76, 0.12);
+}
+
+.teacher-page.page-premium .teacher-students,
+.teacher-page .teacher-students {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.teacher-page.page-premium .teacher-student-card,
+.teacher-page .teacher-student-card {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 0;
+  text-align: left;
+  border-radius: 8px;
+  border: 1px solid var(--desk-line);
+  box-shadow: none;
+  transform: none;
+  background: #fff;
+}
+.teacher-page.page-premium .teacher-student-card:hover,
+.teacher-page .teacher-student-card:hover {
+  border-color: var(--desk-navy);
+  box-shadow: none;
+  transform: none;
+  background: var(--desk-hover);
+}
+.teacher-page.page-premium .teacher-student-card .profile-avatar,
+.teacher-page .teacher-student-card .profile-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+.teacher-page.page-premium .teacher-student-card b {
+  font-size: 14px;
+  font-weight: 650;
+}
+.teacher-page.page-premium .teacher-student-card.is-overdue {
+  border-color: #b42318;
+  box-shadow: none;
+  background: #fdf6f6;
+}
+
+.teacher-page .cal-month {
+  background: #fff;
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  padding: 12px;
+}
+.teacher-page.page-premium .cal-month {
+  background: #fff;
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  padding: 12px;
+}
+.teacher-page .cal-month__cell {
+  min-height: 72px;
+  border-radius: 4px;
+  border-color: var(--desk-line);
+}
+.teacher-page.page-premium .stu-home .cal-month__cell {
+  min-height: 68px;
+}
+.teacher-page .stu-day-panel {
+  border-radius: 8px;
+  box-shadow: none;
+  border-color: var(--desk-line);
+}
+.teacher-page .cal-modal__panel {
+  border-radius: 10px;
+}
+
+.teacher-page .teacher-stat,
+.teacher-page.page-premium .teacher-stat,
+.teacher-page .teacher-card,
+.teacher-page.page-premium .teacher-card {
+  border-radius: 8px;
+  box-shadow: none;
+  border-color: var(--desk-line);
+}
+
+@media (max-width: 899px) {
+  .teacher-page .teacher-side {
+    border-right: 0;
+    border-bottom: 1px solid var(--desk-line);
+  }
+}
