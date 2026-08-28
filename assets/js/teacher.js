@@ -1,46 +1,54 @@
 /* =========================================================================
-   teacher.js — 教师端学情看板
+   teacher.js — 教师端「我的学生」
    ========================================================================= */
 (function () {
   "use strict";
 
   var T = window.YYSD_TEACHER;
   var Y = window.YYSD;
-  var zoneFilter = "";
   var searchQuery = "";
   var students = [];
+  var events = [];
+  var scores = [];
+  var viewStudent = null;
+  var selectedDay = "";
+  var monthCursor = new Date();
+  monthCursor.setDate(1);
+  monthCursor.setHours(0, 0, 0, 0);
+
+  var STATUS_LABEL = { PENDING: "待完成", COMPLETED: "已完成", OVERDUE: "已逾期" };
 
   var welcomeEl = document.getElementById("teacher-welcome");
-  var statsEl = document.getElementById("teacher-stats");
   var listEl = document.getElementById("teacher-students");
   var refreshBtn = document.getElementById("refresh-btn");
   var logoutBtn = document.getElementById("logout-btn");
   var yearEl = document.getElementById("year");
+  var rosterHead = document.getElementById("roster-head");
+  var rosterMain = document.getElementById("roster-main");
+  var studentHead = document.getElementById("student-head");
+  var studentMain = document.getElementById("student-main");
+  var calEl = document.getElementById("stu-cal");
+  var dayEl = document.getElementById("stu-day");
 
   if (yearEl) yearEl.textContent = new Date().getFullYear();
   if (logoutBtn) logoutBtn.addEventListener("click", function () { T.logout(); });
-
-  document.querySelectorAll(".teacher-filter").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      zoneFilter = btn.getAttribute("data-zone") || "";
-      document.querySelectorAll(".teacher-filter").forEach(function (b) {
-        b.classList.toggle("is-active", b === btn);
-      });
-      render();
-    });
-  });
   if (refreshBtn) refreshBtn.addEventListener("click", load);
   var searchEl = document.getElementById("student-search");
   if (searchEl) {
     searchEl.addEventListener("input", function () {
       searchQuery = searchEl.value.trim().toLowerCase();
-      render();
+      renderRoster();
     });
   }
 
+  function studentIdFromUrl() {
+    try { return Number(new URLSearchParams(location.search).get("student") || 0) || 0; }
+    catch (e) { return 0; }
+  }
+
   function studentLabel(student) {
-    if (student.displayName) return student.displayName;
-    return student.phone || "未命名学生";
+    if (student && student.displayName) return student.displayName;
+    return (student && student.phone) || "未命名学生";
   }
 
   function avatarSrc(url) {
@@ -49,17 +57,26 @@
     return T.API_BASE + url;
   }
 
-  function renderTeacherAvatar(url, phone) {
-    var box = document.getElementById("teacher-avatar");
-    if (!box) return;
+  function fillAvatar(el, url, fallback) {
+    if (!el) return;
     var src = avatarSrc(url);
     if (src) {
-      box.innerHTML = '<img src="' + src.replace(/"/g, "") + '" alt="">';
-      box.classList.add("has-img");
+      el.innerHTML = '<img src="' + src.replace(/"/g, "") + '" alt="">';
+      el.classList.add("has-img");
     } else {
-      box.textContent = (phone || "").replace(/\D/g, "").slice(-4) || "师";
-      box.classList.remove("has-img");
+      el.textContent = fallback || "—";
+      el.classList.remove("has-img");
     }
+  }
+
+  function avatarFallback(student) {
+    var name = (student && student.displayName) || "";
+    if (name) return name.slice(0, 1);
+    return ((student && student.phone) || "").replace(/\D/g, "").slice(-4) || "生";
+  }
+
+  function renderTeacherAvatar(url, phone) {
+    fillAvatar(document.getElementById("teacher-avatar"), url, (phone || "").replace(/\D/g, "").slice(-4) || "师");
   }
 
   function showAvatarMsg(text, ok) {
@@ -97,13 +114,8 @@
     return name.indexOf(searchQuery) >= 0 || phone.indexOf(searchQuery) >= 0;
   }
 
-  function zoneLabel(zone) {
-    if (zone === "assignment") return "布置练习";
-    return (Y.ZONE[zone] || {}).label || zone || "—";
-  }
-
-  function subjectLabel(subject) {
-    return (Y.SUBJECT[subject] || {}).label || subject || "—";
+  function sortKey(student) {
+    return (student.displayName || student.phone || "");
   }
 
   function fmtDate(iso) {
@@ -123,6 +135,7 @@
   }
 
   function fmtScore(row) {
+    if (!row) return "—";
     if (row.score == null && row.writingWords == null) return "—";
     if (row.score != null) {
       var s = String(row.score);
@@ -133,115 +146,235 @@
     return row.writingWords ? row.writingWords + " 词" : "已完成";
   }
 
-  function filteredScores(rows) {
-    if (!zoneFilter) return rows || [];
-    return (rows || []).filter(function (r) { return r.zone === zoneFilter; });
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+  function dayKeyOf(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso).slice(0, 10);
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   }
 
-  function renderStats(rows) {
-    var totalStudents = rows.length;
-    var withScores = rows.filter(function (s) { return s.scoreCount > 0; }).length;
-    var totalRecords = rows.reduce(function (n, s) { return n + (s.scoreCount || 0); }, 0);
-    var mockRecords = rows.reduce(function (n, s) { return n + (s.mockCount || 0); }, 0);
-    statsEl.innerHTML =
-      '<div class="teacher-stat"><b>' + totalStudents + '</b><span>学生</span></div>' +
-      '<div class="teacher-stat"><b>' + withScores + '</b><span>有完成记录</span></div>' +
-      '<div class="teacher-stat"><b>' + totalRecords + '</b><span>记录条数</span></div>' +
-      '<div class="teacher-stat"><b>' + mockRecords + '</b><span>其中真题模考</span></div>';
+  function todayKey() { return dayKeyOf(new Date().toISOString()); }
+
+  function prettyDay(key) {
+    var p = String(key || "").split("-");
+    if (p.length !== 3) return key || "";
+    return Number(p[0]) + "年" + Number(p[1]) + "月" + Number(p[2]) + "日";
   }
 
-  function renderStudentCard(student) {
-    var scores = filteredScores(student.scores);
-    var rowsHtml = scores.length
-      ? scores.map(function (r) {
-          var hasEssay = !!(r.writingTask1 || r.writingTask2);
-          var wrongN = (r.wrong && r.wrong.length) || 0;
-          var btnLabel = hasEssay ? "查看作文" : (wrongN ? ("查看错题 (" + wrongN + ")") : "查看详情");
-          return '<tr>' +
-            '<td><b>' + Y.esc(r.title || r.id) + '</b></td>' +
-            '<td>' + Y.esc(zoneLabel(r.zone)) + '</td>' +
-            '<td>' + Y.esc(subjectLabel(r.subject)) + '</td>' +
-            '<td><span class="score-pill">' + Y.esc(fmtScore(r)) + '</span></td>' +
-            '<td>' + fmtDate(r.startedAt) + '</td>' +
-            '<td>' + fmtDate(r.date) + '</td>' +
-            '<td>' + Y.esc(fmtDuration(r.durationSec)) + '</td>' +
-            '<td><button type="button" class="btn btn--ghost btn--sm" data-attempt="' +
-              Y.esc(String(r.attemptId || "")) + '" data-student="' + student.id + '">' +
-              btnLabel + '</button></td>' +
-          '</tr>';
-        }).join("")
-      : '<tr><td colspan="8" class="teacher-empty-row">暂无' +
-        (zoneFilter ? zoneLabel(zoneFilter) : "") + '完成记录</td></tr>';
-
-    return '<article class="teacher-card">' +
-      '<header class="teacher-card__head">' +
-        '<div><b>' + Y.esc(studentLabel(student)) + '</b>' +
-        '<span class="teacher-card__meta">' + Y.esc(student.phone) +
-        ' · 注册 ' + fmtDate(student.createdAt) +
-        ' · 最近完成 ' + fmtDate(student.lastScoreAt || student.lastLoginAt) + '</span></div>' +
-        '<div class="teacher-card__badges">' +
-          '<span class="teacher-badge">' + (student.scoreCount || 0) + ' 条记录</span>' +
-          '<span class="teacher-badge teacher-badge--mock">' + (student.mockCount || 0) + ' 次真题模考</span>' +
-          (student.homeworkCount
-            ? '<span class="teacher-badge">' + student.homeworkCount + ' 条作业</span>'
-            : '') +
-        '</div>' +
-      '</header>' +
-      '<div class="table-wrap"><table class="data teacher-table">' +
-        '<thead><tr><th>内容</th><th>板块</th><th>科目</th><th>得分</th>' +
-        '<th>开始时间</th><th>完成时间</th><th>总用时</th><th>错题</th></tr></thead>' +
-        '<tbody>' + rowsHtml + '</tbody></table></div>' +
-    '</article>';
+  function applyMe(me) {
+    me = me || {};
+    var label = me.name ? me.name + "（" + me.phone + "）" : (me.phone || "");
+    if (welcomeEl) welcomeEl.textContent = "欢迎，" + label + "。点进学生查看布置作业完成情况。";
+    renderTeacherAvatar(me.avatarUrl, me.phone);
+    T.setTeacher({
+      phone: me.phone,
+      name: me.name || "",
+      avatarUrl: me.avatarUrl || "",
+      isAdmin: !!me.isAdmin
+    });
+    try {
+      localStorage.setItem("yysd:auth:user", JSON.stringify({
+        phone: me.phone || "",
+        role: "teacher",
+        displayName: me.name || "",
+        avatarUrl: me.avatarUrl || "",
+        isAdmin: !!me.isAdmin
+      }));
+    } catch (e) {}
+    document.querySelectorAll("[data-admin-only]").forEach(function (el) {
+      el.hidden = !me.isAdmin;
+    });
   }
 
-  function findAttempt(studentId, attemptId) {
-    var sid = Number(studentId);
-    var aid = Number(attemptId);
-    for (var i = 0; i < students.length; i++) {
-      if (students[i].id !== sid) continue;
-      var scores = students[i].scores || [];
-      for (var j = 0; j < scores.length; j++) {
-        if (Number(scores[j].attemptId) === aid) return { student: students[i], attempt: scores[j] };
+  function failBox(msg) {
+    return '<div class="state state--brand teacher-empty"><h3>加载失败</h3><p>' +
+      Y.esc(msg) + '</p><p><a class="btn btn--ghost btn--sm" href="teacher-login.html">重新登录</a></p></div>';
+  }
+
+  function renderRoster() {
+    var visible = students.filter(matchesSearch).slice().sort(function (a, b) {
+      return sortKey(a).localeCompare(sortKey(b), "zh");
+    });
+    if (!visible.length) {
+      listEl.innerHTML = '<div class="state state--brand teacher-empty">' +
+        '<h3>' + (searchQuery ? "未找到匹配的学生" : "暂无学生") + '</h3>' +
+        '<p>' + (searchQuery ? "请尝试其他用户名或手机号。" : "分配学生后会出现在这里。") + '</p></div>';
+      return;
+    }
+    listEl.innerHTML = visible.map(function (student) {
+      var overdue = student.hasOverdue ? " is-overdue" : "";
+      var src = avatarSrc(student.avatarUrl);
+      var av = src
+        ? '<img src="' + src.replace(/"/g, "") + '" alt="">'
+        : Y.esc(avatarFallback(student));
+      return '<a class="teacher-student-card' + overdue + '" href="teacher.html?student=' +
+        student.id + '">' +
+        '<span class="profile-avatar' + (src ? " has-img" : "") + '">' + av + "</span>" +
+        "<b>" + Y.esc(studentLabel(student)) + "</b>" +
+        (student.hasOverdue ? '<span class="teacher-student-card__late">逾期</span>' : "") +
+        "</a>";
+    }).join("");
+  }
+
+  function eventsOnDay(dayKey) {
+    return events.filter(function (ev) { return dayKeyOf(ev.createdAt) === dayKey; });
+  }
+
+  function latestAssignDay() {
+    var latest = "";
+    var latestTs = 0;
+    events.forEach(function (ev) {
+      var ts = Date.parse(ev.createdAt || "") || 0;
+      if (ts > latestTs) {
+        latestTs = ts;
+        latest = dayKeyOf(ev.createdAt);
       }
+    });
+    return latest || todayKey();
+  }
+
+  function chipStatusClass(st) {
+    if (st === "COMPLETED") return "is-done";
+    if (st === "OVERDUE") return "is-overdue";
+    return "is-pending";
+  }
+
+  function scoreForEvent(ev) {
+    var id = String(ev.id);
+    for (var i = 0; i < scores.length; i++) {
+      if (String(scores[i].assignmentEventId || "") === id) return scores[i];
     }
     return null;
   }
 
-  function openAttemptDetail(studentId, attemptId) {
-    var hit = findAttempt(studentId, attemptId);
+  function renderCal() {
+    var y = monthCursor.getFullYear();
+    var m = monthCursor.getMonth();
+    var firstDow = new Date(y, m, 1).getDay();
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var cells = [];
+    var i;
+    for (i = 0; i < firstDow; i++) cells.push('<div class="cal-month__cell is-empty"></div>');
+    for (i = 1; i <= daysInMonth; i++) {
+      var dayKey = y + "-" + pad(m + 1) + "-" + pad(i);
+      var dayEvents = eventsOnDay(dayKey);
+      var chips = dayEvents.slice(0, 3).map(function (ev) {
+        return '<span class="cal-month__chip ' + chipStatusClass(ev.status) + '">' +
+          Y.esc(ev.title) + "</span>";
+      }).join("");
+      if (dayEvents.length > 3) {
+        chips += '<span class="cal-month__more">+' + (dayEvents.length - 3) + "</span>";
+      }
+      var cellCls = "cal-month__cell";
+      if (dayKey === todayKey()) cellCls += " is-today";
+      if (dayKey === selectedDay) cellCls += " is-selected";
+      if (dayEvents.length) cellCls += " has-events";
+      cells.push(
+        '<div class="' + cellCls + '" data-day="' + dayKey + '" role="button" tabindex="0">' +
+          '<div class="cal-month__day">' + i + "</div>" +
+          '<div class="cal-month__chips">' + chips + "</div></div>"
+      );
+    }
+    calEl.innerHTML =
+      '<div class="cal-month">' +
+        '<div class="cal-month__nav">' +
+          '<button type="button" class="btn btn--ghost btn--sm" data-nav-dir="-1">‹</button>' +
+          "<strong>" + y + " 年 " + (m + 1) + " 月</strong>" +
+          '<button type="button" class="btn btn--ghost btn--sm" data-nav-dir="1">›</button>' +
+        "</div>" +
+        '<div class="cal-month__weekdays">' +
+          "<span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>" +
+        "</div>" +
+        '<div class="cal-month__grid">' + cells.join("") + "</div></div>";
+  }
+
+  function renderDay() {
+    var dayEvents = eventsOnDay(selectedDay);
+    var heading = prettyDay(selectedDay);
+    if (!dayEvents.length) {
+      dayEl.innerHTML = '<div class="stu-day-panel"><h2>' + Y.esc(heading) + "</h2>" +
+        '<p class="teacher-empty-row">这天没有布置作业</p></div>';
+      return;
+    }
+    var rows = dayEvents.map(function (ev) {
+      var st = ev.status || "PENDING";
+      var row = scoreForEvent(ev);
+      var meta = [];
+      if (st === "COMPLETED" && row) {
+        meta.push("得分 " + fmtScore(row));
+        meta.push("用时 " + fmtDuration(row.durationSec));
+        if (row.date) meta.push("完成 " + fmtDate(row.date));
+      } else if (ev.exerciseTotal) {
+        meta.push("进度 " + (ev.exerciseDone || 0) + " / " + ev.exerciseTotal);
+      }
+      if (ev.dueTime) meta.push("截止 " + fmtDate(ev.dueTime));
+      var btn = "";
+      if (row) {
+        var hasEssay = !!(row.writingTask1 || row.writingTask2);
+        var wrongN = (row.wrong && row.wrong.length) || 0;
+        var btnLabel = hasEssay ? "查看作文" : (wrongN ? ("查看错题 (" + wrongN + ")") : "查看详情");
+        btn = '<button type="button" class="btn btn--ghost btn--sm" data-attempt="' +
+          Y.esc(String(row.attemptId || "")) + '">' + btnLabel + "</button>";
+      }
+      return '<article class="stu-day-item ' + chipStatusClass(st) + '">' +
+        "<header><b>" + Y.esc(ev.title) + "</b>" +
+        '<span class="cal-status-pill ' +
+          (st === "COMPLETED" ? "cal-status--done" : st === "OVERDUE" ? "cal-status--overdue" : "cal-status--pending") +
+          '">' + Y.esc(STATUS_LABEL[st] || st) + "</span></header>" +
+        (meta.length ? '<p class="stu-day-item__meta">' + Y.esc(meta.join(" · ")) + "</p>" : "") +
+        btn + "</article>";
+    }).join("");
+    dayEl.innerHTML = '<div class="stu-day-panel"><h2>' + Y.esc(heading) + " 布置的作业</h2>" + rows + "</div>";
+  }
+
+  function renderStudentHome() {
+    fillAvatar(document.getElementById("student-avatar"), viewStudent && viewStudent.avatarUrl, avatarFallback(viewStudent));
+    document.getElementById("student-title").textContent = studentLabel(viewStudent);
+    document.getElementById("student-sub").textContent = (viewStudent && viewStudent.phone) || "";
+    renderCal();
+    renderDay();
+  }
+
+  function findAttempt(attemptId) {
+    var aid = Number(attemptId);
+    for (var i = 0; i < scores.length; i++) {
+      if (Number(scores[i].attemptId) === aid) return scores[i];
+    }
+    return null;
+  }
+
+  function openAttemptDetail(attemptId) {
+    var r = findAttempt(attemptId);
     var modal = document.getElementById("attempt-modal");
     var body = document.getElementById("attempt-body");
     var title = document.getElementById("attempt-modal-title");
-    if (!modal || !body || !hit) return;
-    var r = hit.attempt;
+    if (!modal || !body || !r) return;
     var wrong = r.wrong || [];
     title.textContent = (r.title || r.id) + " · " + fmtScore(r);
     var head =
-      '<p class="teacher-attempt-meta">' + Y.esc(studentLabel(hit.student)) +
-      (r.band != null ? ' · Band ' + r.band : '') + '</p>' +
+      '<p class="teacher-attempt-meta">' + Y.esc(studentLabel(viewStudent)) +
+      (r.band != null ? " · Band " + r.band : "") + "</p>" +
       '<p class="teacher-attempt-meta">开始 ' + fmtDate(r.startedAt) +
-      ' · 完成 ' + fmtDate(r.date) +
-      ' · 总用时 ' + Y.esc(fmtDuration(r.durationSec)) + '</p>';
+      " · 完成 " + fmtDate(r.date) +
+      " · 总用时 " + Y.esc(fmtDuration(r.durationSec)) + "</p>";
     var list;
     if (r.writingTask1 || r.writingTask2) {
       list = '<div class="teacher-essay">' +
-        (r.writingTask1
-          ? '<section><h4>Task 1</h4><pre>' + Y.esc(r.writingTask1) + '</pre></section>'
-          : '') +
-        (r.writingTask2
-          ? '<section><h4>Task 2</h4><pre>' + Y.esc(r.writingTask2) + '</pre></section>'
-          : '') +
-        '</div>';
+        (r.writingTask1 ? "<section><h4>Task 1</h4><pre>" + Y.esc(r.writingTask1) + "</pre></section>" : "") +
+        (r.writingTask2 ? "<section><h4>Task 2</h4><pre>" + Y.esc(r.writingTask2) + "</pre></section>" : "") +
+        "</div>";
     } else if (!wrong.length) {
       list = '<p class="teacher-empty-row">本题次无错题明细' +
-        (r.score != null && r.total != null && r.score === r.total ? '（全对）' : '（历史记录或该题型未上报）') +
-        '</p>';
+        (r.score != null && r.total != null && r.score === r.total ? "（全对）" : "（历史记录或该题型未上报）") +
+        "</p>";
     } else {
       list = '<ul class="teacher-wrong-list">' + wrong.map(function (w) {
-        return '<li><b>第 ' + Y.esc(String(w.no)) + ' 题</b>' +
-          '<span>学生作答：' + Y.esc(w.ua || "未作答") + '</span>' +
-          '<span>正确答案：' + Y.esc(w.ans || "—") + '</span></li>';
-      }).join("") + '</ul>';
+        return "<li><b>第 " + Y.esc(String(w.no)) + " 题</b>" +
+          "<span>学生作答：" + Y.esc(w.ua || "未作答") + "</span>" +
+          "<span>正确答案：" + Y.esc(w.ans || "—") + "</span></li>";
+      }).join("") + "</ul>";
     }
     body.innerHTML = head + list;
     modal.hidden = false;
@@ -252,65 +385,77 @@
     if (modal) modal.hidden = true;
   }
 
-  function render() {
-    var visible = students.filter(function (s) {
-      if (!matchesSearch(s)) return false;
-      return !zoneFilter || filteredScores(s.scores).length > 0;
+  function setView(studentMode) {
+    if (rosterHead) rosterHead.hidden = !!studentMode;
+    if (rosterMain) rosterMain.hidden = !!studentMode;
+    if (studentHead) studentHead.hidden = !studentMode;
+    if (studentMain) studentMain.hidden = !studentMode;
+  }
+
+  function loadRoster() {
+    setView(false);
+    listEl.innerHTML = '<div class="state state--brand"><div class="spinner spinner--brand"></div></div>';
+    Promise.all([T.api("/api/teacher/me"), T.api("/api/teacher/students")]).then(function (res) {
+      applyMe(res[0].teacher || {});
+      students = res[1].students || [];
+      renderRoster();
+    }).catch(function (e) {
+      listEl.innerHTML = failBox(e.message);
     });
-    renderStats(students);
-    if (!visible.length) {
-      listEl.innerHTML = '<div class="state state--brand teacher-empty">' +
-        '<h3>' + (searchQuery ? "未找到匹配的学生" : "暂无学生记录") + '</h3>' +
-        '<p>' + (searchQuery ? "请尝试其他用户名或手机号。" : "学生从任务日历完成你布置的练习后，记录会出现在这里。") + '</p></div>';
-      return;
-    }
-    listEl.innerHTML = visible.map(renderStudentCard).join("");
+  }
+
+  function loadStudent(id) {
+    setView(true);
+    calEl.innerHTML = '<div class="state state--brand"><div class="spinner spinner--brand"></div></div>';
+    dayEl.innerHTML = "";
+    Promise.all([
+      T.api("/api/teacher/me"),
+      T.api("/api/teacher/students/" + id + "/calendar"),
+      T.api("/api/teacher/students/" + id + "/scores")
+    ]).then(function (res) {
+      applyMe(res[0].teacher || {});
+      viewStudent = res[1].student || { id: id };
+      events = res[1].events || [];
+      scores = res[2].scores || [];
+      selectedDay = latestAssignDay();
+      var parts = selectedDay.split("-");
+      if (parts.length === 3) {
+        monthCursor = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+      }
+      renderStudentHome();
+    }).catch(function (e) {
+      calEl.innerHTML = failBox(e.message);
+    });
   }
 
   function load() {
-    listEl.innerHTML = '<div class="state state--brand"><div class="spinner spinner--brand"></div></div>';
-    Promise.all([
-      T.api("/api/teacher/me"),
-      T.api("/api/teacher/students")
-    ]).then(function (res) {
-      var me = res[0].teacher || {};
-      var label = me.name ? me.name + "（" + me.phone + "）" : me.phone;
-      welcomeEl.textContent = "欢迎，" + label + "。以下为布置任务的完成记录（含开始/完成时间与总用时）。";
-      renderTeacherAvatar(me.avatarUrl, me.phone);
-      T.setTeacher({
-        phone: me.phone,
-        name: me.name || "",
-        avatarUrl: me.avatarUrl || "",
-        isAdmin: !!me.isAdmin
-      });
-      try {
-        localStorage.setItem("yysd:auth:user", JSON.stringify({
-          phone: me.phone || "",
-          role: "teacher",
-          displayName: me.name || "",
-          avatarUrl: me.avatarUrl || "",
-          isAdmin: !!me.isAdmin
-        }));
-      } catch (e) {}
-      document.querySelectorAll("[data-admin-only]").forEach(function (el) {
-        el.hidden = !me.isAdmin;
-      });
-      students = res[1].students || [];
-      render();
-    }).catch(function (e) {
-      // ponytail: stay put — auto-logout hid the page during local design preview
-      listEl.innerHTML = '<div class="state state--brand"><h3>加载失败</h3><p>' + Y.esc(e.message) +
-        '</p><p><a class="btn btn--ghost btn--sm" href="teacher-login.html">重新登录</a></p></div>';
-    });
+    var id = studentIdFromUrl();
+    if (id) loadStudent(id);
+    else loadRoster();
   }
 
   load();
 
-  if (listEl) {
-    listEl.addEventListener("click", function (e) {
+  if (calEl) {
+    calEl.addEventListener("click", function (e) {
+      var nav = e.target.closest("[data-nav-dir]");
+      if (nav) {
+        monthCursor.setMonth(monthCursor.getMonth() + Number(nav.getAttribute("data-nav-dir")));
+        renderCal();
+        return;
+      }
+      var cell = e.target.closest("[data-day]");
+      if (!cell) return;
+      selectedDay = cell.getAttribute("data-day") || selectedDay;
+      renderCal();
+      renderDay();
+    });
+  }
+  if (dayEl) {
+    dayEl.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-attempt]");
       if (!btn) return;
-      openAttemptDetail(btn.getAttribute("data-student"), btn.getAttribute("data-attempt"));
+      openAttemptDetail(btn.getAttribute("data-attempt"));
     });
   }
   var attemptModal = document.getElementById("attempt-modal");

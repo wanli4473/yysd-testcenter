@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
   <link rel="stylesheet" href="assets/css/style.css?v=20260821tfix1">
-  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260825calnavy3">
+  <link rel="stylesheet" href="assets/css/dashboard-premium.css?v=20260828stu1">
 </head>
 <body class="home-minimal teacher-page teacher-layout shell-compact-nav page-premium">
 
@@ -24,7 +24,7 @@
         </span>
       </a>
       <nav class="minimal-nav" aria-label="教师快捷">
-        <a class="nav-mobile-only" href="teacher.html">学情看板</a>
+        <a class="nav-mobile-only" href="teacher.html">我的学生</a>
         <a class="nav-mobile-only" href="teacher-calendar.html">任务日历</a>
         <a class="nav-persist" href="teacher.html" id="nav-auth">个人中心</a>
         <button type="button" class="btn btn--ghost btn--sm nav-persist" id="logout-btn">退出</button>
@@ -35,7 +35,7 @@
   <div class="teacher-shell">
     <aside class="teacher-side" aria-label="教师导航">
       <p class="teacher-side__label">COURSE</p>
-      <a href="teacher.html" class="teacher-side__link is-active">学情看板</a>
+      <a href="teacher.html" class="teacher-side__link is-active">我的学生</a>
       <a href="teacher-diagnostic.html" class="teacher-side__link">词汇诊断</a>
       <a href="teacher-vocab-challenge.html" class="teacher-side__link">单词闯关</a>
       <a href="teacher-calendar.html" class="teacher-side__link">任务日历</a>
@@ -45,13 +45,13 @@
     </aside>
 
     <div class="teacher-content">
-      <section class="minimal-page-head">
+      <section class="minimal-page-head" id="roster-head">
         <div class="minimal-crumb">教师端</div>
-        <div class="minimal-eyebrow">TEACHER DASHBOARD</div>
+        <div class="minimal-eyebrow">MY STUDENTS</div>
         <div class="teacher-head-row">
           <div class="profile-avatar teacher-head-avatar" id="teacher-avatar" aria-hidden="true">—</div>
           <div>
-            <h1>布置任务完成记录</h1>
+            <h1>我的学生</h1>
             <p class="minimal-page-desc" id="teacher-welcome">加载中…</p>
             <label class="btn btn--ghost btn--sm pressable profile-avatar__btn">
               更换头像
@@ -62,25 +62,35 @@
         </div>
       </section>
 
-      <main class="minimal-main">
-        <div class="teacher-toolbar">
-          <div class="teacher-filters" role="tablist" aria-label="记录筛选">
-            <button type="button" class="teacher-filter is-active" data-zone="">全部</button>
-            <button type="button" class="teacher-filter" data-zone="mock">真题模考</button>
-            <button type="button" class="teacher-filter" data-zone="assignment">上传作业</button>
-            <button type="button" class="teacher-filter" data-zone="study">单词作业</button>
-            <button type="button" class="teacher-filter" data-zone="practice">练习</button>
+      <section class="minimal-page-head" id="student-head" hidden>
+        <div class="minimal-crumb"><a href="teacher.html">我的学生</a> <span class="crumb-sep" aria-hidden="true">★</span> 学生主页</div>
+        <div class="minimal-eyebrow">STUDENT</div>
+        <div class="teacher-head-row">
+          <div class="profile-avatar teacher-head-avatar" id="student-avatar" aria-hidden="true">—</div>
+          <div>
+            <h1 id="student-title">学生</h1>
+            <p class="minimal-page-desc" id="student-sub"></p>
           </div>
+        </div>
+      </section>
+
+      <main class="minimal-main" id="roster-main">
+        <div class="teacher-toolbar">
           <label class="teacher-search">
             <span class="visually-hidden">搜索学生</span>
             <input type="search" id="student-search" placeholder="搜索用户名或手机号" autocomplete="off">
           </label>
           <button type="button" class="btn btn--ghost btn--sm" id="refresh-btn">刷新</button>
         </div>
-
-        <div id="teacher-stats" class="teacher-stats"></div>
         <div id="teacher-students" class="teacher-students">
           <div class="state state--brand"><div class="spinner spinner--brand"></div></div>
+        </div>
+      </main>
+
+      <main class="minimal-main" id="student-main" hidden>
+        <div class="stu-home">
+          <div id="stu-cal" class="stu-home__cal"></div>
+          <div id="stu-day" class="stu-home__day"></div>
         </div>
       </main>
     </div>
@@ -111,6 +121,6 @@
   <script src="assets/js/teacher-auth.js?v=20260821gate1"></script>
   <script src="assets/js/teacher-mode.js?v=20260821gate1"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
-  <script src="assets/js/teacher.js?v=20260818wrong1"></script>
+  <script src="assets/js/teacher.js?v=20260828stu1"></script>
 </body>
 </html>

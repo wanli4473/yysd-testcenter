@@ -3878,3 +3878,130 @@ body.home-apple-page.page-premium .minimal-footer__links a:hover {
     max-height: none;
   }
 }
+
+/* —— 我的学生：bento + 学生主页 —— */
+.page-premium .teacher-students {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 16px;
+}
+.page-premium .teacher-students > .state {
+  grid-column: 1 / -1;
+}
+.page-premium .teacher-student-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 16px 22px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 16px);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  min-height: 168px;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.page-premium .teacher-student-card:hover {
+  border-color: color-mix(in srgb, var(--brand-gold, #c7a45d) 55%, var(--border));
+  box-shadow: var(--bento-shadow-lift, 0 10px 40px -10px rgba(16, 24, 39, 0.08));
+  transform: translateY(-2px);
+}
+.page-premium .teacher-student-card .profile-avatar {
+  width: 72px;
+  height: 72px;
+  font-size: 22px;
+}
+.page-premium .teacher-student-card b {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.page-premium .teacher-student-card.is-overdue {
+  border-color: #c45c5c;
+  box-shadow: 0 0 0 1px rgba(196, 92, 92, 0.28);
+}
+.page-premium .teacher-student-card__late {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(196, 92, 92, 0.14);
+  color: #b42318;
+}
+.page-premium .stu-home {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+.page-premium .stu-home .cal-month__cell {
+  min-height: 84px;
+  cursor: pointer;
+}
+.page-premium .stu-home .cal-month__cell.is-empty { cursor: default; }
+.page-premium .stu-home .cal-month__cell.is-selected {
+  border-color: var(--brand-navy, #102a4c);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-navy, #102a4c) 22%, transparent);
+}
+.page-premium .stu-home .cal-month__chip {
+  cursor: default;
+}
+.page-premium .stu-home .cal-month__chip.is-done {
+  background: rgba(46, 125, 80, 0.18);
+  color: #2e7d50;
+  opacity: 1;
+  text-decoration: none;
+  box-shadow: none;
+}
+.page-premium .stu-home .cal-month__chip.is-pending {
+  background: rgba(199, 164, 93, 0.28);
+  color: #8a6a2f;
+}
+.page-premium .stu-home .cal-month__chip.is-overdue {
+  background: rgba(196, 92, 92, 0.18);
+  color: #b42318;
+  box-shadow: none;
+}
+.page-premium .stu-day-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 16px);
+  box-shadow: var(--shadow-sm);
+  padding: 18px 20px 20px;
+  min-height: 240px;
+}
+.page-premium .stu-day-panel h2 {
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+}
+.page-premium .stu-day-item {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.page-premium .stu-day-item:first-of-type { border-top: 0; }
+.page-premium .stu-day-item header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.page-premium .stu-day-item__meta {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  color: var(--muted-foreground, #5a6472);
+}
+.page-premium .stu-day-item.is-done { border-left: 3px solid #2e7d50; padding-left: 12px; }
+.page-premium .stu-day-item.is-pending { border-left: 3px solid #c7a45d; padding-left: 12px; }
+.page-premium .stu-day-item.is-overdue { border-left: 3px solid #b42318; padding-left: 12px; }
+@media (max-width: 960px) {
+  .page-premium .stu-home { grid-template-columns: 1fr; }
+}

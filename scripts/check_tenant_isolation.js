@@ -10,7 +10,7 @@ var tmp = path.join(__dirname, "..", "server", "data", "_iso_check.db");
 try { fs.unlinkSync(tmp); } catch (e) {}
 var db = new Database(tmp);
 db.exec(
-  "CREATE TABLE users (id INTEGER PRIMARY KEY, phone TEXT, password_hash TEXT, display_name TEXT, created_at TEXT, last_login_at TEXT, org_id INTEGER);" +
+  "CREATE TABLE users (id INTEGER PRIMARY KEY, phone TEXT, password_hash TEXT, display_name TEXT, avatar_url TEXT, created_at TEXT, last_login_at TEXT, org_id INTEGER);" +
   "CREATE TABLE teachers (id INTEGER PRIMARY KEY, phone TEXT, name TEXT, created_at TEXT, last_login_at TEXT, org_id INTEGER);" +
   "CREATE TABLE user_score_attempts (id INTEGER PRIMARY KEY, user_id INTEGER, item_id TEXT, payload TEXT, created_at TEXT);"
 );

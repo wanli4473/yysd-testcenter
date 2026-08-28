@@ -1937,7 +1937,6 @@ function isVisibleTeacherScore(score, studentId, index, isAdmin) {
 }
 
 app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
-  var zone = clipText(req.query.zone, 40);
   var allowed = allowedStudentIdsForTeacher(req);
   var allowedSet = null;
   if (allowed) {
@@ -1945,38 +1944,31 @@ app.get("/api/teacher/students", teacherAuthMiddleware, function (req, res) {
     allowed.forEach(function (id) { allowedSet[id] = 1; });
   }
   var isAdmin = isOrgAdminReq(req);
-  var assignIndex = teacherAssignmentIndex(req.user.sub);
   var orgId = req.user.orgId;
+  // ponytail: this teacher's ASSIGNMENT overdue only; org-wide rollup if admin view needs it
+  var overdueSet = {};
+  stmts.listTeacherEvents.all(req.user.sub).forEach(function (row) {
+    if (row.event_type !== "ASSIGNMENT") return;
+    stmts.listStatusesForEvent.all(row.id).forEach(function (s) {
+      if (effectiveTaskStatus(s.status, row.due_time) === "OVERDUE") overdueSet[s.student_id] = 1;
+    });
+  });
   var rows = (orgId ? orgStmts.listStudentsByOrg.all(orgId) : []).filter(function (row) {
     return !allowedSet || allowedSet[row.id];
   }).filter(function (row) {
     return !teacherPreview.isPreviewUser(row);
   });
   var students = rows.map(function (row) {
-    var scores = stmts.listStudentAttempts.all(row.id).map(parseScorePayload)
-      .filter(function (s) { return isVisibleTeacherScore(s, row.id, assignIndex, isAdmin); });
-    var filtered = zone ? scores.filter(function (s) { return s.zone === zone; }) : scores;
-    var mockCount = scores.filter(function (s) { return s.zone === "mock"; }).length;
-    var homeworkCount = scores.filter(function (s) {
-      return s.zone === "assignment" || s.assignmentEventId ||
-        (s.zone !== "mock" && isTeacherAssignmentAttempt(s, row.id, assignIndex));
-    }).length;
     return {
       id: row.id,
       phone: maskPhone(row.phone),
       displayName: row.display_name || "",
+      avatarUrl: row.avatar_url || "",
       createdAt: row.created_at,
       lastLoginAt: row.last_login_at,
-      scoreCount: scores.length,
-      mockCount: mockCount,
-      homeworkCount: homeworkCount,
-      lastScoreAt: scores.length ? (scores[0].date || row.last_score_at || null) : null,
-      scores: filtered
+      hasOverdue: !!overdueSet[row.id]
     };
   });
-  if (zone) {
-    students = students.filter(function (s) { return s.scores.length > 0; });
-  }
   res.json({ ok: true, students: students, isAdmin: isAdmin });
 });
 
@@ -2002,10 +1994,36 @@ app.get("/api/teacher/students/:userId/scores", teacherAuthMiddleware, function 
       id: user.id,
       phone: maskPhone(user.phone),
       displayName: user.display_name || "",
+      avatarUrl: user.avatar_url || "",
       createdAt: user.created_at,
       lastLoginAt: user.last_login_at
     },
     scores: scores
+  });
+});
+
+app.get("/api/teacher/students/:userId/calendar", teacherAuthMiddleware, function (req, res) {
+  var userId = Number(req.params.userId);
+  if (!userId) return res.status(400).json({ error: "无效的学生 ID" });
+  if (!teacherCanManageStudent(req, userId)) {
+    return res.status(403).json({ error: "该学生未分配给你" });
+  }
+  var user = stmts.findUserById.get(userId);
+  if (!user || (req.user.orgId && user.org_id !== req.user.orgId)) {
+    return res.status(404).json({ error: "学生不存在" });
+  }
+  var events = calendarEventsForStudent(userId).filter(function (ev) {
+    return ev.eventType === "ASSIGNMENT" && Number(ev.createdBy) === Number(req.user.sub);
+  });
+  res.json({
+    ok: true,
+    student: {
+      id: user.id,
+      phone: maskPhone(user.phone),
+      displayName: user.display_name || "",
+      avatarUrl: user.avatar_url || ""
+    },
+    events: events
   });
 });
 
@@ -2322,12 +2340,10 @@ app.put("/api/admin/assignments", adminAuthMiddleware, function (req, res) {
   res.json({ ok: true, teacherId: teacherId, studentIds: studentIds });
 });
 
-app.get("/api/student/calendar", authMiddleware, function (req, res) {
-  if (req.user.role === "teacher") return res.json({ ok: true, events: [] });
+function calendarEventsForStudent(studentId) {
   var scored = {};
-  stmts.listScores.all(req.user.sub).forEach(function (r) { scored[r.item_id] = 1; });
-  var rows = stmts.listStudentCalendar.all(req.user.sub);
-  var events = rows.map(function (row) {
+  stmts.listScores.all(studentId).forEach(function (r) { scored[r.item_id] = 1; });
+  return stmts.listStudentCalendar.all(studentId).map(function (row) {
     var exerciseIds = [];
     try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
     var pack = String(row.cdt_pack || "").toLowerCase();
@@ -2364,7 +2380,11 @@ app.get("/api/student/calendar", authMiddleware, function (req, res) {
       exerciseTotal: totalN
     });
   });
-  res.json({ ok: true, events: events });
+}
+
+app.get("/api/student/calendar", authMiddleware, function (req, res) {
+  if (req.user.role === "teacher") return res.json({ ok: true, events: [] });
+  res.json({ ok: true, events: calendarEventsForStudent(req.user.sub) });
 });
 
 app.patch("/api/student/calendar/:eventId/status", authMiddleware, function (req, res) {

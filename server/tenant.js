@@ -104,7 +104,7 @@ function initTenant(db) {
       "SELECT COUNT(*) AS n FROM users WHERE org_id = ? AND last_login_at IS NOT NULL AND last_login_at >= ?"
     ),
     listStudentsByOrg: db.prepare(
-      "SELECT u.id, u.phone, u.display_name, u.created_at, u.last_login_at, " +
+      "SELECT u.id, u.phone, u.display_name, u.avatar_url, u.created_at, u.last_login_at, " +
       "COUNT(a.id) AS score_count, MAX(a.created_at) AS last_score_at " +
       "FROM users u LEFT JOIN user_score_attempts a ON a.user_id = u.id " +
       "WHERE u.org_id = ? " +
