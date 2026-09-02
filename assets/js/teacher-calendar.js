@@ -39,12 +39,13 @@
     rqtype: "阅读题型练习：选题型与册，再勾题组（只出该组题，文章仍是整篇 Passage）。",
     rscene: "阅读场景练习：选场景与册，再勾 Passage（整篇练习规则）。",
     skill: "单项模考：先选册与 Test，再勾单科整卷（机考模考规则）。",
-    suite: "全套模考：先选册，再勾某套 Test 的听力+阅读+写作。"
+    suite: "全套模考：先选册，再勾某套 Test 的听力+阅读+写作。",
+    rsecret: "阅读绝密套卷：勾选整卷布置。"
   };
 
   function cdtPackForCat(cat) {
     if (cat === "part" || cat === "qtype" || cat === "scene" || cat === "rqtype" || cat === "rscene") return "drill";
-    if (cat === "skill" || cat === "suite") return "exam";
+    if (cat === "skill" || cat === "suite" || cat === "rsecret") return "exam";
     if (cat === "vocab") return "vocab-quiz";
     return "";
   }
@@ -209,8 +210,15 @@
     });
   }
 
+  function isSecretReading(it) {
+    var hay = String((it && it.id) || "") + " " + String((it && it.title) || "");
+    return /secret-set|绝密套卷/.test(hay);
+  }
+
   function itemInCat(it, cat) {
     if (!cat) return true;
+    if (cat === "rsecret") return isSecretReading(it);
+    if (isSecretReading(it)) return false;
     if (cat === "vocab") return isVocabSubject(it.subject);
     if (cat === "part") {
       if (!it.partNum) return false;
@@ -839,7 +847,7 @@
         var checked = selectedExercises[it.id] ? " checked" : "";
         var label = exerciseCat === "skill"
           ? ("单项模考 · " + itemCatLabel(it))
-          : itemCatLabel(it);
+          : (exerciseCat === "rsecret" ? "阅读绝密套卷" : itemCatLabel(it));
         return '<label class="cal-check">' +
           '<input type="checkbox" data-exercise="' + esc(it.id) + '"' + checked + ">" +
           "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(label) + "</small></span></label>";
