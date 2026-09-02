@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260902secret1";
+  var CONTENT_VER = "20260902secret2";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -457,16 +457,16 @@ window.YYSD = (function () {
     return item.title || "";
   }
 
-  // Assignable part ids: cambridge-20-test-1-s1 / cambridge-20-test-1-reading-p1
+  // Assignable part ids: cambridge-20-test-1-s1 / cambridge-20-test-1-reading-p1 / secret-set-1-reading-p1
   function parsePartId(id) {
-    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?)-(s|p)(\d+)$/i);
+    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i);
     if (!m) return null;
     return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]) };
   }
 
-  // 题型练习: cambridge-21-test-1-s1-q1-6 / cambridge-21-test-1-reading-p1-q1-7
+  // 题型练习: cambridge-21-test-1-s1-q1-6 / cambridge-21-test-1-reading-p1-q1-7 / secret-set-1-reading-p1-q1-13
   function parseGroupId(id) {
-    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?)-(s|p)(\d+)-q(\d+)-(\d+)$/i);
+    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)-q(\d+)-(\d+)$/i);
     if (!m) return null;
     return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]), qFrom: Number(m[4]), qTo: Number(m[5]) };
   }

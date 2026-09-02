@@ -50,4 +50,12 @@ var hit = (items || []).filter(function (it) { return it.id === "secret-set-1-re
 must(hit.length === 1, "manifest id");
 must(/绝密套卷/.test(hit[0].title), "manifest title " + hit[0].title);
 
+var cfg = fs.readFileSync(path.join(root, "assets/js/config.js"), "utf8");
+var partRe = /secret-set-\\d\+-reading/;
+must(partRe.test(cfg), "parsePartId accepts secret-set");
+var m1 = "secret-set-1-reading-p2".match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i);
+must(m1 && m1[1] === "secret-set-1-reading" && m1[3] === "2", "p2 parent");
+must("secret-set-1-reading".match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i) == null, "full paper not a part");
+must("cambridge-12-test-1-reading-p1".match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i), "cam part still parses");
+
 console.log("check_secret_set_1: ok");
