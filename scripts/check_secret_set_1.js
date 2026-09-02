@@ -35,6 +35,13 @@ TEST.passages.forEach(function (p) {
 });
 must(got.length === 40, "need 40 got " + got.length);
 got.forEach(function (a, i) { must(a === expect[i], "Q" + (i + 1) + " " + a + " != " + expect[i]); });
+TEST.passages.forEach(function (p) {
+  p.groups.forEach(function (g) {
+    g.questions.forEach(function (q) {
+      must(q.explain && q.explain.indexOf("定位") >= 0 && q.explain.length > 40, "explain Q" + q.no);
+    });
+  });
+});
 
 var cal = fs.readFileSync(path.join(root, "teacher-calendar.html"), "utf8");
 must(cal.indexOf('data-ex-cat="rsecret"') >= 0, "calendar chip");
