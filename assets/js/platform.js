@@ -328,7 +328,45 @@
       }).catch(function (e) { msg(e.message || "保存失败"); });
     });
 
-    gateThenLoad().catch(function (e) {
+    function ensureMaintBox() {
+      if (document.getElementById("maint-toggle")) return;
+      var create = document.getElementById("plat-create");
+      if (!create) return;
+      var box = document.createElement("section");
+      box.className = "plat-form";
+      box.id = "plat-maint";
+      box.innerHTML = "<h2>全站维护</h2>" +
+        "<p class=\"minimal-page-desc\">打开后，只有 15901754473、18956023079 能进网站，其他人只看到更新中页面。改完记得关掉。</p>" +
+        "<button type=\"button\" class=\"btn btn--primary\" id=\"maint-toggle\">打开维护</button>";
+      create.parentNode.insertBefore(box, create);
+    }
+    function loadMaint() {
+      ensureMaintBox();
+      return A.api("/api/maintenance").then(function (d) {
+        var btn = document.getElementById("maint-toggle");
+        if (!btn) return;
+        btn.setAttribute("data-on", d.on ? "1" : "0");
+        btn.textContent = d.on ? "关闭维护（恢复大家访问）" : "打开维护（只留自己能进）";
+      });
+    }
+    function bindMaint() {
+      ensureMaintBox();
+      var maintBtn = document.getElementById("maint-toggle");
+      if (!maintBtn || maintBtn.getAttribute("data-bound") === "1") return;
+      maintBtn.setAttribute("data-bound", "1");
+      maintBtn.addEventListener("click", function () {
+        var on = maintBtn.getAttribute("data-on") !== "1";
+        A.api("/api/maintenance", { method: "POST", body: { on: on } })
+          .then(function () {
+            msg(on ? "维护已打开，其他人暂时进不来" : "维护已关闭，网站恢复访问", true);
+            return loadMaint();
+          })
+          .catch(function (e) { msg(e.message || "切换失败"); });
+      });
+    }
+    bindMaint();
+
+    gateThenLoad().then(loadMaint).catch(function (e) {
       msg((e && e.message) || "无法进入平台主控台");
     });
   });

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
+  <title>网站更新中</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #f4efe6; color: #2a241c; }
+    body { font-family: "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif; }
+    main {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 2rem 1.25rem;
+    }
+    img {
+      width: min(420px, 88vw); height: auto; border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(40, 30, 16, .18);
+    }
+    p { margin: 1.25rem 0 0; font-size: clamp(1.25rem, 4vw, 1.85rem); letter-spacing: .04em; }
+    a { margin-top: 2rem; font-size: .85rem; color: #8a8074; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="assets/img/maintenance-dog.png" alt="">
+    <p>网站更新中，别急啊，在弄了</p>
+    <a href="login.html">工作人员登录</a>
+  </main>
+  <script>
+    setInterval(function () {
+      var h = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+        ? (location.protocol + "//" + location.hostname + ":3000")
+        : "https://api.youyisida.com";
+      fetch(h + "/api/maintenance").then(function (r) { return r.json(); }).then(function (d) {
+        if (d && d.on === false) location.replace("index.html");
+      }).catch(function () {});
+    }, 20000);
+  </script>
+</body>
+</html>
