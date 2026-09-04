@@ -17,6 +17,7 @@ assert(/writingPrompt1: promptForTask/.test(bridge), "writing score includes pro
 assert(/writingChartNote: chartNoteFromTest/.test(bridge), "writing score includes chart note");
 assert(/clearCdtWritingDraft/.test(bridge) && /cdtPack\(\) === "exam"/.test(bridge), "CDT clears writing draft on exam start");
 assert(/if \(!cdtWanted\)/.test(exam) && /practiceDraftElapsed/.test(exam), "CDT skips practice elapsed");
+assert(/fullPaper/.test(exam) && /secret-set-\\d\+\(-reading\)\?/.test(exam), "assigned full secret paper defaults exam");
 assert(/function hopAfterSubmit/.test(cdt) && /timeUpHop/.test(cdt), "time-up hops suite");
 assert(/alreadyScoredThisPaper/.test(cdt), "re-Finish skips 12s wait when scored");
 assert(/function showSubmitLoading/.test(cdt) && /submitLoadingMsg/.test(cdt), "CDT submit loading helpers");
@@ -114,6 +115,9 @@ assert(qs("cambridge-21-test-1-s1-q1-6", ["cambridge-21-test-1-s1-q1-6"]) === "&
 assert(qs("cambridge-21-test-1-reading-p1-q1-7", ["cambridge-21-test-1-reading-p1-q1-7"]) === "&cdt=1&pack=drill", "reading qtype group drill");
 assert(qs("cambridge-16-test-4", ["cambridge-16-test-4", "cambridge-16-test-4-reading", "cambridge-16-test-4-writing"]) === "&cdt=1&pack=exam&suite=1", "suite cdt");
 assert(qs("not-cambridge", []) === "", "non-cam empty");
+assert(qs("secret-set-1-reading", ["secret-set-1-reading"], "exam") === "&cdt=1&pack=exam", "secret reading exam");
+assert(qs("secret-set-2", ["secret-set-2"], "exam") === "&cdt=1&pack=exam", "secret listen exam");
+assert(qs("secret-set-1-reading-p1", ["secret-set-1-reading-p1"]) === "&cdt=1&pack=drill", "secret passage drill");
 
 var pgStart = cfg.indexOf("function parseGroupId");
 var pgEnd = cfg.indexOf("\n  function cambridgeCdtQs");

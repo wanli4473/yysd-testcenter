@@ -65,4 +65,11 @@ must(m1 && m1[1] === "secret-set-1-reading" && m1[3] === "2", "p2 parent");
 must("secret-set-1-reading".match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i) == null, "full paper not a part");
 must("cambridge-12-test-1-reading-p1".match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i), "cam part still parses");
 
+var qsStart = cfg.indexOf("function cambridgeCdtQs");
+var qsEnd = cfg.indexOf("\n  function makePartItem");
+must(qsStart > 0 && qsEnd > qsStart, "cambridgeCdtQs slice");
+var qs = Function(cfg.slice(qsStart, qsEnd) + "\nreturn cambridgeCdtQs;")();
+must(qs("secret-set-1-reading", ["secret-set-1-reading"], "exam") === "&cdt=1&pack=exam", "secret-set calendar href is exam");
+must(qs("secret-set-1", ["secret-set-1"], "exam") === "&cdt=1&pack=exam", "secret-set listening exam");
+
 console.log("check_secret_set_1: ok");

@@ -416,7 +416,11 @@
     if (!assignmentEventId || cdtWanted) return;
     if (!item || item.zone !== "mock" || !Y.isCambridge(item.subject)) return;
     cdtWanted = true;
-    if (!cdtPack) cdtPack = cdtSuite ? "exam" : "drill";
+    if (!cdtPack) {
+      // ponytail: full L/R/W papers are exam assigns; parts/q-ranges stay drill
+      var fullPaper = /^(cambridge-\d+-test-\d+(-reading|-writing)?|secret-set-\d+(-reading)?)$/.test(item.id || "");
+      cdtPack = (cdtSuite || fullPaper) ? "exam" : "drill";
+    }
     try {
       var u = new URL(location.href);
       u.searchParams.set("cdt", "1");

@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260902secret4";
+  var CONTENT_VER = "20260904fix1";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -475,11 +475,11 @@ window.YYSD = (function () {
   // cdtPack from teacher assign: drill | exam | "" (infer)
   function cambridgeCdtQs(itemId, linkedIds, cdtPack) {
     var id = String(itemId || "");
-    if (!/^cambridge-\d+-test-\d+(-reading(-p\d+(-q\d+-\d+)?)?|-writing|-s\d+(-q\d+-\d+)?)?$/.test(id)) return "";
+    if (!/^(cambridge-\d+-test-\d+(-reading(-p\d+(-q\d+-\d+)?)?|-writing|-s\d+(-q\d+-\d+)?)?|secret-set-\d+(-reading(-p\d+(-q\d+-\d+)?)?|-s\d+(-q\d+-\d+)?)?)$/.test(id)) return "";
     var base = "";
-    if (/^cambridge-\d+-test-\d+$/.test(id)) base = id;
+    if (/^cambridge-\d+-test-\d+$/.test(id) || /^secret-set-\d+$/.test(id)) base = id;
     else {
-      var m = id.match(/^(cambridge-\d+-test-\d+)(?:-reading(?:-p\d+(?:-q\d+-\d+)?)?|-writing|-s\d+(?:-q\d+-\d+)?)$/);
+      var m = id.match(/^(cambridge-\d+-test-\d+|secret-set-\d+)(?:-reading(?:-p\d+(?:-q\d+-\d+)?)?|-writing|-s\d+(?:-q\d+-\d+)?)$/);
       if (m) base = m[1];
     }
     var ids = linkedIds || [];

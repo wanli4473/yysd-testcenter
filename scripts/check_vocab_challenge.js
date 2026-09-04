@@ -53,6 +53,8 @@ assert.ok(modeJs.indexOf("teacher-mode-picker.html") >= 0 || modeJs.indexOf("has
 assert.ok(modeJs.indexOf("教室管理区") >= 0, "admin mode label");
 var authJs = read("assets/js/auth.js");
 assert.ok(authJs.indexOf('localStorage.getItem("yysd:teacher:mode") !== "site"') >= 0, "no auto site-mode on student pages");
+assert.ok(authJs.indexOf("isTeacherPage() && localStorage.getItem(TEACHER_TOKEN_KEY)") >= 0, "teacher pages win isTeacher");
+assert.ok(read("login.html").indexOf("leftover student JWT must not skip the form") >= 0, "login stays for teacher next");
 assert.ok(ui.indexOf("网站功能区") >= 0, "teacher hub hint");
 var zone = read("assets/js/zone.js");
 assert.ok(modeJs.indexOf("writeStudentSession") >= 0, "picker writes student token without auth.js");

@@ -316,6 +316,11 @@ window.YYSD_AUTH = (function () {
   function isTeacher() {
     try {
       if (isTeacherSiteMode()) return false;
+      // teacher portal: teacher JWT wins (leftover student JWT must not sync/wipe)
+      if (isTeacherPage() && localStorage.getItem(TEACHER_TOKEN_KEY) &&
+          localStorage.getItem("yysd:teacher:mode") !== "site") {
+        return true;
+      }
       // student session wins on student-facing pages (avoids dashboard bounce)
       if (localStorage.getItem(TOKEN_KEY)) return false;
       return !!localStorage.getItem(TEACHER_TOKEN_KEY);
