@@ -25,7 +25,7 @@ window.YYSD_AUTH = (function () {
   var PUBLIC_PAGES = {
     "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
     "agreement.html": 1, "privacy.html": 1, "report.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
-    "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1
+    "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1, "maintenance.html": 1
   };
   var ORG_KEY = "yysd:org";
 
@@ -1034,7 +1034,7 @@ window.YYSD_AUTH = (function () {
   var PUBLIC = {
     "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
     "agreement.html": 1, "privacy.html": 1, "report.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
-    "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1
+    "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1, "maintenance.html": 1
   };
   var name = location.pathname.split("/").filter(Boolean).pop() || "index.html";
   if (PUBLIC[name]) return;

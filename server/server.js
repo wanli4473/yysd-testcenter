@@ -469,6 +469,35 @@ function isAdminPhone(phone) {
   return ADMIN_PHONES.indexOf(p) >= 0;
 }
 
+var MAINT_FILE = path.join(dataDir, "maintenance.json");
+var MAINT_PHONES = ["15901754473", "18956023079"];
+function isMaintPhone(phone) {
+  return MAINT_PHONES.indexOf(String(phone || "").replace(/\D/g, "")) >= 0;
+}
+function readMaintOn() {
+  try { return !!JSON.parse(fs.readFileSync(MAINT_FILE, "utf8")).on; } catch (e) { return false; }
+}
+function writeMaintOn(on) {
+  fs.writeFileSync(MAINT_FILE, JSON.stringify({ on: !!on }));
+}
+function peekAuthUser(req) {
+  var h = req.headers.authorization || "";
+  var token = h.indexOf("Bearer ") === 0 ? h.slice(7) : "";
+  if (!token || !JWT_SECRET) return null;
+  try { return jwt.verify(token, JWT_SECRET); } catch (e) { return null; }
+}
+function maintBypass(req) {
+  var u = peekAuthUser(req);
+  return !!(u && isMaintPhone(u.phone));
+}
+function maintApiOpen(p) {
+  if (p === "/api/maintenance" || p === "/api/health" || p === "/api/tenant/bootstrap") return true;
+  if (/^\/api\/auth\/(login|register|send-code|reset-password)$/.test(p)) return true;
+  if (/^\/api\/teacher\/(login|register)$/.test(p)) return true;
+  if (/^\/api\/tenant\/invite\//.test(p)) return true;
+  return false;
+}
+
 function resolveRequestOrg(req) {
   var slug = String(req.headers["x-tenant-slug"] || "").toLowerCase().trim();
   if (!slug) {
@@ -889,6 +918,13 @@ app.use(cors({
   }
 }));
 app.use("/uploads", express.static(uploadsRoot, { maxAge: "7d" }));
+app.use(function (req, res, next) {
+  if (req.path.indexOf("/api/") !== 0) return next();
+  if (!readMaintOn()) return next();
+  if (maintApiOpen(req.path)) return next();
+  if (maintBypass(req)) return next();
+  return res.status(503).json({ error: "网站更新中，别急啊，在弄了", maintenance: true });
+});
 
 var DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY || "";
 var DASHSCOPE_MODEL = process.env.DASHSCOPE_MODEL || "qwen-plus";
@@ -1282,6 +1318,16 @@ function buildWritingGradeSystem(taskType, promptBody, chartBlock) {
 
 app.get("/api/health", function (req, res) {
   res.json({ ok: true, service: "yysd-api", ai: !!DASHSCOPE_KEY });
+});
+
+app.get("/api/maintenance", function (req, res) {
+  var on = readMaintOn();
+  res.json({ ok: true, on: on, allow: !on || maintBypass(req) });
+});
+
+app.post("/api/maintenance", platformAuthMiddleware, function (req, res) {
+  writeMaintOn(!!(req.body && req.body.on));
+  res.json({ ok: true, on: readMaintOn() });
 });
 
 app.get("/api/tenant/bootstrap", function (req, res) {
@@ -4512,6 +4558,11 @@ if (require.main === module) {
   console.assert(isAdminPhone("15901754473") === true);
   console.assert(isAdminPhone("15609693333") === true);
   console.assert(isAdminPhone("13800138000") === false);
+  console.assert(isMaintPhone("15901754473") === true);
+  console.assert(isMaintPhone("18956023079") === true);
+  console.assert(isMaintPhone("15609693333") === false);
+  console.assert(maintApiOpen("/api/auth/login") === true);
+  console.assert(maintApiOpen("/api/scores") === false);
   console.assert(tenant.normalizeSlug("acme-edu") === "acme-edu");
   console.assert(tenant.normalizeSlug("www") === null);
   console.assert(tenant.slugFromHost("acme.youyisida.com") === "acme");

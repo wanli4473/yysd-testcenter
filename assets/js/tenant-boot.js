@@ -21,6 +21,7 @@
         "teacher-vocab-challenge.html": 1,
         "admin-assign.html": 1,
         "platform.html": 1,
+        "maintenance.html": 1,
         "agreement.html": 1,
         "privacy.html": 1
       };
@@ -28,6 +29,33 @@
         location.replace(mode === "admin" ? "teacher.html" : "teacher-mode-picker.html");
         return;
       }
+    }
+  } catch (e) {}
+
+  // ponytail: maintenance gate — only platform admin phones pass while on
+  try {
+    var maintPage = page || (function () {
+      var p = location.pathname.split("/").filter(Boolean);
+      return p.length ? p[p.length - 1] : "index.html";
+    })();
+    var maintSkip = {
+      "maintenance.html": 1, "login.html": 1, "register.html": 1,
+      "forgot-password.html": 1, "teacher-login.html": 1, "teacher-register.html": 1
+    };
+    if (!maintSkip[maintPage]) {
+      var apiBase = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+        ? (location.protocol + "//" + location.hostname + ":3000")
+        : "https://api.youyisida.com";
+      var tok = teacherTok || "";
+      try { if (!tok) tok = localStorage.getItem("yysd:auth:token") || ""; } catch (e2) {}
+      var headers = {};
+      if (tok) headers.Authorization = "Bearer " + tok;
+      fetch(apiBase + "/api/maintenance", { headers: headers })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d && d.on && !d.allow) location.replace("maintenance.html");
+        })
+        .catch(function () {});
     }
   } catch (e) {}
 
