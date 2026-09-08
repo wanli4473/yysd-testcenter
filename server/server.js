@@ -743,18 +743,27 @@ function readAssignmentHtml(eventId) {
   }
 }
 
+function isExplainExerciseId(id) {
+  return /-explain$/i.test(String(id || ""));
+}
+
+function practiceExerciseIds(ids) {
+  return (ids || []).filter(function (id) { return !isExplainExerciseId(id); });
+}
+
 function autoCompleteAssignments(studentId, itemId, assignmentEventId) {
   var rows = stmts.listOpenAssignmentsForStudent.all(studentId);
   var scoreRows = stmts.listScores.all(studentId);
   var scored = {};
   scoreRows.forEach(function (r) { scored[r.item_id] = 1; });
-  scored[itemId] = 1;
+  if (!isExplainExerciseId(itemId)) scored[itemId] = 1;
   var now = new Date().toISOString();
   rows.forEach(function (row) {
     var ids = [];
     try { ids = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
-    if (!ids.length) return;
-    var allDone = ids.every(function (id) { return scored[id]; });
+    var need = practiceExerciseIds(ids);
+    if (!need.length) return;
+    var allDone = need.every(function (id) { return scored[id]; });
     if (allDone) stmts.setTaskStatus.run("COMPLETED", now, row.id, studentId);
   });
   // ponytail: upload HTML fallback — linked_exercise_ids empty/missing still completes via event id
@@ -2440,13 +2449,14 @@ app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
     var stu = stmts.findUserById.get(s.student_id);
     var scored = {};
     stmts.listScores.all(s.student_id).forEach(function (r) { scored[r.item_id] = 1; });
-    var doneIds = exerciseIds.filter(function (xid) { return scored[xid]; });
+    var practiceIds = isVocabPack ? exerciseIds : practiceExerciseIds(exerciseIds);
+    var doneIds = practiceIds.filter(function (xid) { return scored[xid]; });
     var quizResult = null;
     if (pack === "vocab-quiz" && s.result_json) {
       try { quizResult = JSON.parse(s.result_json); } catch (e) { quizResult = null; }
     }
     var vqDone = 0;
-    var vqTotal = isVocabPack ? Math.max(1, exerciseIds.length) : exerciseIds.length;
+    var vqTotal = isVocabPack ? Math.max(1, exerciseIds.length) : practiceIds.length;
     if (pack === "vocab-quiz") {
       if (s.status === "COMPLETED") vqDone = vqTotal;
       else if (quizResult && quizResult.passedLists) {
@@ -2468,7 +2478,7 @@ app.get("/api/calendar/events/:id", teacherAuthMiddleware, function (req, res) {
           : (s.status === "COMPLETED" ? exerciseIds.slice() : []))
         : doneIds,
       exerciseDone: isVocabPack ? vqDone : doneIds.length,
-      exerciseTotal: isVocabPack ? vqTotal : exerciseIds.length,
+      exerciseTotal: isVocabPack ? vqTotal : practiceIds.length,
       quizResult: quizResult
     };
   });
@@ -2641,9 +2651,10 @@ function calendarEventsForStudent(studentId) {
     try { exerciseIds = JSON.parse(row.linked_exercise_ids || "[]"); } catch (e) {}
     var pack = String(row.cdt_pack || "").toLowerCase();
     var isVocabPack = pack === "vocab-quiz" || pack === "vocab-learn";
-    var doneIds = exerciseIds.filter(function (xid) { return scored[xid]; });
+    var practiceIds = isVocabPack ? exerciseIds : practiceExerciseIds(exerciseIds);
+    var doneIds = practiceIds.filter(function (xid) { return scored[xid]; });
     var doneN = isVocabPack ? (row.task_status === "COMPLETED" ? 1 : 0) : doneIds.length;
-    var totalN = isVocabPack ? 1 : exerciseIds.length;
+    var totalN = isVocabPack ? 1 : practiceIds.length;
     var passedListIds = [];
     if (pack === "vocab-quiz") {
       totalN = Math.max(1, exerciseIds.length);

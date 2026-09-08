@@ -1358,6 +1358,13 @@
   }
 
   /** This page-load only — never treat prior localStorage scores as "already submitted" */
+  function isExplainMode() {
+    try {
+      var q = new URLSearchParams(location.search);
+      return q.get("explain") === "1" || /-explain$/i.test(String(q.get("id") || ""));
+    } catch (e) { return false; }
+  }
+
   function alreadyScoredThisPaper() {
     if (state.scoredThisSession) return true;
     try {
@@ -1405,6 +1412,12 @@
       else if (typeof win.confirmSubmit === "function") win.confirmSubmit();
       else win.postMessage({ type: "yysd:time-up" }, "*");
     } catch (e) { /* ignore */ }
+    // ponytail: 详解不发 yysd:score — Finish 只出批改
+    if (isExplainMode()) {
+      state.scoredThisSession = true;
+      setTimeout(finish, 300);
+      return;
+    }
     // ponytail: longer fallback if paper never posts score — still hop so student isn't stuck
     setTimeout(finish, 12000);
   }
@@ -1530,11 +1543,13 @@
     var hint = document.getElementById("v-hint");
     if (hint) {
       hint.hidden = false;
-      hint.textContent = state.pack === "drill"
-        ? (isListening(state.item)
-          ? "练习已交卷 · 成绩单与解析如下；可用顶部播放器回放听力。"
-          : "练习已交卷 · 成绩单与解析如下。")
-        : "模考已交卷 · 下方为本次作答与解析。";
+      hint.textContent = isExplainMode()
+        ? "详解批改如下，不计入成绩。"
+        : (state.pack === "drill"
+          ? (isListening(state.item)
+            ? "练习已交卷 · 成绩单与解析如下；可用顶部播放器回放听力。"
+            : "练习已交卷 · 成绩单与解析如下。")
+          : "模考已交卷 · 下方为本次作答与解析。");
     }
   }
 

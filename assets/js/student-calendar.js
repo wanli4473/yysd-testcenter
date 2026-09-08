@@ -73,6 +73,15 @@
     return it ? Y.displayTitle(it) : xid;
   }
 
+  function explainOnly(ev) {
+    return !!(Y.isExplainOnlyAssignment && Y.isExplainOnlyAssignment((ev && ev.linkedExerciseIds) || []));
+  }
+
+  function statusLabel(ev) {
+    if (explainOnly(ev)) return "详解";
+    return STATUS_LABEL[ev.status] || ev.status;
+  }
+
   function parseVocabLinked(linkedIds) {
     var refs = [];
     (linkedIds || []).forEach(function (raw) {
@@ -193,6 +202,7 @@
   function renderStats() {
     var pending = 0, done = 0, overdue = 0;
     events.forEach(function (ev) {
+      if (explainOnly(ev)) return;
       if (ev.status === "COMPLETED") done++;
       else if (ev.status === "OVERDUE") overdue++;
       else pending++;
@@ -293,8 +303,8 @@
       return;
     }
     var sorted = events.slice().sort(function (a, b) {
-      var oa = a.status === "OVERDUE" ? 0 : (a.status === "PENDING" ? 1 : 2);
-      var ob = b.status === "OVERDUE" ? 0 : (b.status === "PENDING" ? 1 : 2);
+      var oa = explainOnly(a) ? 3 : (a.status === "OVERDUE" ? 0 : (a.status === "PENDING" ? 1 : 2));
+      var ob = explainOnly(b) ? 3 : (b.status === "OVERDUE" ? 0 : (b.status === "PENDING" ? 1 : 2));
       if (oa !== ob) return oa - ob;
       return String(a.dueTime || a.startTime || "").localeCompare(String(b.dueTime || b.startTime || ""));
     });
@@ -302,7 +312,7 @@
       var ids = ev.linkedExerciseIds || [];
       var doneN = ev.exerciseDone || 0;
       var totalN = ev.exerciseTotal != null ? ev.exerciseTotal : ids.length;
-      var prog = totalN
+      var prog = (!explainOnly(ev) && totalN)
         ? '<span class="cal-progress__txt">' + doneN + "/" + totalN + " 练习</span>"
         : "";
       var cta = ev.status === "COMPLETED"
@@ -311,14 +321,15 @@
             ((ev.cdtPack === "vocab-quiz" || ev.cdtPack === "vocab-learn") && ids.length)
           ? '<a class="btn btn--primary btn--sm" href="' + examHref(ids[0], ev.id, ids, ev.cdtPack) + '">' +
               (ev.cdtPack === "vocab-quiz" ? "开始检测"
-                : (ev.cdtPack === "vocab-learn" ? "开始学习" : "去做")) + "</a>"
+                : (ev.cdtPack === "vocab-learn" ? "开始学习"
+                  : (Y.isExplainId && Y.isExplainId(ids[0]) ? "进入详解" : "去做"))) + "</a>"
           : '<button type="button" class="btn btn--primary btn--sm" data-open="' + ev.id + '">去做</button>');
       return '<article class="cal-todo-row ' + statusClass(ev.status) + '">' +
         '<div class="cal-todo-row__main">' +
           '<div class="cal-todo-row__tags">' +
             '<span class="cal-tag ' + typeClass(ev.eventType) + '">' + esc(TYPE_LABEL[ev.eventType] || "") + "</span>" +
             '<span class="cal-status-pill ' + statusClass(ev.status) + '">' +
-              esc(STATUS_LABEL[ev.status] || ev.status) + "</span>" +
+              esc(statusLabel(ev)) + "</span>" +
           "</div>" +
           "<h3>" + esc(ev.title) + "</h3>" +
           '<p class="cal-card__meta">' +
@@ -378,7 +389,8 @@
     var exList = linkedIds.map(function (xid) {
       var title = catalogTitle(xid, ev.attachmentName, pack);
       var kind = (!isVocab && Y.drillKindLabel) ? Y.drillKindLabel(xid) : "";
-      var done = isVocab ? ev.status === "COMPLETED" : !!doneSet[xid];
+      var explain = !!(Y.isExplainId && Y.isExplainId(xid));
+      var done = isVocab ? ev.status === "COMPLETED" : (!explain && !!doneSet[xid]);
       var href = examHref(xid, ev.id, linkedIds, ev.cdtPack);
       return '<li class="cal-ex-row' + (done ? " is-done" : "") + '">' +
         "<span><b>" + esc(title) + "</b>" +
@@ -388,7 +400,8 @@
         (done
           ? '<a class="btn btn--ghost btn--sm" href="' + href + '">再看一次</a>'
           : '<a class="btn btn--primary btn--sm" href="' + href + '">' +
-              (pack === "vocab-quiz" ? "开始检测" : (pack === "vocab-learn" ? "开始学习" : "立即去做")) +
+              (pack === "vocab-quiz" ? "开始检测" : (pack === "vocab-learn" ? "开始学习"
+                : (explain ? "进入详解" : "立即去做"))) +
             "</a>") +
         "</li>";
     }).join("");
@@ -396,7 +409,9 @@
     var totalN = ev.exerciseTotal != null ? ev.exerciseTotal : (ev.linkedExerciseIds || []).length;
     var doneN = ev.exerciseDone || 0;
     var progHint = "";
-    if (ev.status !== "COMPLETED" && totalN) {
+    if (explainOnly(ev)) {
+      progHint = '<p class="profile-hint">详解可答题看对错，不记成绩、不算完成。</p>';
+    } else if (ev.status !== "COMPLETED" && totalN) {
       progHint = isVocab
         ? (pack === "vocab-quiz"
           ? '<p class="profile-hint">闯关通过后，任务将自动标记为已完成。</p>'
@@ -407,11 +422,11 @@
       '<p><span class="cal-tag ' + typeClass(ev.eventType) + '">' +
         esc(TYPE_LABEL[ev.eventType] || "") + "</span> " +
         '<span class="cal-status-pill ' + statusClass(ev.status) + '">' +
-        esc(STATUS_LABEL[ev.status] || ev.status) + "</span></p>" +
+        esc(statusLabel(ev)) + "</span></p>" +
       "<p>" + esc(ev.description || "老师未填写额外说明。") + "</p>" +
       '<p class="cal-card__meta">开始：' + esc(fmtDate(ev.startTime)) +
         " · 截止：" + esc(fmtDate(ev.dueTime)) +
-        (totalN ? " · 练习进度 " + doneN + "/" + totalN : "") + "</p>" +
+        ((!explainOnly(ev) && totalN) ? " · 练习进度 " + doneN + "/" + totalN : "") + "</p>" +
       (exList
         ? "<h3>关联练习</h3><ul class=\"cal-ex-list\">" + exList + "</ul>" + progHint
         : (ev.eventType === "ASSIGNMENT"

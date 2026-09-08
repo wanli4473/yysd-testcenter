@@ -6,7 +6,7 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260904fix1";
+  var CONTENT_VER = "20260908explain1";
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -288,13 +288,35 @@ window.YYSD = (function () {
     return data;
   }
 
+  function isExplainId(id) {
+    return /-explain$/i.test(String(id || ""));
+  }
+
+  function baseExerciseId(id) {
+    return String(id || "").replace(/-explain$/i, "");
+  }
+
+  function practiceExerciseIds(ids) {
+    return (ids || []).filter(function (id) { return !isExplainId(id); });
+  }
+
+  function isExplainOnlyAssignment(ids) {
+    var all = ids || [];
+    return all.length > 0 && practiceExerciseIds(all).length === 0;
+  }
+
   function drillKindLabel(id) {
-    var row = _taxById[String(id || "")];
-    if (!row) return "";
+    var raw = String(id || "");
+    var explain = isExplainId(raw);
+    var row = _taxById[baseExerciseId(raw)];
+    if (!row) return explain ? "详解" : "";
     var bits = [];
     if (row.qType) bits.push("题型：" + row.qType);
     if (row.scene) bits.push("场景：" + row.scene);
-    return bits.join(" · ");
+    var label = bits.join(" · ");
+    if (explain) return label ? ("详解 · " + label) : "详解";
+    if (row.qType && raw.indexOf("-reading-") < 0) return label ? ("练习 · " + label) : "练习";
+    return label;
   }
 
   function loadTaxonomyJson(file) {
@@ -464,17 +486,23 @@ window.YYSD = (function () {
     return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]) };
   }
 
-  // 题型练习: cambridge-21-test-1-s1-q1-6 / cambridge-21-test-1-reading-p1-q1-7 / secret-set-1-reading-p1-q1-13
+  // 题型练习: cambridge-21-test-1-s1-q1-6 / …-q1-6-explain / secret-set-1-reading-p1-q1-13
   function parseGroupId(id) {
-    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)-q(\d+)-(\d+)$/i);
+    var raw = String(id || "");
+    var m = raw.match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)-q(\d+)-(\d+)(?:-explain)?$/i);
     if (!m) return null;
-    return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]), qFrom: Number(m[4]), qTo: Number(m[5]) };
+    return {
+      parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]),
+      qFrom: Number(m[4]), qTo: Number(m[5]), explain: /-explain$/i.test(raw)
+    };
   }
 
   // Calendar / dashboard: Cambridge L/R/W (full or part) → CDT chrome query
   // cdtPack from teacher assign: drill | exam | "" (infer)
   function cambridgeCdtQs(itemId, linkedIds, cdtPack) {
     var id = String(itemId || "");
+    var explain = /-explain$/i.test(id);
+    if (explain) id = id.replace(/-explain$/i, "");
     if (!/^(cambridge-\d+-test-\d+(-reading(-p\d+(-q\d+-\d+)?)?|-writing|-s\d+(-q\d+-\d+)?)?|secret-set-\d+(-reading(-p\d+(-q\d+-\d+)?)?|-s\d+(-q\d+-\d+)?)?)$/.test(id)) return "";
     var base = "";
     if (/^cambridge-\d+-test-\d+$/.test(id) || /^secret-set-\d+$/.test(id)) base = id;
@@ -489,8 +517,9 @@ window.YYSD = (function () {
       return "&cdt=1&pack=exam&suite=1";
     }
     var pack = String(cdtPack || "").toLowerCase();
-    if (pack === "exam") return "&cdt=1&pack=exam";
-    return "&cdt=1&pack=drill";
+    var qs = pack === "exam" ? "&cdt=1&pack=exam" : "&cdt=1&pack=drill";
+    if (explain) qs += "&explain=1";
+    return qs;
   }
 
   function makePartItem(parent, kind, num) {
@@ -507,7 +536,7 @@ window.YYSD = (function () {
     });
   }
 
-  function makeGroupItem(parent, num, qFrom, qTo) {
+  function makeGroupItem(parent, num, qFrom, qTo, explain) {
     if (!parent || !num || !qFrom || !qTo) return null;
     var kind = parent.subject === "cambridge-reading" ? "p" : "s";
     var part = makePartItem(parent, kind, num);
@@ -516,6 +545,11 @@ window.YYSD = (function () {
     part.title = part.title + " Q" + qFrom + "–" + qTo;
     part.qFrom = qFrom;
     part.qTo = qTo;
+    if (explain) {
+      part.id += "-explain";
+      part.title += " · 详解";
+      part.explain = true;
+    }
     return part;
   }
 
@@ -530,7 +564,7 @@ window.YYSD = (function () {
       for (var gi = 0; gi < list.length; gi++) {
         if (list[gi].id === group.parentId) { gParent = list[gi]; break; }
       }
-      return gParent ? makeGroupItem(gParent, group.num, group.qFrom, group.qTo) : null;
+      return gParent ? makeGroupItem(gParent, group.num, group.qFrom, group.qTo, group.explain) : null;
     }
     var part = parsePartId(id);
     if (!part) return null;
@@ -1276,6 +1310,8 @@ window.YYSD = (function () {
     needsVocabBridge: needsVocabBridge,
     vocabListNo: vocabListNo, vocabDisplayTitle: vocabDisplayTitle,     displayTitle: displayTitle,
     parsePartId: parsePartId, parseGroupId: parseGroupId,
+    isExplainId: isExplainId, baseExerciseId: baseExerciseId,
+    practiceExerciseIds: practiceExerciseIds, isExplainOnlyAssignment: isExplainOnlyAssignment,
     makePartItem: makePartItem, makeGroupItem: makeGroupItem, resolveItem: resolveItem,
     cambridgeCdtQs: cambridgeCdtQs,
     expandAssignableParts: expandAssignableParts, partSearchText: partSearchText,

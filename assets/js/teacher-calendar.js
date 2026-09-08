@@ -34,7 +34,7 @@
   var CAT_HINT = {
     vocab: "单词检测：可跨词书勾选多个 List；学生逐个 List 闯关，全部通过才算完成。",
     part: "剑雅单项：先选册与 Test，再勾 Section / Passage（练习规则，可续做）。",
-    qtype: "听力题型练习：选题型与册，再勾题组（只出该组题，音频仍是整段 Part）。",
+    qtype: "听力题型：选题型与册，再分别勾「练习」或「详解」（可同时勾；详解不记成绩、不算完成）。",
     scene: "听力场景练习：选场景与册，再勾 Part（整段练习规则）。",
     rqtype: "阅读题型练习：选题型与册，再勾题组（只出该组题，文章仍是整篇 Passage）。",
     rscene: "阅读场景练习：选场景与册，再勾 Passage（整篇练习规则）。",
@@ -822,11 +822,22 @@
       }
       rows = rows.slice(0, searching ? 240 : 200);
       html = rows.map(function (row) {
-        var checked = selectedExercises[row.id] ? " checked" : "";
         var title = isQTypeBrowse() ? groupLabel(row) : partSceneLabel(row);
         var small = isQTypeBrowse()
           ? (row.qType + (row.scene ? (" · " + row.scene) : "") + (row.diff ? (" · " + row.diff) : ""))
           : (row.scene || (isReadingTax() ? "场景 Passage" : "场景 Part"));
+        if (exerciseCat === "qtype") {
+          var xId = row.id + "-explain";
+          var pOn = selectedExercises[row.id] ? " checked" : "";
+          var xOn = selectedExercises[xId] ? " checked" : "";
+          return '<div class="cal-check cal-check--qtype">' +
+            "<span><b>" + esc(title) + "</b><small>" + esc(small) + "</small></span>" +
+            '<span class="cal-duals">' +
+              '<label class="cal-dual"><input type="checkbox" data-exercise="' + esc(row.id) + '"' + pOn + ">练习</label>" +
+              '<label class="cal-dual"><input type="checkbox" data-exercise="' + esc(xId) + '"' + xOn + ">详解</label>" +
+            "</span></div>";
+        }
+        var checked = selectedExercises[row.id] ? " checked" : "";
         return '<label class="cal-check">' +
           '<input type="checkbox" data-exercise="' + esc(row.id) + '"' + checked + ">" +
           "<span><b>" + esc(title) + "</b><small>" + esc(small) + "</small></span></label>";
@@ -1039,12 +1050,17 @@
             ? (s.exerciseDone || 0) + "/" + s.exerciseTotal + " 练习已完成"
             : "—";
         }
+        var stLabel = STATUS_LABEL[st] || st;
+        if (Y.isExplainOnlyAssignment && Y.isExplainOnlyAssignment(ev.linkedExerciseIds || [])) {
+          stLabel = "详解";
+          prog = "不记成绩、不算完成";
+        }
         return "<tr class=\"" + statusClass(st) + "\">" +
           "<td><b>" + esc(s.displayName || s.phone) + "</b>" +
             (s.displayName ? "<small class=\"cal-phone\">" + esc(s.phone) + "</small>" : "") +
           "</td>" +
           '<td><span class="cal-status-pill ' + statusClass(st) + '">' +
-            esc(STATUS_LABEL[st] || st) + "</span></td>" +
+            esc(stLabel) + "</span></td>" +
           "<td>" + esc(prog) + "</td>" +
           "<td>" + esc(fmtDate(s.completedAt)) + "</td></tr>";
       }).join("");

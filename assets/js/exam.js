@@ -37,6 +37,7 @@
   if (cdtPack !== "drill" && cdtPack !== "exam") cdtPack = "";
   var cdtSuite = qs.get("suite") === "1";
   if (cdtSuite && !cdtPack) cdtPack = "exam";
+  var explainMode = qs.get("explain") === "1" || /-explain$/i.test(String(id || ""));
 
   if (!id) { fail("缺少内容编号。"); return; }
 
@@ -464,7 +465,10 @@
         (!isStudy && item.duration ? item.duration + " 分钟" : "")].filter(Boolean).join(" · ");
     }
 
-    if (hintEl && (Y.isReadingExam(item) || item.subject === "cambridge-listening")) {
+    if (hintEl && (explainMode || (item && item.explain))) {
+      hintEl.hidden = false;
+      hintEl.textContent = "详解可答题看对错，不记成绩、不算完成";
+    } else if (hintEl && (Y.isReadingExam(item) || item.subject === "cambridge-listening")) {
       hintEl.hidden = false;
       hintEl.textContent = "选中文字可高亮 · 右键做笔记";
     }
@@ -493,6 +497,7 @@
         src += "&qFrom=" + encodeURIComponent(item.qFrom) + "&qTo=" + encodeURIComponent(item.qTo);
       }
     }
+    if (explainMode || (item && item.explain)) src += "&explain=1";
     var vocabMode = qs.get("vocabMode");
     if (vocabMode === "learn" || vocabMode === "test") {
       src += "&vocabMode=" + encodeURIComponent(vocabMode);
@@ -507,7 +512,7 @@
     if (!isStudy && item.duration > 0) {
       left = item.duration * 60;
       // ponytail: suite CDT must not inherit practice-draft elapsed time
-      if (!cdtWanted) {
+      if (!cdtWanted && !explainMode && !(item && item.explain)) {
         var elapsed = practiceDraftElapsed();
         if (elapsed) left = Math.max(0, left - elapsed);
       }
@@ -675,6 +680,7 @@
     script.src = base + "assets/js/exam-bridge.js?v=" + v + (cdtWanted ? "cdt29" : "");
     script.dataset.mode = item.subject === "cambridge-writing" ? "writing" : "exam";
     script.dataset.examId = item.id;
+    if (explainMode || (item && item.explain)) script.dataset.explain = "1";
     if (cdtWanted) {
       script.dataset.cdt = "1";
       var pack = (window.YYSD_CDT && YYSD_CDT.getPack && YYSD_CDT.getPack()) || cdtPack || "exam";
@@ -911,6 +917,7 @@
     }
 
     if (d.type !== "yysd:score" || !item) return;
+    if (explainMode || item.explain) return;
 
     var key = scoreKeyOf(d);
     // ponytail: in-memory only — blocks same-submit echo; retake reloads exam.html and clears this

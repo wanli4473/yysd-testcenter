@@ -54,6 +54,32 @@
     return p === "drill" ? "drill" : "exam";
   }
 
+  function isExplainMode() {
+    if (script && script.dataset && script.dataset.explain === "1") return true;
+    try {
+      if (location.search && new URLSearchParams(location.search).get("explain") === "1") return true;
+    } catch (e0) { /* ignore */ }
+    try {
+      var ps = window.parent && window.parent.location && window.parent.location.search;
+      if (ps && new URLSearchParams(ps).get("explain") === "1") return true;
+    } catch (e1) { /* ignore */ }
+    return false;
+  }
+
+  function isExplainWide() {
+    return window.matchMedia && window.matchMedia("(min-width: 960px)").matches;
+  }
+
+  if (isExplainMode()) {
+    try {
+      var _post = window.parent.postMessage.bind(window.parent);
+      window.parent.postMessage = function (msg, target) {
+        if (msg && msg.type === "yysd:score") return;
+        return _post(msg, target);
+      };
+    } catch (ePost) { /* ignore */ }
+  }
+
   function assignQRange() {
     var from = Number((script && script.dataset.assignQFrom) || 0);
     var to = Number((script && script.dataset.assignQTo) || 0);
@@ -513,6 +539,7 @@
   }
 
   function postScore(payload) {
+    if (isExplainMode()) return;
     if (posted) return;
     posted = true;
     try {
@@ -956,6 +983,7 @@
   var saveBound = false;
 
   function loadDraft() {
+    if (isExplainMode()) return null;
     try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) { return null; }
   }
 
@@ -999,6 +1027,7 @@
   }
 
   function saveDraft() {
+    if (isExplainMode()) return;
     if (!isTesting()) return;
     if (pageGet("submitted")) return;
     if (pageGet("mode") === "exam") return;
@@ -1356,6 +1385,7 @@
             } catch (eT) { /* ignore */ }
           }
           afterStartRestore();
+          mountExplainTranscript();
         }, 0);
       }
       return ret;
@@ -1424,6 +1454,7 @@
   }
 
   function showResumeBanner() {
+    if (isExplainMode()) return;
     var draft = loadDraft();
     if (!draft || draft.mode === "exam" || !countAnswered(draft.answers)) return;
     var cover = document.getElementById("coverArea");
@@ -1478,6 +1509,171 @@
     if (!go()) setTimeout(go, 80);
   }
 
+  function transcriptSidecarUrl() {
+    var m = (location.pathname || "").match(/cambridge-(\d+)-test-(\d+)/i);
+    if (!m) return "";
+    return (location.pathname || "").replace(/[^/]+$/, "cambridge-" + m[1] + "-test-" + m[2] + "-transcript.json");
+  }
+
+  function sentencesInAudioWindow(data) {
+    var partNum = Number((script && script.dataset.assignPart) || 0);
+    if (!partNum) {
+      try { partNum = Number(new URLSearchParams(location.search).get("assignPart") || 0); } catch (e) { partNum = 0; }
+    }
+    var parts = (data && data.parts) || [];
+    var part = null;
+    for (var i = 0; i < parts.length; i++) {
+      if (Number(parts[i].section) === partNum) { part = parts[i]; break; }
+    }
+    if (!part) part = parts[0] || null;
+    var sents = (part && part.sentences) || [];
+    var w = assignedAudioWindow();
+    if (!w) return sents;
+    return sents.filter(function (s) {
+      return Number(s.end) > w.start && Number(s.start) < w.end;
+    });
+  }
+
+  function escTx(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function injectExplainTranscriptCss() {
+    if (document.getElementById("yysd-explain-css")) return;
+    var st = document.createElement("style");
+    st.id = "yysd-explain-css";
+    st.textContent =
+      ".yysd-explain-split{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;}" +
+      "#yysd-tx-pane{background:#fff;border:1px solid #e2e8f0;border-radius:12px;position:sticky;top:12px;" +
+        "max-height:calc(100vh - 24px);display:flex;flex-direction:column;box-shadow:0 4px 18px rgba(0,0,0,.04);}" +
+      "#yysd-tx-pane .transcript-head{display:flex;align-items:center;justify-content:space-between;gap:10px;" +
+        "padding:12px 16px;border-bottom:1px solid #eef2f7;flex-shrink:0;flex-wrap:wrap;}" +
+      "#yysd-tx-pane .th-title{font-size:14px;font-weight:700;color:#1b4f8a;}" +
+      "#yysd-tx-pane .transcript-toggles{display:flex;gap:12px;}" +
+      "#yysd-tx-pane .transcript-toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;" +
+        "color:#33475b;cursor:pointer;user-select:none;}" +
+      "#yysd-tx-pane .transcript-body{overflow:auto;padding:14px 16px 20px;line-height:1.75;font-size:14.5px;color:#243447;}" +
+      "#yysd-tx-pane .tx-sent{display:block;width:100%;text-align:left;border:none;background:transparent;" +
+        "padding:6px 8px;margin:0 0 2px;border-radius:8px;cursor:pointer;color:inherit;font:inherit;line-height:1.75;}" +
+      "#yysd-tx-pane .tx-sent:hover{background:#f0f6ff;}" +
+      "#yysd-tx-pane .tx-sent.active{background:#dbeafe;color:#0f3d7a;}" +
+      "#yysd-tx-pane .tx-en{display:block;}" +
+      "#yysd-tx-pane .tx-zh{display:none;color:#4b5d73;font-size:13.5px;margin-top:2px;}" +
+      "#yysd-tx-pane.show-en .tx-en{display:block;}" +
+      "#yysd-tx-pane.hide-en .tx-en{display:none;}" +
+      "#yysd-tx-pane.show-zh .tx-zh{display:block;}" +
+      "#yysd-tx-pane .tx-empty{color:#8a96a5;font-size:13.5px;padding:12px 4px;}" +
+      "@media (max-width:959px){.yysd-explain-split{display:block;}#yysd-tx-pane{display:none;}}";
+    document.head.appendChild(st);
+  }
+
+  function paintExplainToggles(pane) {
+    pane.classList.toggle("show-en", document.getElementById("yysd-tx-en").checked);
+    pane.classList.toggle("hide-en", !document.getElementById("yysd-tx-en").checked);
+    pane.classList.toggle("show-zh", document.getElementById("yysd-tx-zh").checked);
+  }
+
+  function seekExplainSentence(start) {
+    var player = document.getElementById("player");
+    if (!player) return;
+    var w = assignedAudioWindow();
+    var t = Number(start) || 0;
+    if (w) t = Math.max(w.start, Math.min(w.end - 0.05, t));
+    try { player.currentTime = t; } catch (e) { /* ignore */ }
+    player.play().catch(function () {});
+  }
+
+  function syncExplainHighlight(sents) {
+    var player = document.getElementById("player");
+    var body = document.getElementById("yysd-tx-body");
+    if (!player || !body || !sents || !sents.length) return;
+    var t = player.currentTime || 0;
+    var idx = -1;
+    for (var i = 0; i < sents.length; i++) {
+      if (t >= sents[i].start && t < sents[i].end) { idx = i; break; }
+      if (t >= sents[i].start) idx = i;
+    }
+    if (idx < 0) idx = 0;
+    var prev = body.querySelector(".tx-sent.active");
+    if (prev) prev.classList.remove("active");
+    var el = body.querySelector('.tx-sent[data-i="' + idx + '"]');
+    if (el) {
+      el.classList.add("active");
+      var br = body.getBoundingClientRect();
+      var er = el.getBoundingClientRect();
+      if (er.top < br.top + 8 || er.bottom > br.bottom - 8) {
+        el.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }
+
+  function renderExplainSentences(sents) {
+    var body = document.getElementById("yysd-tx-body");
+    var pane = document.getElementById("yysd-tx-pane");
+    if (!body || !pane) return;
+    if (!sents.length) {
+      body.innerHTML = '<p class="tx-empty">暂无原文</p>';
+      return;
+    }
+    body.innerHTML = sents.map(function (s, i) {
+      var zh = s.zh ? '<span class="tx-zh">' + escTx(s.zh) + "</span>" : "";
+      return '<button type="button" class="tx-sent" data-i="' + i + '" data-start="' + escTx(s.start) + '">' +
+        '<span class="tx-en">' + escTx(s.text || s.en || "") + "</span>" + zh + "</button>";
+    }).join("");
+    body.querySelectorAll(".tx-sent").forEach(function (btn) {
+      btn.addEventListener("click", function () { seekExplainSentence(btn.getAttribute("data-start")); });
+    });
+    var player = document.getElementById("player");
+    if (player && !player._yysdTxBound) {
+      player._yysdTxBound = true;
+      player.addEventListener("timeupdate", function () { syncExplainHighlight(sents); });
+    } else {
+      syncExplainHighlight(sents);
+    }
+  }
+
+  function mountExplainTranscript() {
+    if (!isExplainMode() || !isExplainWide()) return;
+    var test = document.getElementById("testArea");
+    if (!test || document.getElementById("yysd-tx-pane")) return;
+    if (test.style.display === "none") return;
+    injectExplainTranscriptCss();
+    var old = document.getElementById("transcriptPane");
+    if (old) old.style.display = "none";
+    var split = document.getElementById("practiceSplit");
+    if (split) split.classList.add("exam-mode");
+    var wrap = document.createElement("div");
+    wrap.id = "yysd-explain-split";
+    wrap.className = "yysd-explain-split";
+    test.parentNode.insertBefore(wrap, test);
+    wrap.appendChild(test);
+    var pane = document.createElement("aside");
+    pane.id = "yysd-tx-pane";
+    pane.className = "show-en";
+    pane.setAttribute("aria-label", "听力原文");
+    pane.innerHTML =
+      '<div class="transcript-head"><span class="th-title">原文</span>' +
+        '<span class="transcript-toggles">' +
+          '<label class="transcript-toggle"><input type="checkbox" id="yysd-tx-en" checked>原文</label>' +
+          '<label class="transcript-toggle"><input type="checkbox" id="yysd-tx-zh">译文</label>' +
+        "</span></div>" +
+      '<div class="transcript-body" id="yysd-tx-body"><p class="tx-empty">加载原文…</p></div>';
+    wrap.appendChild(pane);
+    document.getElementById("yysd-tx-en").addEventListener("change", function () { paintExplainToggles(pane); });
+    document.getElementById("yysd-tx-zh").addEventListener("change", function () { paintExplainToggles(pane); });
+    var url = transcriptSidecarUrl();
+    if (!url) { renderExplainSentences([]); return; }
+    fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("no sidecar");
+      return r.json();
+    }).then(function (data) {
+      renderExplainSentences(sentencesInAudioWindow(data));
+    }).catch(function () {
+      renderExplainSentences([]);
+    });
+  }
+
   function initDraft() {
     ensureBandHelpers();
     clipAssignedGroup();
@@ -1486,6 +1682,7 @@
     hookSubmitTest();
     hookBackToCover();
     bootAssignedPart();
+    mountExplainTranscript();
     if (!script || !script.dataset.assignPart) showResumeBanner();
     if (draftListenersBound) return;
     draftListenersBound = true;

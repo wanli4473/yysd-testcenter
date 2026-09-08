@@ -16,7 +16,7 @@ var thtml = fs.readFileSync("teacher-calendar.html", "utf8");
 assert(/writingPrompt1: promptForTask/.test(bridge), "writing score includes prompts");
 assert(/writingChartNote: chartNoteFromTest/.test(bridge), "writing score includes chart note");
 assert(/clearCdtWritingDraft/.test(bridge) && /cdtPack\(\) === "exam"/.test(bridge), "CDT clears writing draft on exam start");
-assert(/if \(!cdtWanted\)/.test(exam) && /practiceDraftElapsed/.test(exam), "CDT skips practice elapsed");
+assert(/practiceDraftElapsed/.test(exam) && /!cdtWanted && !explainMode/.test(exam), "CDT/explain skip practice elapsed");
 assert(/fullPaper/.test(exam) && /secret-set-\\d\+\(-reading\)\?/.test(exam), "assigned full secret paper defaults exam");
 assert(/function hopAfterSubmit/.test(cdt) && /timeUpHop/.test(cdt), "time-up hops suite");
 assert(/alreadyScoredThisPaper/.test(cdt), "re-Finish skips 12s wait when scored");
@@ -112,6 +112,7 @@ assert(qs("cambridge-16-test-4-reading-p3", ["cambridge-16-test-4-reading-p3"]) 
 assert(qs("cambridge-16-test-4-reading", ["cambridge-16-test-4-reading"], "exam") === "&cdt=1&pack=exam", "skill mock exam");
 assert(qs("cambridge-16-test-4-s2", ["cambridge-16-test-4-s2"]) === "&cdt=1&pack=drill", "listening section drill");
 assert(qs("cambridge-21-test-1-s1-q1-6", ["cambridge-21-test-1-s1-q1-6"]) === "&cdt=1&pack=drill", "qtype group drill");
+assert(qs("cambridge-21-test-1-s1-q1-6-explain", ["cambridge-21-test-1-s1-q1-6-explain"]) === "&cdt=1&pack=drill&explain=1", "qtype explain cdt");
 assert(qs("cambridge-21-test-1-reading-p1-q1-7", ["cambridge-21-test-1-reading-p1-q1-7"]) === "&cdt=1&pack=drill", "reading qtype group drill");
 assert(qs("cambridge-16-test-4", ["cambridge-16-test-4", "cambridge-16-test-4-reading", "cambridge-16-test-4-writing"]) === "&cdt=1&pack=exam&suite=1", "suite cdt");
 assert(qs("not-cambridge", []) === "", "non-cam empty");
@@ -126,6 +127,8 @@ var parseGroupId = Function(cfg.slice(pgStart, pgEnd) + "\nreturn parseGroupId;"
 var g = parseGroupId("cambridge-21-test-1-s1-q1-6");
 assert(g && g.parentId === "cambridge-21-test-1" && g.num === 1 && g.qFrom === 1 && g.qTo === 6, "parseGroupId fields");
 assert(!parseGroupId("cambridge-21-test-1-s1"), "parseGroupId ignores section id");
+var gx = parseGroupId("cambridge-21-test-1-s1-q1-6-explain");
+assert(gx && gx.parentId === "cambridge-21-test-1" && gx.explain, "parseGroupId explain");
 var rg = parseGroupId("cambridge-21-test-1-reading-p1-q1-7");
 assert(rg && rg.parentId === "cambridge-21-test-1-reading" && rg.kind === "p" && rg.num === 1 && rg.qFrom === 1 && rg.qTo === 7, "parseGroupId reading");
 assert(!parseGroupId("cambridge-21-test-1-reading-p1"), "parseGroupId ignores passage id");
@@ -138,6 +141,13 @@ var rItem = makeGroupItem({ id: "cambridge-21-test-1-reading", subject: "cambrid
 assert(rItem && rItem.id === "cambridge-21-test-1-reading-p1-q1-7" && rItem.partKind === "p", "makeGroupItem reading");
 var lItem = makeGroupItem({ id: "cambridge-21-test-1", subject: "cambridge-listening", title: "剑21" }, 1, 1, 6);
 assert(lItem && lItem.id === "cambridge-21-test-1-s1-q1-6" && lItem.partKind === "s", "makeGroupItem listening");
+var xItem = makeGroupItem({ id: "cambridge-21-test-1", subject: "cambridge-listening", title: "剑21" }, 1, 1, 6, true);
+assert(xItem && xItem.id === "cambridge-21-test-1-s1-q1-6-explain" && xItem.explain, "makeGroupItem explain");
+assert(/cal-dual/.test(teach) && /row\.id \+ "-explain"/.test(teach), "teacher qtype dual boxes");
+assert(/function isExplainExerciseId/.test(server) && /practiceExerciseIds/.test(server), "server skips explain complete");
+assert(/function isExplainMode/.test(bridge) && /mountExplainTranscript/.test(bridge), "bridge explain transcript");
+assert(/dataset.explain/.test(exam) && /src \+= "&explain=1"/.test(exam), "exam explain qs");
+assert(/20260908explain1/.test(cfg), "CONTENT_VER explain");
 
 var c9 = fs.readFileSync("library/mock/cambridge-listening/cambridge-9-test-4.html", "utf8");
 function c9clip(title, start, end) {

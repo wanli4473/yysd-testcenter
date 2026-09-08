@@ -78,6 +78,7 @@
   // ponytail: 最新布置(未见) > 今日截止 > 逾期 > 其余未完成
   function pickFocus(events) {
     var open = (events || []).filter(function (ev) {
+      if (Y.isExplainOnlyAssignment && Y.isExplainOnlyAssignment(ev.linkedExerciseIds || [])) return false;
       return ev.status === "PENDING" || ev.status === "OVERDUE";
     });
     if (!open.length) return null;
@@ -167,7 +168,7 @@
           href: "exam.html?id=" + encodeURIComponent(ids[0]) +
             "&event=" + encodeURIComponent(ev.id) +
             (Y.cambridgeCdtQs ? Y.cambridgeCdtQs(ids[0], ids, ev.cdtPack) : ""),
-          label: "开始这项"
+          label: (Y.isExplainId && Y.isExplainId(ids[0])) ? "进入详解" : "开始这项"
         };
       }
     }
@@ -185,6 +186,7 @@
   function renderFocus(events) {
     if (!focusEl) return;
     var openN = (events || []).filter(function (ev) {
+      if (Y.isExplainOnlyAssignment && Y.isExplainOnlyAssignment(ev.linkedExerciseIds || [])) return false;
       return ev.status === "PENDING" || ev.status === "OVERDUE";
     }).length;
     var hit = pickFocus(events);
