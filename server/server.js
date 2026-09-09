@@ -540,6 +540,18 @@ function allowedStudentIdsForTeacher(req) {
   return stmts.listTeacherStudentIds.all(req.user.sub).map(function (r) { return r.student_id; });
 }
 
+// 单词闯关：机构内任意老师可看/布置本机构学生（不要求师生绑定）
+function teacherCanAssignChallenge(req, studentId) {
+  var stu = stmts.findUserById.get(studentId);
+  return !!(stu && req.user && req.user.orgId && stu.org_id === req.user.orgId);
+}
+
+function listChallengeStudentIds(req) {
+  var orgId = req.user && req.user.orgId;
+  if (!orgId) return [];
+  return orgStmts.listStudentsByOrg.all(orgId).map(function (r) { return r.id; });
+}
+
 function auditPlatform(actorPhone, action, orgId, detail) {
   orgStmts.insertAudit.run(
     phoneDigits(actorPhone) || "",
@@ -4578,8 +4590,8 @@ vocabChallenge.mountRoutes(app, {
   db: db,
   authMiddleware: authMiddleware,
   repoRoot: path.join(__dirname, ".."),
-  canManageStudent: teacherCanManageStudent,
-  listManagedStudentIds: allowedStudentIdsForTeacher,
+  canManageStudent: teacherCanAssignChallenge,
+  listManagedStudentIds: listChallengeStudentIds,
   isPreviewStudent: teacherPreview.isPreviewUser
 });
 
