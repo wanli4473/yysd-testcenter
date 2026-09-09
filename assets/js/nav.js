@@ -46,9 +46,10 @@
       title: "听力",
       href: "zone.html?zone=mock&s=listening",
       links: [
-        { href: "zone.html?zone=mock&s=listening", label: "听力真题顺序练习" },
+        { href: "zone.html?zone=mock&s=listening", label: "听力真题顺序练习" }
+      ].concat((window.YYSD && window.YYSD.JINGTING_OPEN) ? [
         { href: "zone.html?zone=mock&s=jingting", label: "听力真题精听" }
-      ]
+      ] : [])
     },
     {
       key: "reading",

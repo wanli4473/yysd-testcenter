@@ -3167,6 +3167,35 @@ app.post("/api/speaking/grade", authMiddleware, async function (req, res) {
   }
 });
 
+var GLOSS_SYSTEM =
+  "Give the most common short Chinese gloss for this English word or short phrase, IELTS listening context. " +
+  'Reply ONLY JSON: {"word":"","gloss":"中文释义，不超过16字"}';
+var glossCachePath = path.join(__dirname, "jingting-gloss-cache.json");
+var glossCache = {};
+try { glossCache = JSON.parse(fs.readFileSync(glossCachePath, "utf8")) || {}; } catch (e) { glossCache = {}; }
+function saveGlossCache() {
+  try { fs.writeFileSync(glossCachePath, JSON.stringify(glossCache)); } catch (e) {}
+}
+
+app.post("/api/jingting/gloss", authMiddleware, async function (req, res) {
+  var gate = canUseAi(req.ip || "unknown");
+  if (!gate.ok) return res.status(429).json({ error: gate.msg });
+  var word = clipText(req.body && req.body.word, 40).replace(/[^A-Za-z' -]/g, "");
+  if (!word || word.length < 2) return res.status(400).json({ error: "缺少 word" });
+  var key = word.toLowerCase();
+  if (glossCache[key]) return res.json({ word: word, gloss: glossCache[key] });
+  try {
+    var d = parseJsonFromLLM(await qwenChat(GLOSS_SYSTEM, word));
+    var gloss = clipText(d.gloss, 40) || "暂无释义";
+    glossCache[key] = gloss;
+    saveGlossCache();
+    res.json({ word: word, gloss: gloss });
+  } catch (e) {
+    console.error("[yysd-api] jingting/gloss", e.message);
+    res.status(e.message.indexOf("未配置") >= 0 ? 503 : 502).json({ error: "查词失败，请稍后再试" });
+  }
+});
+
 app.post("/api/jingting/translate", authMiddleware, async function (req, res) {
   var gate = canUseAi(req.ip || "unknown");
   if (!gate.ok) return res.status(429).json({ error: gate.msg });

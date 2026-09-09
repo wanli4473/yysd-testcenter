@@ -6,7 +6,9 @@ window.YYSD = (function () {
   "use strict";
 
   // Bump when library HTML changes so exam iframe skips stale browser cache.
-  var CONTENT_VER = "20260908explain1";
+  var CONTENT_VER = "20260909jtopen";
+  // ponytail: 剑7/12 与剑10 T4P2 仍缺，目录只列出已有册
+  var JINGTING_OPEN = true;
   var WRONG_WORDS_KEY = "yysd:wrong-words";
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
@@ -81,9 +83,10 @@ window.YYSD = (function () {
     mock: [
       { key: "listening", label: "听力", subject: "cambridge-listening", desc: "听力真题顺序练习", skill: "listening",
         links: [
-          { label: "听力真题顺序练习", href: "zone.html?zone=mock&s=listening" },
+          { label: "听力真题顺序练习", href: "zone.html?zone=mock&s=listening" }
+        ].concat(JINGTING_OPEN ? [
           { label: "听力真题精听", href: "zone.html?zone=mock&s=jingting" }
-        ] },
+        ] : []) },
       { key: "reading", label: "阅读", subject: "cambridge-reading", desc: "阅读真题顺序练习", skill: "reading" },
       { key: "speaking", label: "口语", subject: "ielts-speaking", desc: "AI口语练习/模考", href: "speaking.html" },
       { key: "writing", label: "写作", subject: "cambridge-writing", desc: "写作真题顺序练习", skill: "writing",
@@ -481,7 +484,7 @@ window.YYSD = (function () {
 
   // Assignable part ids: cambridge-20-test-1-s1 / cambridge-20-test-1-reading-p1 / secret-set-1-reading-p1
   function parsePartId(id) {
-    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i);
+    var m = String(id || "").match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+(?:-reading)?)-(s|p)(\d+)$/i);
     if (!m) return null;
     return { parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]) };
   }
@@ -489,7 +492,7 @@ window.YYSD = (function () {
   // 题型练习: cambridge-21-test-1-s1-q1-6 / …-q1-6-explain / secret-set-1-reading-p1-q1-13
   function parseGroupId(id) {
     var raw = String(id || "");
-    var m = raw.match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)-q(\d+)-(\d+)(?:-explain)?$/i);
+    var m = raw.match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+(?:-reading)?)-(s|p)(\d+)-q(\d+)-(\d+)(?:-explain)?$/i);
     if (!m) return null;
     return {
       parentId: m[1], kind: m[2].toLowerCase(), num: Number(m[3]),
@@ -520,6 +523,59 @@ window.YYSD = (function () {
     var qs = pack === "exam" ? "&cdt=1&pack=exam" : "&cdt=1&pack=drill";
     if (explain) qs += "&explain=1";
     return qs;
+  }
+
+  // 绝密套卷 Section / Passage 中英标题（教师布置检索用）
+  var SECRET_PART_TITLES = {
+    "secret-set-1-s1": ["图书馆服务", "Library services"],
+    "secret-set-1-s2": ["大学生租房", "Types of accommodation"],
+    "secret-set-1-s3": ["牛仔裤时尚项目", "Fashion Project on Jeans"],
+    "secret-set-1-s4": ["天然橡胶制作", "Natural rubber production"],
+    "secret-set-1-reading-p1": ["历代玩偶", "Dolls through the ages"],
+    "secret-set-1-reading-p2": ["过山车", "Roller coaster"],
+    "secret-set-1-reading-p3": ["史蒂文森", "Robert Louis Stevenson"],
+    "secret-set-2-s1": ["热气球飞行", "High Flyers balloon flights"],
+    "secret-set-2-s2": ["美术馆导览", "Art Gallery"],
+    "secret-set-2-s3": ["目击者证词", "Eyewitness reliability"],
+    "secret-set-2-s4": ["红树林再生", "The mangrove regeneration project"],
+    "secret-set-2-reading-p1": ["野生长长颈鹿", "Giraffes in the wild"],
+    "secret-set-2-reading-p2": ["法律的重要性", "The importance of law"],
+    "secret-set-2-reading-p3": ["艺术博物馆重塑", "Rebranding art museums"],
+    "secret-set-3-reading-p1": ["悉尼歌剧院", "Sydney Opera House"],
+    "secret-set-3-reading-p2": ["亲自然设计", "Biophilic Design"],
+    "secret-set-3-reading-p3": ["当人们对音乐失聪", "When people are deaf to music"],
+    "secret-set-4-reading-p1": ["澳大利亚空中牙医", "Australia's Airborne Dentists"],
+    "secret-set-4-reading-p2": ["塔斯马尼亚虎", "The Tasmanian Tiger"],
+    "secret-set-4-reading-p3": ["200年澳洲风景之伦敦皇家学院", "200 Years of Australian Landscapes at the Royal Academy in London"]
+  };
+
+  function secretPartPair(id) {
+    return SECRET_PART_TITLES[id] || null;
+  }
+
+  function secretTopicLine(item) {
+    var t = item && SECRET_PART_TITLES[item.id];
+    return t ? (t[0] + " · " + t[1]) : "";
+  }
+
+  function secretPaperTopics(item) {
+    if (!item || item.partNum) return "";
+    var kind = item.subject === "cambridge-listening" ? "s" : (item.subject === "cambridge-reading" ? "p" : "");
+    if (!kind || !/^secret-set-\d+/.test(item.id || "")) return "";
+    var n = kind === "s" ? 4 : 3;
+    var bits = [];
+    for (var i = 1; i <= n; i++) {
+      var t = SECRET_PART_TITLES[item.id + "-" + kind + i];
+      if (t) bits.push(t[0]);
+    }
+    return bits.join(" / ");
+  }
+
+  function secretSearchText(item) {
+    if (!item) return "";
+    var t = SECRET_PART_TITLES[item.id];
+    if (t) return t[0] + " " + t[1];
+    return secretPaperTopics(item);
   }
 
   function makePartItem(parent, kind, num) {
@@ -600,7 +656,8 @@ window.YYSD = (function () {
       "t" + t + k + item.partNum,
       "t" + t + (item.partKind === "s" ? "section" : "passage") + item.partNum,
       (item.partKind === "s" ? "section" : "passage") + item.partNum,
-      skill + "t" + t + k + item.partNum
+      skill + "t" + t + k + item.partNum,
+      secretSearchText(item)
     ].join(" ");
   }
 
@@ -812,9 +869,9 @@ window.YYSD = (function () {
         : accent === "reading"
           ? '<span class="vc-skill vc-skill--r">P1</span><span class="vc-skill vc-skill--r">P2</span><span class="vc-skill vc-skill--r">P3</span>'
           : '<span class="vc-skill vc-skill--w">T1</span><span class="vc-skill vc-skill--w">T2</span>';
-    var href = (prefix || "") + "cambridge.html?vol=" + encodeURIComponent(v.vol) +
-      (skill ? "&skill=" + encodeURIComponent(skill) : "");
-    var goLabel = skill ? "开始练习 ›" : "开始模考 ›";
+    var href = opts.href || ((prefix || "") + "cambridge.html?vol=" + encodeURIComponent(v.vol) +
+      (skill ? "&skill=" + encodeURIComponent(skill) : ""));
+    var goLabel = opts.goLabel || (skill ? "开始练习 ›" : "开始模考 ›");
     return '' +
       '<a class="vol-card vol-card--' + accent + ' vol-card--tier-' + tag.c + doneClass + '" href="' + href + '" data-skill="' + accent + '">' +
         '<div class="vol-card__main">' +
@@ -861,7 +918,10 @@ window.YYSD = (function () {
 
     function cards(vols) {
       return vols.map(function (v) {
-        return camVolumeCardHTML(v, prefix, items, { skill: opts.skill || "" });
+        var cardOpts = { skill: opts.skill || "" };
+        if (opts.goLabel) cardOpts.goLabel = opts.goLabel;
+        if (opts.cardHref) cardOpts.href = opts.cardHref(v);
+        return camVolumeCardHTML(v, prefix, items, cardOpts);
       }).join("");
     }
 
@@ -882,7 +942,7 @@ window.YYSD = (function () {
     return html;
   }
 
-  // 听力精听：按册折叠，默认只露最新册（剑21）；册内再按 Test 折叠
+  // 听力精听：册列表走 vol-grid；点进一册再列 Test / Part
   function jingtingVol(item) {
     var m = String((item && item.title) || "").match(/剑(?:雅|桥雅思)?\s*0*(\d+)/);
     if (m) return m[1];
@@ -917,70 +977,92 @@ window.YYSD = (function () {
       "</a>";
   }
 
-  function jingtingCatalogHTML(items, prefix) {
-    var groups = {};
-    (items || []).forEach(function (it) {
-      var v = jingtingVol(it) || "other";
-      if (!groups[v]) groups[v] = [];
-      groups[v].push(it);
+  function jingtingPlayerItems(items) {
+    return (items || []).filter(function (it) {
+      return it.directHref && String(it.directHref).indexOf("jingting-player") === 0;
     });
-    var vols = Object.keys(groups).sort(function (a, b) {
-      if (a === "other") return 1;
-      if (b === "other") return -1;
-      return Number(b) - Number(a);
-    });
-    if (!vols.length) return '<div class="soon-box">暂无精听内容。</div>';
+  }
 
-    // ponytail: newest vol open with Test folds closed; older vols fully collapsed
-    return vols.map(function (v, vi) {
-      var list = groups[v].slice().sort(function (a, b) {
-        return (Number(jingtingTestNo(a)) - Number(jingtingTestNo(b))) ||
-          (Number(jingtingPartNo(a)) - Number(jingtingPartNo(b))) ||
-          String(a.title).localeCompare(String(b.title), "zh");
+  function jingtingVolumes(items) {
+    var map = {};
+    jingtingPlayerItems(items).forEach(function (it) {
+      var v = jingtingVol(it);
+      if (!v) return;
+      if (!map[v]) map[v] = { vol: v, listening: 0, reading: 0, writing: 0, total: 0, _tests: {} };
+      map[v].listening++;
+      map[v].total++;
+      var t = jingtingTestNo(it);
+      if (t) map[v]._tests[t] = 1;
+    });
+    return Object.keys(map)
+      .sort(function (a, b) { return Number(b) - Number(a); })
+      .map(function (k) {
+        var o = map[k];
+        o.tests = Object.keys(o._tests).length || o.total;
+        delete o._tests;
+        return o;
       });
-      var byTest = {};
-      list.forEach(function (it) {
-        var t = jingtingTestNo(it) || "0";
-        if (!byTest[t]) byTest[t] = [];
-        byTest[t].push(it);
-      });
-      var tests = Object.keys(byTest).sort(function (a, b) { return Number(a) - Number(b); });
-      var isLegacy = v === "other" || Number(v) < 21;
-      var volLabel = v === "other" ? "其它 / 旧版" : ("剑" + v);
-      var openAttr = vi === 0 && !isLegacy ? " open" : "";
-      var inner;
-      if (tests.length <= 1 && tests[0] === "0") {
-        inner = '<div class="catalog-rows jt-fold__rows">' + list.map(function (it) {
-          return jingtingPartRowHTML(it, prefix);
-        }).join("") + "</div>";
-      } else {
-        inner = '<div class="jt-fold__tests">' + tests.map(function (t) {
-          var parts = byTest[t];
-          return '<details class="catalog-collapse catalog-collapse--jt catalog-collapse--nested">' +
-            '<summary>' +
-              '<span class="catalog-collapse__lead">' +
-                '<span class="catalog-collapse__chev" aria-hidden="true"></span>' +
-                '<span class="catalog-collapse__label">Test ' + esc(t) + "</span>" +
-              "</span>" +
-              '<span class="catalog-collapse__meta">' + parts.length + " Part</span>" +
-            "</summary>" +
-            '<div class="catalog-collapse__body"><div class="catalog-collapse__inner">' +
-              '<div class="catalog-rows jt-fold__rows">' + parts.map(function (it) {
-                return jingtingPartRowHTML(it, prefix);
-              }).join("") + "</div>" +
-            "</div></div></details>";
-        }).join("") + "</div>";
+  }
+
+  function jingtingTestsHTML(list, prefix) {
+    list = list.slice().sort(function (a, b) {
+      return (Number(jingtingTestNo(a)) - Number(jingtingTestNo(b))) ||
+        (Number(jingtingPartNo(a)) - Number(jingtingPartNo(b))) ||
+        String(a.title).localeCompare(String(b.title), "zh");
+    });
+    var byTest = {};
+    list.forEach(function (it) {
+      var t = jingtingTestNo(it) || "0";
+      if (!byTest[t]) byTest[t] = [];
+      byTest[t].push(it);
+    });
+    var tests = Object.keys(byTest).sort(function (a, b) { return Number(a) - Number(b); });
+    if (tests.length <= 1 && tests[0] === "0") {
+      return '<div class="catalog-rows">' + list.map(function (it) {
+        return jingtingPartRowHTML(it, prefix);
+      }).join("") + "</div>";
+    }
+    return '<div class="vol-grid">' + tests.map(function (t) {
+      var parts = byTest[t];
+      return '<div class="vol-card vol-card--listening">' +
+        '<div class="vol-card__main">' +
+          '<div class="vol-card__top">' +
+            '<span class="vol-card__vol">TEST ' + esc(t) + "</span>" +
+            '<span class="vol-card__tag vol-card__tag--new">' + parts.length + " Part</span>" +
+          "</div>" +
+          '<div class="catalog-rows">' + parts.map(function (it) {
+            return jingtingPartRowHTML(it, prefix);
+          }).join("") + "</div>" +
+        "</div></div>";
+    }).join("") + "</div>";
+  }
+
+  function jingtingCatalogHTML(items, prefix, opts) {
+    opts = opts || {};
+    items = jingtingPlayerItems(items);
+    if (opts.vol) {
+      var vol = String(opts.vol);
+      var list = items.filter(function (it) { return jingtingVol(it) === vol; });
+      if (!list.length) {
+        return '<div class="soon-box">未找到剑' + esc(vol) + " 精听。" +
+          '<p><a href="zone.html?zone=mock&amp;s=jingting">返回册列表</a></p></div>';
       }
-      return '<details class="catalog-collapse catalog-collapse--jt"' + openAttr + ">" +
-        '<summary>' +
-          '<span class="catalog-collapse__lead">' +
-            '<span class="catalog-collapse__chev" aria-hidden="true"></span>' +
-            '<span class="catalog-collapse__label">' + esc(volLabel) + " · 听力精听</span>" +
-          "</span>" +
-          '<span class="catalog-collapse__meta">' + list.length + " Part</span>" +
-        "</summary>" +
-        '<div class="catalog-collapse__body"><div class="catalog-collapse__inner">' + inner + "</div></div></details>";
-    }).join("");
+      return '<p class="cam-pick-hint"><a href="zone.html?zone=mock&amp;s=jingting">← 返回听力精听</a>' +
+        " · 选择 Test / Part 进入精听。</p>" +
+        jingtingTestsHTML(list, prefix);
+    }
+    var vols = jingtingVolumes(items);
+    if (!vols.length) return '<div class="soon-box">暂无精听内容。</div>';
+    return cambridgeCatalogHTML(vols, items, prefix, {
+      skill: "listening",
+      tier: opts.tier,
+      query: opts.query,
+      collapseLegacy: true,
+      goLabel: "开始精听 ›",
+      cardHref: function (v) {
+        return (prefix || "") + "zone.html?zone=mock&s=jingting&vol=" + encodeURIComponent(v.vol);
+      }
+    });
   }
 
   function relativeWhen(iso) {
@@ -1290,8 +1372,31 @@ window.YYSD = (function () {
       "</section>";
   }
 
+  // HTML 被旧发布盖掉时，布置栏仍补回绝密套卷芯片
+  function ensureSecretCatChips() {
+    var host = document.getElementById("exercise-cats");
+    if (!host) return;
+    [["rsecret", "阅读绝密套卷"], ["lsecret", "听力绝密套卷"]].forEach(function (pair) {
+      if (host.querySelector('[data-ex-cat="' + pair[0] + '"]')) return;
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "chip";
+      btn.setAttribute("data-ex-cat", pair[0]);
+      btn.textContent = pair[1];
+      host.appendChild(btn);
+    });
+  }
+  if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", ensureSecretCatChips);
+    } else {
+      ensureSecretCatChips();
+    }
+  }
+
   return {
     CONTENT_VER: CONTENT_VER,
+    ensureSecretCatChips: ensureSecretCatChips,
     ZONES: ZONES, ZONE: ZONE, ZONE_SUBJECTS: ZONE_SUBJECTS, SUBJECT: SUBJECT,
     NAV: NAV, navOf: navOf,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
@@ -1299,7 +1404,9 @@ window.YYSD = (function () {
     isCambridge: isCambridge, isReadingExam: isReadingExam, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,
     skillGlyph: skillGlyph,
     camVolumeCardHTML: camVolumeCardHTML, camVolumeProgress: camVolumeProgress,
+    JINGTING_OPEN: JINGTING_OPEN,
     cambridgeCatalogHTML: cambridgeCatalogHTML, jingtingCatalogHTML: jingtingCatalogHTML,
+    jingtingVolumes: jingtingVolumes,
     searchItems: searchItems,
     recentActivity: recentActivity, continueStripHTML: continueStripHTML,
     journeyStats: journeyStats, homeIeltsHTML: homeIeltsHTML, homeJourneyHTML: homeJourneyHTML, homeDashboardHTML: homeDashboardHTML,
@@ -1315,6 +1422,8 @@ window.YYSD = (function () {
     makePartItem: makePartItem, makeGroupItem: makeGroupItem, resolveItem: resolveItem,
     cambridgeCdtQs: cambridgeCdtQs,
     expandAssignableParts: expandAssignableParts, partSearchText: partSearchText,
+    secretTopicLine: secretTopicLine, secretPaperTopics: secretPaperTopics,
+    secretSearchText: secretSearchText, secretPartPair: secretPartPair,
     loadListeningTaxonomy: loadListeningTaxonomy,
     loadReadingTaxonomy: loadReadingTaxonomy,
     drillKindLabel: drillKindLabel,

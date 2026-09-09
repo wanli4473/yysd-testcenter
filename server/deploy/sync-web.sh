@@ -50,6 +50,22 @@ else
   done
 fi
 
+# 旧 HTML 发布会丢掉绝密套卷芯片；同步后强制补回
+python3 - <<PY
+from pathlib import Path
+p = Path("${WEB_ROOT}/teacher-calendar.html")
+if not p.is_file():
+    raise SystemExit(0)
+t = p.read_text(encoding="utf-8")
+old = '              <button type="button" class="chip" data-ex-cat="rsecret">阅读绝密套卷</button>\\n            </div>'
+new = '              <button type="button" class="chip" data-ex-cat="rsecret">阅读绝密套卷</button>\\n              <button type="button" class="chip" data-ex-cat="lsecret">听力绝密套卷</button>\\n            </div>'
+if 'data-ex-cat="lsecret"' not in t:
+    if old not in t:
+        raise SystemExit("teacher-calendar.html missing 听力绝密套卷 chip and cannot patch")
+    p.write_text(t.replace(old, new, 1), encoding="utf-8")
+    print("==> 已补回听力绝密套卷芯片")
+PY
+
 echo ""
 echo "==> 校验关键文件"
 check() {
@@ -98,6 +114,12 @@ check "assets/js/vocab-challenge-ui.js"
 check "assets/js/teacher-vocab-challenge.js"
 check "assets/css/vocab-shelf.css"
 check "assets/css/vocab-learn.css"
+if ! grep -q 'data-ex-cat="lsecret"' "$WEB_ROOT/teacher-calendar.html"; then
+  echo "  ✗ teacher-calendar.html 缺少听力绝密套卷芯片"
+  missing=1
+else
+  echo "  ✓ 听力绝密套卷芯片"
+fi
 
 if grep -q "api.youyisida.com" "$WEB_ROOT/library/practice/jingting/cam20-test1-section1.html" 2>/dev/null; then
   echo "  ✓ 精听页已配置生产 API"

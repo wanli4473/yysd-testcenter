@@ -9,7 +9,7 @@
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap">
   <link rel="stylesheet" href="assets/css/style.css?v=20260723read">
-  <link rel="stylesheet" href="assets/css/jingting-player.css?v=20260723jt">
+  <link rel="stylesheet" href="assets/css/jingting-player.css?v=20260909jt">
 </head>
 <body class="jt-page">
   <header class="jt-top">
@@ -35,7 +35,6 @@
         <div class="jt-modes" role="tablist">
           <button type="button" class="jt-mode is-on" data-mode="full" role="tab">全文精听</button>
           <button type="button" class="jt-mode" data-mode="line" role="tab">逐句精听</button>
-          <button type="button" class="jt-mode" data-mode="shadow" role="tab">AI 跟读</button>
         </div>
         <div class="jt-toggles">
           <button type="button" class="jt-chip" id="jtShowEn" title="快捷键 ↑">原文</button>
@@ -64,22 +63,6 @@
         </div>
       </div>
 
-      <div class="jt-stage is-hidden" id="jtStageShadow">
-        <div class="jt-shadow">
-          <div class="jt-shadow-meta">跟读 · <span id="jtShadowIdx">1</span>/<span id="jtShadowTotal">0</span>
-            · 过关 <span id="jtPassCount">0</span></div>
-          <div class="jt-blind" id="jtBlind">🔒 测试期间不显示原文 · 先听再复述</div>
-          <div class="jt-shadow-row">
-            <button type="button" class="jt-btn jt-btn--solid" id="jtPlayClip">▶ 播放本句</button>
-            <button type="button" class="jt-btn jt-btn--rec" id="jtRec">🎙 开始复述</button>
-            <button type="button" class="jt-btn jt-btn--ghost" id="jtStopRec" disabled>■ 说完停止</button>
-            <button type="button" class="jt-btn jt-btn--ghost is-hidden" id="jtShadowNext">下一句 →</button>
-          </div>
-          <div class="jt-heard" id="jtHeard"><span class="ph">你复述的内容会显示在这里…</span></div>
-          <div class="jt-verdict" id="jtVerdict"></div>
-          <p class="jt-note" id="jtSrNote"></p>
-        </div>
-      </div>
     </main>
   </div>
 
@@ -116,6 +99,10 @@
   </footer>
 
   <audio id="jtAudio" preload="auto"></audio>
+  <div class="jt-gloss is-hidden" id="jtGloss" role="tooltip">
+    <strong id="jtGlossW"></strong>
+    <span id="jtGlossM"></span>
+  </div>
 
   <div class="jt-modal is-hidden" id="jtHotkeyModal" role="dialog" aria-labelledby="jtHkTitle">
     <div class="jt-modal-card">
@@ -132,6 +119,6 @@
   </div>
 
   <script src="assets/js/auth.js?v=20260812scores304"></script>
-  <script src="assets/js/jingting-player.js?v=20260723jt"></script>
+  <script src="assets/js/jingting-player.js?v=20260909jt"></script>
 </body>
 </html>

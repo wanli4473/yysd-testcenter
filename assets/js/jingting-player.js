@@ -1,4 +1,4 @@
-/* 听力精听 lyric player — full / line / AI shadow */
+/* 听力精听 lyric player — full / line + LightPeek */
 (function () {
   "use strict";
 
@@ -12,15 +12,15 @@
 
   var state = {
     data: null,
-    mode: "full", // full | line | shadow
+    mode: "full", // full | line
     i: 0,
     showEn: false,
     showZh: false,
     loop: false,
     rate: 1,
     playing: false,
-    clipMode: false, // playing [start,end] then pause (line/shadow)
-    passed: {}
+    clipMode: false, // playing [start,end] then pause (line)
+    glossCache: {}
   };
 
   var audio = document.getElementById("jtAudio");
@@ -46,18 +46,49 @@
     return h;
   }
 
-  function loadPassed() {
-    try {
-      state.passed = JSON.parse(localStorage.getItem("yysd:jt:pass:" + partId) || "{}") || {};
-    } catch (e) { state.passed = {}; }
+  function linkWords(en) {
+    var SKIP = /^(WOMAN|MAN|NARRATOR|SPEAKER|CHILD)$/i;
+    return esc(en).replace(/\b([A-Za-z][A-Za-z']{1,})\b/g, function (w) {
+      if (SKIP.test(w)) return w;
+      return '<span class="jt-w" data-w="' + w.replace(/"/g, "") + '">' + w + "</span>";
+    });
   }
-  function savePassed() {
-    try { localStorage.setItem("yysd:jt:pass:" + partId, JSON.stringify(state.passed)); } catch (e) {}
+
+  function hideGloss() {
+    var el = $("jtGloss");
+    if (el) el.classList.add("is-hidden");
   }
-  function passCount() {
-    var n = 0, k;
-    for (k in state.passed) if (state.passed[k]) n++;
-    return n;
+
+  function showGloss(word, x, y) {
+    var el = $("jtGloss"), wEl = $("jtGlossW"), mEl = $("jtGlossM");
+    if (!el) return;
+    wEl.textContent = word;
+    mEl.textContent = "查询中…";
+    el.classList.remove("is-hidden");
+    var left = Math.min(x + 8, window.innerWidth - 280);
+    var top = Math.min(y + 12, window.innerHeight - 80);
+    el.style.left = left + "px";
+    el.style.top = top + "px";
+    var key = word.toLowerCase();
+    if (state.glossCache[key]) {
+      mEl.textContent = state.glossCache[key];
+      return;
+    }
+    fetch(API_BASE + "/api/jingting/gloss", {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify({ word: word })
+    }).then(function (r) {
+      if (r.status === 401) throw new Error("登录后可查词");
+      if (!r.ok) throw new Error("查词失败");
+      return r.json();
+    }).then(function (d) {
+      var g = (d && d.gloss) || "暂无释义";
+      state.glossCache[key] = g;
+      if (wEl.textContent === word) mEl.textContent = g;
+    }).catch(function (err) {
+      if (wEl.textContent === word) mEl.textContent = (err && err.message) || "查词失败";
+    });
   }
 
   function curSent() {
@@ -84,7 +115,7 @@
     var ol = $("jtSentList");
     if (!ol || !state.data) return;
     ol.innerHTML = state.data.sentences.map(function (s, i) {
-      var cls = (i === state.i ? " is-active" : "") + (state.passed[i] ? " is-pass" : "");
+      var cls = i === state.i ? " is-active" : "";
       return '<li><button type="button" data-i="' + i + '" class="' + cls.trim() + '">第 ' + (i + 1) + " 句</button></li>";
     }).join("");
     var active = ol.querySelector(".is-active");
@@ -96,7 +127,7 @@
     if (!body || !state.data) return;
     body.classList.toggle("is-blind", !state.showEn && !state.showZh);
     body.innerHTML = state.data.sentences.map(function (s, i) {
-      var en = state.showEn ? '<span class="jt-full-en">' + esc(s.en) + "</span>" : '<span class="jt-full-en">· · ·</span>';
+      var en = state.showEn ? '<span class="jt-full-en">' + linkWords(s.en) + "</span>" : '<span class="jt-full-en">· · ·</span>';
       var zh = state.showZh ? '<span class="jt-full-zh">' + esc(s.zh || "") + "</span>" : "";
       return '<button type="button" class="jt-full-line' + (i === state.i ? " is-active" : "") +
         '" data-i="' + i + '" data-start="' + s.start + '">' + en + zh + "</button>";
@@ -121,7 +152,7 @@
     if (!s) return;
     $("jtIdx").textContent = String(state.i + 1);
     $("jtTotal").textContent = String(state.data.sentences.length);
-    $("jtLineEn").textContent = s.en;
+    $("jtLineEn").innerHTML = linkWords(s.en);
     $("jtLineZh").textContent = s.zh || "";
     var reveal = $("jtReveal");
     var showAny = state.showEn || state.showZh;
@@ -130,39 +161,22 @@
     $("jtLineZh").classList.toggle("is-hidden", !state.showZh);
   }
 
-  function renderShadow() {
-    var s = curSent();
-    if (!s) return;
-    $("jtShadowIdx").textContent = String(state.i + 1);
-    $("jtShadowTotal").textContent = String(state.data.sentences.length);
-    $("jtPassCount").textContent = String(passCount());
-    var blind = $("jtBlind");
-    if (state.showEn) {
-      blind.classList.add("is-show");
-      blind.textContent = s.en + (state.showZh && s.zh ? "\n" + s.zh : "");
-    } else {
-      blind.classList.remove("is-show");
-      blind.textContent = "🔒 测试期间不显示原文 · 先听再复述";
-    }
-  }
-
   function renderStage() {
     $("jtStageFull").classList.toggle("is-hidden", state.mode !== "full");
     $("jtStageLine").classList.toggle("is-hidden", state.mode !== "line");
-    $("jtStageShadow").classList.toggle("is-hidden", state.mode !== "shadow");
     document.querySelectorAll(".jt-mode").forEach(function (btn) {
       btn.classList.toggle("is-on", btn.getAttribute("data-mode") === state.mode);
     });
     $("jtShowEn").classList.toggle("is-on", state.showEn);
     $("jtShowZh").classList.toggle("is-on", state.showZh);
     if (state.mode === "full") renderFull();
-    else if (state.mode === "line") renderLineCard();
-    else renderShadow();
+    else renderLineCard();
   }
 
   function setMode(mode) {
+    if (mode !== "full" && mode !== "line") mode = "full";
     state.mode = mode;
-    state.clipMode = mode === "line" || mode === "shadow";
+    state.clipMode = mode === "line";
     audio.pause();
     state.playing = false;
     syncPlayBtn();
@@ -268,122 +282,6 @@
     paintTime();
   }
 
-  /* ---- AI shadow ---- */
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  var recog = null, wantRec = false, lastHeard = "";
-
-  function setRecUi(on) {
-    $("jtRec").classList.toggle("on", on);
-    $("jtRec").disabled = on;
-    $("jtStopRec").disabled = !on;
-  }
-
-  function localShadow(heard, target) {
-    // ponytail: offline fallback; server shadow is source of truth
-    var tw = target.toLowerCase().replace(/[^a-z0-9'\s]/g, " ").split(/\s+/).filter(Boolean);
-    var hw = heard.toLowerCase().replace(/[^a-z0-9'\s]/g, " ").split(/\s+/).filter(Boolean);
-    var words = [], hi = 0, ok = 0;
-    tw.forEach(function (w) {
-      if (hi < hw.length && hw[hi] === w) { words.push({ target: w, heard: w, status: "ok" }); ok++; hi++; }
-      else words.push({ target: w, heard: "", status: "miss" });
-    });
-    var acc = tw.length ? ok / tw.length : 0;
-    return { words: words, extras: [], accuracy: acc, pass: acc >= (tw.length <= 5 ? 0.9 : 0.85), comment: "" };
-  }
-
-  function paintVerdict(d) {
-    var html = (d.words || []).map(function (w) {
-      var cls = w.status === "ok" ? "w-ok" : (w.status === "bad" ? "w-bad" : "w-miss");
-      return '<span class="' + cls + '">' + esc(w.target) + "</span>";
-    }).join(" ");
-    var pct = Math.round((d.accuracy || 0) * 100);
-    html += '<div class="' + (d.pass ? "ok" : "bad") + '" style="margin-top:8px">' +
-      (d.pass ? "过关" : "未过关") + " · " + pct + "%" +
-      (d.comment ? " · " + esc(d.comment) : "") + "</div>";
-    $("jtVerdict").innerHTML = html;
-    $("jtShadowNext").classList.toggle("is-hidden", !d.pass);
-    if (d.pass) {
-      state.passed[state.i] = true;
-      savePassed();
-      $("jtPassCount").textContent = String(passCount());
-      renderList();
-    }
-  }
-
-  function gradeShadow() {
-    var s = curSent();
-    if (!s || !lastHeard) {
-      $("jtSrNote").textContent = "没有识别到内容，请再试一次。";
-      return;
-    }
-    $("jtHeard").textContent = lastHeard;
-    $("jtSrNote").textContent = "评分中…";
-    fetch(API_BASE + "/api/jingting/shadow", {
-      method: "POST",
-      headers: apiHeaders(),
-      body: JSON.stringify({ heard: lastHeard, target: s.en })
-    }).then(function (r) {
-      if (r.status === 401) throw new Error("请先登录后再使用 AI 跟读");
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    }).then(function (d) {
-      $("jtSrNote").textContent = "";
-      paintVerdict(d);
-    }).catch(function (err) {
-      $("jtSrNote").textContent = (err && err.message) || "评分失败，已用本地比对";
-      paintVerdict(localShadow(lastHeard, s.en));
-    });
-  }
-
-  function startRec() {
-    if (!SR || wantRec) return;
-    audio.pause();
-    state.playing = false;
-    syncPlayBtn();
-    lastHeard = "";
-    wantRec = true;
-    $("jtHeard").innerHTML = '<span class="ph">🎙 正在听… 说完整句后点「说完停止」</span>';
-    $("jtVerdict").innerHTML = "";
-    $("jtShadowNext").classList.add("is-hidden");
-    $("jtSrNote").textContent = "";
-    setRecUi(true);
-    recog = new SR();
-    recog.lang = "en-GB";
-    recog.continuous = true;
-    recog.interimResults = true;
-    recog.onresult = function (ev) {
-      var txt = "", i;
-      for (i = 0; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
-      lastHeard = txt.trim();
-      $("jtHeard").textContent = lastHeard || "…";
-    };
-    recog.onerror = function (ev) {
-      if (ev.error === "no-speech" || ev.error === "aborted") return;
-      wantRec = false;
-      setRecUi(false);
-      var msg = { "not-allowed": "请允许麦克风权限", network: "网络错误" };
-      $("jtSrNote").textContent = "识别出错：" + (msg[ev.error] || ev.error);
-    };
-    recog.onend = function () {
-      if (wantRec) {
-        try { recog.start(); } catch (e) {}
-        return;
-      }
-      setRecUi(false);
-      gradeShadow();
-    };
-    try { recog.start(); } catch (e) {
-      wantRec = false;
-      setRecUi(false);
-      $("jtSrNote").textContent = "无法启动语音识别，请用 Chrome。";
-    }
-  }
-
-  function stopRec() {
-    wantRec = false;
-    if (recog) try { recog.stop(); } catch (e) {}
-  }
-
   function bind() {
     document.querySelectorAll(".jt-mode").forEach(function (btn) {
       btn.addEventListener("click", function () { setMode(btn.getAttribute("data-mode")); });
@@ -393,14 +291,30 @@
       var b = e.target.closest("button[data-i]");
       if (!b) return;
       setIndex(Number(b.getAttribute("data-i")));
-      if (state.mode === "line" || state.mode === "shadow") playFromCurrent();
+      if (state.mode === "line") playFromCurrent();
     });
 
     $("jtFullBody").addEventListener("click", function (e) {
+      var w = e.target.closest(".jt-w");
+      if (w) {
+        e.stopPropagation();
+        showGloss(w.getAttribute("data-w"), e.clientX, e.clientY);
+        return;
+      }
       var b = e.target.closest(".jt-full-line");
       if (!b) return;
+      hideGloss();
       setIndex(Number(b.getAttribute("data-i")));
       playFromCurrent();
+    });
+    $("jtLineEn").addEventListener("click", function (e) {
+      var w = e.target.closest(".jt-w");
+      if (!w) return;
+      e.stopPropagation();
+      showGloss(w.getAttribute("data-w"), e.clientX, e.clientY);
+    });
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest(".jt-w") && !e.target.closest("#jtGloss")) hideGloss();
     });
 
     $("jtPrev").onclick = $("jtBarPrev").onclick = function () {
@@ -411,15 +325,6 @@
       setIndex(state.i + 1);
       if (state.clipMode) playFromCurrent();
     };
-    $("jtShadowNext").onclick = function () {
-      if (state.i < state.data.sentences.length - 1) {
-        setIndex(state.i + 1);
-        $("jtHeard").innerHTML = '<span class="ph">你复述的内容会显示在这里…</span>';
-        $("jtVerdict").innerHTML = "";
-        $("jtShadowNext").classList.add("is-hidden");
-      }
-    };
-
     $("jtReveal").onclick = function () {
       state.showEn = true;
       renderStage();
@@ -459,18 +364,6 @@
 
     $("jtProg").onclick = seekProg;
     $("jtVol").oninput = function () { audio.volume = Number($("jtVol").value); };
-
-    $("jtPlayClip").onclick = function () {
-      state.clipMode = true;
-      playFromCurrent();
-    };
-    $("jtRec").onclick = startRec;
-    $("jtStopRec").onclick = stopRec;
-
-    if (!SR) {
-      $("jtSrNote").textContent = "请用电脑版 Chrome 打开以使用语音识别。";
-      $("jtRec").disabled = true;
-    }
 
     $("jtHotkeys").onclick = function () { $("jtHotkeyModal").classList.remove("is-hidden"); };
     $("jtHkClose").onclick = function () { $("jtHotkeyModal").classList.add("is-hidden"); };
@@ -516,7 +409,6 @@
   }
 
   function boot() {
-    loadPassed();
     bind();
     fetch(DATA_URL).then(function (r) {
       if (!r.ok) throw new Error("找不到精听数据：" + partId);

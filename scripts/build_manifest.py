@@ -197,18 +197,55 @@ def main():
         seen.add(e["id"])
         items.append(e)
 
-    # ponytail: refuse to write a manifest that drops a vocab book whose HTML is on disk
-    lite_dir = os.path.join(LIB_DIR, "study", "vocab-cet4-lite")
-    if os.path.isdir(lite_dir):
-        html_n = len([n for n in os.listdir(lite_dir) if n.lower().endswith((".html", ".htm"))])
-        sub_n = sum(1 for e in items if e.get("subject") == "vocab-cet4-lite")
-        if html_n and sub_n != html_n:
-            print(
-                "cet4-lite not indexed: %d html in %s, %d manifest items with subject vocab-cet4-lite"
-                % (html_n, lite_dir, sub_n),
-                file=sys.stderr,
-            )
-            sys.exit(1)
+    # ponytail: jingting catalog is JSON parts, not HTML; keep them across HTML-only scans
+    jt_dir = os.path.join(LIB_DIR, "practice", "jingting", "data")
+    if os.path.isdir(jt_dir):
+        for n in sorted(os.listdir(jt_dir)):
+            if not re.match(r"cam\d+-t\d+-p\d+\.json$", n):
+                continue
+            path = os.path.join(jt_dir, n)
+            try:
+                obj = json.loads(read_text(path))
+            except Exception as ex:
+                print("Skipping %s: %s" % (n, ex), file=sys.stderr)
+                continue
+            pid = obj.get("id") or n[:-5]
+            if pid in seen:
+                continue
+            seen.add(pid)
+            items.append({
+                "id": pid,
+                "file": "practice/jingting/data/" + n,
+                "directHref": "jingting-player.html?id=" + pid,
+                "title": obj.get("title") or pid,
+                "zone": "mock",
+                "subject": "jingting",
+                "duration": 0,
+                "description": "全文/逐句精听：真音频、官方原文时间轴、译文、划词。",
+                "added": git_added_date(path),
+            })
+
+    # ponytail: refuse to write a manifest that drops HTML sitting in a known subject folder
+    for zone, subjects in ZONE_SUBJECTS.items():
+        for subj in subjects:
+            folder = os.path.join(LIB_DIR, zone, subj)
+            if not os.path.isdir(folder):
+                continue
+            html_n = 0
+            for dirpath, dirnames, names in os.walk(folder):
+                dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+                html_n += sum(
+                    1 for n in names
+                    if n.lower().endswith((".html", ".htm")) and not n.startswith(".")
+                )
+            sub_n = sum(1 for e in items if e.get("zone") == zone and e.get("subject") == subj)
+            if html_n and sub_n != html_n:
+                print(
+                    "%s/%s not indexed: %d html on disk, %d manifest items"
+                    % (zone, subj, html_n, sub_n),
+                    file=sys.stderr,
+                )
+                sys.exit(1)
 
     manifest = {
         "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),

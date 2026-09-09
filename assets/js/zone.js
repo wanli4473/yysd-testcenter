@@ -14,6 +14,7 @@
   var activeCat = "all";
   var searchQuery = "";
   var camTier = "all";
+  var jtVol = (params.get("vol") || "").trim();
 
   document.body.classList.add("zone-page", "zone-page--" + zone);
 
@@ -80,7 +81,8 @@
 
   function showCambridgeSubFilters() {
     return zone === "mock" &&
-      (activeCat === "listening" || activeCat === "reading" || activeCat === "writing" || activeCat === "mock") &&
+      (activeCat === "listening" || activeCat === "reading" || activeCat === "writing" ||
+        activeCat === "mock" || (activeCat === "jingting" && !jtVol)) &&
       !searchQuery;
   }
 
@@ -175,6 +177,7 @@
     filtersEl.querySelectorAll(".chip").forEach(function (c) { c.classList.remove("is-active"); });
     b.classList.add("is-active");
     activeCat = next;
+    jtVol = "";
     syncZoneQuery();
     buildSubFilters();
     if (zone === "study" && next === "vocab" && window.YYSD_DIAG_GATE) {
@@ -256,7 +259,9 @@
       }
     } else if (subject === "jingting") {
       var jt = itemsOf(subject);
-      if (jt.length && Y.jingtingCatalogHTML) return Y.jingtingCatalogHTML(jt, "");
+      if (jt.length && Y.jingtingCatalogHTML) {
+        return Y.jingtingCatalogHTML(jt, "", { vol: jtVol, query: searchQuery, tier: camTier });
+      }
       if (jt.length) {
         return '<div class="exam-grid">' + jt.map(function (it) { return Y.cardHTML(it, ""); }).join("") + "</div>";
       }
@@ -275,9 +280,12 @@
   function countOf(subject) {
     if (subject === "ielts-speaking") return 1;
     if (Y.isCambridge(subject)) return Y.camVolumes(allItems.filter(function (it) { return it.subject === subject; })).length;
+    if (subject === "jingting") {
+      return Y.jingtingVolumes ? Y.jingtingVolumes(itemsOf(subject)).length : itemsOf(subject).length;
+    }
     return itemsOf(subject).length;
   }
-  function unitOf(subject) { return Y.isCambridge(subject) ? " 册" : " 份"; }
+  function unitOf(subject) { return (Y.isCambridge(subject) || subject === "jingting") ? " 册" : " 份"; }
 
   // Vocab hub — 学习台：左进度轨 + 右主模块；诊断/每日单词为 chips
   function dailyWordChipMeta() {
@@ -413,16 +421,25 @@
       set("quiz-m2", d.lastAccuracy != null ? d.lastAccuracy + "%" : "—");
       set("wrong-m1", String(d.pendingSessions || 0));
       set("wrong-m2", String(d.mistakeWords || 0));
-      if (ch && ch.assigned && ch.progress) {
+      if (ch && ch.needsBook && ch.assignments && ch.assignments.length > 1) {
+        set("challenge-m1", ch.assignments.length + " 本");
+        set("challenge-m2", "选词册");
+        setCta("challenge-cta", "vocab-challenge.html", "去闯关");
+      } else if (ch && ch.assigned && ch.progress) {
+        var totalDays = (ch.progress && ch.progress.totalDays) || 78;
+        var bookHref = "vocab-challenge.html" +
+          (ch.assignment && ch.assignment.bookId
+            ? "?book=" + encodeURIComponent(ch.assignment.bookId)
+            : "");
         if (ch.programComplete) {
           set("challenge-m1", "已完成");
-          setCta("challenge-cta", "vocab-challenge.html", "查看进度");
+          setCta("challenge-cta", bookHref, "查看进度");
         } else if (ch.progressDay) {
-          set("challenge-m1", "第 " + Math.min(ch.progressDay, 78) + " 关");
-          setCta("challenge-cta", "vocab-challenge.html", ch.activeAttemptId ? "继续闯关" : "去闯关");
+          set("challenge-m1", "第 " + Math.min(ch.progressDay, totalDays) + " 关");
+          setCta("challenge-cta", bookHref, ch.activeAttemptId ? "继续闯关" : "去闯关");
         } else {
           set("challenge-m1", "L" + (ch.progress.nextListNo || 1));
-          setCta("challenge-cta", "vocab-challenge.html", "去闯关");
+          setCta("challenge-cta", bookHref, "去闯关");
         }
         set("challenge-m2", String((ch.pool && ch.pool.active) || 0));
       } else {
@@ -520,7 +537,7 @@
     // ponytail: vocab desk owns its own title — skip generic subject head
     var head = cat.key === "vocab" ? "" : ('<div class="subject-group__head">' +
       '<span class="subject-dot" style="background:' + sub.color + '"></span>' +
-      "<h2>" + Y.esc(cat.label) + '</h2><span class="cnt">' +
+      "<h2>" + Y.esc(cat.key === "jingting" && jtVol ? ("剑桥雅思 " + jtVol) : cat.label) + '</h2><span class="cnt">' +
       (cat.key === "mock" || cat.key === "ielts" ? Y.camVolumes(allItems).length + " 册"
         : cat.key === "alevel" && alevelCatalog && window.YYSD_ALEVEL
           ? window.YYSD_ALEVEL.qpCount(alevelCatalog) + " 套"
@@ -543,6 +560,11 @@
             skill: cat.skill || ""
           })
         : emptyBox("该科目暂无内容", "先试试其他科目，或稍后再来。", "zone.html?zone=mock", "返回雅思总览");
+    } else if (cat.key === "jingting") {
+      var jtItems = itemsOf("jingting");
+      body = jtItems.length && Y.jingtingCatalogHTML
+        ? Y.jingtingCatalogHTML(jtItems, "", { vol: jtVol, query: searchQuery, tier: camTier })
+        : emptyBox("暂无精听内容", "精听材料上传后会出现在这里。", "zone.html?zone=mock&s=listening", "返回听力");
     } else if (cat.href) {
       body = '<a class="bento-cta" href="' + Y.esc(cat.href) + '">' +
         '<div><p class="bento-cta__title">' + Y.esc(cat.label) + "</p>" +
@@ -573,14 +595,23 @@
       var u = new URL(location.href);
       var cur = u.searchParams.get("s") || "";
       var want = activeCat === "all" ? "" : activeCat;
+      var changed = false;
       if (!want) {
-        if (!cur) return;
-        u.searchParams.delete("s");
-      } else if (cur === want) {
-        return;
-      } else {
+        if (cur) { u.searchParams.delete("s"); changed = true; }
+      } else if (cur !== want) {
         u.searchParams.set("s", want);
+        changed = true;
       }
+      if (activeCat === "jingting" && jtVol) {
+        if (u.searchParams.get("vol") !== jtVol) {
+          u.searchParams.set("vol", jtVol);
+          changed = true;
+        }
+      } else if (u.searchParams.has("vol")) {
+        u.searchParams.delete("vol");
+        changed = true;
+      }
+      if (!changed) return;
       history.replaceState(null, "", u.pathname + u.search + u.hash);
     } catch (e) { /* ignore */ }
   }
