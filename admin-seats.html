@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>激活码 · 优益思达</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260821tfix1">
+</head>
+<body class="home-minimal">
+  <main class="minimal-shell minimal-main" style="max-width:880px">
+    <p><a href="platform.html">返回主控台</a></p>
+    <h1>激活码</h1>
+    <p id="switch-line"></p>
+    <p>
+      <button type="button" id="switch-on" class="btn btn--primary">打开总开关</button>
+      <button type="button" id="switch-off" class="btn">关闭总开关</button>
+    </p>
+    <p class="auth-msg" id="msg"></p>
+    <form id="create" class="auth-form">
+      <label class="auth-field"><span>身份</span>
+        <select id="role"><option value="student">学生</option><option value="teacher">老师</option></select>
+      </label>
+      <label class="auth-field"><span>手机号</span>
+        <input id="phone" inputmode="numeric" maxlength="11" placeholder="老用户必填，新用户留空">
+      </label>
+      <button class="btn btn--primary" type="submit">生成激活码</button>
+    </form>
+    <div id="list"></div>
+  </main>
+  <script src="assets/js/auth.js?v=20260924seat1"></script>
+  <script>
+    var A = window.YYSD_AUTH;
+    var msg = document.getElementById("msg");
+    function show(t) { msg.textContent = t || ""; }
+    function load() {
+      A.api("/api/platform/seats").then(function (d) {
+        document.getElementById("switch-line").textContent = d.on
+          ? "总开关已打开：学生和老师只能用 Mac 程序。"
+          : "总开关关着：浏览器仍可登录。程序里登录成功会绑定这台 Mac。";
+        var html = "<table><tr><th>码</th><th>身份</th><th>手机号</th><th>电脑</th><th>状态</th><th></th></tr>";
+        (d.seats || []).forEach(function (s) {
+          html += "<tr><td>" + s.code + "</td><td>" + (s.role === "teacher" ? "老师" : "学生") +
+            "</td><td>" + (s.phone || "空白") + "</td><td>" + (s.device_key ? "已绑定" : "未绑定") +
+            "</td><td>" + (s.disabled ? "停用" : "可用") + "</td><td>" +
+            "<button data-act='unbind' data-id='" + s.id + "'>解除</button> " +
+            (s.disabled
+              ? "<button data-act='enable' data-id='" + s.id + "'>恢复</button> "
+              : "<button data-act='disable' data-id='" + s.id + "'>停用</button> ") +
+            "<button data-act='password' data-id='" + s.id + "'>设密码</button></td></tr>";
+        });
+        document.getElementById("list").innerHTML = html + "</table>";
+      }).catch(function (e) { show(e.message); });
+    }
+    document.getElementById("switch-on").onclick = function () {
+      A.api("/api/platform/seat-switch", { method: "POST", body: { on: true } }).then(load).catch(function (e) { show(e.message); });
+    };
+    document.getElementById("switch-off").onclick = function () {
+      A.api("/api/platform/seat-switch", { method: "POST", body: { on: false } }).then(load).catch(function (e) { show(e.message); });
+    };
+    document.getElementById("create").onsubmit = function (ev) {
+      ev.preventDefault();
+      A.api("/api/platform/seats", {
+        method: "POST",
+        body: { role: document.getElementById("role").value, phone: document.getElementById("phone").value.trim() }
+      }).then(function () { document.getElementById("phone").value = ""; load(); }).catch(function (e) { show(e.message); });
+    };
+    document.getElementById("list").onclick = function (ev) {
+      var btn = ev.target.closest("button");
+      if (!btn) return;
+      var id = btn.getAttribute("data-id");
+      var act = btn.getAttribute("data-act");
+      if (act === "password") {
+        var password = window.prompt("新密码（至少 6 位）");
+        if (!password) return;
+        A.api("/api/platform/seats/" + id + "/password", { method: "POST", body: { password: password } })
+          .then(function () { show("密码已设置"); }).catch(function (e) { show(e.message); });
+        return;
+      }
+      A.api("/api/platform/seats/" + id + "/" + act, { method: "POST", body: {} })
+        .then(load).catch(function (e) { show(e.message); });
+    };
+    if (!A.getToken()) location.replace("login.html?next=admin-seats.html");
+    else load();
+  </script>
+</body>
+</html>

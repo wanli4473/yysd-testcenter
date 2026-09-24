@@ -93,7 +93,7 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260724p1"></script>
-  <script src="assets/js/auth.js?v=20260904sess1"></script>
+  <script src="assets/js/auth.js?v=20260924seat1"></script>
   <script src="assets/js/nav.js?v=20260729admit2"></script>
   <script src="assets/js/ui.js?v=20260723motion"></script>
   <script>
@@ -106,11 +106,7 @@
     var nextRaw = new URLSearchParams(location.search).get("next") || "index.html";
     var next = A.postLoginPath ? A.postLoginPath(nextRaw) : nextRaw;
 
-    var hasTeacher = false;
-    try { hasTeacher = !!localStorage.getItem("yysd:teacher:token"); } catch (e) {}
-    var wantsTeacher = /teacher|admin-assign|platform\.html/.test(String(nextRaw || ""));
-    // leftover student JWT must not skip the form when opening teacher login
-    if (A.getToken() && (hasTeacher || !wantsTeacher)) {
+    if (A.getToken()) {
       location.replace(A.postLoginPath ? A.postLoginPath(nextRaw) : (A.isTeacher && A.isTeacher() ? "teacher.html" : "index.html"));
       return;
     }
@@ -141,7 +137,11 @@
       showMsg("");
       A.api("/api/auth/login", {
         method: "POST",
-        body: { phone: phoneEl.value.trim(), password: passwordEl.value }
+        body: {
+          phone: phoneEl.value.trim(),
+          password: passwordEl.value,
+          activationCode: (document.getElementById("activationCode") || {}).value || ""
+        }
       })
         .then(function (d) {
           A.applyLogin(d);

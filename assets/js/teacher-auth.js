@@ -144,6 +144,10 @@ window.YYSD_TEACHER = (function () {
 
   function api(path, opts) {
     opts = opts || {};
+    var desk = window.yysdDesktop && window.yysdDesktop.device;
+    if (opts.body && typeof opts.body === "object" && desk && desk.hw && desk.file) {
+      opts.body.device = { hw: String(desk.hw), file: String(desk.file) };
+    }
     return fetch(API_BASE + path, {
       method: opts.method || "GET",
       headers: authHeaders(),
@@ -153,6 +157,7 @@ window.YYSD_TEACHER = (function () {
         var d = null;
         try { d = raw ? JSON.parse(raw) : null; } catch (e) { d = null; }
         if (!r.ok) {
+          if (d && d.code === "seat_required") location.replace("download.html");
           throw new Error((d && d.error) || (r.status === 502 ? "服务暂不可用，请重试" : "请求失败"));
         }
         return d || {};

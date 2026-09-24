@@ -17,6 +17,7 @@ const hsVocab = require("./hs-vocab");
 const vocabShelf = require("./vocab-shelf");
 const vocabChallenge = require("./vocab-challenge");
 const teacherPreview = require("./teacher-preview");
+const seatMod = require("./seat");
 
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -83,6 +84,7 @@ teacherPreview.ensureSchema(db);
 
 var tenantInit = tenant.initTenant(db);
 var orgStmts = tenantInit.stmts;
+var seats = seatMod.init(db);
 
 const uploadsRoot = path.join(dataDir, "uploads");
 const avatarsDir = path.join(uploadsRoot, "avatars");
@@ -318,13 +320,17 @@ function verifySmsCode(phone, code) {
   return true;
 }
 
-function issueToken(user, phone) {
+function issueToken(user, phone, extra) {
   if (!JWT_SECRET || JWT_SECRET.length < 16) return null;
-  return jwt.sign(
-    { sub: user.id, phone: phone, role: "student", orgId: user.org_id || null },
-    JWT_SECRET,
-    { expiresIn: "30d" }
-  );
+  var payload = { sub: user.id, phone: phone, role: "student", orgId: user.org_id || null };
+  if (extra && extra.device) payload.device = extra.device;
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
+}
+
+function seatBlock(res, authz) {
+  if (!authz || !authz.error) return false;
+  res.status(authz.status || 403).json({ error: authz.error, code: authz.code });
+  return true;
 }
 
 function issueTeacherToken(teacher, phone, extra) {
@@ -870,6 +876,10 @@ function authMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ error: "未登录" });
   try {
     req.user = jwt.verify(token, JWT_SECRET);
+    if (!isAdminPhone(req.user.phone)) {
+      var seatErr = seats.rejectToken(req.user);
+      if (seatErr) return res.status(401).json({ error: seatErr, code: "seat_required" });
+    }
     next();
   } catch (e) {
     return res.status(401).json({ error: "登录已过期，请重新登录" });
@@ -883,6 +893,10 @@ function teacherAuthMiddleware(req, res, next) {
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     if (req.user.role !== "teacher") return res.status(403).json({ error: "请使用教师账号登录" });
+    if (!isAdminPhone(req.user.phone)) {
+      var seatErr = seats.rejectToken(req.user);
+      if (seatErr) return res.status(401).json({ error: seatErr, code: "seat_required" });
+    }
     next();
   } catch (e) {
     return res.status(401).json({ error: "登录已过期，请重新登录" });
@@ -1381,6 +1395,9 @@ app.post("/api/auth/send-code", async function (req, res) {
       return res.status(400).json({ error: "该手机号已注册，请直接登录" });
     }
   }
+  if ((purpose === "register" || purpose === "reset") && seats.switchOn() && !seats.deviceKey(req.body && req.body.device)) {
+    return res.status(403).json({ error: "请下载 Mac 程序后继续", code: "seat_required" });
+  }
   if (purpose === "reset") {
     var userForReset = stmts.findUser.get(phone);
     var teacherForReset = stmts.findTeacher.get(phone);
@@ -1437,6 +1454,15 @@ app.post("/api/auth/register", function (req, res) {
   if (existing && existing.password_hash) {
     return res.status(400).json({ error: "该手机号已注册，请直接登录" });
   }
+  var seatAuth = seats.authorize({
+    role: "student",
+    phone: phone,
+    device: req.body && req.body.device,
+    code: req.body && req.body.activationCode,
+    purpose: "register",
+    isAdmin: false
+  });
+  if (seatBlock(res, seatAuth)) return;
 
   var nowIso = new Date().toISOString();
   var hash = hashPassword(password);
@@ -1458,7 +1484,8 @@ app.post("/api/auth/register", function (req, res) {
     return res.status(e.httpStatus || 400).json({ error: e.message || "注册失败" });
   }
   var user = stmts.findUser.get(phone);
-  var token = issueToken(user, phone);
+  seats.commitBind(seatAuth);
+  var token = issueToken(user, phone, { device: seatAuth.claim });
   if (!token) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
 
   res.json({ ok: true, token: token, user: authUserPayload(user), org: tenant.orgPublicPayload(org) });
@@ -1495,7 +1522,17 @@ app.post("/api/auth/login", function (req, res) {
       db.prepare("UPDATE users SET org_id = ? WHERE phone = ?").run(org.id, phone);
       user.org_id = org.id;
     }
-    var studentToken = issueToken(user, phone);
+    var seatAuth = seats.authorize({
+      role: "student",
+      phone: phone,
+      device: req.body && req.body.device,
+      code: req.body && req.body.activationCode,
+      purpose: "login",
+      isAdmin: false
+    });
+    if (seatBlock(res, seatAuth)) return;
+    seats.commitBind(seatAuth);
+    var studentToken = issueToken(user, phone, { device: seatAuth.claim });
     if (!studentToken) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
     return res.json({
       ok: true,
@@ -1521,6 +1558,17 @@ app.post("/api/auth/login", function (req, res) {
       teacher.org_id = org.id;
     }
     // Platform admin may open any usable org from that subdomain (JWT only; DB org unchanged)
+    var seatFree = isAdminPhone(phone) || isOrgAdminPhone(org, phone);
+    var seatAuth = seats.authorize({
+      role: "teacher",
+      phone: phone,
+      device: req.body && req.body.device,
+      code: req.body && req.body.activationCode,
+      purpose: "login",
+      isAdmin: seatFree
+    });
+    if (seatBlock(res, seatAuth)) return;
+    seats.commitBind(seatAuth);
     var tokenTeacher = isAdminPhone(phone)
       ? Object.assign({}, teacher, { org_id: org.id })
       : teacher;
@@ -1529,7 +1577,10 @@ app.post("/api/auth/login", function (req, res) {
     } catch (provErr) {
       console.error("[auth/login] teacher preview provision", provErr && provErr.message);
     }
-    var teacherToken = issueTeacherToken(tokenTeacher, phone);
+    var teacherToken = issueTeacherToken(tokenTeacher, phone, {
+      device: seatAuth.claim || undefined,
+      adminSeat: seatFree || undefined
+    });
     if (!teacherToken) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
     return res.json({
       ok: true,
@@ -1550,6 +1601,14 @@ app.post("/api/auth/reset-password", function (req, res) {
   if (isTenantOrg(org)) {
     return res.status(403).json({ error: "本站不支持短信重置密码，请联系学校管理员或超级管理员" });
   }
+  var seatAuth = seats.authorize({
+    role: "student",
+    phone: normalizePhone(req.body && req.body.phone),
+    device: req.body && req.body.device,
+    purpose: "reset",
+    isAdmin: false
+  });
+  if (seatBlock(res, seatAuth)) return;
   var phone = normalizePhone(req.body && req.body.phone);
   var code = String((req.body && req.body.code) || "").trim();
   var password = String((req.body && req.body.password) || "");
@@ -1573,6 +1632,66 @@ app.post("/api/auth/reset-password", function (req, res) {
   if (user && user.password_hash) stmts.setPasswordHash.run(hash, phone);
   if (teacher && teacher.password_hash) stmts.setTeacherPasswordHash.run(hash, phone);
   res.json({ ok: true, message: "密码已重置，请使用新密码登录" });
+});
+
+app.get("/api/seat/config", function (req, res) {
+  res.json({ ok: true, on: seats.switchOn() });
+});
+
+app.get("/api/platform/seats", platformAuthMiddleware, function (req, res) {
+  res.json({ ok: true, on: seats.switchOn(), seats: seats.list() });
+});
+
+app.post("/api/platform/seat-switch", platformAuthMiddleware, function (req, res) {
+  seats.setSwitch(!!(req.body && req.body.on));
+  res.json({ ok: true, on: seats.switchOn() });
+});
+
+app.post("/api/platform/seats", platformAuthMiddleware, function (req, res) {
+  var role = String((req.body && req.body.role) || "");
+  var phone = normalizePhone(req.body && req.body.phone) || "";
+  if (phone) {
+    var acc = role === "teacher" ? stmts.findTeacher.get(phone) : stmts.findUser.get(phone);
+    if (!acc || !acc.password_hash) {
+      return res.status(400).json({ error: "没有这个账号。新用户请不要填手机号，发一张空白码" });
+    }
+  }
+  var created = seats.create(role, phone);
+  if (created.error) return res.status(400).json({ error: created.error });
+  res.json({ ok: true, seat: created.seat });
+});
+
+app.post("/api/platform/seats/:id/unbind", platformAuthMiddleware, function (req, res) {
+  var row = seats.get(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: "激活码不存在" });
+  seats.unbind(row.id);
+  res.json({ ok: true });
+});
+
+app.post("/api/platform/seats/:id/disable", platformAuthMiddleware, function (req, res) {
+  var row = seats.get(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: "激活码不存在" });
+  seats.setDisabled(row.id, true);
+  res.json({ ok: true });
+});
+
+app.post("/api/platform/seats/:id/enable", platformAuthMiddleware, function (req, res) {
+  var row = seats.get(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: "激活码不存在" });
+  seats.setDisabled(row.id, false);
+  res.json({ ok: true });
+});
+
+app.post("/api/platform/seats/:id/password", platformAuthMiddleware, function (req, res) {
+  var row = seats.get(Number(req.params.id));
+  if (!row || !row.phone) return res.status(404).json({ error: "还没有绑定手机号" });
+  var password = String((req.body && req.body.password) || "");
+  var pwErr = validatePassword(password);
+  if (pwErr) return res.status(400).json({ error: pwErr });
+  var hash = hashPassword(password);
+  if (row.role === "teacher") stmts.setTeacherPasswordHash.run(hash, row.phone);
+  else stmts.setPasswordHash.run(hash, row.phone);
+  res.json({ ok: true });
 });
 
 app.post("/api/auth/change-password", authMiddleware, function (req, res) {
@@ -1772,6 +1891,16 @@ app.post("/api/teacher/register", function (req, res) {
   if (stmts.findUser.get(phone) && stmts.findUser.get(phone).password_hash) {
     return res.status(400).json({ error: "该手机号已注册为学生账号，请使用其他手机号" });
   }
+  var seatFree = isAdminPhone(phone) || becomeOrgAdmin;
+  var seatAuth = seats.authorize({
+    role: "teacher",
+    phone: phone,
+    device: req.body && req.body.device,
+    code: req.body && req.body.activationCode,
+    purpose: "register",
+    isAdmin: seatFree
+  });
+  if (seatBlock(res, seatAuth)) return;
 
   var nowIso = new Date().toISOString();
   var hash = hashPassword(password);
@@ -1795,7 +1924,11 @@ app.post("/api/teacher/register", function (req, res) {
   }
 
   var teacher = stmts.findTeacher.get(phone);
-  var token = issueTeacherToken(teacher, phone);
+  seats.commitBind(seatAuth);
+  var token = issueTeacherToken(teacher, phone, {
+    device: seatAuth.claim || undefined,
+    adminSeat: seatFree || undefined
+  });
   if (!token) return res.status(503).json({ error: "服务未配置 JWT_SECRET" });
   try {
     teacherPreview.provisionTeacher(db, stmts, vocabChallenge, teacher);

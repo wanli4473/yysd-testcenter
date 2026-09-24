@@ -316,11 +316,6 @@ window.YYSD_AUTH = (function () {
   function isTeacher() {
     try {
       if (isTeacherSiteMode()) return false;
-      // teacher portal: teacher JWT wins (leftover student JWT must not sync/wipe)
-      if (isTeacherPage() && localStorage.getItem(TEACHER_TOKEN_KEY) &&
-          localStorage.getItem("yysd:teacher:mode") !== "site") {
-        return true;
-      }
       // student session wins on student-facing pages (avoids dashboard bounce)
       if (localStorage.getItem(TOKEN_KEY)) return false;
       return !!localStorage.getItem(TEACHER_TOKEN_KEY);
@@ -539,8 +534,17 @@ window.YYSD_AUTH = (function () {
     return h;
   }
 
+  function desktopDevice() {
+    var d = window.yysdDesktop && window.yysdDesktop.device;
+    if (!d || !d.hw || !d.file) return null;
+    return { hw: String(d.hw), file: String(d.file) };
+  }
+
   function api(path, opts) {
     opts = opts || {};
+    if (opts.body && typeof opts.body === "object" && desktopDevice()) {
+      opts.body.device = desktopDevice();
+    }
     return ensureTeacherSiteStudentToken().then(function () {
       return fetch(API_BASE + path, {
         method: opts.method || "GET",
@@ -561,7 +565,13 @@ window.YYSD_AUTH = (function () {
               ? "服务器暂时不可用，请稍后重试"
               : "服务器返回异常（" + r.status + "），请确认已部署最新版本");
           }
-          if (!r.ok) throw new Error((d && d.error) || "请求失败");
+          if (!r.ok) {
+            if (d && d.code === "seat_required" && location.pathname.indexOf("download.html") < 0) {
+              clearSession();
+              location.replace("download.html");
+            }
+            throw new Error((d && d.error) || "请求失败");
+          }
           return d;
         });
       });
@@ -1043,4 +1053,33 @@ window.YYSD_AUTH = (function () {
       location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
     }
   } catch (e) {}
+})();
+
+(function () {
+  var page = location.pathname.split("/").filter(Boolean).pop() || "index.html";
+  var authPages = {
+    "login.html": 1, "register.html": 1, "forgot-password.html": 1,
+    "teacher-login.html": 1, "teacher-register.html": 1
+  };
+  if (!authPages[page] || !window.YYSD_AUTH) return;
+  var form = document.querySelector("form");
+  if (window.yysdDesktop && form && !document.getElementById("activationCode")) {
+    var label = document.createElement("label");
+    label.className = "auth-field";
+    label.innerHTML = "<span>激活码</span><input id=\"activationCode\" autocomplete=\"off\" placeholder=\"这台 Mac 已绑定可留空\">";
+    var btn = form.querySelector("button[type=submit], button");
+    form.insertBefore(label, btn);
+  }
+  if (window.yysdDesktop) return;
+  window.YYSD_AUTH.api("/api/seat/config").then(function (d) {
+    if (!d || !d.on || !form) return;
+    var p = document.createElement("p");
+    p.className = "auth-msg auth-msg--err";
+    p.textContent = "学生和老师请下载 Mac 程序。管理员仍可在此登录。";
+    var a = document.createElement("a");
+    a.href = "download.html";
+    a.textContent = "下载 Mac 程序";
+    form.parentNode.insertBefore(p, form);
+    form.parentNode.insertBefore(a, form);
+  }).catch(function () {});
 })();
