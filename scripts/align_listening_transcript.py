@@ -2,8 +2,9 @@
 """Align official IELTS audioscript sentences to MP3 via Whisper word timestamps.
 Usage: python scripts/align_listening_transcript.py [test] [model]
   test: 1-4 (default 1); model: whisper size (default tiny)
-ponytail: strict sequential token align + linear fill; upgrade to WhisperX if needed."""
+ponytail: SequenceMatcher on the whole script; linear fill only for gaps. Upgrade to WhisperX if word times are still coarse."""
 import json, re, sys
+from difflib import SequenceMatcher
 from pathlib import Path
 
 import whisper
@@ -46,32 +47,16 @@ def align_sentences(sentences, words, audio_dur=None):
 
     dur = float(audio_dur if audio_dur is not None else words[-1]["end"])
 
-    # skip exam preamble: find first content token
-    first = script_tokens[0][1]
-    wi0 = next((j for j, w in enumerate(words) if w["w"] == first), 0)
-
-    # strict sequential: exact token match, whisper may insert extras
+    # whole-script match: greedy windows drift after the first miss and park
+    # later lines on the "check your answers" tail
+    stok = [t for _, t in script_tokens]
+    wtok = [w["w"] for w in words]
     matched = [None] * len(script_tokens)
-    wi = wi0
-    for i, (_, st) in enumerate(script_tokens):
-        hit = None
-        # search ahead; longer words get wider window
-        window = 40 if len(st) >= 4 else 18
-        limit = min(len(words), wi + window)
-        for j in range(wi, limit):
-            if words[j]["w"] == st:
-                hit = j
-                break
-        if hit is None and len(st) >= 5:
-            # one soft pass for plural/stem noise
-            for j in range(wi, min(len(words), wi + 60)):
-                ww = words[j]["w"]
-                if ww.startswith(st) or st.startswith(ww):
-                    hit = j
-                    break
-        matched[i] = hit
-        if hit is not None:
-            wi = hit + 1
+    sm = SequenceMatcher(None, stok, wtok, autojunk=False)
+    for a, b, n in sm.get_matching_blocks():
+        for k in range(n):
+            matched[a + k] = b + k
+    wi0 = next((j for j in matched if j is not None), 0)
 
     spans = {i: [None, None] for i in range(len(sentences))}
     for (si, _), widx in zip(script_tokens, matched):
@@ -143,6 +128,16 @@ def align_sentences(sentences, words, audio_dur=None):
             out[i - 1]["end"] = out[i]["start"]
         if out[i]["end"] <= out[i]["start"]:
             out[i]["end"] = round(min(dur, out[i]["start"] + 0.8), 2)
+    # stacked matches collapse a line to 0s; keep it long enough to hear
+    for i in range(n - 1):
+        if out[i]["end"] - out[i]["start"] < 0.25:
+            if out[i + 1]["start"] <= out[i]["start"] + 0.05:
+                out[i]["end"] = round(min(dur, out[i]["start"] + 0.25), 2)
+                out[i + 1]["start"] = out[i]["end"]
+            else:
+                out[i]["end"] = round(min(out[i + 1]["start"], out[i]["start"] + 0.25), 2)
+    if n and out[-1]["end"] - out[-1]["start"] < 0.25:
+        out[-1]["end"] = round(min(dur, out[-1]["start"] + 0.25), 2)
     return out
 
 
@@ -201,5 +196,19 @@ def main():
     print("wrote", OUT)
 
 
+def _selfcheck():
+    # greedy window locks onto the early "like" and never reaches the real line
+    words = [{"w": "like", "start": 0.0, "end": 1.0}]
+    words += [{"w": "and", "start": float(i), "end": float(i + 1)} for i in range(1, 60)]
+    for i, w in enumerate("if you like fish".split()):
+        words.append({"w": w, "start": 60 + i, "end": 61 + i})
+    out = align_sentences(["If you like fish."], words, words[-1]["end"])
+    assert out[0]["start"] >= 59, out[0]
+    print("align selfcheck ok")
+
+
 if __name__ == "__main__":
-    main()
+    if "--selfcheck" in sys.argv:
+        _selfcheck()
+    else:
+        main()
