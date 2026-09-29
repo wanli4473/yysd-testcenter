@@ -43,6 +43,7 @@ var perfectL = T.scorePaper(listening, fullL);
 if (perfectL.score !== 52 || perfectL.band !== 6) throw new Error("full listening " + perfectL.score);
 listening.tasks.forEach(function (task) {
   if (!fs.existsSync(path.join(root, task.audio))) throw new Error("missing " + task.audio);
+  if (!T.hideQsUntilHeard(task)) throw new Error(task.title + " must listen first");
 });
 if (lItems[0].q.answer !== "C" || lItems[51].q.answer !== "D") throw new Error("L1Q1 / L13Q4 keys");
 

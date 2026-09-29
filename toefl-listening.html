@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260929toefl6">
   <script src="assets/js/config.js?v=20260929toefl6"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
-  <script src="assets/js/toefl-reading.js?v=20260929toefl1"></script>
+  <script src="assets/js/toefl-reading.js?v=20260929toefl7"></script>
   <script src="assets/js/toefl-full.js?v=20260929toefl6"></script>
 </head>
 <body class="exam-ets">
@@ -77,7 +77,7 @@
   <div id="help-box" class="hidden">
     <div>
       <h2>Help</h2>
-      <p>Each clip plays when you first reach that conversation or lecture. You may skip questions and return to them later if time remains.</p>
+      <p>Choose a Response shows the options with the clip. Conversations, announcements, and lectures play first; questions appear after the recording ends.</p>
       <p>In a mock test the audio plays once and cannot be replayed. Practice mode lets you play again. Hide Time hides the clock; the clock does not stop.</p>
       <p>You cannot return to Module 1 after you begin Module 2.</p>
       <p><button class="btn" type="button" id="help-close">Return</button></p>
@@ -107,6 +107,7 @@
       var answers = {};
       var seen = {};
       var played = {};
+      var heard = {};
       var remain = 0;
       var hideTime = false;
       var tick = null;
@@ -237,11 +238,18 @@
 
       clip.addEventListener("timeupdate", paintAudio);
       clip.addEventListener("loadedmetadata", paintAudio);
+      function waiting(task) {
+        return T.hideQsUntilHeard(task) && !heard[T.taskKey(task)];
+      }
+
       clip.addEventListener("ended", function () {
         var scr = screens[si];
         if (scr) {
-          played[T.taskKey(scr.task)] = 1;
+          var key = T.taskKey(scr.task);
+          played[key] = 1;
+          heard[key] = 1;
           syncPlayBtn(scr.task);
+          if (view === "exam" && T.hideQsUntilHeard(scr.task)) renderExam();
         }
         paintAudio();
       });
@@ -250,16 +258,27 @@
         view = "exam";
         var scr = screens[si];
         moduleN = scr.module;
-        markSeen();
         show(exam);
-        document.getElementById("instruction").textContent = scr.task.instruction || "";
+        var wait = waiting(scr.task);
+        document.getElementById("instruction").textContent = wait
+          ? ((scr.task.instruction || "Listen.") + " Questions appear when the recording ends.")
+          : (scr.task.instruction || "");
         document.getElementById("q-range").textContent =
           "Listening | Module " + scr.module + " | Question " +
           (scr.from === scr.to ? scr.from : (scr.from + "–" + scr.to));
         nextBtn.textContent = "Next";
-        backBtn.disabled = si === 0 || scr.module !== screens[si - 1].module;
-        document.getElementById("q-stem").textContent = scr.q.stem;
-        T.renderOptions(scr.q, opts, answers[scr.q.id]);
+        backBtn.disabled = wait || si === 0 || scr.module !== screens[si - 1].module;
+        nextBtn.disabled = wait;
+        reviewBtn.disabled = wait;
+        document.querySelector(".listen-card").classList.toggle("hidden", wait);
+        if (wait) {
+          document.getElementById("q-stem").textContent = "";
+          opts.innerHTML = "";
+        } else {
+          markSeen();
+          document.getElementById("q-stem").textContent = scr.q.stem;
+          T.renderOptions(scr.q, opts, answers[scr.q.id]);
+        }
         bindAudio(scr.task);
       }
 

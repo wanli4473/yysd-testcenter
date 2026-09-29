@@ -50,4 +50,9 @@ if (T.rawTo30(38, 47) !== 24 || T.bandFrom30(24) !== 5) {
   throw new Error("38/47 should map to 24 → 5");
 }
 
+if (T.hideQsUntilHeard({ type: "choose_response" })) throw new Error("choose_response shows options with audio");
+["conversation", "announcement", "lecture"].forEach(function (t) {
+  if (!T.hideQsUntilHeard({ type: t })) throw new Error(t + " should wait for audio");
+});
+
 console.log("ok toefl-902-listening 47 items band 1–6");

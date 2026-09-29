@@ -284,6 +284,13 @@
     return !!(q && (q.insert || q.kind === "insert"));
   }
 
+  // standing rule: conversation / announcement / lecture = audio first, then questions
+  // Choose a Response keeps options on screen with the clip
+  function hideQsUntilHeard(task) {
+    var t = (task && task.type) || "";
+    return t === "conversation" || t === "announcement" || t === "lecture";
+  }
+
   function renderPassage(task, host, showInsert) {
     if (task.layout) {
       host.innerHTML = dailyHTML(task);
@@ -326,6 +333,7 @@
     restoreHighlights: restoreHighlights,
     applySelectionHighlight: applySelectionHighlight,
     isInsertQ: isInsertQ,
+    hideQsUntilHeard: hideQsUntilHeard,
     paperOf: paperOf,
     taskKey: taskKey,
     esc: esc

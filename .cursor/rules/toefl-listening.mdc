@@ -1,0 +1,14 @@
+---
+description: TOEFL listening papers play conversation/announcement/lecture audio before questions
+globs: toefl-listening.html,library/toefl/**/*listening*.json,assets/js/toefl-reading.js,scripts/build_toefl*.py,scripts/check_toefl*listening*
+alwaysApply: false
+---
+
+# TOEFL listening — listen first
+
+When making any new TOEFL listening paper:
+
+- `choose_response`: options stay on screen with the clip.
+- `conversation`, `announcement`, `lecture`: play the clip to the end, then show questions. Do not show stems or options during the first play. Next/Review stay off until it ends. Later questions on the same clip appear immediately.
+
+The player already does this via `hideQsUntilHeard`. New JSON only needs the correct `type`. Do not build a second listening UI.
