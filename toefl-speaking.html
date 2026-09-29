@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOEFL Speaking</title>
+  <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260929toefl4">
+  <script src="assets/js/config.js?v=20260929toefl4"></script>
+  <script src="assets/js/auth.js?v=20260821gate1"></script>
+  <script src="assets/js/toefl-speaking.js?v=20260929toefl4"></script>
+</head>
+<body class="exam-ets">
+  <header class="ets-bar">
+    <div class="ets-bar-left">
+      <b>Speaking</b>
+      <span id="mode-tag"></span>
+    </div>
+    <div class="ets-bar-right">
+      <span id="clock" class="ets-clock"></span>
+      <button type="button" id="hide-time">Hide Time</button>
+      <button type="button" id="help-btn">Help</button>
+      <button type="button" id="back-btn">Back</button>
+      <button type="button" id="next-btn">Next</button>
+    </div>
+  </header>
+  <div class="ets-sub"><span id="q-range">Speaking</span></div>
+
+  <section id="exam" class="exam-body hidden">
+    <p class="exam-title" id="instruction"></p>
+    <div class="ets-audio" id="audio-box">
+      <button type="button" id="play-btn">Play</button>
+      <span id="a-time">00:00</span>
+      <div class="a-track"><i id="a-fill"></i></div>
+      <audio id="clip" preload="auto"></audio>
+    </div>
+    <article class="exam-card listen-card">
+      <p class="q-stem" id="q-stem"></p>
+      <p class="speak-status" id="speak-status">Listen to the prompt, then record your answer.</p>
+      <div class="speak-acts">
+        <button type="button" class="btn" id="rec-btn">Record</button>
+        <span id="rec-clock"></span>
+      </div>
+      <audio id="playback" controls class="hidden"></audio>
+    </article>
+  </section>
+
+  <section id="rest" class="result hidden">
+    <h1 id="rest-title">本部分已完成</h1>
+    <p id="rest-copy">准备好后进入下一部分。离开后不能返回。</p>
+    <p><button class="btn" type="button" id="rest-go">继续</button></p>
+  </section>
+
+  <section id="done" class="result hidden">
+    <h1>口语已提交</h1>
+    <p>录音只保存在这一页。离开前请导出。口语不自动估分。</p>
+    <p><button class="btn" type="button" id="export-all">导出全部回答</button></p>
+    <div class="review" id="wrong-preview"></div>
+    <p><a class="btn" href="zone.html?zone=toefl&amp;s=speaking">返回托福口语</a></p>
+  </section>
+
+  <div id="void-lock">
+    <div>
+      <h2>模考已中止</h2>
+      <p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答，也不记分。</p>
+      <div class="void-acts">
+        <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=speaking">退出</a>
+        <button class="btn" type="button" id="void-restart">重新开始</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="help-box" class="hidden">
+    <div>
+      <h2>Help</h2>
+      <p>Listen and Repeat: listen once, then repeat the sentence. In a mock test you may record only once.</p>
+      <p>Interview: listen to the researcher, then speak. You cannot return to an earlier part after you leave it.</p>
+      <p><button class="btn" type="button" id="help-close">Return</button></p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var A = window.YYSD_AUTH;
+      var S = window.YYSD_TOEFL_SPEAK;
+      var qs = new URLSearchParams(location.search);
+      var mode = qs.get("mode") === "mock" ? "mock" : (qs.get("mode") === "practice" ? "practice" : "");
+      var paperId = qs.get("id") || "";
+      var zoneBack = "zone.html?zone=toefl&s=speaking";
+      if (A && A.requireLogin && !A.requireLogin()) return;
+      if (!mode || !paperId) { location.replace(zoneBack); return; }
+      var list = (window.YYSD && window.YYSD.TOEFL_SPEAKING) || [];
+      var meta = list.filter(function (p) { return p.id === paperId; })[0] || null;
+      if (!meta) { location.replace(zoneBack); return; }
+
+      var paper = null;
+      var screens = [];
+      var si = 0;
+      var recs = {};
+      var remain = 0;
+      var hideTime = false;
+      var tick = null;
+      var view = "exam";
+      var moduleN = 1;
+      var voided = false;
+      var lockOn = false;
+      var recorder = null;
+      var stream = null;
+      var chunks = [];
+      var recLeft = 0;
+      var recTick = null;
+      var played = {};
+
+      var clock = document.getElementById("clock");
+      var exam = document.getElementById("exam");
+      var rest = document.getElementById("rest");
+      var done = document.getElementById("done");
+      var nextBtn = document.getElementById("next-btn");
+      var backBtn = document.getElementById("back-btn");
+      var clip = document.getElementById("clip");
+      var playBtn = document.getElementById("play-btn");
+      var recBtn = document.getElementById("rec-btn");
+      var recClock = document.getElementById("rec-clock");
+      var playback = document.getElementById("playback");
+      var statusEl = document.getElementById("speak-status");
+
+      function fmt(sec) {
+        sec = Math.max(0, Math.floor(sec || 0));
+        return String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
+      }
+      function showClock() {
+        clock.textContent = hideTime ? "" : (mode === "practice" ? "Practice" : fmt(remain));
+      }
+      function moduleOf(n) {
+        return paper.modules.filter(function (m) { return m.n === n; })[0];
+      }
+      function screensIn(mod) {
+        return screens.filter(function (s) { return s.module === mod; });
+      }
+      function setNav(on) {
+        [nextBtn, backBtn, document.getElementById("hide-time"), document.getElementById("help-btn")].forEach(function (b) { b.disabled = !on; });
+      }
+      function show(el) {
+        [exam, rest, done].forEach(function (n) { n.classList.add("hidden"); });
+        el.classList.remove("hidden");
+        setNav(el === exam);
+      }
+
+      document.getElementById("hide-time").onclick = function () {
+        hideTime = !hideTime;
+        this.textContent = hideTime ? "Show Time" : "Hide Time";
+        showClock();
+      };
+      document.getElementById("help-btn").onclick = function () { document.getElementById("help-box").classList.remove("hidden"); };
+      document.getElementById("help-close").onclick = function () { document.getElementById("help-box").classList.add("hidden"); };
+
+      function paintAudio() {
+        var d = clip.duration;
+        var t = clip.currentTime || 0;
+        document.getElementById("a-time").textContent = isFinite(d) ? (fmt(t) + " / " + fmt(d)) : fmt(t);
+        document.getElementById("a-fill").style.width = (isFinite(d) && d > 0 ? (t / d * 100) : 0) + "%";
+      }
+      function syncPlayBtn(task) {
+        var key = task.id;
+        var locked = mode === "mock" && played[key];
+        playBtn.disabled = locked;
+        playBtn.textContent = locked ? "Played" : (clip.paused ? "Play" : "Pause");
+      }
+      function bindAudio(task) {
+        if (clip.getAttribute("data-src") !== task.audio) {
+          clip.pause();
+          clip.src = task.audio;
+          clip.setAttribute("data-src", task.audio);
+        }
+        if (!played[task.id]) {
+          var p = clip.play();
+          if (p && p.then) p.then(function () { played[task.id] = 1; syncPlayBtn(task); }).catch(function () { syncPlayBtn(task); });
+        } else syncPlayBtn(task);
+        paintAudio();
+      }
+      playBtn.onclick = function () {
+        var scr = screens[si];
+        if (!scr) return;
+        if (mode === "mock" && played[scr.task.id] && clip.paused) return;
+        if (clip.paused) {
+          clip.play().then(function () { played[scr.task.id] = 1; syncPlayBtn(scr.task); }).catch(function () {});
+        } else if (mode === "practice") {
+          clip.pause();
+          syncPlayBtn(scr.task);
+        }
+      };
+      clip.addEventListener("timeupdate", paintAudio);
+      clip.addEventListener("loadedmetadata", paintAudio);
+      clip.addEventListener("ended", function () {
+        var scr = screens[si];
+        if (!scr) return;
+        played[scr.task.id] = 1;
+        syncPlayBtn(scr.task);
+        paintAudio();
+        if (mode === "mock" && !recs[scr.task.id]) startRec(true);
+        else statusEl.textContent = "Prompt finished. Record your answer.";
+      });
+
+      function stopTracks() {
+        if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+        stream = null;
+      }
+      function stopRec() {
+        if (recTick) { clearInterval(recTick); recTick = null; }
+        if (recorder && recorder.state === "recording") recorder.stop();
+      }
+      function storeBlob(id, blob, mime) {
+        var prev = recs[id];
+        if (prev && prev.url) URL.revokeObjectURL(prev.url);
+        recs[id] = { blob: blob, mime: mime, url: URL.createObjectURL(blob) };
+        playback.src = recs[id].url;
+        playback.classList.remove("hidden");
+      }
+      function startRec(auto) {
+        var scr = screens[si];
+        if (!scr) return;
+        if (mode === "mock" && recs[scr.task.id] && !auto) return;
+        if (recorder && recorder.state === "recording") return;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          statusEl.textContent = "This browser cannot record audio.";
+          return;
+        }
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+          stream = s;
+          chunks = [];
+          var mime = S.recMime();
+          recorder = mime ? new MediaRecorder(s, { mimeType: mime }) : new MediaRecorder(s);
+          recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+          recorder.onstop = function () {
+            recBtn.textContent = "Record";
+            recClock.textContent = "";
+            stopTracks();
+            var blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+            if (blob.size) storeBlob(scr.task.id, blob, recorder.mimeType || "audio/webm");
+            statusEl.textContent = recs[scr.task.id] ? "Recorded. You can continue." : "No audio captured.";
+          };
+          recorder.start();
+          recBtn.textContent = "Stop";
+          recLeft = scr.task.speakSec || 15;
+          recClock.textContent = fmt(recLeft);
+          statusEl.textContent = "Recording…";
+          recTick = setInterval(function () {
+            recLeft -= 1;
+            recClock.textContent = fmt(recLeft);
+            if (recLeft <= 0) stopRec();
+          }, 1000);
+        }).catch(function () {
+          statusEl.textContent = "Microphone permission is required.";
+        });
+      }
+      recBtn.onclick = function () {
+        if (recorder && recorder.state === "recording") stopRec();
+        else startRec(false);
+      };
+
+      function renderExam() {
+        view = "exam";
+        stopRec();
+        clip.pause();
+        var scr = screens[si];
+        moduleN = scr.module;
+        show(exam);
+        var lab = (moduleOf(moduleN) || {}).label || "Speaking";
+        document.getElementById("q-range").textContent = "Speaking | " + lab + " | Question " + scr.from;
+        document.getElementById("instruction").textContent = scr.task.instruction || "";
+        document.getElementById("q-stem").textContent = scr.task.stem || (scr.type === "repeat" ? "Repeat what you hear." : "");
+        nextBtn.textContent = "Next";
+        backBtn.disabled = mode === "mock" || si === 0 || scr.module !== screens[si - 1].module;
+        recBtn.disabled = mode === "mock" && !!recs[scr.task.id];
+        recBtn.textContent = "Record";
+        recClock.textContent = "";
+        if (recs[scr.task.id]) {
+          playback.src = recs[scr.task.id].url;
+          playback.classList.remove("hidden");
+          statusEl.textContent = mode === "mock" ? "Recorded." : "Recorded. You may record again.";
+        } else {
+          playback.removeAttribute("src");
+          playback.classList.add("hidden");
+          statusEl.textContent = "Listen to the prompt, then record your answer.";
+        }
+        bindAudio(scr.task);
+      }
+
+      function startModule(n) {
+        moduleN = n;
+        remain = mode === "mock" ? ((moduleOf(n) || {}).timeSec || 0) : 0;
+        var first = screens.findIndex(function (s) { return s.module === n; });
+        si = first < 0 ? 0 : first;
+        renderExam();
+        showClock();
+      }
+      function leaveModule() {
+        stopRec();
+        clip.pause();
+        if (moduleN === 1) {
+          if (mode === "practice") {
+            document.getElementById("rest-title").textContent = "Listen and Repeat 已完成";
+            document.getElementById("rest-copy").textContent = "准备好后进入面试。离开后不能返回。";
+            document.getElementById("rest-go").onclick = function () { startModule(2); };
+            view = "rest";
+            show(rest);
+            return;
+          }
+          startModule(2);
+          return;
+        }
+        finish();
+      }
+      function finish() {
+        clearInterval(tick);
+        lockOn = false;
+        stopRec();
+        clip.pause();
+        view = "done";
+        show(done);
+        document.getElementById("wrong-preview").innerHTML = screens.map(function (s) {
+          var rec = recs[s.task.id];
+          var play = rec ? '<audio controls src="' + rec.url + '"></audio>' : "<span>未录音</span>";
+          var dl = rec ? '<button type="button" class="btn exp-one" data-id="' + s.task.id + '">下载本题</button>' : "";
+          return '<div class="review-row"><span>Q' + s.task.id + " · " +
+            (s.type === "repeat" ? "Listen and Repeat" : "Interview") +
+            "</span>" + dl + "</div>" + play +
+            (s.task.stem ? "<p class=\"sample\"><b>Question</b> " + S.esc(s.task.stem) + "</p>" : "") +
+            "<p class=\"sample\"><b>Sample</b> " + S.esc(s.task.sample || "") + "</p>";
+        }).join("");
+      }
+      document.getElementById("wrong-preview").onclick = function (e) {
+        var b = e.target.closest ? e.target.closest(".exp-one") : null;
+        if (!b) return;
+        var rec = recs[Number(b.getAttribute("data-id"))];
+        if (!rec) return;
+        S.saveBlob(rec.blob, "toefl-902-speaking-q" + String(b.getAttribute("data-id")).padStart(2, "0") + "." + S.extOf(rec.mime));
+      };
+      document.getElementById("export-all").onclick = function () {
+        var notes = S.notesText(paper, recs);
+        S.saveBlob(new Blob([notes], { type: "text/plain" }), "toefl-902-speaking-notes.txt");
+        var n = 0;
+        screens.forEach(function (s) {
+          var rec = recs[s.task.id];
+          if (!rec) return;
+          n += 1;
+          setTimeout(function () {
+            S.saveBlob(rec.blob, "toefl-902-speaking-q" + String(s.task.id).padStart(2, "0") + "." + S.extOf(rec.mime));
+          }, 400 * n);
+        });
+      };
+
+      nextBtn.onclick = function () {
+        stopRec();
+        var scr = screens[si];
+        var last = screensIn(scr.module);
+        if (si === screens.indexOf(last[last.length - 1])) leaveModule();
+        else { si += 1; renderExam(); }
+      };
+      backBtn.onclick = function () {
+        if (mode === "mock") return;
+        stopRec();
+        if (si > 0 && screens[si - 1].module === screens[si].module) {
+          si -= 1;
+          renderExam();
+        }
+      };
+      document.getElementById("void-restart").onclick = function () {
+        location.replace("toefl-speaking.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
+      };
+
+      function triggerVoid() {
+        if (voided || !lockOn) return;
+        voided = true;
+        lockOn = false;
+        clearInterval(tick);
+        stopRec();
+        clip.pause();
+        document.getElementById("void-lock").classList.add("is-visible");
+      }
+      function bindLock() {
+        lockOn = true;
+        var armed = false;
+        setTimeout(function () { armed = true; }, 2500);
+        document.addEventListener("visibilitychange", function () {
+          if (armed && document.hidden) triggerVoid();
+        });
+        window.addEventListener("blur", function () {
+          if (!armed) return;
+          setTimeout(function () { if (!document.hasFocus()) triggerVoid(); }, 400);
+        });
+        window.addEventListener("pagehide", function () { if (armed) triggerVoid(); });
+        window.addEventListener("beforeunload", function (e) {
+          if (!lockOn || voided) return;
+          e.preventDefault();
+          e.returnValue = "";
+        });
+      }
+
+      fetch(meta.file, { cache: "no-store" })
+        .then(function (r) { if (!r.ok) throw new Error("Unable to load this test"); return r.json(); })
+        .then(function (p) {
+          paper = p;
+          screens = S.screensOf(p);
+          document.title = (p.title || "TOEFL Speaking") + (mode === "mock" ? " · 模考" : " · 练习");
+          document.getElementById("mode-tag").textContent = mode === "mock" ? "Mock" : "Practice";
+          startModule(1);
+          if (mode === "mock") {
+            bindLock();
+            tick = setInterval(function () {
+              remain -= 1;
+              showClock();
+              if (remain <= 0) leaveModule();
+            }, 1000);
+          } else showClock();
+        })
+        .catch(function (e) {
+          exam.classList.remove("hidden");
+          document.getElementById("instruction").textContent = e.message || "Unable to load this test";
+        });
+    })();
+  </script>
+</body>
+</html>

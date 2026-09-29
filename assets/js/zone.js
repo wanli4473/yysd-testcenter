@@ -536,7 +536,8 @@
   var TOEFL_SKILL = {
     reading: { list: "TOEFL_READING", page: "toefl-reading.html", badge: "阅读", empty: "暂无阅读真题" },
     listening: { list: "TOEFL_LISTENING", page: "toefl-listening.html", badge: "听力", empty: "暂无听力真题" },
-    writing: { list: "TOEFL_WRITING", page: "toefl-writing.html", badge: "写作", empty: "暂无写作真题" }
+    writing: { list: "TOEFL_WRITING", page: "toefl-writing.html", badge: "写作", empty: "暂无写作真题" },
+    speaking: { list: "TOEFL_SPEAKING", page: "toefl-speaking.html", badge: "口语", empty: "暂无口语真题" }
   };
 
   function toeflPaperCards(skill) {
@@ -586,7 +587,7 @@
       '<header class="ielts-hub__intro">' +
         '<p class="ielts-hub__kicker">Enhanced TOEFL iBT</p>' +
         "<h2>选择你的训练路径</h2>" +
-        "<p>阅读、听力、写作已开放。口语随后上线。</p>" +
+        "<p>阅读、听力、口语、写作均已开放。</p>" +
       "</header>" +
       '<div class="ielts-hub__grid ielts-hub__grid--4">' + cards + "</div>" +
     "</section>";
@@ -613,7 +614,7 @@
         ? Y.cambridgeCatalogHTML(vols, allItems, "", { tier: camTier, query: searchQuery, collapseLegacy: true })
         : emptyBox("暂无剑桥真题", "老师上传套题后会出现在这里。也可以先做单项听力或阅读练习。", "zone.html?zone=mock&s=listening", "去练听力");
     } else if (zone === "toefl" && cat.soon) {
-      body = emptyBox(cat.label + "即将上线", "阅读、听力和写作已开放，这一科随后加入。", "zone.html?zone=toefl", "返回托福总览");
+      body = emptyBox(cat.label + "即将上线", "四科机考已开放，这一科随后加入。", "zone.html?zone=toefl", "返回托福总览");
     } else if (zone === "toefl" && TOEFL_SKILL[cat.key]) {
       body = toeflPaperCards(cat.key);
     } else if (zone === "mock" && (cat.key === "listening" || cat.key === "reading" || cat.key === "writing")) {
