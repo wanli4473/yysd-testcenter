@@ -16,9 +16,11 @@ if (F.skillHref("2025-09-02", "practice", "reading").indexOf("full=1") < 0) thro
 if (F.compactScore({ score: 40, total: 50, band: 4.5, scaled30: 22 }).band !== 4.5) throw new Error("compact");
 if (F.restCopy("reading").indexOf("Listening") < 0) throw new Error("rest copy");
 
-["reading", "listening", "writing", "speaking"].forEach(function (skill) {
-  var p = path.join(root, "library/toefl/2025-09-02-" + skill + ".json");
-  if (!fs.existsSync(p)) throw new Error("missing " + skill);
+["2025-09-02", "2025-09-05"].forEach(function (id) {
+  ["reading", "listening", "writing", "speaking"].forEach(function (skill) {
+    var p = path.join(root, "library/toefl/" + id + "-" + skill + ".json");
+    if (!fs.existsSync(p)) throw new Error("missing " + skill + " " + id);
+  });
 });
 var html = fs.readFileSync(path.join(root, "toefl-full.html"), "utf8");
 if (html.indexOf("无安排休息") < 0) throw new Error("break rule");

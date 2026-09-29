@@ -6,11 +6,11 @@
   <title>TOEFL Speaking</title>
   <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260929toefl4">
-  <script src="assets/js/config.js?v=20260929toefl4"></script>
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260929toefl6">
+  <script src="assets/js/config.js?v=20260929toefl6"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
-  <script src="assets/js/toefl-speaking.js?v=20260929toefl4"></script>
-  <script src="assets/js/toefl-full.js?v=20260929toefl5"></script>
+  <script src="assets/js/toefl-speaking.js?v=20260929toefl6"></script>
+  <script src="assets/js/toefl-full.js?v=20260929toefl6"></script>
 </head>
 <body class="exam-ets">
   <header class="ets-bar">
@@ -301,16 +301,17 @@
       function leaveModule() {
         stopRec();
         clip.pause();
-        if (moduleN === 1) {
+        if (moduleN < paper.modules.length) {
           if (mode === "practice") {
-            document.getElementById("rest-title").textContent = "Listen and Repeat 已完成";
-            document.getElementById("rest-copy").textContent = "准备好后进入面试。离开后不能返回。";
-            document.getElementById("rest-go").onclick = function () { startModule(2); };
+            var nextLab = (moduleOf(moduleN + 1) || {}).label || "下一部分";
+            document.getElementById("rest-title").textContent = (moduleOf(moduleN) || {}).label + " 已完成";
+            document.getElementById("rest-copy").textContent = "准备好后进入 " + nextLab + "。离开后不能返回。";
+            document.getElementById("rest-go").onclick = function () { startModule(moduleN + 1); };
             view = "rest";
             show(rest);
             return;
           }
-          startModule(2);
+          startModule(moduleN + 1);
           return;
         }
         finish();
@@ -350,18 +351,18 @@
         if (!b) return;
         var rec = recs[Number(b.getAttribute("data-id"))];
         if (!rec) return;
-        S.saveBlob(rec.blob, "toefl-902-speaking-q" + String(b.getAttribute("data-id")).padStart(2, "0") + "." + S.extOf(rec.mime));
+        S.saveBlob(rec.blob, (paper.id || paperId) + "-speaking-q" + String(b.getAttribute("data-id")).padStart(2, "0") + "." + S.extOf(rec.mime));
       };
       document.getElementById("export-all").onclick = function () {
         var notes = S.notesText(paper, recs);
-        S.saveBlob(new Blob([notes], { type: "text/plain" }), "toefl-902-speaking-notes.txt");
+        S.saveBlob(new Blob([notes], { type: "text/plain" }), (paper.id || paperId) + "-speaking-notes.txt");
         var n = 0;
         screens.forEach(function (s) {
           var rec = recs[s.task.id];
           if (!rec) return;
           n += 1;
           setTimeout(function () {
-            S.saveBlob(rec.blob, "toefl-902-speaking-q" + String(s.task.id).padStart(2, "0") + "." + S.extOf(rec.mime));
+            S.saveBlob(rec.blob, (paper.id || paperId) + "-speaking-q" + String(s.task.id).padStart(2, "0") + "." + S.extOf(rec.mime));
           }, 400 * n);
         });
       };

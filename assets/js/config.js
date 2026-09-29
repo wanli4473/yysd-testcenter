@@ -122,9 +122,16 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-02-reading.json",
       duration: 30,
       desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）"
+    },
+    {
+      id: "2025-09-05",
+      title: "新托福 9.05 · 阅读",
+      file: "library/toefl/2025-09-05-reading.json",
+      duration: 52,
+      desc: "110 题 · 填词 70（28 分钟）+ 学术 40（24 分钟）"
     }
   ];
-  // ponytail: 听力 PDF 无模块时长；按 Enhanced 整段约 36 分钟拆 25+11
+  // ponytail: 听力 PDF 无模块时长；9.02 按 Enhanced 整段约 36 分钟拆 25+11；9.05 仅 13 讲座
   var TOEFL_LISTENING = [
     {
       id: "2025-09-02",
@@ -132,6 +139,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-02-listening.json",
       duration: 36,
       desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）"
+    },
+    {
+      id: "2025-09-05",
+      title: "新托福 9.05 · 听力",
+      file: "library/toefl/2025-09-05-listening.json",
+      duration: 45,
+      desc: "52 题 · 13 篇讲座 · Module 1（25 分钟）+ Module 2（20 分钟）"
     }
   ];
   // ponytail: 组句无官方时长；邮件 7 分、讨论 10 分按 ETS Enhanced
@@ -142,6 +156,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-02-writing.json",
       duration: 25,
       desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）"
+    },
+    {
+      id: "2025-09-05",
+      title: "新托福 9.05 · 写作",
+      file: "library/toefl/2025-09-05-writing.json",
+      duration: 68,
+      desc: "4 封邮件（28 分钟）+ 4 篇学术讨论（40 分钟）· 无组句"
     }
   ];
   var TOEFL_SPEAKING = [
@@ -151,15 +172,70 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-02-speaking.json",
       duration: 10,
       desc: "听后复述 7 题（4 分钟）+ 面试 4 题（6 分钟）"
+    },
+    {
+      id: "2025-09-05",
+      title: "新托福 9.05 · 口语 Form 1",
+      file: "library/toefl/2025-09-05-speaking.json",
+      duration: 10,
+      desc: "科学展示 · 听后复述 7 题 + 新爱好面试 4 题"
+    },
+    {
+      id: "2025-09-05-s2",
+      title: "新托福 9.05 · 口语 Form 2",
+      file: "library/toefl/2025-09-05-speaking-f2.json",
+      duration: 10,
+      desc: "校园咖啡店 · 听后复述 + 学习新爱好面试"
+    },
+    {
+      id: "2025-09-05-s3",
+      title: "新托福 9.05 · 口语 Form 3",
+      file: "library/toefl/2025-09-05-speaking-f3.json",
+      duration: 10,
+      desc: "海事博物馆 · 听后复述 + 艺术表达面试"
+    },
+    {
+      id: "2025-09-05-s4",
+      title: "新托福 9.05 · 口语 Form 4",
+      file: "library/toefl/2025-09-05-speaking-f4.json",
+      duration: 10,
+      desc: "博物馆导览 · 听后复述 + 可再生能源面试"
+    },
+    {
+      id: "2025-09-05-s5",
+      title: "新托福 9.05 · 口语 Form 5",
+      file: "library/toefl/2025-09-05-speaking-f5.json",
+      duration: 10,
+      desc: "机房值班 · 听后复述 + 文化节面试"
+    },
+    {
+      id: "2025-09-05-s6",
+      title: "新托福 9.05 · 口语 Form 6 面试",
+      file: "library/toefl/2025-09-05-speaking-f6.json",
+      duration: 6,
+      desc: "公共交通习惯 · 面试 4 题"
+    },
+    {
+      id: "2025-09-05-s7",
+      title: "新托福 9.05 · 口语 Form 7 面试",
+      file: "library/toefl/2025-09-05-speaking-f7.json",
+      duration: 6,
+      desc: "阅读习惯 · 面试 4 题"
     }
   ];
-  // ponytail: 9.02 四科齐全即为一套全卷；顺序按 ETS Enhanced FAQ：R→L→W→S，无休息
+  // ponytail: 9.05 为题库而非标准 47 题听力全卷；完整模考链同一套 id 的四科
   var TOEFL_FULL = [
     {
       id: "2025-09-02",
       title: "新托福 9.02 · 完整模考",
       duration: 101,
       desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
+    },
+    {
+      id: "2025-09-05",
+      title: "新托福 9.05 · 完整模考",
+      duration: 175,
+      desc: "阅读→听力→写作→口语 Form 1 · 约 175 分钟 · 无休息"
     }
   ];
   function navOf(zone) { return NAV[zone] || []; }
