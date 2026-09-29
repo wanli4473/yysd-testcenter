@@ -6377,6 +6377,18 @@ body.is-vocab-hub .catalog-toolbar {
   gap: 16px;
   align-items: stretch;
 }
+.ielts-hub__grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.ielts-hub__card.is-soon {
+  opacity: 0.72;
+}
+.ielts-hub__card.is-soon:hover { transform: none; }
+.ielts-hub__go.is-soon {
+  color: var(--mega-muted);
+  pointer-events: none;
+}
+.toefl-card-acts { display: flex; gap: 8px; }
 .ielts-hub__card {
   --hub-accent: #c7a45d;
   --hub-tint: rgba(199, 164, 93, .08);
@@ -6530,7 +6542,8 @@ body.is-vocab-hub .catalog-toolbar {
   transform: translateX(3px);
 }
 @media (max-width: 1100px) {
-  .ielts-hub__grid {
+  .ielts-hub__grid,
+  .ielts-hub__grid--4 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .ielts-hub__card--mock {

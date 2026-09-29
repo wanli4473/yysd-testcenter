@@ -13,7 +13,7 @@ window.YYSD = (function () {
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
   // Homepage display order: 单词区 → 练习区 → 真题区
-  var ZONES = ["study", "practice", "mock"];
+  var ZONES = ["study", "practice", "mock", "toefl"];
 
   var ZONE = {
     study:    { label: "单词区", en: "Words", icon: "📚",
@@ -21,7 +21,9 @@ window.YYSD = (function () {
     practice: { label: "练习区", en: "Practice", icon: "✏️",
                 desc: "长难句、数字听写等专项训练，针对性提分。" },
     mock:     { label: "雅思真题", en: "IELTS Past Papers", icon: "🎯",
-                desc: "剑桥雅思听力 / 阅读 / 写作历年真题，在线练习。" }
+                desc: "剑桥雅思听力 / 阅读 / 写作历年真题，在线练习。" },
+    toefl:    { label: "托福真题", en: "TOEFL", icon: "🎯",
+                desc: "新托福阅读机考：练习不限时，模考按模块计时。" }
   };
 
   // ordered subjects per zone (leaf keys used by the manifest / folder classification)
@@ -31,7 +33,8 @@ window.YYSD = (function () {
                "vocab-themes"],
     practice: ["changnanju", "shuzi-tingxie", "ielts-speaking", "ielts"],
     mock:     ["cambridge-listening", "cambridge-reading", "cambridge-writing", "ielts",
-               "ielts-speaking", "ielts-writing", "jingting"]
+               "ielts-speaking", "ielts-writing", "jingting"],
+    toefl:    ["toefl-reading"]
   };
 
   var SUBJECT = {
@@ -45,6 +48,7 @@ window.YYSD = (function () {
     alevel:  { label: "A-Level 真题", en: "A-Level", color: "var(--c-pte)" },
     ap:      { label: "AP 真题", en: "AP", color: "var(--c-toefl)" },
     toefl:   { label: "托福真题", en: "TOEFL", color: "var(--c-toefl)" },
+    "toefl-reading": { label: "托福阅读", en: "TOEFL Reading", color: "var(--c-toefl)" },
     sat:     { label: "SAT 真题", en: "SAT", color: "var(--c-grammar)" },
     grammar: { label: "语法", en: "Grammar", color: "var(--c-grammar)" },
     vocab:   { label: "高中词汇", en: "Vocabulary", color: "var(--c-vocab)" },
@@ -97,8 +101,25 @@ window.YYSD = (function () {
       { key: "mock", label: "模考", subject: "ielts", desc: "剑桥套题模考" },
       // ponytail: under 听力 links only — excluded from hub columns/chips in zone.js
       { key: "jingting", label: "听力精听", subject: "jingting", desc: "听力真题精听" }
+    ],
+    toefl: [
+      { key: "reading", label: "阅读", subject: "toefl-reading", desc: "阅读真题顺序练习", skill: "reading" },
+      { key: "listening", label: "听力", desc: "即将上线", skill: "listening", soon: true },
+      { key: "speaking", label: "口语", desc: "即将上线", skill: "speaking", soon: true },
+      { key: "writing", label: "写作", desc: "即将上线", skill: "writing", soon: true }
     ]
   };
+
+  // ponytail: 托福卷是 JSON，不进 HTML manifest；加套只改这一表
+  var TOEFL_READING = [
+    {
+      id: "2025-09-02",
+      title: "新托福 9.02 · 阅读",
+      file: "library/toefl/2025-09-02-reading.json",
+      duration: 30,
+      desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）"
+    }
+  ];
   function navOf(zone) { return NAV[zone] || []; }
 
   function esc(s) {
@@ -873,7 +894,9 @@ window.YYSD = (function () {
       (skill ? "&skill=" + encodeURIComponent(skill) : ""));
     var goLabel = opts.goLabel || (skill ? "开始练习 ›" : "开始模考 ›");
     return '' +
-      '<a class="vol-card vol-card--' + accent + ' vol-card--tier-' + tag.c + doneClass + '" href="' + href + '" data-skill="' + accent + '">' +
+      '<a class="vol-card vol-card--' + accent + ' vol-card--tier-' + tag.c + doneClass +
+        (opts.cardClass ? " " + opts.cardClass : "") +
+        '" href="' + href + '" data-skill="' + accent + '">' +
         '<div class="vol-card__main">' +
         '<div class="vol-card__top">' +
           '<span class="vol-card__vol">' + markIcon + ' VOL.' + esc(v.vol) + '</span>' +
@@ -921,6 +944,7 @@ window.YYSD = (function () {
         var cardOpts = { skill: opts.skill || "" };
         if (opts.goLabel) cardOpts.goLabel = opts.goLabel;
         if (opts.cardHref) cardOpts.href = opts.cardHref(v);
+        if (opts.cardClass) cardOpts.cardClass = opts.cardClass;
         return camVolumeCardHTML(v, prefix, items, cardOpts);
       }).join("");
     }
@@ -1024,7 +1048,7 @@ window.YYSD = (function () {
     }
     return '<div class="vol-grid">' + tests.map(function (t) {
       var parts = byTest[t];
-      return '<div class="vol-card vol-card--listening">' +
+      return '<div class="vol-card vol-card--jingting">' +
         '<div class="vol-card__main">' +
           '<div class="vol-card__top">' +
             '<span class="vol-card__vol">TEST ' + esc(t) + "</span>" +
@@ -1059,6 +1083,7 @@ window.YYSD = (function () {
       query: opts.query,
       collapseLegacy: true,
       goLabel: "开始精听 ›",
+      cardClass: "vol-card--jingting",
       cardHref: function (v) {
         return (prefix || "") + "zone.html?zone=mock&s=jingting&vol=" + encodeURIComponent(v.vol);
       }
@@ -1398,7 +1423,7 @@ window.YYSD = (function () {
     CONTENT_VER: CONTENT_VER,
     ensureSecretCatChips: ensureSecretCatChips,
     ZONES: ZONES, ZONE: ZONE, ZONE_SUBJECTS: ZONE_SUBJECTS, SUBJECT: SUBJECT,
-    NAV: NAV, navOf: navOf,
+    NAV: NAV, navOf: navOf, TOEFL_READING: TOEFL_READING,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
     fileHref: fileHref, vocabLessonHref: vocabLessonHref, cardHTML: cardHTML, countsBySubject: countsBySubject,
     isCambridge: isCambridge, isReadingExam: isReadingExam, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,

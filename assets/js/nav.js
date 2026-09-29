@@ -31,6 +31,7 @@
     { href: "index.html", key: "home", label: "首页" },
     { href: "zone.html?zone=study&s=vocab", key: "words", label: "单词", zone: "study" },
     { href: "zone.html?zone=mock", key: "ielts", label: "雅思", mega: true },
+    { href: "zone.html?zone=toefl", key: "toefl", label: "托福", zone: "toefl" },
     { href: "alevel.html", key: "intl", label: "国际课程" },
     { href: "/rankings", key: "rankings", label: "全球大学排行榜", special: "nav-rankings", rankings: true },
     { href: "/admission", key: "ai-admit", label: "AI升学顾问", special: "nav-ai-admit", aiAdmit: true },
@@ -435,6 +436,10 @@
     if (path === "ai-tutor.html" || path === "jingting-player.html") { activate("ielts"); return; }
     if (path === "cambridge.html" || (path === "zone.html" && zone === "mock") || (path === "zone.html" && subject === "ielts")) {
       activate("ielts");
+      return;
+    }
+    if (path === "toefl-reading.html" || (path === "zone.html" && zone === "toefl")) {
+      activate("toefl");
       return;
     }
     if (path === "zone.html" && zone === "practice") { activate("ielts"); return; }

@@ -201,7 +201,8 @@
   }
 
   if (searchInput) {
-    searchInput.placeholder = zone === "mock" ? "搜索模考、册数、Test…" : "搜索内容名称…";
+    searchInput.placeholder = zone === "mock" ? "搜索模考、册数、Test…"
+      : (zone === "toefl" ? "搜索托福套题…" : "搜索内容名称…");
     var onSearch = window.YYSD_DEBOUNCE ? window.YYSD_DEBOUNCE(function () {
       searchQuery = searchInput.value.trim();
       buildSubFilters();
@@ -532,6 +533,58 @@
     "</section>";
   }
 
+  function toeflPaperCards() {
+    var papers = Y.TOEFL_READING || [];
+    if (!papers.length) {
+      return emptyBox("暂无阅读真题", "题目上传后会出现在这里。", "zone.html?zone=toefl", "返回托福总览");
+    }
+    return '<div class="exam-grid">' + papers.map(function (p) {
+      var practice = "toefl-reading.html?id=" + encodeURIComponent(p.id) + "&mode=practice";
+      var mock = "toefl-reading.html?id=" + encodeURIComponent(p.id) + "&mode=mock";
+      return '<article class="exam-card">' +
+        '<div class="exam-card__top"><span class="badge badge--toefl-reading">阅读</span></div>' +
+        "<h3>" + Y.esc(p.title) + "</h3>" +
+        "<p>" + Y.esc(p.desc || "") + "</p>" +
+        '<div class="exam-card__meta"><span>⏱️ ' + Y.esc(String(p.duration || 30)) + " 分钟</span></div>" +
+        '<div class="exam-card__foot toefl-card-acts">' +
+          '<a class="btn btn--ghost btn--sm" href="' + practice + '">练习</a>' +
+          '<a class="btn btn--primary btn--sm" href="' + mock + '">模考</a>' +
+        "</div></article>";
+    }).join("") + "</div>";
+  }
+
+  function toeflHubHTML() {
+    var en = { listening: "Listening", reading: "Reading", speaking: "Speaking", writing: "Writing" };
+    var cards = nav.map(function (cat) {
+      var soon = !!cat.soon;
+      var headHref = soon ? "" : ("zone.html?zone=toefl&s=" + encodeURIComponent(cat.key));
+      var hit = soon
+        ? '<div class="ielts-hub__hit">'
+        : '<a class="ielts-hub__hit" href="' + Y.esc(headHref) + '">';
+      var hitEnd = soon ? "</div>" : "</a>";
+      var go = soon
+        ? '<span class="ielts-hub__go is-soon">即将上线</span>'
+        : '<a class="ielts-hub__go" href="' + Y.esc(headHref) + '">进入' + Y.esc(cat.label) + ' <span aria-hidden="true">›</span></a>';
+      return '<article class="ielts-hub__card ielts-hub__card--' + Y.esc(cat.key) + (soon ? " is-soon" : "") + '">' +
+        hit +
+          '<span class="ielts-hub__ico" aria-hidden="true">' + (Y.skillGlyph ? Y.skillGlyph(cat.key) : "") + "</span>" +
+          '<span class="ielts-hub__eyebrow">' + Y.esc(en[cat.key] || "") + "</span>" +
+          "<h3>" + Y.esc(cat.label) + "</h3>" +
+          '<p class="ielts-hub__desc">' + Y.esc(cat.desc || "") + "</p>" +
+        hitEnd +
+        go +
+      "</article>";
+    }).join("");
+    return '<section class="ielts-hub" aria-label="托福入口">' +
+      '<header class="ielts-hub__intro">' +
+        '<p class="ielts-hub__kicker">Enhanced TOEFL iBT</p>' +
+        "<h2>选择你的训练路径</h2>" +
+        "<p>第一期先开放阅读机考。听力、口语、写作随后上线。</p>" +
+      "</header>" +
+      '<div class="ielts-hub__grid ielts-hub__grid--4">' + cards + "</div>" +
+    "</section>";
+  }
+
   function categoryHTML(cat) {
     var sub = Y.SUBJECT[cat.subject] || { color: "var(--c-cambridge)" };
     // ponytail: vocab desk owns its own title — skip generic subject head
@@ -541,7 +594,9 @@
       (cat.key === "mock" || cat.key === "ielts" ? Y.camVolumes(allItems).length + " 册"
         : cat.key === "alevel" && alevelCatalog && window.YYSD_ALEVEL
           ? window.YYSD_ALEVEL.qpCount(alevelCatalog) + " 套"
-        : countOf(cat.subject) + unitOf(cat.subject || "")) +
+        : (zone === "toefl" && cat.key === "reading"
+          ? (Y.TOEFL_READING || []).length + " 套"
+          : countOf(cat.subject) + unitOf(cat.subject || ""))) +
       "</span></div>");
 
     var body;
@@ -550,7 +605,11 @@
       body = vols.length
         ? Y.cambridgeCatalogHTML(vols, allItems, "", { tier: camTier, query: searchQuery, collapseLegacy: true })
         : emptyBox("暂无剑桥真题", "老师上传套题后会出现在这里。也可以先做单项听力或阅读练习。", "zone.html?zone=mock&s=listening", "去练听力");
-    } else if (cat.key === "listening" || cat.key === "reading" || cat.key === "writing") {
+    } else if (zone === "toefl" && cat.soon) {
+      body = emptyBox(cat.label + "即将上线", "第一期先做阅读模考，这一科随后加入。", "zone.html?zone=toefl", "返回托福总览");
+    } else if (zone === "toefl" && cat.key === "reading") {
+      body = toeflPaperCards();
+    } else if (zone === "mock" && (cat.key === "listening" || cat.key === "reading" || cat.key === "writing")) {
       var skillVols = Y.camVolumes(allItems.filter(function (it) { return it.subject === cat.subject; }));
       body = skillVols.length
         ? Y.cambridgeCatalogHTML(skillVols, allItems, "", {
@@ -590,7 +649,7 @@
   }
 
   function syncZoneQuery() {
-    if (zone !== "mock") return;
+    if (zone !== "mock" && zone !== "toefl") return;
     try {
       var u = new URL(location.href);
       var cur = u.searchParams.get("s") || "";
@@ -620,9 +679,10 @@
     if (!toolbarEl) return;
     /* ponytail: IELTS hub / vocab hub are portals — hide search (vocab always) */
     var isIeltsHub = zone === "mock" && activeCat === "all" && !searchQuery;
+    var isToeflHub = zone === "toefl" && activeCat === "all" && !searchQuery;
     var isVocabHub = zone === "study" && activeCat === "vocab";
-    var hub = isIeltsHub || isVocabHub;
-    document.body.classList.toggle("is-ielts-hub", isIeltsHub);
+    var hub = isIeltsHub || isToeflHub || isVocabHub;
+    document.body.classList.toggle("is-ielts-hub", isIeltsHub || isToeflHub);
     document.body.classList.toggle("is-vocab-hub", isVocabHub);
     toolbarEl.hidden = hub;
     toolbarEl.setAttribute("aria-hidden", hub ? "true" : "false");
@@ -642,6 +702,8 @@
         Y.searchResultsHTML(matched, "");
     } else if (zone === "mock" && activeCat === "all") {
       html = ieltsHubHTML();
+    } else if (zone === "toefl" && activeCat === "all") {
+      html = toeflHubHTML();
     } else {
       var aiTutorHTML = zone === "practice"
         ? '<a class="ai-tutor-entry pressable" href="ai-tutor.html">' +

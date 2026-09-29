@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOEFL Reading</title>
+  <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css">
+  <script src="assets/js/config.js?v=20260929toefl1"></script>
+  <script src="assets/js/auth.js?v=20260821gate1"></script>
+  <script src="assets/js/toefl-reading.js?v=20260929toefl1"></script>
+</head>
+<body class="exam-ets">
+  <header class="ets-bar">
+    <div class="ets-bar-left">
+      <b id="set-title">Reading</b>
+      <span id="mode-tag"></span>
+    </div>
+    <div class="ets-bar-right">
+      <span id="clock" class="ets-clock"></span>
+      <button type="button" id="hide-time">Hide Time</button>
+      <button type="button" id="help-btn">Help</button>
+      <button type="button" id="review-btn">Review</button>
+      <button type="button" id="back-btn">Back</button>
+      <button type="button" id="next-btn">Next</button>
+    </div>
+  </header>
+  <div class="ets-sub">
+    <span id="q-range">Reading</span>
+  </div>
+
+  <section id="exam" class="exam-body hidden">
+    <p class="exam-title" id="instruction"></p>
+    <div id="cw-wrap" class="hidden">
+      <div class="passage" id="passage"></div>
+    </div>
+    <div id="split-wrap" class="exam-split hidden">
+      <article class="exam-card">
+        <p class="q-stem" id="q-stem"></p>
+        <div id="opts"></div>
+      </article>
+      <article class="exam-card passage" id="right-pass"></article>
+    </div>
+  </section>
+
+  <section id="review" class="exam-body hidden">
+    <p class="exam-title">Review</p>
+    <div class="review" id="review-list"></div>
+  </section>
+
+  <section id="rest" class="result hidden">
+    <h1>Module 1 已完成</h1>
+    <p>练习模式可以休息。准备好后进入 Module 2。</p>
+    <p><button class="btn" type="button" id="rest-go">开始 Module 2</button></p>
+  </section>
+
+  <section id="done" class="result hidden">
+    <h1 id="score-line"></h1>
+    <p id="pct-line"></p>
+    <div class="review" id="wrong-preview"></div>
+    <p><a class="btn" id="back-zone" href="zone.html?zone=toefl&amp;s=reading">返回托福阅读</a></p>
+  </section>
+
+  <div id="void-lock">
+    <div>
+      <h2>模考已中止</h2>
+      <p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答，也不记分。</p>
+      <div class="void-acts">
+        <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=reading">退出</a>
+        <button class="btn" type="button" id="void-restart">重新开始</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="help-box" class="hidden">
+    <div>
+      <h2>Help</h2>
+      <p>Use Next and Back to move between questions in this module. You may skip questions and return to them later if time remains.</p>
+      <p>Use Review to see which questions you have answered. From Review, you may go only to questions you have already seen. Hide Time hides the clock; the clock does not stop. Help does not stop the clock.</p>
+      <p>You cannot return to Module 1 after you begin Module 2.</p>
+      <p><button class="btn" type="button" id="help-close">Return</button></p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var A = window.YYSD_AUTH;
+      var T = window.YYSD_TOEFL;
+      var qs = new URLSearchParams(location.search);
+      var mode = qs.get("mode") === "mock" ? "mock" : (qs.get("mode") === "practice" ? "practice" : "");
+      var paperId = qs.get("id") || "";
+      var zoneBack = "zone.html?zone=toefl&s=reading";
+      if (A && A.requireLogin && !A.requireLogin()) return;
+      if (!mode || !paperId) { location.replace(zoneBack); return; }
+
+      var meta = T.paperOf(paperId);
+      if (!meta) { location.replace(zoneBack); return; }
+
+      var paper = null;
+      var screens = [];
+      var si = 0;
+      var answers = {};
+      var highlights = {};
+      var seen = {};
+      var remain = 0;
+      var hideTime = false;
+      var tick = null;
+      var view = "exam";
+      var moduleN = 1;
+      var voided = false;
+      var lockOn = false;
+
+      var clock = document.getElementById("clock");
+      var exam = document.getElementById("exam");
+      var review = document.getElementById("review");
+      var rest = document.getElementById("rest");
+      var done = document.getElementById("done");
+      var nextBtn = document.getElementById("next-btn");
+      var backBtn = document.getElementById("back-btn");
+      var reviewBtn = document.getElementById("review-btn");
+      var hideBtn = document.getElementById("hide-time");
+      var helpBtn = document.getElementById("help-btn");
+      var helpBox = document.getElementById("help-box");
+      var cwWrap = document.getElementById("cw-wrap");
+      var splitWrap = document.getElementById("split-wrap");
+      var passage = document.getElementById("passage");
+      var rightPass = document.getElementById("right-pass");
+      var opts = document.getElementById("opts");
+
+      function fmt(sec) {
+        sec = Math.max(0, sec);
+        var m = Math.floor(sec / 60);
+        var s = sec % 60;
+        return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+      }
+
+      function showClock() {
+        if (mode === "practice") {
+          clock.textContent = hideTime ? "" : "Practice";
+          return;
+        }
+        clock.textContent = hideTime ? "" : fmt(remain);
+      }
+
+      function markSeen() { seen[si] = true; }
+
+      function passageHost() {
+        var scr = screens[si];
+        if (!scr) return null;
+        return scr.type === "complete_words" ? passage : rightPass;
+      }
+
+      function storeMarks() {
+        var scr = screens[si];
+        var host = passageHost();
+        if (scr && host) T.saveHighlights(scr.task, host, highlights);
+      }
+
+      function bindMarks(host) {
+        if (!host) return;
+        host.onmouseup = function () {
+          if (T.applySelectionHighlight(host)) storeMarks();
+        };
+        host.onclick = function (e) {
+          if (e.target && e.target.classList && e.target.classList.contains("hl")) {
+            var p = e.target.parentNode;
+            while (e.target.firstChild) p.insertBefore(e.target.firstChild, e.target);
+            p.removeChild(e.target);
+            p.normalize();
+            storeMarks();
+          }
+        };
+      }
+
+      hideBtn.onclick = function () {
+        hideTime = !hideTime;
+        hideBtn.textContent = hideTime ? "Show Time" : "Hide Time";
+        showClock();
+      };
+      helpBtn.onclick = function () { helpBox.classList.remove("hidden"); };
+      document.getElementById("help-close").onclick = function () { helpBox.classList.add("hidden"); };
+
+      function moduleOf(n) {
+        return paper.modules.filter(function (m) { return m.n === n; })[0];
+      }
+
+      function screensIn(mod) {
+        return screens.filter(function (s) { return s.module === mod; });
+      }
+
+      function harvest() {
+        var scr = screens[si];
+        if (!scr) return;
+        storeMarks();
+        if (scr.type === "complete_words") {
+          var got = T.collectBlanks(passage);
+          Object.keys(got).forEach(function (k) { answers[k] = got[k]; });
+          return;
+        }
+        var picked = opts.querySelector("input:checked");
+        answers[scr.q.id] = picked ? picked.value : (answers[scr.q.id] || "");
+      }
+
+      function filled(no) {
+        return String(answers[no] || "").trim() !== "";
+      }
+
+      function setNav(on) {
+        [nextBtn, backBtn, reviewBtn, hideBtn, helpBtn].forEach(function (b) { b.disabled = !on; });
+      }
+
+      function show(el) {
+        [exam, review, rest, done].forEach(function (n) { n.classList.add("hidden"); });
+        el.classList.remove("hidden");
+        setNav(el === exam || el === review);
+      }
+
+      function bindInsert() {
+        var scr = screens[si];
+        if (!scr || !scr.q || !T.isInsertQ(scr.q)) return;
+        var qid = scr.q.id;
+        rightPass.querySelectorAll(".insert").forEach(function (btn) {
+          btn.classList.toggle("is-on", answers[qid] === btn.dataset.insert);
+          btn.onclick = function () {
+            answers[qid] = btn.dataset.insert;
+            var radio = opts.querySelector('input[value="' + btn.dataset.insert + '"]');
+            if (radio) radio.checked = true;
+            rightPass.querySelectorAll(".insert").forEach(function (b) {
+              b.classList.toggle("is-on", b === btn);
+            });
+          };
+        });
+        opts.onchange = function () {
+          var picked = opts.querySelector("input:checked");
+          if (!picked) return;
+          answers[qid] = picked.value;
+          rightPass.querySelectorAll(".insert").forEach(function (b) {
+            b.classList.toggle("is-on", b.dataset.insert === picked.value);
+          });
+        };
+      }
+
+      function renderExam() {
+        view = "exam";
+        var scr = screens[si];
+        moduleN = scr.module;
+        markSeen();
+        show(exam);
+        document.getElementById("instruction").textContent = scr.task.instruction || "";
+        document.getElementById("q-range").textContent =
+          "Reading | Module " + scr.module + " | Question " +
+          (scr.from === scr.to ? scr.from : (scr.from + "–" + scr.to));
+        nextBtn.textContent = "Next";
+        backBtn.disabled = si === 0 || scr.module !== screens[si - 1].module;
+        if (scr.type === "complete_words") {
+          cwWrap.classList.remove("hidden");
+          splitWrap.classList.add("hidden");
+          T.renderBlanks(scr.task, passage, answers);
+          T.restoreHighlights(scr.task, passage, highlights);
+          bindMarks(passage);
+        } else {
+          cwWrap.classList.add("hidden");
+          splitWrap.classList.remove("hidden");
+          T.renderPassage(scr.task, rightPass, T.isInsertQ(scr.q));
+          T.restoreHighlights(scr.task, rightPass, highlights);
+          document.getElementById("q-stem").textContent = scr.q.stem;
+          T.renderOptions(scr.q, opts, answers[scr.q.id]);
+          bindInsert();
+          bindMarks(rightPass);
+        }
+      }
+
+      function goReview() {
+        harvest();
+        view = "review";
+        show(review);
+        nextBtn.textContent = "Continue";
+        backBtn.disabled = false;
+        var rows = [];
+        screensIn(moduleN).forEach(function (s) {
+          var screenIndex = screens.indexOf(s);
+          var can = !!seen[screenIndex];
+          s.nos.forEach(function (n) {
+            var status = !can ? "Not Yet Seen" : (filled(n) ? "Answered" : "Not Answered");
+            var cls = "review-row" + (can ? " is-jump" : " is-locked");
+            rows.push('<div class="' + cls + '" data-si="' + screenIndex + '"><span>Question ' +
+              n + '</span><span class="dot' + (filled(n) && can ? " ok" : "") + '">' +
+              status + "</span></div>");
+          });
+        });
+        document.getElementById("review-list").innerHTML = rows.join("");
+      }
+
+      document.getElementById("review-list").onclick = function (e) {
+        var row = e.target.closest ? e.target.closest(".review-row") : null;
+        if (!row || !row.classList.contains("is-jump")) return;
+        si = Number(row.dataset.si);
+        renderExam();
+      };
+
+      function startModule(n) {
+        moduleN = n;
+        var metaM = moduleOf(n);
+        remain = mode === "mock" ? (metaM.timeSec || 0) : 0;
+        var first = screens.findIndex(function (s) { return s.module === n; });
+        si = first < 0 ? 0 : first;
+        renderExam();
+        showClock();
+      }
+
+      function leaveModule() {
+        if (moduleN === 1) {
+          if (mode === "practice") {
+            view = "rest";
+            show(rest);
+            return;
+          }
+          startModule(2);
+          return;
+        }
+        finish();
+      }
+
+      function finish() {
+        clearInterval(tick);
+        lockOn = false;
+        harvest();
+        var r = T.scorePaper(paper, answers);
+        view = "done";
+        show(done);
+        var pct = r.total ? Math.round(r.score / r.total * 100) : 0;
+        document.getElementById("score-line").textContent = r.score + " / " + r.total;
+        document.getElementById("pct-line").textContent =
+          pct + "% · 阅读预估 " + r.band + "（对照 0–30 为 " + r.scaled30 + "）";
+        var box = document.getElementById("wrong-preview");
+        box.innerHTML = r.detail.map(function (d) {
+          return '<div class="review-row ' + (d.ok ? "is-ok" : "is-bad") + '"><span>Q' +
+            T.esc(d.id) + " · " + (d.ok ? "正确" : "错误") + "</span><span>你的：" +
+            T.esc(d.ua || "（未作答）") + " · 正解：" + T.esc(d.expect) + "</span></div>";
+        }).join("");
+      }
+
+      nextBtn.onclick = function () {
+        if (view === "review") { leaveModule(); return; }
+        harvest();
+        var scr = screens[si];
+        var last = screensIn(scr.module);
+        if (si === screens.indexOf(last[last.length - 1])) goReview();
+        else { si += 1; renderExam(); }
+      };
+      backBtn.onclick = function () {
+        if (view === "review") { renderExam(); return; }
+        harvest();
+        if (si > 0 && screens[si - 1].module === screens[si].module) {
+          si -= 1;
+          renderExam();
+        }
+      };
+      reviewBtn.onclick = function () {
+        if (view === "review") return;
+        goReview();
+      };
+      document.getElementById("rest-go").onclick = function () { startModule(2); };
+      document.getElementById("void-restart").onclick = function () {
+        location.replace("toefl-reading.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
+      };
+
+      function triggerVoid() {
+        if (voided || !lockOn) return;
+        voided = true;
+        lockOn = false;
+        clearInterval(tick);
+        document.getElementById("void-lock").classList.add("is-visible");
+      }
+
+      function bindLock() {
+        lockOn = true;
+        var armed = false;
+        setTimeout(function () { armed = true; }, 2500);
+        document.addEventListener("visibilitychange", function () {
+          if (armed && document.hidden) triggerVoid();
+        });
+        window.addEventListener("blur", function () {
+          if (!armed) return;
+          setTimeout(function () {
+            if (!document.hasFocus()) triggerVoid();
+          }, 400);
+        });
+        window.addEventListener("pagehide", function () { if (armed) triggerVoid(); });
+        window.addEventListener("beforeunload", function (e) {
+          if (!lockOn || voided) return;
+          e.preventDefault();
+          e.returnValue = "";
+        });
+      }
+
+      fetch(meta.file, { cache: "no-store" })
+        .then(function (r) { if (!r.ok) throw new Error("Unable to load this test"); return r.json(); })
+        .then(function (p) {
+          paper = p;
+          screens = T.screensOf(p);
+          document.title = (p.title || "TOEFL Reading") + (mode === "mock" ? " · 模考" : " · 练习");
+          document.getElementById("set-title").textContent = "Reading";
+          document.getElementById("mode-tag").textContent = mode === "mock" ? "Mock" : "Practice";
+          startModule(1);
+          if (mode === "mock") {
+            bindLock();
+            tick = setInterval(function () {
+              remain -= 1;
+              showClock();
+              if (remain <= 0) {
+                harvest();
+                if (moduleN === 1) startModule(2);
+                else finish();
+              }
+            }, 1000);
+          } else showClock();
+        })
+        .catch(function (e) {
+          exam.classList.remove("hidden");
+          document.getElementById("instruction").textContent = e.message || "Unable to load this test";
+        });
+    })();
+  </script>
+</body>
+</html>
