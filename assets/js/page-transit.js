@@ -8,7 +8,8 @@
     "cdt-report.html": 1,
     "speaking-session.html": 1,
     "jingting-player.html": 1,
-    "toefl-reading.html": 1
+    "toefl-reading.html": 1,
+    "toefl-listening.html": 1
   };
   var AUTH = {
     "login.html": 1,
