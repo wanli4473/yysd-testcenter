@@ -11,7 +11,8 @@
     "toefl-reading.html": 1,
     "toefl-listening.html": 1,
     "toefl-writing.html": 1,
-    "toefl-speaking.html": 1
+    "toefl-speaking.html": 1,
+    "toefl-full.html": 1
   };
   var AUTH = {
     "login.html": 1,

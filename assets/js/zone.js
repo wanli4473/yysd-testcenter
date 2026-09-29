@@ -534,6 +534,7 @@
   }
 
   var TOEFL_SKILL = {
+    full: { list: "TOEFL_FULL", page: "toefl-full.html", badge: "全卷", empty: "暂无完整套题" },
     reading: { list: "TOEFL_READING", page: "toefl-reading.html", badge: "阅读", empty: "暂无阅读真题" },
     listening: { list: "TOEFL_LISTENING", page: "toefl-listening.html", badge: "听力", empty: "暂无听力真题" },
     writing: { list: "TOEFL_WRITING", page: "toefl-writing.html", badge: "写作", empty: "暂无写作真题" },
@@ -562,7 +563,7 @@
   }
 
   function toeflHubHTML() {
-    var en = { listening: "Listening", reading: "Reading", speaking: "Speaking", writing: "Writing" };
+    var en = { full: "Full Test", listening: "Listening", reading: "Reading", speaking: "Speaking", writing: "Writing" };
     var cards = nav.map(function (cat) {
       var soon = !!cat.soon;
       var headHref = soon ? "" : ("zone.html?zone=toefl&s=" + encodeURIComponent(cat.key));
@@ -573,7 +574,8 @@
       var go = soon
         ? '<span class="ielts-hub__go is-soon">即将上线</span>'
         : '<a class="ielts-hub__go" href="' + Y.esc(headHref) + '">进入' + Y.esc(cat.label) + ' <span aria-hidden="true">›</span></a>';
-      return '<article class="ielts-hub__card ielts-hub__card--' + Y.esc(cat.key) + (soon ? " is-soon" : "") + '">' +
+      var kind = cat.key === "full" ? "mock" : cat.key;
+      return '<article class="ielts-hub__card ielts-hub__card--' + Y.esc(kind) + (soon ? " is-soon" : "") + '">' +
         hit +
           '<span class="ielts-hub__ico" aria-hidden="true">' + (Y.skillGlyph ? Y.skillGlyph(cat.key) : "") + "</span>" +
           '<span class="ielts-hub__eyebrow">' + Y.esc(en[cat.key] || "") + "</span>" +
@@ -587,9 +589,9 @@
       '<header class="ielts-hub__intro">' +
         '<p class="ielts-hub__kicker">Enhanced TOEFL iBT</p>' +
         "<h2>选择你的训练路径</h2>" +
-        "<p>阅读、听力、口语、写作均已开放。</p>" +
+        "<p>可单项练习，也可按网考顺序完整连考：阅读 → 听力 → 写作 → 口语，无休息。</p>" +
       "</header>" +
-      '<div class="ielts-hub__grid ielts-hub__grid--4">' + cards + "</div>" +
+      '<div class="ielts-hub__grid">' + cards + "</div>" +
     "</section>";
   }
 

@@ -438,7 +438,7 @@
       activate("ielts");
       return;
     }
-    if (path === "toefl-reading.html" || path === "toefl-listening.html" || path === "toefl-writing.html" || path === "toefl-speaking.html" || (path === "zone.html" && zone === "toefl")) {
+    if (path === "toefl-reading.html" || path === "toefl-listening.html" || path === "toefl-writing.html" || path === "toefl-speaking.html" || path === "toefl-full.html" || (path === "zone.html" && zone === "toefl")) {
       activate("toefl");
       return;
     }

@@ -10,6 +10,7 @@
   <script src="assets/js/config.js?v=20260929toefl4"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
   <script src="assets/js/toefl-speaking.js?v=20260929toefl4"></script>
+  <script src="assets/js/toefl-full.js?v=20260929toefl5"></script>
 </head>
 <body class="exam-ets">
   <header class="ets-bar">
@@ -84,15 +85,17 @@
     (function () {
       var A = window.YYSD_AUTH;
       var S = window.YYSD_TOEFL_SPEAK;
+      var F = window.YYSD_TOEFL_FULL;
       var qs = new URLSearchParams(location.search);
       var mode = qs.get("mode") === "mock" ? "mock" : (qs.get("mode") === "practice" ? "practice" : "");
       var paperId = qs.get("id") || "";
-      var zoneBack = "zone.html?zone=toefl&s=speaking";
+      var zoneBack = (F && F.isFull()) ? "zone.html?zone=toefl&s=full" : "zone.html?zone=toefl&s=speaking";
       if (A && A.requireLogin && !A.requireLogin()) return;
       if (!mode || !paperId) { location.replace(zoneBack); return; }
       var list = (window.YYSD && window.YYSD.TOEFL_SPEAKING) || [];
       var meta = list.filter(function (p) { return p.id === paperId; })[0] || null;
       if (!meta) { location.replace(zoneBack); return; }
+      if (F && F.isFull() && !F.enterSkill(paperId, mode, "speaking")) return;
 
       var paper = null;
       var screens = [];
@@ -319,6 +322,11 @@
         clip.pause();
         view = "done";
         show(done);
+        if (F && F.isFull()) {
+          var n = 0;
+          Object.keys(recs).forEach(function (k) { if (recs[k] && recs[k].blob) n += 1; });
+          F.afterSection("speaking", paperId, mode, { recorded: n, total: screens.length });
+        }
         document.getElementById("wrong-preview").innerHTML = screens.map(function (s) {
           var rec = recs[s.task.id];
           var play = rec ? '<audio controls src="' + rec.url + '"></audio>' : "<span>未录音</span>";
@@ -329,6 +337,13 @@
             (s.task.stem ? "<p class=\"sample\"><b>Question</b> " + S.esc(s.task.stem) + "</p>" : "") +
             "<p class=\"sample\"><b>Sample</b> " + S.esc(s.task.sample || "") + "</p>";
         }).join("");
+        if (F && F.isFull()) {
+          var extra = document.createElement("p");
+          extra.innerHTML = '<a class="btn" href="' + F.resultsHref(paperId, mode) + '">查看全卷成绩</a>';
+          document.getElementById("done").appendChild(extra);
+          var back = document.querySelector("#done a.btn[href*='speaking']");
+          if (back) back.setAttribute("href", "zone.html?zone=toefl&s=full");
+        }
       }
       document.getElementById("wrong-preview").onclick = function (e) {
         var b = e.target.closest ? e.target.closest(".exp-one") : null;
@@ -367,7 +382,7 @@
         }
       };
       document.getElementById("void-restart").onclick = function () {
-        location.replace("toefl-speaking.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
+        location.replace((F && F.isFull()) ? F.voidRestartHref(paperId) : "toefl-speaking.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
       };
 
       function triggerVoid() {
@@ -377,10 +392,12 @@
         clearInterval(tick);
         stopRec();
         clip.pause();
+        if (F && F.isFull()) F.markVoid(paperId);
         document.getElementById("void-lock").classList.add("is-visible");
       }
       function bindLock() {
         lockOn = true;
+        if (F && F.isFull()) F.dressVoidUI();
         var armed = false;
         setTimeout(function () { armed = true; }, 2500);
         document.addEventListener("visibilitychange", function () {

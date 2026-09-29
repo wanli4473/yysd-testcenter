@@ -106,6 +106,7 @@ window.YYSD = (function () {
       { key: "jingting", label: "听力精听", subject: "jingting", desc: "听力真题精听" }
     ],
     toefl: [
+      { key: "full", label: "完整模考", desc: "四科连考 · 网考顺序", skill: "full" },
       { key: "reading", label: "阅读", subject: "toefl-reading", desc: "阅读真题顺序练习", skill: "reading" },
       { key: "listening", label: "听力", subject: "toefl-listening", desc: "听力真题顺序练习", skill: "listening" },
       { key: "speaking", label: "口语", subject: "toefl-speaking", desc: "口语真题顺序练习", skill: "speaking" },
@@ -150,6 +151,15 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-02-speaking.json",
       duration: 10,
       desc: "听后复述 7 题（4 分钟）+ 面试 4 题（6 分钟）"
+    }
+  ];
+  // ponytail: 9.02 四科齐全即为一套全卷；顺序按 ETS Enhanced FAQ：R→L→W→S，无休息
+  var TOEFL_FULL = [
+    {
+      id: "2025-09-02",
+      title: "新托福 9.02 · 完整模考",
+      duration: 101,
+      desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
     }
   ];
   function navOf(zone) { return NAV[zone] || []; }
@@ -1455,7 +1465,7 @@ window.YYSD = (function () {
     CONTENT_VER: CONTENT_VER,
     ensureSecretCatChips: ensureSecretCatChips,
     ZONES: ZONES, ZONE: ZONE, ZONE_SUBJECTS: ZONE_SUBJECTS, SUBJECT: SUBJECT,
-    NAV: NAV, navOf: navOf, TOEFL_READING: TOEFL_READING, TOEFL_LISTENING: TOEFL_LISTENING, TOEFL_WRITING: TOEFL_WRITING, TOEFL_SPEAKING: TOEFL_SPEAKING,
+    NAV: NAV, navOf: navOf, TOEFL_READING: TOEFL_READING, TOEFL_LISTENING: TOEFL_LISTENING, TOEFL_WRITING: TOEFL_WRITING, TOEFL_SPEAKING: TOEFL_SPEAKING, TOEFL_FULL: TOEFL_FULL,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
     fileHref: fileHref, vocabLessonHref: vocabLessonHref, cardHTML: cardHTML, countsBySubject: countsBySubject,
     isCambridge: isCambridge, isReadingExam: isReadingExam, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,

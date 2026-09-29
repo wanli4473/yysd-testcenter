@@ -10,6 +10,7 @@
   <script src="assets/js/config.js?v=20260929toefl3"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
   <script src="assets/js/toefl-writing.js?v=20260929toefl3"></script>
+  <script src="assets/js/toefl-full.js?v=20260929toefl5"></script>
 </head>
 <body class="exam-ets">
   <header class="ets-bar">
@@ -113,16 +114,18 @@
     (function () {
       var A = window.YYSD_AUTH;
       var W = window.YYSD_TOEFL_WRITE;
+      var F = window.YYSD_TOEFL_FULL;
       var qs = new URLSearchParams(location.search);
       var mode = qs.get("mode") === "mock" ? "mock" : (qs.get("mode") === "practice" ? "practice" : "");
       var paperId = qs.get("id") || "";
-      var zoneBack = "zone.html?zone=toefl&s=writing";
+      var zoneBack = (F && F.isFull()) ? "zone.html?zone=toefl&s=full" : "zone.html?zone=toefl&s=writing";
       if (A && A.requireLogin && !A.requireLogin()) return;
       if (!mode || !paperId) { location.replace(zoneBack); return; }
 
       var list = (window.YYSD && window.YYSD.TOEFL_WRITING) || [];
       var meta = list.filter(function (p) { return p.id === paperId; })[0] || null;
       if (!meta) { location.replace(zoneBack); return; }
+      if (F && F.isFull() && !F.enterSkill(paperId, mode, "writing")) return;
 
       var paper = null;
       var screens = [];
@@ -343,6 +346,11 @@
         lockOn = false;
         harvest();
         var r = W.scorePaper(paper, answers);
+        if (F && F.isFull()) {
+          var act = F.afterSection("writing", paperId, mode, F.compactWriting(r));
+          if (act === "go") return;
+          if (act === "rest") { F.fillRest("writing", paperId, mode); view = "rest"; show(rest); return; }
+        }
         view = "done";
         show(done);
         document.getElementById("score-line").textContent = "句子 " + r.score + " / " + r.total;
@@ -386,7 +394,7 @@
         goReview();
       };
       document.getElementById("void-restart").onclick = function () {
-        location.replace("toefl-writing.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
+        location.replace((F && F.isFull()) ? F.voidRestartHref(paperId) : "toefl-writing.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
       };
 
       function triggerVoid() {
@@ -394,10 +402,12 @@
         voided = true;
         lockOn = false;
         clearInterval(tick);
+        if (F && F.isFull()) F.markVoid(paperId);
         document.getElementById("void-lock").classList.add("is-visible");
       }
       function bindLock() {
         lockOn = true;
+        if (F && F.isFull()) F.dressVoidUI();
         var armed = false;
         setTimeout(function () { armed = true; }, 2500);
         document.addEventListener("visibilitychange", function () {
