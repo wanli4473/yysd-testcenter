@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOEFL Writing</title>
+  <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260929toefl3">
+  <script src="assets/js/config.js?v=20260929toefl3"></script>
+  <script src="assets/js/auth.js?v=20260821gate1"></script>
+  <script src="assets/js/toefl-writing.js?v=20260929toefl3"></script>
+</head>
+<body class="exam-ets">
+  <header class="ets-bar">
+    <div class="ets-bar-left">
+      <b id="set-title">Writing</b>
+      <span id="mode-tag"></span>
+    </div>
+    <div class="ets-bar-right">
+      <span id="clock" class="ets-clock"></span>
+      <button type="button" id="hide-time">Hide Time</button>
+      <button type="button" id="help-btn">Help</button>
+      <button type="button" id="review-btn">Review</button>
+      <button type="button" id="back-btn">Back</button>
+      <button type="button" id="next-btn">Next</button>
+    </div>
+  </header>
+  <div class="ets-sub">
+    <span id="q-range">Writing</span>
+  </div>
+
+  <section id="exam" class="exam-body hidden">
+    <p class="exam-title" id="instruction"></p>
+    <div id="sentence-wrap" class="exam-card listen-card hidden"></div>
+    <div id="email-wrap" class="write-split hidden">
+      <article class="exam-card write-prompt">
+        <p id="email-prompt"></p>
+        <ul id="email-bullets"></ul>
+        <p class="write-meta" id="email-to"></p>
+      </article>
+      <article class="exam-card write-compose">
+        <div class="write-tools">
+          <button type="button" data-cmd="cut">Cut</button>
+          <button type="button" data-cmd="copy">Copy</button>
+          <button type="button" data-cmd="undo">Undo</button>
+          <button type="button" data-cmd="redo">Redo</button>
+          <button type="button" id="hide-wc">Hide Word Count</button>
+          <span id="email-wc">0</span>
+        </div>
+        <textarea id="email-ta" spellcheck="true"></textarea>
+      </article>
+    </div>
+    <div id="disc-wrap" class="write-split hidden">
+      <article class="exam-card write-prompt">
+        <p class="disc-kicker" id="disc-class"></p>
+        <div class="disc-post" id="disc-prof"></div>
+        <div id="disc-posts"></div>
+      </article>
+      <article class="exam-card write-compose">
+        <div class="write-tools">
+          <button type="button" data-cmd="cut">Cut</button>
+          <button type="button" data-cmd="copy">Copy</button>
+          <button type="button" data-cmd="undo">Undo</button>
+          <button type="button" data-cmd="redo">Redo</button>
+          <button type="button" id="hide-wc2">Hide Word Count</button>
+          <span id="disc-wc">0</span>
+        </div>
+        <textarea id="disc-ta" spellcheck="true"></textarea>
+      </article>
+    </div>
+  </section>
+
+  <section id="review" class="exam-body hidden">
+    <p class="exam-title">Review</p>
+    <div class="review" id="review-list"></div>
+  </section>
+
+  <section id="rest" class="result hidden">
+    <h1 id="rest-title">本部分已完成</h1>
+    <p id="rest-copy">练习模式可以休息。准备好后进入下一部分。</p>
+    <p><button class="btn" type="button" id="rest-go">继续</button></p>
+  </section>
+
+  <section id="done" class="result hidden">
+    <h1 id="score-line"></h1>
+    <p id="pct-line"></p>
+    <div class="review" id="wrong-preview"></div>
+    <p><a class="btn" id="back-zone" href="zone.html?zone=toefl&amp;s=writing">返回托福写作</a></p>
+  </section>
+
+  <div id="void-lock">
+    <div>
+      <h2>模考已中止</h2>
+      <p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答，也不记分。</p>
+      <div class="void-acts">
+        <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=writing">退出</a>
+        <button class="btn" type="button" id="void-restart">重新开始</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="help-box" class="hidden">
+    <div>
+      <h2>Help</h2>
+      <p>Sentence Construction: tap a word to fill the next blank. Tap a filled blank to return the word.</p>
+      <p>You cannot return to an earlier writing task after you leave it. Hide Time hides the clock; the clock does not stop.</p>
+      <p><button class="btn" type="button" id="help-close">Return</button></p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var A = window.YYSD_AUTH;
+      var W = window.YYSD_TOEFL_WRITE;
+      var qs = new URLSearchParams(location.search);
+      var mode = qs.get("mode") === "mock" ? "mock" : (qs.get("mode") === "practice" ? "practice" : "");
+      var paperId = qs.get("id") || "";
+      var zoneBack = "zone.html?zone=toefl&s=writing";
+      if (A && A.requireLogin && !A.requireLogin()) return;
+      if (!mode || !paperId) { location.replace(zoneBack); return; }
+
+      var list = (window.YYSD && window.YYSD.TOEFL_WRITING) || [];
+      var meta = list.filter(function (p) { return p.id === paperId; })[0] || null;
+      if (!meta) { location.replace(zoneBack); return; }
+
+      var paper = null;
+      var screens = [];
+      var si = 0;
+      var answers = {};
+      var seen = {};
+      var remain = 0;
+      var hideTime = false;
+      var hideWc = false;
+      var tick = null;
+      var view = "exam";
+      var moduleN = 1;
+      var voided = false;
+      var lockOn = false;
+
+      var clock = document.getElementById("clock");
+      var exam = document.getElementById("exam");
+      var review = document.getElementById("review");
+      var rest = document.getElementById("rest");
+      var done = document.getElementById("done");
+      var nextBtn = document.getElementById("next-btn");
+      var backBtn = document.getElementById("back-btn");
+      var reviewBtn = document.getElementById("review-btn");
+      var hideBtn = document.getElementById("hide-time");
+      var helpBox = document.getElementById("help-box");
+      var sentWrap = document.getElementById("sentence-wrap");
+      var emailWrap = document.getElementById("email-wrap");
+      var discWrap = document.getElementById("disc-wrap");
+      var emailTa = document.getElementById("email-ta");
+      var discTa = document.getElementById("disc-ta");
+
+      function fmt(sec) {
+        sec = Math.max(0, Math.floor(sec || 0));
+        return String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
+      }
+      function showClock() {
+        clock.textContent = hideTime ? "" : (mode === "practice" ? "Practice" : fmt(remain));
+      }
+      function moduleOf(n) {
+        return paper.modules.filter(function (m) { return m.n === n; })[0];
+      }
+      function screensIn(mod) {
+        return screens.filter(function (s) { return s.module === mod; });
+      }
+      function setNav(on) {
+        [nextBtn, backBtn, reviewBtn, hideBtn, document.getElementById("help-btn")].forEach(function (b) { b.disabled = !on; });
+      }
+      function show(el) {
+        [exam, review, rest, done].forEach(function (n) { n.classList.add("hidden"); });
+        el.classList.remove("hidden");
+        setNav(el === exam || el === review);
+      }
+      function paintWc(el, ta) {
+        el.textContent = hideWc ? "" : String(W.wordCount(ta.value));
+      }
+
+      hideBtn.onclick = function () {
+        hideTime = !hideTime;
+        hideBtn.textContent = hideTime ? "Show Time" : "Hide Time";
+        showClock();
+      };
+      document.getElementById("help-btn").onclick = function () { helpBox.classList.remove("hidden"); };
+      document.getElementById("help-close").onclick = function () { helpBox.classList.add("hidden"); };
+      function toggleWc() {
+        hideWc = !hideWc;
+        document.getElementById("hide-wc").textContent = hideWc ? "Show Word Count" : "Hide Word Count";
+        document.getElementById("hide-wc2").textContent = hideWc ? "Show Word Count" : "Hide Word Count";
+        paintWc(document.getElementById("email-wc"), emailTa);
+        paintWc(document.getElementById("disc-wc"), discTa);
+      }
+      document.getElementById("hide-wc").onclick = toggleWc;
+      document.getElementById("hide-wc2").onclick = toggleWc;
+      document.querySelectorAll("[data-cmd]").forEach(function (b) {
+        b.onclick = function () {
+          var ta = moduleN === 3 ? discTa : emailTa;
+          ta.focus();
+          try { document.execCommand(b.getAttribute("data-cmd")); } catch (e) {}
+        };
+      });
+      emailTa.oninput = function () { paintWc(document.getElementById("email-wc"), emailTa); };
+      discTa.oninput = function () { paintWc(document.getElementById("disc-wc"), discTa); };
+
+      function harvest() {
+        var scr = screens[si];
+        if (!scr) return;
+        if (scr.type === "sentence") {
+          answers[scr.task.id] = W.collectSentence(sentWrap, W.slotCount(scr.task));
+        } else if (scr.type === "email") {
+          answers[scr.task.id] = emailTa.value;
+        } else if (scr.type === "discussion") {
+          answers[scr.task.id] = discTa.value;
+        }
+      }
+
+      function filled(no) {
+        var scr = screens.filter(function (s) { return s.task.id === no; })[0];
+        if (!scr) return false;
+        if (scr.type === "sentence") return W.filledSlots(answers[no]);
+        return String(answers[no] || "").trim() !== "";
+      }
+
+      function bindSentence(task) {
+        sentWrap.onclick = function (e) {
+          var chip = e.target.closest ? e.target.closest(".sc-chip") : null;
+          var slot = e.target.closest ? e.target.closest(".sc-slot") : null;
+          var got = W.collectSentence(sentWrap, W.slotCount(task));
+          if (chip) {
+            var w = chip.getAttribute("data-w");
+            for (var i = 0; i < got.length; i++) {
+              if (!got[i]) { got[i] = w; break; }
+            }
+          } else if (slot && slot.classList.contains("is-on")) {
+            got[Number(slot.getAttribute("data-i"))] = "";
+          } else return;
+          answers[task.id] = got;
+          W.renderSentence(task, sentWrap, got);
+        };
+      }
+
+      function renderExam() {
+        view = "exam";
+        var scr = screens[si];
+        moduleN = scr.module;
+        seen[si] = true;
+        show(exam);
+        var lab = (moduleOf(moduleN) || {}).label || "Writing";
+        document.getElementById("q-range").textContent = "Writing | " + lab + " | Question " + scr.from;
+        nextBtn.textContent = "Next";
+        backBtn.disabled = si === 0 || scr.module !== screens[si - 1].module;
+        reviewBtn.disabled = scr.type !== "sentence";
+        sentWrap.classList.add("hidden");
+        emailWrap.classList.add("hidden");
+        discWrap.classList.add("hidden");
+        if (scr.type === "sentence") {
+          document.getElementById("instruction").textContent = "Use the words to complete the response.";
+          sentWrap.classList.remove("hidden");
+          W.renderSentence(scr.task, sentWrap, answers[scr.task.id]);
+          bindSentence(scr.task);
+        } else if (scr.type === "email") {
+          document.getElementById("instruction").textContent = "Writing | Question 1 of 1";
+          emailWrap.classList.remove("hidden");
+          document.getElementById("email-prompt").textContent = scr.task.prompt;
+          document.getElementById("email-bullets").innerHTML = (scr.task.bullets || []).map(function (b) {
+            return "<li>" + W.esc(b) + "</li>";
+          }).join("");
+          document.getElementById("email-to").textContent = "To: " + scr.task.to + "  ·  Subject: " + scr.task.subject;
+          emailTa.value = answers[scr.task.id] || "";
+          paintWc(document.getElementById("email-wc"), emailTa);
+        } else {
+          document.getElementById("instruction").textContent = scr.task.instruction || "Write for an Academic Discussion";
+          discWrap.classList.remove("hidden");
+          document.getElementById("disc-class").textContent = scr.task.class || "Class Discussion";
+          var p = scr.task.professor;
+          document.getElementById("disc-prof").innerHTML =
+            '<img src="' + W.esc(p.photo) + '" alt="">' +
+            "<div><b>" + W.esc(p.name) + "</b><p>" + W.esc(p.text) + "</p></div>";
+          document.getElementById("disc-posts").innerHTML = (scr.task.posts || []).map(function (x) {
+            return '<div class="disc-post"><img src="' + W.esc(x.photo) + '" alt="">' +
+              "<div><b>" + W.esc(x.name) + "</b><p>" + W.esc(x.text) + "</p></div></div>";
+          }).join("");
+          discTa.value = answers[scr.task.id] || "";
+          paintWc(document.getElementById("disc-wc"), discTa);
+        }
+      }
+
+      function goReview() {
+        harvest();
+        view = "review";
+        show(review);
+        nextBtn.textContent = "Continue";
+        backBtn.disabled = false;
+        var rows = [];
+        screensIn(moduleN).forEach(function (s) {
+          var idx = screens.indexOf(s);
+          var can = !!seen[idx];
+          var status = !can ? "Not Yet Seen" : (filled(s.task.id) ? "Answered" : "Not Answered");
+          rows.push('<div class="review-row' + (can ? " is-jump" : " is-locked") + '" data-si="' + idx +
+            '"><span>Question ' + s.task.id + '</span><span class="dot' + (filled(s.task.id) && can ? " ok" : "") +
+            '">' + status + "</span></div>");
+        });
+        document.getElementById("review-list").innerHTML = rows.join("");
+      }
+      document.getElementById("review-list").onclick = function (e) {
+        var row = e.target.closest ? e.target.closest(".review-row") : null;
+        if (!row || !row.classList.contains("is-jump")) return;
+        si = Number(row.dataset.si);
+        renderExam();
+      };
+
+      function startModule(n) {
+        moduleN = n;
+        remain = mode === "mock" ? ((moduleOf(n) || {}).timeSec || 0) : 0;
+        var first = screens.findIndex(function (s) { return s.module === n; });
+        si = first < 0 ? 0 : first;
+        renderExam();
+        showClock();
+      }
+
+      function leaveModule() {
+        if (moduleN < 3) {
+          if (mode === "practice") {
+            var nextLab = (moduleOf(moduleN + 1) || {}).label || "下一部分";
+            document.getElementById("rest-title").textContent = (moduleOf(moduleN) || {}).label + " 已完成";
+            document.getElementById("rest-copy").textContent = "准备好后进入 " + nextLab + "。离开后不能返回。";
+            document.getElementById("rest-go").onclick = function () { startModule(moduleN + 1); };
+            view = "rest";
+            show(rest);
+            return;
+          }
+          startModule(moduleN + 1);
+          return;
+        }
+        finish();
+      }
+
+      function finish() {
+        clearInterval(tick);
+        lockOn = false;
+        harvest();
+        var r = W.scorePaper(paper, answers);
+        view = "done";
+        show(done);
+        document.getElementById("score-line").textContent = "句子 " + r.score + " / " + r.total;
+        document.getElementById("pct-line").textContent = "两篇作文对照范文，不自动估分。";
+        document.getElementById("wrong-preview").innerHTML = r.detail.map(function (d) {
+          if (d.type === "sentence") {
+            return '<div class="review-row ' + (d.ok ? "is-ok" : "is-bad") + '"><span>Q' + d.id +
+              " · " + (d.ok ? "正确" : "错误") + "</span><span>你的：" + W.esc(d.ua || "（未作答）") +
+              " · 正解：" + W.esc(d.expect) + "</span></div>";
+          }
+          var samples = d.samples && d.samples.length
+            ? d.samples.map(function (s) {
+                return "<p><b>范文 · " + W.esc(s.title) + "</b></p><p class=\"sample\">" + W.esc(s.text) + "</p>";
+              }).join("")
+            : "<p class=\"sample\">" + W.esc(d.sample || "") + "</p>";
+          return '<div class="review-row"><span>' + (d.type === "email" ? "Email" : "Discussion") +
+            " · " + d.words + " 词</span></div>" +
+            "<p><b>你的作答</b></p><p class=\"sample\">" + W.esc(d.ua || "（未作答）") + "</p>" + samples;
+        }).join("");
+      }
+
+      nextBtn.onclick = function () {
+        if (view === "review") { leaveModule(); return; }
+        harvest();
+        var scr = screens[si];
+        if (scr.type !== "sentence") { leaveModule(); return; }
+        var last = screensIn(scr.module);
+        if (si === screens.indexOf(last[last.length - 1])) goReview();
+        else { si += 1; renderExam(); }
+      };
+      backBtn.onclick = function () {
+        if (view === "review") { renderExam(); return; }
+        harvest();
+        if (si > 0 && screens[si - 1].module === screens[si].module) {
+          si -= 1;
+          renderExam();
+        }
+      };
+      reviewBtn.onclick = function () {
+        if (view === "review" || screens[si].type !== "sentence") return;
+        goReview();
+      };
+      document.getElementById("void-restart").onclick = function () {
+        location.replace("toefl-writing.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
+      };
+
+      function triggerVoid() {
+        if (voided || !lockOn) return;
+        voided = true;
+        lockOn = false;
+        clearInterval(tick);
+        document.getElementById("void-lock").classList.add("is-visible");
+      }
+      function bindLock() {
+        lockOn = true;
+        var armed = false;
+        setTimeout(function () { armed = true; }, 2500);
+        document.addEventListener("visibilitychange", function () {
+          if (armed && document.hidden) triggerVoid();
+        });
+        window.addEventListener("blur", function () {
+          if (!armed) return;
+          setTimeout(function () { if (!document.hasFocus()) triggerVoid(); }, 400);
+        });
+        window.addEventListener("pagehide", function () { if (armed) triggerVoid(); });
+        window.addEventListener("beforeunload", function (e) {
+          if (!lockOn || voided) return;
+          e.preventDefault();
+          e.returnValue = "";
+        });
+      }
+
+      fetch(meta.file, { cache: "no-store" })
+        .then(function (r) { if (!r.ok) throw new Error("Unable to load this test"); return r.json(); })
+        .then(function (p) {
+          paper = p;
+          screens = W.screensOf(p);
+          document.title = (p.title || "TOEFL Writing") + (mode === "mock" ? " · 模考" : " · 练习");
+          document.getElementById("mode-tag").textContent = mode === "mock" ? "Mock" : "Practice";
+          startModule(1);
+          if (mode === "mock") {
+            bindLock();
+            tick = setInterval(function () {
+              remain -= 1;
+              showClock();
+              if (remain <= 0) {
+                harvest();
+                leaveModule();
+              }
+            }, 1000);
+          } else showClock();
+        })
+        .catch(function (e) {
+          exam.classList.remove("hidden");
+          document.getElementById("instruction").textContent = e.message || "Unable to load this test";
+        });
+    })();
+  </script>
+</body>
+</html>

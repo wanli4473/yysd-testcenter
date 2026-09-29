@@ -533,21 +533,23 @@
     "</section>";
   }
 
+  var TOEFL_SKILL = {
+    reading: { list: "TOEFL_READING", page: "toefl-reading.html", badge: "阅读", empty: "暂无阅读真题" },
+    listening: { list: "TOEFL_LISTENING", page: "toefl-listening.html", badge: "听力", empty: "暂无听力真题" },
+    writing: { list: "TOEFL_WRITING", page: "toefl-writing.html", badge: "写作", empty: "暂无写作真题" }
+  };
+
   function toeflPaperCards(skill) {
-    var listening = skill === "listening";
-    var papers = listening ? (Y.TOEFL_LISTENING || []) : (Y.TOEFL_READING || []);
-    var page = listening ? "toefl-listening.html" : "toefl-reading.html";
-    var badge = listening ? "听力" : "阅读";
-    var badgeClass = listening ? "toefl-listening" : "toefl-reading";
-    var emptyLabel = listening ? "暂无听力真题" : "暂无阅读真题";
+    var spec = TOEFL_SKILL[skill] || TOEFL_SKILL.reading;
+    var papers = Y[spec.list] || [];
     if (!papers.length) {
-      return emptyBox(emptyLabel, "题目上传后会出现在这里。", "zone.html?zone=toefl", "返回托福总览");
+      return emptyBox(spec.empty, "题目上传后会出现在这里。", "zone.html?zone=toefl", "返回托福总览");
     }
     return '<div class="exam-grid">' + papers.map(function (p) {
-      var practice = page + "?id=" + encodeURIComponent(p.id) + "&mode=practice";
-      var mock = page + "?id=" + encodeURIComponent(p.id) + "&mode=mock";
+      var practice = spec.page + "?id=" + encodeURIComponent(p.id) + "&mode=practice";
+      var mock = spec.page + "?id=" + encodeURIComponent(p.id) + "&mode=mock";
       return '<article class="exam-card">' +
-        '<div class="exam-card__top"><span class="badge badge--' + badgeClass + '">' + badge + "</span></div>" +
+        '<div class="exam-card__top"><span class="badge badge--toefl-' + skill + '">' + spec.badge + "</span></div>" +
         "<h3>" + Y.esc(p.title) + "</h3>" +
         "<p>" + Y.esc(p.desc || "") + "</p>" +
         '<div class="exam-card__meta"><span>⏱️ ' + Y.esc(String(p.duration || 30)) + " 分钟</span></div>" +
@@ -584,7 +586,7 @@
       '<header class="ielts-hub__intro">' +
         '<p class="ielts-hub__kicker">Enhanced TOEFL iBT</p>' +
         "<h2>选择你的训练路径</h2>" +
-        "<p>阅读、听力已开放。口语、写作随后上线。</p>" +
+        "<p>阅读、听力、写作已开放。口语随后上线。</p>" +
       "</header>" +
       '<div class="ielts-hub__grid ielts-hub__grid--4">' + cards + "</div>" +
     "</section>";
@@ -599,8 +601,8 @@
       (cat.key === "mock" || cat.key === "ielts" ? Y.camVolumes(allItems).length + " 册"
         : cat.key === "alevel" && alevelCatalog && window.YYSD_ALEVEL
           ? window.YYSD_ALEVEL.qpCount(alevelCatalog) + " 套"
-        : (zone === "toefl" && (cat.key === "reading" || cat.key === "listening")
-          ? ((cat.key === "listening" ? Y.TOEFL_LISTENING : Y.TOEFL_READING) || []).length + " 套"
+        : (zone === "toefl" && TOEFL_SKILL[cat.key]
+          ? (Y[TOEFL_SKILL[cat.key].list] || []).length + " 套"
           : countOf(cat.subject) + unitOf(cat.subject || ""))) +
       "</span></div>");
 
@@ -611,8 +613,8 @@
         ? Y.cambridgeCatalogHTML(vols, allItems, "", { tier: camTier, query: searchQuery, collapseLegacy: true })
         : emptyBox("暂无剑桥真题", "老师上传套题后会出现在这里。也可以先做单项听力或阅读练习。", "zone.html?zone=mock&s=listening", "去练听力");
     } else if (zone === "toefl" && cat.soon) {
-      body = emptyBox(cat.label + "即将上线", "阅读和听力已开放，这一科随后加入。", "zone.html?zone=toefl", "返回托福总览");
-    } else if (zone === "toefl" && (cat.key === "reading" || cat.key === "listening")) {
+      body = emptyBox(cat.label + "即将上线", "阅读、听力和写作已开放，这一科随后加入。", "zone.html?zone=toefl", "返回托福总览");
+    } else if (zone === "toefl" && TOEFL_SKILL[cat.key]) {
       body = toeflPaperCards(cat.key);
     } else if (zone === "mock" && (cat.key === "listening" || cat.key === "reading" || cat.key === "writing")) {
       var skillVols = Y.camVolumes(allItems.filter(function (it) { return it.subject === cat.subject; }));

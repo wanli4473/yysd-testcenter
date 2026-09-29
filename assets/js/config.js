@@ -34,7 +34,7 @@ window.YYSD = (function () {
     practice: ["changnanju", "shuzi-tingxie", "ielts-speaking", "ielts"],
     mock:     ["cambridge-listening", "cambridge-reading", "cambridge-writing", "ielts",
                "ielts-speaking", "ielts-writing", "jingting"],
-    toefl:    ["toefl-reading", "toefl-listening"]
+    toefl:    ["toefl-reading", "toefl-listening", "toefl-writing"]
   };
 
   var SUBJECT = {
@@ -50,6 +50,7 @@ window.YYSD = (function () {
     toefl:   { label: "托福真题", en: "TOEFL", color: "var(--c-toefl)" },
     "toefl-reading": { label: "托福阅读", en: "TOEFL Reading", color: "var(--c-toefl)" },
     "toefl-listening": { label: "托福听力", en: "TOEFL Listening", color: "var(--c-toefl)" },
+    "toefl-writing": { label: "托福写作", en: "TOEFL Writing", color: "var(--c-toefl)" },
     sat:     { label: "SAT 真题", en: "SAT", color: "var(--c-grammar)" },
     grammar: { label: "语法", en: "Grammar", color: "var(--c-grammar)" },
     vocab:   { label: "高中词汇", en: "Vocabulary", color: "var(--c-vocab)" },
@@ -107,7 +108,7 @@ window.YYSD = (function () {
       { key: "reading", label: "阅读", subject: "toefl-reading", desc: "阅读真题顺序练习", skill: "reading" },
       { key: "listening", label: "听力", subject: "toefl-listening", desc: "听力真题顺序练习", skill: "listening" },
       { key: "speaking", label: "口语", desc: "即将上线", skill: "speaking", soon: true },
-      { key: "writing", label: "写作", desc: "即将上线", skill: "writing", soon: true }
+      { key: "writing", label: "写作", subject: "toefl-writing", desc: "写作真题顺序练习", skill: "writing" }
     ]
   };
 
@@ -129,6 +130,16 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-02-listening.json",
       duration: 36,
       desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）"
+    }
+  ];
+  // ponytail: 组句无官方时长；邮件 7 分、讨论 10 分按 ETS Enhanced
+  var TOEFL_WRITING = [
+    {
+      id: "2025-09-02",
+      title: "新托福 9.02 · 写作",
+      file: "library/toefl/2025-09-02-writing.json",
+      duration: 25,
+      desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）"
     }
   ];
   function navOf(zone) { return NAV[zone] || []; }
@@ -1434,7 +1445,7 @@ window.YYSD = (function () {
     CONTENT_VER: CONTENT_VER,
     ensureSecretCatChips: ensureSecretCatChips,
     ZONES: ZONES, ZONE: ZONE, ZONE_SUBJECTS: ZONE_SUBJECTS, SUBJECT: SUBJECT,
-    NAV: NAV, navOf: navOf, TOEFL_READING: TOEFL_READING, TOEFL_LISTENING: TOEFL_LISTENING,
+    NAV: NAV, navOf: navOf, TOEFL_READING: TOEFL_READING, TOEFL_LISTENING: TOEFL_LISTENING, TOEFL_WRITING: TOEFL_WRITING,
     esc: esc, results: results, load: load, subjectsOf: subjectsOf,
     fileHref: fileHref, vocabLessonHref: vocabLessonHref, cardHTML: cardHTML, countsBySubject: countsBySubject,
     isCambridge: isCambridge, isReadingExam: isReadingExam, camVolume: camVolume, camTestNo: camTestNo, camVolumes: camVolumes,
