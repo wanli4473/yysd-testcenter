@@ -138,6 +138,13 @@ window.YYSD = (function () {
       desc: "111 题 · 填词 70（28 分钟）+ 日常 6 + 学术 35（24 分钟）"
     },
     {
+      id: "2025-09-19",
+      title: "新托福 9.19 · 阅读",
+      file: "library/toefl/2025-09-19-reading.json",
+      duration: 30,
+      desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）· 海外线下"
+    },
+    {
       id: "2026-09-23",
       title: "新托福 9.23 · 阅读",
       file: "library/toefl/2026-09-23-reading.json",
@@ -169,6 +176,13 @@ window.YYSD = (function () {
       desc: "58 题 · 14 篇讲座 + 1 则通知 · Module 1（25 分钟）+ Module 2（22 分钟）"
     },
     {
+      id: "2025-09-19",
+      title: "新托福 9.19 · 听力",
+      file: "library/toefl/2025-09-19-listening.json",
+      duration: 36,
+      desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）· 海外线下"
+    },
+    {
       id: "2026-09-23",
       title: "新托福 9.23 · 听力",
       file: "library/toefl/2026-09-23-listening.json",
@@ -198,6 +212,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-13-writing.json",
       duration: 58,
       desc: "4 封邮件（28 分钟）+ 3 篇学术讨论（30 分钟）· 无组句"
+    },
+    {
+      id: "2025-09-19",
+      title: "新托福 9.19 · 写作",
+      file: "library/toefl/2025-09-19-writing.json",
+      duration: 25,
+      desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）· 海外线下"
     },
     {
       id: "2026-09-23",
@@ -293,6 +314,13 @@ window.YYSD = (function () {
       desc: "图书馆导览 · 听后复述 + 电影娱乐面试"
     },
     {
+      id: "2025-09-19",
+      title: "新托福 9.19 · 口语",
+      file: "library/toefl/2025-09-19-speaking.json",
+      duration: 10,
+      desc: "选课注册 · 听后复述 7 题 + 个人目标面试 4 题 · 海外线下"
+    },
+    {
       id: "2026-09-23",
       title: "新托福 9.23 · 口语 Form 1",
       file: "library/toefl/2026-09-23-speaking.json",
@@ -340,6 +368,12 @@ window.YYSD = (function () {
       title: "新托福 9.13 · 完整模考",
       duration: 167,
       desc: "阅读→听力→写作→口语 Form 1 · 约 167 分钟 · 无休息"
+    },
+    {
+      id: "2025-09-19",
+      title: "新托福 9.19 · 完整模考",
+      duration: 101,
+      desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息 · 海外线下"
     },
     {
       id: "2026-09-23",
