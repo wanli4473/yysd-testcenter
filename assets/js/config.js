@@ -501,7 +501,6 @@ window.YYSD = (function () {
       desc: "2 封邮件（14 分钟）+ 4 篇学术讨论（40 分钟）· 无组句 · 国内线下"
     },
     {
-    {
       id: "2025-08-08",
       title: "新托福 8.08 · 写作",
       file: "library/toefl/2025-08-08-writing.json",
