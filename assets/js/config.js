@@ -136,6 +136,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-13-reading.json",
       duration: 52,
       desc: "111 题 · 填词 70（28 分钟）+ 日常 6 + 学术 35（24 分钟）"
+    },
+    {
+      id: "2026-09-23",
+      title: "新托福 9.23 · 阅读",
+      file: "library/toefl/2026-09-23-reading.json",
+      duration: 32,
+      desc: "80 题 · 填词 80 · Module 1（16 分钟）+ Module 2（16 分钟）"
     }
   ];
   // ponytail: 听力 PDF 无模块时长；9.02 按 Enhanced 整段约 36 分钟拆 25+11；9.05 仅 13 讲座
@@ -160,6 +167,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-13-listening.json",
       duration: 47,
       desc: "58 题 · 14 篇讲座 + 1 则通知 · Module 1（25 分钟）+ Module 2（22 分钟）"
+    },
+    {
+      id: "2026-09-23",
+      title: "新托福 9.23 · 听力",
+      file: "library/toefl/2026-09-23-listening.json",
+      duration: 20,
+      desc: "16 题 · 4 篇讲座 · Module 1（10 分钟）+ Module 2（10 分钟）"
     }
   ];
   // ponytail: 组句无官方时长；邮件 7 分、讨论 10 分按 ETS Enhanced
@@ -184,6 +198,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-13-writing.json",
       duration: 58,
       desc: "4 封邮件（28 分钟）+ 3 篇学术讨论（30 分钟）· 无组句"
+    },
+    {
+      id: "2026-09-23",
+      title: "新托福 9.23 · 写作",
+      file: "library/toefl/2026-09-23-writing.json",
+      duration: 41,
+      desc: "3 封邮件（21 分钟）+ 2 篇学术讨论（20 分钟）· 无组句"
     }
   ];
   var TOEFL_SPEAKING = [
@@ -270,6 +291,34 @@ window.YYSD = (function () {
       file: "library/toefl/2025-09-13-speaking-f4.json",
       duration: 10,
       desc: "图书馆导览 · 听后复述 + 电影娱乐面试"
+    },
+    {
+      id: "2026-09-23",
+      title: "新托福 9.23 · 口语 Form 1",
+      file: "library/toefl/2026-09-23-speaking.json",
+      duration: 4,
+      desc: "图书馆导览 · 听后复述 7 题"
+    },
+    {
+      id: "2026-09-23-s2",
+      title: "新托福 9.23 · 口语 Form 2",
+      file: "library/toefl/2026-09-23-speaking-f2.json",
+      duration: 4,
+      desc: "木工入门 · 听后复述 7 题"
+    },
+    {
+      id: "2026-09-23-s3",
+      title: "新托福 9.23 · 口语 Form 3",
+      file: "library/toefl/2026-09-23-speaking-f3.json",
+      duration: 4,
+      desc: "观鸟 · 听后复述 7 题"
+    },
+    {
+      id: "2026-09-23-s4",
+      title: "新托福 9.23 · 口语 Form 4",
+      file: "library/toefl/2026-09-23-speaking-f4.json",
+      duration: 4,
+      desc: "做果昔 · 听后复述 7 题"
     }
   ];
   // ponytail: 9.05 为题库而非标准 47 题听力全卷；完整模考链同一套 id 的四科
@@ -291,6 +340,12 @@ window.YYSD = (function () {
       title: "新托福 9.13 · 完整模考",
       duration: 167,
       desc: "阅读→听力→写作→口语 Form 1 · 约 167 分钟 · 无休息"
+    },
+    {
+      id: "2026-09-23",
+      title: "新托福 9.23 · 完整模考",
+      duration: 97,
+      desc: "阅读→听力→写作→口语 Form 1 · 约 97 分钟 · 无休息"
     }
   ];
   function navOf(zone) { return NAV[zone] || []; }
