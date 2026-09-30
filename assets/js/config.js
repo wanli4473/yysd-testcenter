@@ -124,6 +124,13 @@ window.YYSD = (function () {
       desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）"
     },
     {
+      id: "2025-08-12",
+      title: "新托福 8.12 国内线下 · 阅读",
+      file: "library/toefl/2025-08-12-reading.json",
+      duration: 32,
+      desc: "65 题 · 填词 50 + 日常 5（24 分钟）+ 学术 10（8 分钟）· 国内线下"
+    },
+    {
       id: "2025-09-02",
       title: "新托福 9.02 · 阅读",
       file: "library/toefl/2025-09-02-reading.json",
@@ -174,6 +181,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-08-08-listening.json",
       duration: 36,
       desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）"
+    },
+    {
+      id: "2025-08-12",
+      title: "新托福 8.12 国内线下 · 听力",
+      file: "library/toefl/2025-08-12-listening.json",
+      duration: 25,
+      desc: "20 题 · 5 篇讲座 · Module 1（15 分钟）+ Module 2（10 分钟）· 国内线下"
     },
     {
       id: "2025-09-02",
@@ -228,6 +242,13 @@ window.YYSD = (function () {
       desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）"
     },
     {
+      id: "2025-08-12",
+      title: "新托福 8.12 国内线下 · 写作",
+      file: "library/toefl/2025-08-12-writing.json",
+      duration: 78,
+      desc: "4 封邮件（28 分钟）+ 5 篇学术讨论（50 分钟）· 无组句 · 国内线下"
+    },
+    {
       id: "2025-09-02",
       title: "新托福 9.02 · 写作",
       file: "library/toefl/2025-09-02-writing.json",
@@ -277,6 +298,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-08-08-speaking.json",
       duration: 9,
       desc: "听后复述 7 题（4 分钟）+ 面试 3 题（4.5 分钟）"
+    },
+    {
+      id: "2025-08-12",
+      title: "新托福 8.12 国内线下 · 口语",
+      file: "library/toefl/2025-08-12-speaking.json",
+      duration: 10,
+      desc: "服装店 · 听后复述 7 题 + 购物习惯面试 4 题 · 国内线下"
     },
     {
       id: "2025-09-02",
@@ -447,6 +475,12 @@ window.YYSD = (function () {
       title: "新托福 8.08 · 完整模考",
       duration: 100,
       desc: "阅读→听力→写作→口语 · 约 100 分钟 · 无休息"
+    },
+    {
+      id: "2025-08-12",
+      title: "新托福 8.12 国内线下 · 完整模考",
+      duration: 145,
+      desc: "阅读→听力→写作→口语 · 约 145 分钟 · 无休息 · 国内线下"
     },
     {
       id: "2025-09-02",
