@@ -131,6 +131,13 @@ window.YYSD = (function () {
       desc: "45 题 · 填词 40（12 分钟）+ 学术 5（15 分钟）· 国内线下"
     },
     {
+      id: "2025-07-08",
+      title: "新托福 7.08 · 阅读",
+      file: "library/toefl/2025-07-08-reading.json",
+      duration: 30,
+      desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）"
+    },
+    {
       id: "2025-07-11",
       title: "新托福 7.11 国内线下 · 阅读",
       file: "library/toefl/2025-07-11-reading.json",
@@ -141,6 +148,13 @@ window.YYSD = (function () {
       id: "2025-07-13",
       title: "新托福 7.13 · 阅读",
       file: "library/toefl/2025-07-13-reading.json",
+      duration: 30,
+      desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）"
+    },
+    {
+      id: "2025-07-16",
+      title: "新托福 7.16 · 阅读",
+      file: "library/toefl/2025-07-16-reading.json",
       duration: 30,
       desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）"
     },
@@ -164,6 +178,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-07-25-reading.json",
       duration: 30,
       desc: "40 题 · 填词 10（10 分钟）+ 学术 30（20 分钟）· 国内线下"
+    },
+    {
+      id: "2025-07-29",
+      title: "新托福 7.29 国内线下 · 阅读",
+      file: "library/toefl/2025-07-29-reading.json",
+      duration: 38,
+      desc: "55 题 · 填词 40（20 分钟）+ 学术 15（18 分钟）· 国内线下"
     },
     {
       id: "2025-08-08",
@@ -267,6 +288,13 @@ window.YYSD = (function () {
       desc: "8 题 · 2 篇讲座 · Module 1（8 分钟）+ Module 2（8 分钟）· 国内线下"
     },
     {
+      id: "2025-07-08",
+      title: "新托福 7.08 · 听力",
+      file: "library/toefl/2025-07-08-listening.json",
+      duration: 36,
+      desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）"
+    },
+    {
       id: "2025-07-11",
       title: "新托福 7.11 国内线下 · 听力",
       file: "library/toefl/2025-07-11-listening.json",
@@ -277,6 +305,13 @@ window.YYSD = (function () {
       id: "2025-07-13",
       title: "新托福 7.13 · 听力",
       file: "library/toefl/2025-07-13-listening.json",
+      duration: 36,
+      desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）"
+    },
+    {
+      id: "2025-07-16",
+      title: "新托福 7.16 · 听力",
+      file: "library/toefl/2025-07-16-listening.json",
       duration: 36,
       desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）"
     },
@@ -300,6 +335,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-07-25-listening.json",
       duration: 24,
       desc: "16 题 · 4 篇讲座（24 分钟）· 国内线下"
+    },
+    {
+      id: "2025-07-29",
+      title: "新托福 7.29 国内线下 · 听力",
+      file: "library/toefl/2025-07-29-listening.json",
+      duration: 32,
+      desc: "20 题 · Module 1（8 分钟）+ Module 2（24 分钟）· 国内线下"
     },
     {
       id: "2025-08-08",
@@ -403,6 +445,13 @@ window.YYSD = (function () {
       desc: "5 封邮件（35 分钟）+ 4 篇学术讨论（40 分钟）· 无组句 · 国内线下"
     },
     {
+      id: "2025-07-08",
+      title: "新托福 7.08 · 写作",
+      file: "library/toefl/2025-07-08-writing.json",
+      duration: 25,
+      desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）"
+    },
+    {
       id: "2025-07-11",
       title: "新托福 7.11 国内线下 · 写作",
       file: "library/toefl/2025-07-11-writing.json",
@@ -413,6 +462,13 @@ window.YYSD = (function () {
       id: "2025-07-13",
       title: "新托福 7.13 · 写作",
       file: "library/toefl/2025-07-13-writing.json",
+      duration: 25,
+      desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）"
+    },
+    {
+      id: "2025-07-16",
+      title: "新托福 7.16 · 写作",
+      file: "library/toefl/2025-07-16-writing.json",
       duration: 25,
       desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）"
     },
@@ -437,6 +493,14 @@ window.YYSD = (function () {
       duration: 52,
       desc: "组句 2 题（8 分钟）+ 2 封邮件（14 分钟）+ 3 篇学术讨论（30 分钟）· 国内线下"
     },
+    {
+      id: "2025-07-29",
+      title: "新托福 7.29 国内线下 · 写作",
+      file: "library/toefl/2025-07-29-writing.json",
+      duration: 54,
+      desc: "2 封邮件（14 分钟）+ 4 篇学术讨论（40 分钟）· 无组句 · 国内线下"
+    },
+    {
     {
       id: "2025-08-08",
       title: "新托福 8.08 · 写作",
@@ -587,6 +651,13 @@ window.YYSD = (function () {
       desc: "垃圾分类 · 听后复述 + 艺术音乐面试 · 国内线下"
     },
     {
+      id: "2025-07-08",
+      title: "新托福 7.08 · 口语",
+      file: "library/toefl/2025-07-08-speaking.json",
+      duration: 10,
+      desc: "社区烘焙 · 听后复述 7 题（4 分钟）+ 公园面试 4 题（6 分钟）"
+    },
+    {
       id: "2025-07-11",
       title: "新托福 7.11 国内线下 · 口语 Form 1",
       file: "library/toefl/2025-07-11-speaking.json",
@@ -620,6 +691,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-07-13-speaking.json",
       duration: 10,
       desc: "听后复述 7 题（4 分钟）+ 面试 4 题（6 分钟）"
+    },
+    {
+      id: "2025-07-16",
+      title: "新托福 7.16 · 口语",
+      file: "library/toefl/2025-07-16-speaking.json",
+      duration: 10,
+      desc: "图书馆资料 · 听后复述 7 题（4 分钟）+ 回收面试 4 题（6 分钟）"
     },
     {
       id: "2025-07-18",
@@ -718,6 +796,34 @@ window.YYSD = (function () {
       file: "library/toefl/2025-07-25-speaking-f4.json",
       duration: 6,
       desc: "童年教育面试 4 题 · 国内线下"
+    },
+    {
+      id: "2025-07-29",
+      title: "新托福 7.29 国内线下 · 口语 Form 1",
+      file: "library/toefl/2025-07-29-speaking.json",
+      duration: 10,
+      desc: "修自行车 · 听后复述 7 题 + 购物面试 4 题 · 国内线下"
+    },
+    {
+      id: "2025-07-29-s2",
+      title: "新托福 7.29 国内线下 · 口语 Form 2",
+      file: "library/toefl/2025-07-29-speaking-f2.json",
+      duration: 4,
+      desc: "旅行社 · 听后复述 7 题 · 国内线下"
+    },
+    {
+      id: "2025-07-29-s3",
+      title: "新托福 7.29 国内线下 · 口语 Form 3",
+      file: "library/toefl/2025-07-29-speaking-f3.json",
+      duration: 4,
+      desc: "投影仪 · 听后复述 7 题 · 国内线下"
+    },
+    {
+      id: "2025-07-29-s4",
+      title: "新托福 7.29 国内线下 · 口语 Form 4",
+      file: "library/toefl/2025-07-29-speaking-f4.json",
+      duration: 4,
+      desc: "在线学习平台 · 听后复述 7 题 · 国内线下"
     },
     {
       id: "2025-08-08",
@@ -1015,6 +1121,12 @@ window.YYSD = (function () {
       desc: "阅读→听力→写作→口语 Form 1 · 约 128 分钟 · 无休息 · 国内线下"
     },
     {
+      id: "2025-07-08",
+      title: "新托福 7.08 · 完整模考",
+      duration: 101,
+      desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
+    },
+    {
       id: "2025-07-11",
       title: "新托福 7.11 国内线下 · 完整模考",
       duration: 82,
@@ -1023,6 +1135,12 @@ window.YYSD = (function () {
     {
       id: "2025-07-13",
       title: "新托福 7.13 · 完整模考",
+      duration: 101,
+      desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
+    },
+    {
+      id: "2025-07-16",
+      title: "新托福 7.16 · 完整模考",
       duration: 101,
       desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
     },
@@ -1043,6 +1161,12 @@ window.YYSD = (function () {
       title: "新托福 7.25 国内线下 · 完整模考",
       duration: 116,
       desc: "阅读→听力→写作→口语 Form 1 · 约 116 分钟 · 无休息 · 国内线下"
+    },
+    {
+      id: "2025-07-29",
+      title: "新托福 7.29 国内线下 · 完整模考",
+      duration: 134,
+      desc: "阅读→听力→写作→口语 Form 1 · 约 134 分钟 · 无休息 · 国内线下"
     },
     {
       id: "2025-08-08",
