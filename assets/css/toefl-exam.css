@@ -123,6 +123,7 @@ body.exam-ets .ets-record {
   flex: 0 0 88px;
   width: 88px;
   height: 88px;
+  border: 0;
   border-radius: 50%;
   background: #0d7377;
   color: #fff;
@@ -132,7 +133,87 @@ body.exam-ets .ets-record {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
+  cursor: pointer;
 }
+body.exam-ets .ets-record:disabled { opacity: 0.7; cursor: default; }
+body.exam-ets .ets-meter {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 28px;
+  margin: 16px 0 6px;
+}
+body.exam-ets .ets-meter i {
+  flex: 1;
+  height: 100%;
+  background: #e5e7eb;
+}
+body.exam-ets .ets-meter i.is-quiet { background: #94a3b8; }
+body.exam-ets .ets-meter i.is-good { background: #0d7377; }
+body.exam-ets .ets-meter i.is-loud { background: #b45309; }
+body.exam-ets .ets-meter-lab {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+}
+body.exam-ets .ets-listen-stage,
+body.exam-ets .ets-speak-stage {
+  min-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: #394251;
+}
+body.exam-ets .ets-headset {
+  width: 120px;
+  height: 120px;
+  color: #0d7377;
+}
+body.exam-ets .ets-headset svg { width: 100%; height: 100%; fill: currentColor; }
+body.exam-ets .ets-phase {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+body.exam-ets .ets-big-clock {
+  margin: 0;
+  font-size: 42px;
+  font-variant-numeric: tabular-nums;
+}
+body.exam-ets .ets-hl-bar {
+  font-size: 13px;
+  color: #4b5563;
+  margin: 0 0 10px;
+}
+body.exam-ets .review-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0 10px;
+  border-bottom: 2px solid #394251;
+  font-weight: 600;
+  font-size: 13px;
+}
+body.exam-ets .write-hint { color: #b45309; font-size: 13px; margin: 0 0 8px; }
+body.exam-ets #ets-exit {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(20, 22, 26, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+body.exam-ets #ets-exit.is-on { display: flex; }
+body.exam-ets #ets-exit > div {
+  width: min(460px, 92%);
+  background: #fff;
+  padding: 28px 24px;
+}
+body.exam-ets .ets-exit-acts { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
 body.exam-ets #pause-btn::before {
   content: "";
   width: 7px;
@@ -224,13 +305,18 @@ body.exam-ets .opt:hover { border-color: #4a5160; }
 body.exam-ets .insert {
   display: inline-flex;
   align-items: center;
-  border: 1px solid #9aa8b5;
-  background: #eef3f7;
-  border-radius: 4px;
-  padding: 0 6px;
-  margin: 0 4px 0 0;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #394251;
+  background: #fff;
+  border-radius: 2px;
+  padding: 0;
+  margin: 0 6px 0 0;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 700;
+  vertical-align: middle;
 }
 body.exam-ets .insert.is-on { background: #ffe566; border-color: #c4a000; }
 body.exam-ets .review {
@@ -423,11 +509,12 @@ body.exam-ets .sc-slot {
 body.exam-ets .sc-slot.is-on { background: #e8f0fe; border-bottom-color: #2b2f36; }
 body.exam-ets .sc-bank { display: flex; flex-wrap: wrap; gap: 8px; }
 body.exam-ets .sc-chip {
-  border: 1px solid #c5c9d0;
-  background: #fff;
-  padding: 6px 10px;
+  border: 1px solid #9aa8b5;
+  background: #eef2f6;
+  padding: 8px 14px;
   cursor: pointer;
   font: inherit;
+  min-width: 4.5em;
 }
 body.exam-ets .sc-chip:hover { border-color: #2b2f36; }
 body.exam-ets .write-split {

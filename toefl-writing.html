@@ -6,12 +6,12 @@
   <title>TOEFL Writing</title>
   <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets1">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets2">
   <script src="assets/js/config.js?v=20260929toefl8"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
   <script src="assets/js/toefl-writing.js?v=20260929toefl6"></script>
-  <script src="assets/js/toefl-full.js?v=20260929toefl6"></script>
-  <script src="assets/js/toefl-shell.js?v=20260930ets1"></script>
+  <script src="assets/js/toefl-full.js?v=20260930ets2"></script>
+  <script src="assets/js/toefl-shell.js?v=20260930ets2"></script>
 </head>
 <body class="exam-ets ets-booting">
 <div class="ets-frame">
@@ -29,6 +29,7 @@
       <button type="button" id="review-btn" class="hidden">Review</button>
       <button type="button" id="vol-btn" class="hidden">Volume</button>
       <button type="button" id="pause-btn" class="hidden">Pause Test</button>
+      <button type="button" id="exit-btn" class="hidden">Exit Section</button>
       <button type="button" id="back-btn" class="hidden">Back</button>
       <button type="button" id="next-btn">Continue</button>
     </div>
@@ -51,6 +52,7 @@
         <div class="write-tools">
           <button type="button" data-cmd="cut">Cut</button>
           <button type="button" data-cmd="copy">Copy</button>
+          <button type="button" data-cmd="paste">Paste</button>
           <button type="button" data-cmd="undo">Undo</button>
           <button type="button" data-cmd="redo">Redo</button>
           <button type="button" id="hide-wc">Hide Word Count</button>
@@ -69,32 +71,35 @@
         <div class="write-tools">
           <button type="button" data-cmd="cut">Cut</button>
           <button type="button" data-cmd="copy">Copy</button>
+          <button type="button" data-cmd="paste">Paste</button>
           <button type="button" data-cmd="undo">Undo</button>
           <button type="button" data-cmd="redo">Redo</button>
           <button type="button" id="hide-wc2">Hide Word Count</button>
           <span id="disc-wc">0</span>
         </div>
+        <p id="disc-hint" class="write-hint hidden">An effective discussion response contains at least 100 words.</p>
         <textarea id="disc-ta" spellcheck="true"></textarea>
       </article>
     </div>
   </section>
 
   <section id="review" class="exam-body hidden">
-    <p class="exam-title">Review</p>
+    <p class="exam-title">Go To Question</p>
     <div class="review" id="review-list"></div>
   </section>
 
-  <section id="rest" class="result hidden">
-    <h1 id="rest-title">本部分已完成</h1>
-    <p id="rest-copy">练习模式可以休息。准备好后进入下一部分。</p>
-    <p><button class="btn" type="button" id="rest-go">继续</button></p>
+  <section id="rest" class="ets-info hidden">
+    <h2 id="rest-title">End of this part</h2>
+    <p id="rest-copy">You cannot return. Select Continue to begin the next part.</p>
+    <p><button class="btn" type="button" id="rest-go">Continue</button></p>
   </section>
 
   <section id="done" class="result hidden">
-    <h1 id="score-line"></h1>
+    <h1>Writing Results</h1>
+    <p id="score-line"></p>
     <p id="pct-line"></p>
     <div class="review" id="wrong-preview"></div>
-    <p><a class="btn" id="back-zone" href="zone.html?zone=toefl&amp;s=writing">返回托福写作</a></p>
+    <p><a class="btn" id="back-zone" href="zone.html?zone=toefl&amp;s=writing">Return</a></p>
   </section>
 </div>
   <div id="ets-pause">
@@ -107,11 +112,22 @@
   <div id="ets-vol" class="ets-vol-pop hidden">
     <label for="ets-vol-range">Volume</label>
     <input type="range" id="ets-vol-range" min="0" max="1" step="0.05" value="1">
+    <p><button type="button" class="btn" id="ets-vol-tone">Play sample</button></p>
+  </div>
+  <div id="ets-exit">
+    <div>
+      <h2>Exit Section</h2>
+      <p>If you exit this section, unanswered questions will not be scored and you cannot return.</p>
+      <div class="ets-exit-acts">
+        <button class="btn" type="button" id="ets-exit-no">Return</button>
+        <button class="btn" type="button" id="ets-exit-yes">Exit Section</button>
+      </div>
+    </div>
   </div>
   <div id="void-lock">
     <div>
-      <h2>模考已中止</h2>
-      <p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答，也不记分。</p>
+      <h2>This mock test has been stopped</h2>
+      <p>Leaving the test window voids this mock test. It cannot be continued and will not be scored.</p>
       <div class="void-acts">
         <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=writing">退出</a>
         <button class="btn" type="button" id="void-restart">重新开始</button>
@@ -198,6 +214,8 @@
       }
       function paintWc(el, ta) {
         el.textContent = hideWc ? "" : String(W.wordCount(ta.value));
+        var hint = document.getElementById("disc-hint");
+        if (hint && ta === discTa) hint.classList.toggle("hidden", W.wordCount(ta.value) >= 100);
       }
 
       hideBtn.onclick = function () {
@@ -220,8 +238,18 @@
         b.onclick = function () {
           var scr = screens[si];
           var ta = scr && scr.type === "discussion" ? discTa : emailTa;
+          var cmd = b.getAttribute("data-cmd");
           ta.focus();
-          try { document.execCommand(b.getAttribute("data-cmd")); } catch (e) {}
+          if (cmd === "paste" && navigator.clipboard && navigator.clipboard.readText) {
+            navigator.clipboard.readText().then(function (t) {
+              var s = ta.selectionStart || 0;
+              var e = ta.selectionEnd || 0;
+              ta.value = ta.value.slice(0, s) + t + ta.value.slice(e);
+              paintWc(ta === discTa ? document.getElementById("disc-wc") : document.getElementById("email-wc"), ta);
+            }).catch(function () {});
+            return;
+          }
+          try { document.execCommand(cmd); } catch (e) {}
         };
       });
       emailTa.oninput = function () { paintWc(document.getElementById("email-wc"), emailTa); };
@@ -327,7 +355,8 @@
             '"><span>Question ' + s.task.id + '</span><span class="dot' + (filled(s.task.id) && can ? " ok" : "") +
             '">' + status + "</span></div>");
         });
-        document.getElementById("review-list").innerHTML = rows.join("");
+        document.getElementById("review-list").innerHTML =
+          '<div class="review-head"><span>Question</span><span>Status</span></div>' + rows.join("");
       }
       document.getElementById("review-list").onclick = function (e) {
         var row = e.target.closest ? e.target.closest(".review-row") : null;
@@ -348,9 +377,9 @@
       function leaveModule() {
         if (moduleN < paper.modules.length) {
           if (mode === "practice") {
-            var nextLab = (moduleOf(moduleN + 1) || {}).label || "下一部分";
-            document.getElementById("rest-title").textContent = (moduleOf(moduleN) || {}).label + " 已完成";
-            document.getElementById("rest-copy").textContent = "准备好后进入 " + nextLab + "。离开后不能返回。";
+            var nextLab = (moduleOf(moduleN + 1) || {}).label || "the next part";
+            document.getElementById("rest-title").textContent = "End of " + ((moduleOf(moduleN) || {}).label || "this part");
+            document.getElementById("rest-copy").textContent = "You cannot return. Select Continue to begin " + nextLab + ".";
             document.getElementById("rest-go").onclick = function () { startModule(moduleN + 1); };
             view = "rest";
             show(rest);
@@ -375,10 +404,10 @@
         view = "done";
         show(done);
         document.getElementById("score-line").textContent = r.total
-          ? ("句子 " + r.score + " / " + r.total)
-          : ("邮件 " + r.detail.filter(function (d) { return d.type === "email"; }).length +
-            " · 讨论 " + r.detail.filter(function (d) { return d.type === "discussion"; }).length);
-        document.getElementById("pct-line").textContent = "作文对照范文，不自动估分。";
+          ? ("Sentence construction " + r.score + " / " + r.total)
+          : ("Emails " + r.detail.filter(function (d) { return d.type === "email"; }).length +
+            " · Discussions " + r.detail.filter(function (d) { return d.type === "discussion"; }).length);
+        document.getElementById("pct-line").textContent = "Essays are not scored automatically. Compare the sample responses.";
         document.getElementById("wrong-preview").innerHTML = r.detail.map(function (d) {
           if (d.type === "sentence") {
             return '<div class="review-row ' + (d.ok ? "is-ok" : "is-bad") + '"><span>Q' + d.id +
@@ -479,7 +508,8 @@
               skill: "writing",
               mode: mode,
               isFull: !!(F && F.isFull()),
-              onReady: goStart
+              onReady: goStart,
+              onExit: function () { harvest(); leaveModule(); }
             });
           } else goStart();
         })

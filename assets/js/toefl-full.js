@@ -112,20 +112,20 @@
   }
 
   function restCopy(skill) {
-    return "下一部分是 " + label(nextSkill(skill)) +
-      "。练习可在此暂停。网考无休息，模考将直接进入。离开后不能返回上一部分。";
+    return "You have finished the " + label(skill) + " section. You cannot return. The next section is " +
+      label(nextSkill(skill)) + ". Select Continue when you are ready.";
   }
 
   function fillRest(skill, id, mode) {
     var rest = document.getElementById("rest");
     if (!rest) return;
-    var h = rest.querySelector("h1");
+    var h = rest.querySelector("h1, h2");
     var p = rest.querySelector("p");
     var go = document.getElementById("rest-go");
-    if (h) h.textContent = label(skill) + " 已完成";
+    if (h) h.textContent = "End of " + label(skill) + " Section";
     if (p) p.textContent = restCopy(skill);
     if (go) {
-      go.textContent = "继续 " + label(nextSkill(skill));
+      go.textContent = "Continue";
       go.onclick = function () { location.replace(nextHref(id, mode, skill)); };
     }
   }
@@ -136,8 +136,8 @@
     var h = box.querySelector("h2");
     var p = box.querySelector("p");
     var exit = box.querySelector("a");
-    if (h) h.textContent = "完整模考已中止";
-    if (p) p.textContent = "检测到切换页面或离开考试窗口，整场完整模考无效，四科均不记分。";
+    if (h) h.textContent = "This complete test has been stopped";
+    if (p) p.textContent = "Leaving the test window voids this mock test. No section is scored.";
     if (exit) exit.setAttribute("href", "zone.html?zone=toefl&s=full");
   }
 

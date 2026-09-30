@@ -1,4 +1,4 @@
-/* Official-like TOEFL chrome: intro screens, pause, volume */
+/* Official-like TOEFL chrome: intro, pause, volume tone, mic gate, exit */
 (function (w) {
   "use strict";
 
@@ -6,6 +6,10 @@
   var vol = 1;
   var ready = null;
   var examBtns = [];
+  var micOk = false;
+  var micStream = null;
+  var micRaf = 0;
+  var toneCtx = null;
 
   var COPY = {
     general: {
@@ -31,22 +35,27 @@
         "<p>Please make sure your headset is on. Follow the instructions on each screen. Be sure that your microphone is properly positioned and adjusted to allow for the best possible recording. Speak directly into the microphone and in your normal speaking voice.</p>"
     },
     volume: {
+      id: "volume",
       title: "Adjusting the Volume",
       html:
         "<p>To adjust the volume, select the <b>Volume</b> icon at the top of the screen. The volume control will appear. Move the volume indicator to the left or the right to change the volume.</p>" +
         "<p>To close the volume control, select the <b>Volume</b> icon again.</p>" +
         "<p>You will be able to change the volume during the test if you need to.</p>" +
-        "<p>You now have the option to adjust the volume.</p>"
+        "<p>Select <b>Play sample</b> to hear a tone at the current volume. Select <b>Continue</b> when you are ready.</p>" +
+        '<p><button type="button" class="btn" id="ets-tone">Play sample</button></p>'
     },
     microphone: {
+      id: "microphone",
       title: "Adjusting the Microphone",
       html:
         "<p>In order to check your microphone volume, you will speak into the microphone using your normal tone and volume. For best recording results, your voice level should remain generally within the <b>Good</b> range.</p>" +
-        '<div class="ets-mic-row"><div class="ets-record" aria-hidden="true">RECORD</div><div>' +
+        '<div class="ets-mic-row"><button type="button" class="ets-record" id="ets-record">RECORD</button><div>' +
         "<p>Select the <b>Record</b> button. A timer will count down until the system is ready to record.</p>" +
         "<p>To check your microphone level, you will record the following paragraph using your normal tone and volume.</p>" +
         "<p>There are several reasons why I would prefer to live in a large city. Some of the greatest advantages would include the number of job opportunities and career options, public transportation, greater diversity, and a wealth of entertainment. Also, large cities typically have a great deal to offer in terms of history, art and culture.</p>" +
-        "<p>On this practice system, select <b>Continue</b> when you are ready. You will not be able to adjust the microphone during the test.</p>" +
+        '<div class="ets-meter" id="ets-meter" aria-hidden="true"></div>' +
+        '<p class="ets-meter-lab"><span>Too Quiet</span><span>Good</span><span>Too Loud</span></p>' +
+        '<p id="ets-mic-msg">Select Record, then speak the paragraph. Continue unlocks after your voice stays in the Good range.</p>' +
         "</div></div>"
     },
     reading: {
@@ -79,8 +88,57 @@
 
   function $(id) { return document.getElementById(id); }
 
+  function hwKey(id) { return "yysd:toefl-hw:" + id; }
+
+  function hwDone(id) {
+    if (!id || typeof sessionStorage === "undefined") return false;
+    try { return sessionStorage.getItem(hwKey(id)) === "1"; } catch (e) { return false; }
+  }
+
+  function markHw(id) {
+    if (!id || typeof sessionStorage === "undefined") return;
+    try { sessionStorage.setItem(hwKey(id), "1"); } catch (e) {}
+  }
+
+  // ponytail: RMS bands match the official 3-zone meter; swap for AGC if laptops clip
+  function levelOf(rms) {
+    if (rms < 0.02) return 0;
+    if (rms > 0.28) return 2;
+    return 1;
+  }
+
   function applyVol() {
     document.querySelectorAll("audio").forEach(function (a) { a.volume = vol; });
+  }
+
+  function playTone() {
+    var Ctx = w.AudioContext || w.webkitAudioContext;
+    if (!Ctx) return;
+    if (toneCtx) { try { toneCtx.close(); } catch (e) {} }
+    toneCtx = new Ctx();
+    var osc = toneCtx.createOscillator();
+    var g = toneCtx.createGain();
+    osc.frequency.value = 440;
+    g.gain.value = 0.12 * vol;
+    osc.connect(g);
+    g.connect(toneCtx.destination);
+    osc.start();
+    osc.stop(toneCtx.currentTime + 1.2);
+  }
+
+  function playBeep() {
+    var Ctx = w.AudioContext || w.webkitAudioContext;
+    if (!Ctx) return;
+    var ctx = new Ctx();
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.frequency.value = 880;
+    g.gain.value = 0.18 * vol;
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.22);
+    osc.onended = function () { try { ctx.close(); } catch (e) {} };
   }
 
   function setPaused(on) {
@@ -92,16 +150,112 @@
     });
   }
 
+  function stopMic() {
+    if (micRaf) cancelAnimationFrame(micRaf);
+    micRaf = 0;
+    if (micStream) {
+      micStream.getTracks().forEach(function (t) { t.stop(); });
+      micStream = null;
+    }
+  }
+
+  function paintMeter(n) {
+    var box = $("ets-meter");
+    if (!box) return;
+    if (!box.childElementCount) {
+      var i;
+      for (i = 0; i < 20; i++) box.appendChild(document.createElement("i"));
+    }
+    Array.prototype.forEach.call(box.children, function (el, i) {
+      el.className = i < n ? (i < 7 ? "is-quiet" : (i < 15 ? "is-good" : "is-loud")) : "";
+    });
+  }
+
+  function startMicListen(msg) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (msg) msg.textContent = "This browser cannot access the microphone.";
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      micStream = stream;
+      var Ctx = w.AudioContext || w.webkitAudioContext;
+      var ctx = new Ctx();
+      var src = ctx.createMediaStreamSource(stream);
+      var analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      src.connect(analyser);
+      var data = new Uint8Array(analyser.fftSize);
+      function tick() {
+        analyser.getByteTimeDomainData(data);
+        var sum = 0;
+        var i;
+        for (i = 0; i < data.length; i++) {
+          var v = (data[i] - 128) / 128;
+          sum += v * v;
+        }
+        var rms = Math.sqrt(sum / data.length);
+        var lv = levelOf(rms);
+        paintMeter(Math.min(20, Math.round(rms * 70)));
+        if (lv === 1) {
+          micOk = true;
+          var next = $("next-btn");
+          if (next) next.disabled = false;
+          if (msg) msg.textContent = "Good. Select Continue to begin the test.";
+        }
+        micRaf = requestAnimationFrame(tick);
+      }
+      tick();
+    }).catch(function () {
+      if (msg) msg.textContent = "Microphone permission is required. Continue stays locked until the microphone works.";
+    });
+  }
+
+  function bindMic() {
+    var rec = $("ets-record");
+    var msg = $("ets-mic-msg");
+    var next = $("next-btn");
+    micOk = false;
+    paintMeter(0);
+    if (next) next.disabled = true;
+    if (!rec) return;
+    rec.onclick = function () {
+      var n = 3;
+      rec.disabled = true;
+      rec.textContent = String(n);
+      var t = setInterval(function () {
+        n -= 1;
+        if (n > 0) { rec.textContent = String(n); return; }
+        clearInterval(t);
+        rec.textContent = "REC";
+        if (msg) msg.textContent = "Speak the paragraph now.";
+        startMicListen(msg);
+      }, 1000);
+    };
+  }
+
   function examMode(on) {
     examBtns.forEach(function (el) {
       if (!el) return;
       el.classList.toggle("hidden", !on);
     });
     var next = $("next-btn");
-    if (next && on) next.textContent = "Next";
+    if (next && on) {
+      next.textContent = "Next";
+      next.disabled = false;
+    }
     document.body.classList.toggle("ets-booting", !on);
     var pop = $("ets-vol");
     if (on && pop) pop.classList.add("hidden");
+  }
+
+  function confirmExit(onYes) {
+    var box = $("ets-exit");
+    if (!box) { if (onYes) onYes(); return; }
+    box.classList.add("is-on");
+    var yes = $("ets-exit-yes");
+    var no = $("ets-exit-no");
+    if (yes) yes.onclick = function () { box.classList.remove("is-on"); if (onYes) onYes(); };
+    if (no) no.onclick = function () { box.classList.remove("is-on"); };
   }
 
   function boot(opts) {
@@ -119,7 +273,7 @@
       if (label) titleEl.textContent = label;
     }
     var queue = [];
-    if (opts.isFull && opts.skill === "reading") {
+    if (opts.isFull && opts.skill === "reading" && !hwDone(opts.id)) {
       queue.push(COPY.general, COPY.hardware, COPY.volume, COPY.microphone);
     }
     if (COPY[opts.skill]) queue.push(COPY[opts.skill]);
@@ -133,8 +287,9 @@
     var next = $("next-btn");
     var pause = $("pause-btn");
     var volBtn = $("vol-btn");
+    var exitBtn = $("exit-btn");
     var i = 0;
-    examBtns = [$("hide-time"), $("help-btn"), $("review-btn"), $("back-btn"), $("clock")];
+    examBtns = [$("hide-time"), $("help-btn"), $("review-btn"), $("back-btn"), $("clock"), exitBtn];
     examMode(false);
     if (pause) {
       pause.classList.toggle("hidden", opts.mode !== "practice");
@@ -143,24 +298,38 @@
     if (volBtn) {
       volBtn.classList.toggle("hidden", opts.skill !== "listening" && opts.skill !== "speaking" && !opts.isFull);
     }
+    if (exitBtn) {
+      exitBtn.onclick = function () { confirmExit(opts.onExit); };
+    }
     if (intro) intro.classList.remove("hidden");
     if (next) next.textContent = "Continue";
 
     function paint() {
       var scr = queue[i];
       if (!scr || !intro) return;
+      stopMic();
       intro.innerHTML = "<h2>" + scr.title + "</h2>" + scr.html;
+      if (next) next.disabled = false;
+      if (scr.id === "volume") {
+        var tone = $("ets-tone");
+        if (tone) tone.onclick = playTone;
+      }
+      if (scr.id === "microphone") bindMic();
     }
     paint();
 
     var oldNext = next && next.onclick;
     if (next) {
       next.onclick = function () {
+        var scr = queue[i];
+        if (scr && scr.id === "microphone" && !micOk) return;
         if (i < queue.length - 1) {
           i += 1;
           paint();
           return;
         }
+        if (opts.isFull && opts.skill === "reading") markHw(opts.id);
+        stopMic();
         intro.classList.add("hidden");
         next.onclick = oldNext;
         examMode(true);
@@ -189,6 +358,8 @@
         applyVol();
       };
     }
+    var sample = $("ets-vol-tone");
+    if (sample) sample.onclick = playTone;
     if (w.MutationObserver) {
       new MutationObserver(applyVol).observe(document.body, { childList: true, subtree: true });
     }
@@ -200,6 +371,11 @@
   w.YYSD_TOEFL_SHELL = {
     boot: boot,
     paused: function () { return paused; },
-    applyVol: applyVol
+    applyVol: applyVol,
+    playBeep: playBeep,
+    playTone: playTone,
+    confirmExit: confirmExit,
+    levelOf: levelOf,
+    hwKey: hwKey
   };
 })(window);

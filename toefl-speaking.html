@@ -6,12 +6,12 @@
   <title>TOEFL Speaking</title>
   <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets1">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets2">
   <script src="assets/js/config.js?v=20260929toefl8"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
   <script src="assets/js/toefl-speaking.js?v=20260929toefl6"></script>
-  <script src="assets/js/toefl-full.js?v=20260929toefl6"></script>
-  <script src="assets/js/toefl-shell.js?v=20260930ets1"></script>
+  <script src="assets/js/toefl-full.js?v=20260930ets2"></script>
+  <script src="assets/js/toefl-shell.js?v=20260930ets2"></script>
 </head>
 <body class="exam-ets ets-booting">
 <div class="ets-frame">
@@ -28,6 +28,7 @@
       <button type="button" id="help-btn" class="hidden">Help</button>
       <button type="button" id="vol-btn" class="hidden">Volume</button>
       <button type="button" id="pause-btn" class="hidden">Pause Test</button>
+      <button type="button" id="exit-btn" class="hidden">Exit Section</button>
       <button type="button" id="back-btn" class="hidden">Back</button>
       <button type="button" id="next-btn">Continue</button>
     </div>
@@ -37,35 +38,35 @@
 
   <section id="exam" class="exam-body hidden">
     <p class="exam-title" id="instruction"></p>
-    <div class="ets-audio" id="audio-box">
-      <button type="button" id="play-btn">Play</button>
-      <span id="a-time">00:00</span>
-      <div class="a-track"><i id="a-fill"></i></div>
-      <audio id="clip" preload="auto"></audio>
-    </div>
-    <article class="exam-card listen-card">
+    <div id="speak-stage" class="ets-speak-stage">
+      <div class="ets-headset" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 22a16 16 0 1 1 32 0v10a5 5 0 0 1-5 5h-3V24h6v-2a14 14 0 1 0-28 0v2h6v13H13a5 5 0 0 1-5-5V22z"/></svg></div>
+      <p class="ets-phase" id="speak-phase">LISTEN</p>
+      <p class="ets-big-clock" id="speak-timer"></p>
       <p class="q-stem" id="q-stem"></p>
-      <p class="speak-status" id="speak-status">Listen to the prompt, then record your answer.</p>
+    </div>
+    <audio id="clip" preload="auto" class="hidden"></audio>
+    <article class="exam-card listen-card hidden" id="speak-card">
+      <p class="speak-status" id="speak-status"></p>
       <div class="speak-acts">
-        <button type="button" class="btn" id="rec-btn">Record</button>
+        <button type="button" class="btn hidden" id="rec-btn">Record</button>
         <span id="rec-clock"></span>
       </div>
       <audio id="playback" controls class="hidden"></audio>
     </article>
   </section>
 
-  <section id="rest" class="result hidden">
-    <h1 id="rest-title">本部分已完成</h1>
-    <p id="rest-copy">准备好后进入下一部分。离开后不能返回。</p>
-    <p><button class="btn" type="button" id="rest-go">继续</button></p>
+  <section id="rest" class="ets-info hidden">
+    <h2 id="rest-title">End of this part</h2>
+    <p id="rest-copy">You cannot return. Select Continue to begin the next part.</p>
+    <p><button class="btn" type="button" id="rest-go">Continue</button></p>
   </section>
 
   <section id="done" class="result hidden">
-    <h1>口语已提交</h1>
-    <p>录音只保存在这一页。离开前请导出。口语不自动估分。</p>
-    <p><button class="btn" type="button" id="export-all">导出全部回答</button></p>
+    <h1>Speaking Results</h1>
+    <p>Speaking is not scored automatically. Export your recordings before you leave this page.</p>
+    <p><button class="btn" type="button" id="export-all">Export all responses</button></p>
     <div class="review" id="wrong-preview"></div>
-    <p><a class="btn" href="zone.html?zone=toefl&amp;s=speaking">返回托福口语</a></p>
+    <p><a class="btn" href="zone.html?zone=toefl&amp;s=speaking">Return</a></p>
   </section>
 </div>
   <div id="ets-pause">
@@ -78,11 +79,22 @@
   <div id="ets-vol" class="ets-vol-pop hidden">
     <label for="ets-vol-range">Volume</label>
     <input type="range" id="ets-vol-range" min="0" max="1" step="0.05" value="1">
+    <p><button type="button" class="btn" id="ets-vol-tone">Play sample</button></p>
+  </div>
+  <div id="ets-exit">
+    <div>
+      <h2>Exit Section</h2>
+      <p>If you exit this section, unanswered questions will not be scored and you cannot return.</p>
+      <div class="ets-exit-acts">
+        <button class="btn" type="button" id="ets-exit-no">Return</button>
+        <button class="btn" type="button" id="ets-exit-yes">Exit Section</button>
+      </div>
+    </div>
   </div>
   <div id="void-lock">
     <div>
-      <h2>模考已中止</h2>
-      <p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答，也不记分。</p>
+      <h2>This mock test has been stopped</h2>
+      <p>Leaving the test window voids this mock test. It cannot be continued and will not be scored.</p>
       <div class="void-acts">
         <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=speaking">退出</a>
         <button class="btn" type="button" id="void-restart">重新开始</button>
@@ -131,7 +143,9 @@
       var chunks = [];
       var recLeft = 0;
       var recTick = null;
+      var prepTick = null;
       var played = {};
+      var phase = "listen";
 
       var clock = document.getElementById("clock");
       var exam = document.getElementById("exam");
@@ -140,11 +154,14 @@
       var nextBtn = document.getElementById("next-btn");
       var backBtn = document.getElementById("back-btn");
       var clip = document.getElementById("clip");
-      var playBtn = document.getElementById("play-btn");
       var recBtn = document.getElementById("rec-btn");
       var recClock = document.getElementById("rec-clock");
       var playback = document.getElementById("playback");
       var statusEl = document.getElementById("speak-status");
+      var speakStage = document.getElementById("speak-stage");
+      var speakCard = document.getElementById("speak-card");
+      var speakPhase = document.getElementById("speak-phase");
+      var speakTimer = document.getElementById("speak-timer");
 
       function fmt(sec) {
         sec = Math.max(0, Math.floor(sec || 0));
@@ -176,51 +193,58 @@
       document.getElementById("help-btn").onclick = function () { document.getElementById("help-box").classList.remove("hidden"); };
       document.getElementById("help-close").onclick = function () { document.getElementById("help-box").classList.add("hidden"); };
 
-      function paintAudio() {
-        var d = clip.duration;
-        var t = clip.currentTime || 0;
-        document.getElementById("a-time").textContent = isFinite(d) ? (fmt(t) + " / " + fmt(d)) : fmt(t);
-        document.getElementById("a-fill").style.width = (isFinite(d) && d > 0 ? (t / d * 100) : 0) + "%";
+      function clearPhase() {
+        if (prepTick) { clearInterval(prepTick); prepTick = null; }
       }
-      function syncPlayBtn(task) {
-        var key = task.id;
-        var locked = mode === "mock" && played[key];
-        playBtn.disabled = locked;
-        playBtn.textContent = locked ? "Played" : (clip.paused ? "Play" : "Pause");
+      function showStage(on) {
+        speakStage.classList.toggle("hidden", !on);
+        speakCard.classList.toggle("hidden", on);
       }
-      function bindAudio(task) {
+      function startListen(task) {
+        phase = "listen";
+        nextBtn.disabled = true;
+        showStage(true);
+        speakPhase.textContent = "LISTEN";
+        speakTimer.textContent = "";
+        recBtn.classList.add("hidden");
+        playback.classList.add("hidden");
         if (clip.getAttribute("data-src") !== task.audio) {
           clip.pause();
           clip.src = task.audio;
           clip.setAttribute("data-src", task.audio);
         }
-        if (!played[task.id]) {
-          var p = clip.play();
-          if (p && p.then) p.then(function () { played[task.id] = 1; syncPlayBtn(task); }).catch(function () { syncPlayBtn(task); });
-        } else syncPlayBtn(task);
-        paintAudio();
+        clip.play().then(function () { played[task.id] = 1; }).catch(function () {});
       }
-      playBtn.onclick = function () {
-        var scr = screens[si];
-        if (!scr) return;
-        if (mode === "mock" && played[scr.task.id] && clip.paused) return;
-        if (clip.paused) {
-          clip.play().then(function () { played[scr.task.id] = 1; syncPlayBtn(scr.task); }).catch(function () {});
-        } else if (mode === "practice") {
-          clip.pause();
-          syncPlayBtn(scr.task);
-        }
-      };
-      clip.addEventListener("timeupdate", paintAudio);
-      clip.addEventListener("loadedmetadata", paintAudio);
+      function startPrep(task) {
+        var sec = task.prepSec != null ? task.prepSec : (task.type === "interview" ? 15 : 3);
+        if (sec <= 0) { startResponse(task); return; }
+        phase = "prep";
+        showStage(true);
+        speakPhase.textContent = "PREPARATION TIME";
+        speakTimer.textContent = fmt(sec);
+        var left = sec;
+        prepTick = setInterval(function () {
+          if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.paused()) return;
+          left -= 1;
+          speakTimer.textContent = fmt(left);
+          if (left <= 0) {
+            clearPhase();
+            startResponse(task);
+          }
+        }, 1000);
+      }
+      function startResponse(task) {
+        phase = "record";
+        showStage(true);
+        speakPhase.textContent = "RESPONSE TIME";
+        if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.playBeep) YYSD_TOEFL_SHELL.playBeep();
+        startRec(true);
+      }
       clip.addEventListener("ended", function () {
         var scr = screens[si];
-        if (!scr) return;
+        if (!scr || phase !== "listen") return;
         played[scr.task.id] = 1;
-        syncPlayBtn(scr.task);
-        paintAudio();
-        if (mode === "mock" && !recs[scr.task.id]) startRec(true);
-        else statusEl.textContent = "Prompt finished. Record your answer.";
+        startPrep(scr.task);
       });
 
       function stopTracks() {
@@ -259,15 +283,29 @@
             stopTracks();
             var blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
             if (blob.size) storeBlob(scr.task.id, blob, recorder.mimeType || "audio/webm");
-            statusEl.textContent = recs[scr.task.id] ? "Recorded. You can continue." : "No audio captured.";
+            phase = "done";
+            nextBtn.disabled = false;
+            speakTimer.textContent = "";
+            speakPhase.textContent = "RECORDED";
+            if (mode === "practice" && recs[scr.task.id]) {
+              showStage(false);
+              recBtn.classList.remove("hidden");
+              playback.classList.remove("hidden");
+              statusEl.textContent = "Recorded. You may play it back or record again.";
+            } else {
+              statusEl.textContent = recs[scr.task.id] ? "Recorded. Select Next." : "No audio captured.";
+            }
           };
           recorder.start();
           recBtn.textContent = "Stop";
           recLeft = scr.task.speakSec || 15;
+          speakTimer.textContent = fmt(recLeft);
           recClock.textContent = fmt(recLeft);
           statusEl.textContent = "Recording…";
           recTick = setInterval(function () {
+            if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.paused()) return;
             recLeft -= 1;
+            speakTimer.textContent = fmt(recLeft);
             recClock.textContent = fmt(recLeft);
             if (recLeft <= 0) stopRec();
           }, 1000);
@@ -283,6 +321,7 @@
       function renderExam() {
         view = "exam";
         stopRec();
+        clearPhase();
         clip.pause();
         var scr = screens[si];
         moduleN = scr.module;
@@ -297,15 +336,25 @@
         recBtn.textContent = "Record";
         recClock.textContent = "";
         if (recs[scr.task.id]) {
-          playback.src = recs[scr.task.id].url;
-          playback.classList.remove("hidden");
-          statusEl.textContent = mode === "mock" ? "Recorded." : "Recorded. You may record again.";
+          phase = "done";
+          nextBtn.disabled = false;
+          speakPhase.textContent = "RECORDED";
+          speakTimer.textContent = "";
+          if (mode === "practice") {
+            showStage(false);
+            playback.src = recs[scr.task.id].url;
+            playback.classList.remove("hidden");
+            recBtn.classList.remove("hidden");
+            statusEl.textContent = "Recorded. You may play it back or record again.";
+          } else {
+            showStage(true);
+            playback.classList.add("hidden");
+            recBtn.classList.add("hidden");
+          }
         } else {
           playback.removeAttribute("src");
-          playback.classList.add("hidden");
-          statusEl.textContent = "Listen to the prompt, then record your answer.";
+          startListen(scr.task);
         }
-        bindAudio(scr.task);
       }
 
       function startModule(n) {
@@ -321,9 +370,9 @@
         clip.pause();
         if (moduleN < paper.modules.length) {
           if (mode === "practice") {
-            var nextLab = (moduleOf(moduleN + 1) || {}).label || "下一部分";
-            document.getElementById("rest-title").textContent = (moduleOf(moduleN) || {}).label + " 已完成";
-            document.getElementById("rest-copy").textContent = "准备好后进入 " + nextLab + "。离开后不能返回。";
+            var nextLab = (moduleOf(moduleN + 1) || {}).label || "the next part";
+            document.getElementById("rest-title").textContent = "End of " + ((moduleOf(moduleN) || {}).label || "this part");
+            document.getElementById("rest-copy").textContent = "You cannot return. Select Continue to begin " + nextLab + ".";
             document.getElementById("rest-go").onclick = function () { startModule(moduleN + 1); };
             view = "rest";
             show(rest);
@@ -461,7 +510,8 @@
               skill: "speaking",
               mode: mode,
               isFull: !!(F && F.isFull()),
-              onReady: goStart
+              onReady: goStart,
+              onExit: function () { stopRec(); leaveModule(); }
             });
           } else goStart();
         })

@@ -6,12 +6,12 @@
   <title>TOEFL Listening</title>
   <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets1">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets2">
   <script src="assets/js/config.js?v=20260929toefl8"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
-  <script src="assets/js/toefl-reading.js?v=20260929toefl7"></script>
-  <script src="assets/js/toefl-full.js?v=20260929toefl6"></script>
-  <script src="assets/js/toefl-shell.js?v=20260930ets1"></script>
+  <script src="assets/js/toefl-reading.js?v=20260930ets2"></script>
+  <script src="assets/js/toefl-full.js?v=20260930ets2"></script>
+  <script src="assets/js/toefl-shell.js?v=20260930ets2"></script>
 </head>
 <body class="exam-ets ets-booting">
 <div class="ets-frame">
@@ -29,6 +29,7 @@
       <button type="button" id="review-btn" class="hidden">Review</button>
       <button type="button" id="vol-btn" class="hidden">Volume</button>
       <button type="button" id="pause-btn" class="hidden">Pause Test</button>
+      <button type="button" id="exit-btn" class="hidden">Exit Section</button>
       <button type="button" id="back-btn" class="hidden">Back</button>
       <button type="button" id="next-btn">Continue</button>
     </div>
@@ -40,10 +41,14 @@
 
   <section id="exam" class="exam-body hidden">
     <p class="exam-title" id="instruction"></p>
-    <div class="ets-audio" id="audio-box">
+    <div id="listen-stage" class="ets-listen-stage hidden">
+      <div class="ets-headset" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 22a16 16 0 1 1 32 0v10a5 5 0 0 1-5 5h-3V24h6v-2a14 14 0 1 0-28 0v2h6v13H13a5 5 0 0 1-5-5V22z"/></svg></div>
+      <p class="ets-phase" id="listen-phase">LISTEN</p>
+      <p id="listen-caption">Listen to the recording.</p>
+    </div>
+    <div class="ets-audio hidden" id="audio-box">
       <button type="button" id="play-btn">Play</button>
       <span id="a-time">00:00</span>
-      <div class="a-track" id="a-track" aria-hidden="true"><i id="a-fill"></i></div>
       <audio id="clip" preload="auto"></audio>
     </div>
     <article class="exam-card listen-card">
@@ -53,21 +58,23 @@
   </section>
 
   <section id="review" class="exam-body hidden">
-    <p class="exam-title">Review</p>
+    <p class="exam-title">Go To Question</p>
     <div class="review" id="review-list"></div>
   </section>
 
-  <section id="rest" class="result hidden">
-    <h1>Module 1 已完成</h1>
-    <p>练习模式可以休息。准备好后进入 Module 2。</p>
-    <p><button class="btn" type="button" id="rest-go">开始 Module 2</button></p>
+  <section id="rest" class="ets-info hidden">
+    <h2>End of Module 1</h2>
+    <p>You have completed this module. You will not be able to return.</p>
+    <p>Select Continue to begin Module 2.</p>
+    <p><button class="btn" type="button" id="rest-go">Continue</button></p>
   </section>
 
   <section id="done" class="result hidden">
-    <h1 id="score-line"></h1>
+    <h1>Listening Results</h1>
+    <p id="score-line"></p>
     <p id="pct-line"></p>
     <div class="review" id="wrong-preview"></div>
-    <p><a class="btn" id="back-zone" href="zone.html?zone=toefl&amp;s=listening">返回托福听力</a></p>
+    <p><a class="btn" id="back-zone" href="zone.html?zone=toefl&amp;s=listening">Return</a></p>
   </section>
 </div>
   <div id="ets-pause">
@@ -80,11 +87,22 @@
   <div id="ets-vol" class="ets-vol-pop hidden">
     <label for="ets-vol-range">Volume</label>
     <input type="range" id="ets-vol-range" min="0" max="1" step="0.05" value="1">
+    <p><button type="button" class="btn" id="ets-vol-tone">Play sample</button></p>
+  </div>
+  <div id="ets-exit">
+    <div>
+      <h2>Exit Section</h2>
+      <p>If you exit this section, unanswered questions will not be scored and you cannot return.</p>
+      <div class="ets-exit-acts">
+        <button class="btn" type="button" id="ets-exit-no">Return</button>
+        <button class="btn" type="button" id="ets-exit-yes">Exit Section</button>
+      </div>
+    </div>
   </div>
   <div id="void-lock">
     <div>
-      <h2>模考已中止</h2>
-      <p>检测到切换页面或离开考试窗口，本次模考无效，无法继续作答，也不记分。</p>
+      <h2>This mock test has been stopped</h2>
+      <p>Leaving the test window voids this mock test. It cannot be continued and will not be scored.</p>
       <div class="void-acts">
         <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=listening">退出</a>
         <button class="btn" type="button" id="void-restart">重新开始</button>
@@ -149,7 +167,8 @@
       var clip = document.getElementById("clip");
       var playBtn = document.getElementById("play-btn");
       var aTime = document.getElementById("a-time");
-      var aFill = document.getElementById("a-fill");
+      var listenStage = document.getElementById("listen-stage");
+      var audioBox = document.getElementById("audio-box");
 
       function fmt(sec) {
         sec = Math.max(0, Math.floor(sec || 0));
@@ -208,8 +227,7 @@
       function paintAudio() {
         var d = clip.duration;
         var t = clip.currentTime || 0;
-        aTime.textContent = isFinite(d) ? (fmt(t) + " / " + fmt(d)) : fmt(t);
-        aFill.style.width = (isFinite(d) && d > 0 ? (t / d * 100) : 0) + "%";
+        if (aTime) aTime.textContent = isFinite(d) ? (fmt(t) + " / " + fmt(d)) : fmt(t);
       }
 
       function syncPlayBtn(task) {
@@ -226,7 +244,7 @@
           clip.src = task.audio;
           clip.setAttribute("data-src", task.audio);
         }
-        document.getElementById("audio-box").classList.toggle("is-locked", mode === "mock" && played[key]);
+        if (audioBox) audioBox.classList.toggle("is-locked", mode === "mock" && played[key]);
         if (!played[key]) {
           var p = clip.play();
           if (p && p.then) {
@@ -288,8 +306,13 @@
         backBtn.disabled = wait || si === 0 || scr.module !== screens[si - 1].module;
         nextBtn.disabled = wait;
         reviewBtn.disabled = wait;
+        var hideFirst = T.hideQsUntilHeard(scr.task);
+        listenStage.classList.toggle("hidden", !wait);
         document.querySelector(".listen-card").classList.toggle("hidden", wait);
+        audioBox.classList.toggle("hidden", wait || (hideFirst && mode === "mock"));
+        playBtn.textContent = hideFirst ? "Replay" : "Play";
         if (wait) {
+          document.getElementById("instruction").textContent = "";
           document.getElementById("q-stem").textContent = "";
           opts.innerHTML = "";
         } else {
@@ -319,7 +342,8 @@
               status + "</span></div>");
           });
         });
-        document.getElementById("review-list").innerHTML = rows.join("");
+        document.getElementById("review-list").innerHTML =
+          '<div class="review-head"><span>Question</span><span>Status</span></div>' + rows.join("");
       }
 
       document.getElementById("review-list").onclick = function (e) {
@@ -367,9 +391,9 @@
         view = "done";
         show(done);
         var pct = r.total ? Math.round(r.score / r.total * 100) : 0;
-        document.getElementById("score-line").textContent = r.score + " / " + r.total;
+        document.getElementById("score-line").textContent = "Score " + r.score + " / " + r.total;
         document.getElementById("pct-line").textContent =
-          pct + "% · 听力预估 " + r.band + "（对照 0–30 为 " + r.scaled30 + "）";
+          pct + "% · Listening estimate " + r.band + " (0–30 scale " + r.scaled30 + ")";
         var box = document.getElementById("wrong-preview");
         box.innerHTML = r.detail.map(function (d) {
           return '<div class="review-row ' + (d.ok ? "is-ok" : "is-bad") + '"><span>Q' +
@@ -466,7 +490,8 @@
               skill: "listening",
               mode: mode,
               isFull: !!(F && F.isFull()),
-              onReady: goStart
+              onReady: goStart,
+              onExit: function () { harvest(); leaveModule(); }
             });
           } else goStart();
         })

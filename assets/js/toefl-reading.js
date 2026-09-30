@@ -194,7 +194,7 @@
     var mark = "";
     if (showInsert && p.insert) {
       mark = '<button type="button" class="insert" data-insert="' + esc(p.insert) +
-        '" aria-label="insert ' + esc(p.insert) + '">■ ' + esc(p.insert) + "</button> ";
+        '" aria-label="insert ' + esc(p.insert) + '">' + esc(p.insert) + "</button> ";
     }
     if (!p.t) return mark ? "<p>" + mark + "</p>" : "";
     return "<p>" + mark + hl(p.t) + "</p>";
