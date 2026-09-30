@@ -38,6 +38,7 @@
   function startPack(id, mode) {
     var pack = { id: id, mode: mode, sections: {}, voided: false };
     save(pack);
+    try { sessionStorage.removeItem("yysd:toefl-hw:" + id); } catch (e) {}
     return pack;
   }
 

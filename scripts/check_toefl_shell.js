@@ -3,6 +3,7 @@ var assert = require("assert");
 var fs = require("fs");
 var path = require("path");
 var src = fs.readFileSync(path.join(__dirname, "../assets/js/toefl-shell.js"), "utf8");
+var full = fs.readFileSync(path.join(__dirname, "../assets/js/toefl-full.js"), "utf8");
 
 function levelOf(rms) {
   if (rms < 0.02) return 0;
@@ -17,4 +18,5 @@ assert.ok(src.indexOf("yysd:toefl-hw:") >= 0);
 assert.ok(src.indexOf("getUserMedia") >= 0);
 assert.ok(src.indexOf("AnalyserNode") >= 0 || src.indexOf("createAnalyser") >= 0);
 assert.ok(src.indexOf("id: \"microphone\"") >= 0);
+assert.ok(full.indexOf('sessionStorage.removeItem("yysd:toefl-hw:"') >= 0);
 console.log("toefl-shell ok");
