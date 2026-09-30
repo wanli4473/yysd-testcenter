@@ -319,7 +319,7 @@ def build_reading():
         raise SystemExit("reading blanks ended at %s" % n)
     return {
         "id": "2025-09-19",
-        "title": "新托福 9.19 · 阅读",
+        "title": "新托福 9.19 海外线下 · 阅读",
         "set": "9.19",
         "skill": "reading",
         "modules": [
@@ -609,7 +609,7 @@ def build_listening():
     ]
     return {
         "id": "2025-09-19",
-        "title": "新托福 9.19 · 听力",
+        "title": "新托福 9.19 海外线下 · 听力",
         "set": "9.19",
         "skill": "listening",
         "modules": [
@@ -634,7 +634,7 @@ def sent(sid, context, lead, bank, answer, tail="."):
 def build_writing():
     return {
         "id": "2025-09-19",
-        "title": "新托福 9.19 · 写作",
+        "title": "新托福 9.19 海外线下 · 写作",
         "set": "9.19",
         "skill": "writing",
         "modules": [
@@ -750,7 +750,7 @@ def build_speaking():
         })
     return {
         "id": "2025-09-19",
-        "title": "新托福 9.19 · 口语",
+        "title": "新托福 9.19 海外线下 · 口语",
         "set": "9.19",
         "skill": "speaking",
         "modules": [

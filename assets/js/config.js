@@ -139,10 +139,17 @@ window.YYSD = (function () {
     },
     {
       id: "2025-09-19",
-      title: "新托福 9.19 · 阅读",
+      title: "新托福 9.19 海外线下 · 阅读",
       file: "library/toefl/2025-09-19-reading.json",
       duration: 30,
       desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）· 海外线下"
+    },
+    {
+      id: "2025-09-23",
+      title: "新托福 9.23 国内线下 · 阅读",
+      file: "library/toefl/2025-09-23-reading.json",
+      duration: 48,
+      desc: "100 题 · 填词 80（32 分钟）+ 学术 20（16 分钟）· 国内线下"
     },
     {
       id: "2026-09-23",
@@ -177,10 +184,17 @@ window.YYSD = (function () {
     },
     {
       id: "2025-09-19",
-      title: "新托福 9.19 · 听力",
+      title: "新托福 9.19 海外线下 · 听力",
       file: "library/toefl/2025-09-19-listening.json",
       duration: 36,
       desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）· 海外线下"
+    },
+    {
+      id: "2025-09-23",
+      title: "新托福 9.23 国内线下 · 听力",
+      file: "library/toefl/2025-09-23-listening.json",
+      duration: 45,
+      desc: "52 题 · 13 篇讲座 · Module 1（25 分钟）+ Module 2（20 分钟）· 国内线下"
     },
     {
       id: "2026-09-23",
@@ -215,10 +229,17 @@ window.YYSD = (function () {
     },
     {
       id: "2025-09-19",
-      title: "新托福 9.19 · 写作",
+      title: "新托福 9.19 海外线下 · 写作",
       file: "library/toefl/2025-09-19-writing.json",
       duration: 25,
       desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）· 海外线下"
+    },
+    {
+      id: "2025-09-23",
+      title: "新托福 9.23 国内线下 · 写作",
+      file: "library/toefl/2025-09-23-writing.json",
+      duration: 109,
+      desc: "7 封邮件（49 分钟）+ 6 篇学术讨论（60 分钟）· 无组句 · 国内线下"
     },
     {
       id: "2026-09-23",
@@ -315,10 +336,52 @@ window.YYSD = (function () {
     },
     {
       id: "2025-09-19",
-      title: "新托福 9.19 · 口语",
+      title: "新托福 9.19 海外线下 · 口语",
       file: "library/toefl/2025-09-19-speaking.json",
       duration: 10,
       desc: "选课注册 · 听后复述 7 题 + 个人目标面试 4 题 · 海外线下"
+    },
+    {
+      id: "2025-09-23",
+      title: "新托福 9.23 国内线下 · 口语 Form 1",
+      file: "library/toefl/2025-09-23-speaking.json",
+      duration: 10,
+      desc: "健身中心 · 听后复述 7 题 + 消费预算面试 4 题 · 国内线下"
+    },
+    {
+      id: "2025-09-23-s2",
+      title: "新托福 9.23 国内线下 · 口语 Form 2",
+      file: "library/toefl/2025-09-23-speaking-f2.json",
+      duration: 10,
+      desc: "书店协助 · 听后复述 + 公园休闲面试 · 国内线下"
+    },
+    {
+      id: "2025-09-23-s3",
+      title: "新托福 9.23 国内线下 · 口语 Form 3",
+      file: "library/toefl/2025-09-23-speaking-f3.json",
+      duration: 10,
+      desc: "观鸟 · 听后复述 + 环保习惯面试 · 国内线下"
+    },
+    {
+      id: "2025-09-23-s4",
+      title: "新托福 9.23 国内线下 · 口语 Form 4",
+      file: "library/toefl/2025-09-23-speaking-f4.json",
+      duration: 4,
+      desc: "图书馆设施 · 听后复述 7 题 · 国内线下"
+    },
+    {
+      id: "2025-09-23-s5",
+      title: "新托福 9.23 国内线下 · 口语 Form 5",
+      file: "library/toefl/2025-09-23-speaking-f5.json",
+      duration: 4,
+      desc: "木工入门 · 听后复述 7 题 · 国内线下"
+    },
+    {
+      id: "2025-09-23-s6",
+      title: "新托福 9.23 国内线下 · 口语 Form 6",
+      file: "library/toefl/2025-09-23-speaking-f6.json",
+      duration: 4,
+      desc: "烤面包 · 听后复述 7 题 · 国内线下"
     },
     {
       id: "2026-09-23",
@@ -371,9 +434,15 @@ window.YYSD = (function () {
     },
     {
       id: "2025-09-19",
-      title: "新托福 9.19 · 完整模考",
+      title: "新托福 9.19 海外线下 · 完整模考",
       duration: 101,
       desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息 · 海外线下"
+    },
+    {
+      id: "2025-09-23",
+      title: "新托福 9.23 国内线下 · 完整模考",
+      duration: 212,
+      desc: "阅读→听力→写作→口语 Form 1 · 约 212 分钟 · 无休息 · 国内线下"
     },
     {
       id: "2026-09-23",
