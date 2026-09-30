@@ -6,23 +6,21 @@
   <title>TOEFL Complete Test</title>
   <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260929toefl6">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets1">
   <script src="assets/js/config.js?v=20260929toefl8"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
   <script src="assets/js/toefl-full.js?v=20260929toefl6"></script>
 </head>
 <body class="exam-ets">
+<div class="ets-frame">
   <header class="ets-bar">
     <div class="ets-bar-left">
-      <b>Complete Test</b>
+      <span class="ets-wordmark">TOEFL</span>
+      <span class="ets-split"></span>
+      <b id="set-title">Complete Test</b>
       <span id="mode-tag"></span>
     </div>
-    <div class="ets-bar-right">
-      <button type="button" disabled>Hide Time</button>
-      <button type="button" disabled>Help</button>
-      <button type="button" disabled>Back</button>
-      <button type="button" disabled>Next</button>
-    </div>
+    <div class="ets-bar-right"></div>
   </header>
   <div class="ets-sub"><span id="q-range">Reading → Listening → Writing → Speaking</span></div>
 
@@ -43,7 +41,7 @@
     <div class="review" id="summary"></div>
     <p><a class="btn" href="zone.html?zone=toefl&amp;s=full">返回完整模考</a></p>
   </section>
-
+</div>
   <script>
     (function () {
       var A = window.YYSD_AUTH;
@@ -59,6 +57,7 @@
       if (!meta) { location.replace("zone.html?zone=toefl&s=full"); return; }
 
       document.title = (meta.title || "Complete Test") + (mode === "mock" ? " · 模考" : mode === "practice" ? " · 练习" : "");
+      document.getElementById("set-title").textContent = meta.title || "Complete Test";
       document.getElementById("mode-tag").textContent = mode === "mock" ? "Mock" : (mode === "practice" ? "Practice" : "");
       document.getElementById("intro-title").textContent = meta.title || "Complete Test";
 
