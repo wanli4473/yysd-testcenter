@@ -117,6 +117,13 @@ window.YYSD = (function () {
   // ponytail: 托福卷是 JSON，不进 HTML manifest；加套只改这一表
   var TOEFL_READING = [
     {
+      id: "2025-08-08",
+      title: "新托福 8.08 · 阅读",
+      file: "library/toefl/2025-08-08-reading.json",
+      duration: 30,
+      desc: "50 题 · Module 1（21 分钟）+ Module 2（9 分钟）"
+    },
+    {
       id: "2025-09-02",
       title: "新托福 9.02 · 阅读",
       file: "library/toefl/2025-09-02-reading.json",
@@ -161,6 +168,13 @@ window.YYSD = (function () {
   ];
   // ponytail: 听力 PDF 无模块时长；9.02 按 Enhanced 整段约 36 分钟拆 25+11；9.05 仅 13 讲座
   var TOEFL_LISTENING = [
+    {
+      id: "2025-08-08",
+      title: "新托福 8.08 · 听力",
+      file: "library/toefl/2025-08-08-listening.json",
+      duration: 36,
+      desc: "47 题 · Module 1（25 分钟）+ Module 2（11 分钟）"
+    },
     {
       id: "2025-09-02",
       title: "新托福 9.02 · 听力",
@@ -207,6 +221,13 @@ window.YYSD = (function () {
   // ponytail: 组句无官方时长；邮件 7 分、讨论 10 分按 ETS Enhanced
   var TOEFL_WRITING = [
     {
+      id: "2025-08-08",
+      title: "新托福 8.08 · 写作",
+      file: "library/toefl/2025-08-08-writing.json",
+      duration: 25,
+      desc: "组句 10 题（8 分钟）+ 邮件（7 分钟）+ 学术讨论（10 分钟）"
+    },
+    {
       id: "2025-09-02",
       title: "新托福 9.02 · 写作",
       file: "library/toefl/2025-09-02-writing.json",
@@ -250,6 +271,13 @@ window.YYSD = (function () {
     }
   ];
   var TOEFL_SPEAKING = [
+    {
+      id: "2025-08-08",
+      title: "新托福 8.08 · 口语",
+      file: "library/toefl/2025-08-08-speaking.json",
+      duration: 9,
+      desc: "听后复述 7 题（4 分钟）+ 面试 3 题（4.5 分钟）"
+    },
     {
       id: "2025-09-02",
       title: "新托福 9.02 · 口语",
@@ -414,6 +442,12 @@ window.YYSD = (function () {
   ];
   // ponytail: 9.05 为题库而非标准 47 题听力全卷；完整模考链同一套 id 的四科
   var TOEFL_FULL = [
+    {
+      id: "2025-08-08",
+      title: "新托福 8.08 · 完整模考",
+      duration: 100,
+      desc: "阅读→听力→写作→口语 · 约 100 分钟 · 无休息"
+    },
     {
       id: "2025-09-02",
       title: "新托福 9.02 · 完整模考",
