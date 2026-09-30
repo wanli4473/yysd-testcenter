@@ -131,6 +131,13 @@ window.YYSD = (function () {
       desc: "65 题 · 填词 50 + 日常 5（24 分钟）+ 学术 10（8 分钟）· 国内线下"
     },
     {
+      id: "2025-08-19",
+      title: "新托福 8.19 国内线下 · 阅读",
+      file: "library/toefl/2025-08-19-reading.json",
+      duration: 52,
+      desc: "108 题 · 填词 70（28 分钟）+ 日常 3 + 学术 35（24 分钟）· 国内线下"
+    },
+    {
       id: "2025-09-02",
       title: "新托福 9.02 · 阅读",
       file: "library/toefl/2025-09-02-reading.json",
@@ -188,6 +195,13 @@ window.YYSD = (function () {
       file: "library/toefl/2025-08-12-listening.json",
       duration: 25,
       desc: "20 题 · 5 篇讲座 · Module 1（15 分钟）+ Module 2（10 分钟）· 国内线下"
+    },
+    {
+      id: "2025-08-19",
+      title: "新托福 8.19 国内线下 · 听力",
+      file: "library/toefl/2025-08-19-listening.json",
+      duration: 60,
+      desc: "68 题 · 17 篇讲座 · Module 1（32 分钟）+ Module 2（28 分钟）· 国内线下"
     },
     {
       id: "2025-09-02",
@@ -249,6 +263,13 @@ window.YYSD = (function () {
       desc: "4 封邮件（28 分钟）+ 5 篇学术讨论（50 分钟）· 无组句 · 国内线下"
     },
     {
+      id: "2025-08-19",
+      title: "新托福 8.19 国内线下 · 写作",
+      file: "library/toefl/2025-08-19-writing.json",
+      duration: 71,
+      desc: "3 封邮件（21 分钟）+ 5 篇学术讨论（50 分钟）· 无组句 · 国内线下"
+    },
+    {
       id: "2025-09-02",
       title: "新托福 9.02 · 写作",
       file: "library/toefl/2025-09-02-writing.json",
@@ -305,6 +326,48 @@ window.YYSD = (function () {
       file: "library/toefl/2025-08-12-speaking.json",
       duration: 10,
       desc: "服装店 · 听后复述 7 题 + 购物习惯面试 4 题 · 国内线下"
+    },
+    {
+      id: "2025-08-19",
+      title: "新托福 8.19 国内线下 · 口语 Form 1",
+      file: "library/toefl/2025-08-19-speaking.json",
+      duration: 10,
+      desc: "校园咖啡店 · 听后复述 7 题 + 艺术音乐面试 4 题 · 国内线下"
+    },
+    {
+      id: "2025-08-19-s2",
+      title: "新托福 8.19 国内线下 · 口语 Form 2",
+      file: "library/toefl/2025-08-19-speaking-f2.json",
+      duration: 10,
+      desc: "图书馆设施 · 听后复述 + 阅读面试 · 国内线下"
+    },
+    {
+      id: "2025-08-19-s3",
+      title: "新托福 8.19 国内线下 · 口语 Form 3",
+      file: "library/toefl/2025-08-19-speaking-f3.json",
+      duration: 10,
+      desc: "科学项目展示 · 听后复述 + 文化节面试 · 国内线下"
+    },
+    {
+      id: "2025-08-19-s4",
+      title: "新托福 8.19 国内线下 · 口语 Form 4",
+      file: "library/toefl/2025-08-19-speaking-f4.json",
+      duration: 10,
+      desc: "自行车修理 · 听后复述 + 新爱好面试 · 国内线下"
+    },
+    {
+      id: "2025-08-19-s5",
+      title: "新托福 8.19 国内线下 · 口语 Form 5",
+      file: "library/toefl/2025-08-19-speaking-f5.json",
+      duration: 6,
+      desc: "爱好面试 4 题 · 国内线下"
+    },
+    {
+      id: "2025-08-19-s6",
+      title: "新托福 8.19 国内线下 · 口语 Form 6",
+      file: "library/toefl/2025-08-19-speaking-f6.json",
+      duration: 6,
+      desc: "可再生能源面试 4 题 · 国内线下"
     },
     {
       id: "2025-09-02",
@@ -481,6 +544,12 @@ window.YYSD = (function () {
       title: "新托福 8.12 国内线下 · 完整模考",
       duration: 145,
       desc: "阅读→听力→写作→口语 · 约 145 分钟 · 无休息 · 国内线下"
+    },
+    {
+      id: "2025-08-19",
+      title: "新托福 8.19 国内线下 · 完整模考",
+      duration: 193,
+      desc: "阅读→听力→写作→口语 Form 1 · 约 193 分钟 · 无休息 · 国内线下"
     },
     {
       id: "2025-09-02",
