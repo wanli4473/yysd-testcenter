@@ -259,15 +259,31 @@
     for (var i = 0; i < bodies.length && i < saved.length; i++) bodies[i].innerHTML = saved[i];
   }
 
-  function applySelectionHighlight(root) {
+  function selectionRange(root) {
     var sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !sel.rangeCount) return false;
+    if (!sel || sel.isCollapsed || !sel.rangeCount || !root) return null;
     var range = sel.getRangeAt(0);
     var node = range.commonAncestorContainer;
     if (node.nodeType === 3) node = node.parentNode;
     var body = node && node.closest ? node.closest(".hl-body") : null;
-    if (!body || !root.contains(body)) return false;
-    if (!body.contains(range.startContainer) || !body.contains(range.endContainer)) return false;
+    if (!body || !root.contains(body)) return null;
+    if (!body.contains(range.startContainer) || !body.contains(range.endContainer)) return null;
+    return range;
+  }
+
+  function selectionHitsHighlight(root) {
+    var range = selectionRange(root);
+    if (!range) return false;
+    var marks = root.querySelectorAll("mark.hl");
+    for (var i = 0; i < marks.length; i++) {
+      try { if (range.intersectsNode(marks[i])) return true; } catch (e) {}
+    }
+    return false;
+  }
+
+  function applySelectionHighlight(root) {
+    var range = selectionRange(root);
+    if (!range || selectionHitsHighlight(root)) return false;
     var mark = document.createElement("mark");
     mark.className = "hl";
     try {
@@ -276,7 +292,29 @@
       mark.appendChild(range.extractContents());
       range.insertNode(mark);
     }
-    sel.removeAllRanges();
+    window.getSelection().removeAllRanges();
+    return true;
+  }
+
+  function removeSelectionHighlight(root) {
+    var range = selectionRange(root);
+    if (!range) return false;
+    var hit = [];
+    var marks = root.querySelectorAll("mark.hl");
+    var i;
+    for (i = 0; i < marks.length; i++) {
+      try { if (range.intersectsNode(marks[i])) hit.push(marks[i]); } catch (e) {}
+    }
+    if (!hit.length) return false;
+    for (i = 0; i < hit.length; i++) {
+      var mark = hit[i];
+      var p = mark.parentNode;
+      if (!p) continue;
+      while (mark.firstChild) p.insertBefore(mark.firstChild, mark);
+      p.removeChild(mark);
+      p.normalize();
+    }
+    window.getSelection().removeAllRanges();
     return true;
   }
 
@@ -332,6 +370,8 @@
     saveHighlights: saveHighlights,
     restoreHighlights: restoreHighlights,
     applySelectionHighlight: applySelectionHighlight,
+    removeSelectionHighlight: removeSelectionHighlight,
+    selectionHitsHighlight: selectionHitsHighlight,
     isInsertQ: isInsertQ,
     hideQsUntilHeard: hideQsUntilHeard,
     paperOf: paperOf,

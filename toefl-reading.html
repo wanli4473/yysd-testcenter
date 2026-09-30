@@ -6,10 +6,10 @@
   <title>TOEFL Reading</title>
   <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets2">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets4">
   <script src="assets/js/config.js?v=20260929toefl8"></script>
   <script src="assets/js/auth.js?v=20260821gate1"></script>
-  <script src="assets/js/toefl-reading.js?v=20260930ets2"></script>
+  <script src="assets/js/toefl-reading.js?v=20260930ets4"></script>
   <script src="assets/js/toefl-full.js?v=20260930ets3"></script>
   <script src="assets/js/toefl-shell.js?v=20260930ets2"></script>
 </head>
@@ -41,7 +41,7 @@
 
   <section id="exam" class="exam-body hidden">
     <p class="exam-title" id="instruction"></p>
-    <p class="ets-hl-bar">Select text in the passage to highlight. Click a highlight to remove it.</p>
+    <p class="ets-hl-bar">Select text in the passage, then choose Highlight. Select a highlight and choose Remove Highlight to clear it.</p>
     <div id="cw-wrap" class="hidden">
       <div class="passage" id="passage"></div>
     </div>
@@ -95,6 +95,10 @@
         <button class="btn" type="button" id="ets-exit-yes">Exit Section</button>
       </div>
     </div>
+  </div>
+  <div id="ets-hl-pop" class="ets-hl-pop hidden">
+    <button type="button" id="ets-hl-add">Highlight</button>
+    <button type="button" id="ets-hl-del">Remove Highlight</button>
   </div>
   <div id="void-lock">
     <div>
@@ -193,21 +197,64 @@
         if (scr && host) T.saveHighlights(scr.task, host, highlights);
       }
 
+      var hlPop = document.getElementById("ets-hl-pop");
+      var hlAdd = document.getElementById("ets-hl-add");
+      var hlDel = document.getElementById("ets-hl-del");
+      var hlHost = null;
+
+      function hideHlPop() {
+        hlPop.classList.add("hidden");
+        hlHost = null;
+      }
+
+      function placeHlPop() {
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return hideHlPop();
+        var rect = sel.getRangeAt(0).getBoundingClientRect();
+        if (!rect.width && !rect.height) return hideHlPop();
+        var x = Math.min(window.innerWidth - 220, Math.max(8, rect.left));
+        var y = rect.bottom + 8;
+        if (y + 40 > window.innerHeight) y = Math.max(8, rect.top - 40);
+        hlPop.style.left = x + "px";
+        hlPop.style.top = y + "px";
+      }
+
+      function showHlPop(host) {
+        var sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.rangeCount) return hideHlPop();
+        var node = sel.getRangeAt(0).commonAncestorContainer;
+        if (node.nodeType === 3) node = node.parentNode;
+        var body = node && node.closest ? node.closest(".hl-body") : null;
+        if (!body || !host.contains(body)) return hideHlPop();
+        var hit = T.selectionHitsHighlight(host);
+        if (!hit && !sel.toString()) return hideHlPop();
+        hlHost = host;
+        hlAdd.classList.toggle("hidden", hit);
+        hlDel.classList.toggle("hidden", !hit);
+        placeHlPop();
+        hlPop.classList.remove("hidden");
+      }
+
       function bindMarks(host) {
         if (!host) return;
-        host.onmouseup = function () {
-          if (T.applySelectionHighlight(host)) storeMarks();
-        };
-        host.onclick = function (e) {
-          if (e.target && e.target.classList && e.target.classList.contains("hl")) {
-            var p = e.target.parentNode;
-            while (e.target.firstChild) p.insertBefore(e.target.firstChild, e.target);
-            p.removeChild(e.target);
-            p.normalize();
-            storeMarks();
-          }
-        };
+        host.onmouseup = function () { showHlPop(host); };
       }
+
+      hlPop.onmousedown = function (e) { e.preventDefault(); };
+      hlAdd.onclick = function () {
+        if (hlHost && T.applySelectionHighlight(hlHost)) storeMarks();
+        hideHlPop();
+      };
+      hlDel.onclick = function () {
+        if (hlHost && T.removeSelectionHighlight(hlHost)) storeMarks();
+        hideHlPop();
+      };
+      document.addEventListener("mousedown", function (e) {
+        if (hlPop.classList.contains("hidden")) return;
+        if (hlPop.contains(e.target)) return;
+        if (hlHost && hlHost.contains(e.target)) return;
+        hideHlPop();
+      });
 
       hideBtn.onclick = function () {
         hideTime = !hideTime;
@@ -283,6 +330,7 @@
         moduleN = scr.module;
         markSeen();
         show(exam);
+        hideHlPop();
         document.getElementById("instruction").textContent = scr.task.instruction || "";
         document.getElementById("q-range").textContent =
           "Reading | Module " + scr.module + " | Question " +
