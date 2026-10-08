@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 · 机考系统</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <script src="assets/js/gate.js"></script>
+  <script src="assets/js/auth.js"></script>
+</head>
+<body>
+  <header class="top"><b>优益思达机考系统</b></header>
+  <main class="shell">
+    <div class="card">
+      <h1>登录</h1>
+      <p class="lead">使用学习中心同一套手机号和密码。</p>
+      <form id="f">
+        <label class="field">手机号
+          <input type="tel" id="phone" maxlength="11" inputmode="numeric" autocomplete="tel" required>
+        </label>
+        <label class="field">密码
+          <input type="password" id="password" minlength="6" autocomplete="current-password" required>
+        </label>
+        <p class="msg" id="msg"></p>
+        <button class="btn btn-block" type="submit">进入机考</button>
+      </form>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var A = window.YYSD_APP;
+      var next = new URLSearchParams(location.search).get("next") || "home.html";
+      if (A.token()) { location.replace(next); return; }
+      document.getElementById("f").addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var msg = document.getElementById("msg");
+        msg.textContent = "";
+        A.api("/api/auth/login", {
+          method: "POST",
+          body: {
+            phone: document.getElementById("phone").value.trim(),
+            password: document.getElementById("password").value
+          }
+        }).then(function (d) {
+          A.applyLogin(d);
+          location.replace(next);
+        }).catch(function (e) {
+          msg.textContent = e.message || "登录失败";
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

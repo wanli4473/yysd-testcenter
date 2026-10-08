@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Writing</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/exam.css">
+  <script src="assets/js/gate.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/hit-shell.js"></script>
+  <script src="assets/js/play.js"></script>
+  <script src="assets/js/toefl-writing.js"></script>
+</head>
+<body class="exam-ets">
+  <header class="ets-bar">
+    <div class="ets-bar-left"><b id="set-title">Writing</b><span id="mode-tag">Practice</span></div>
+    <div class="ets-bar-right"><button type="button" id="next-btn">Submit</button></div>
+  </header>
+  <div class="ets-sub"><span id="q-range">Writing</span></div>
+  <section class="exam-body">
+    <p class="exam-title" id="instruction"></p>
+    <div id="sentence-wrap" class="exam-card hidden"></div>
+    <div id="email-wrap" class="write-split hidden">
+      <article class="exam-card">
+        <p id="email-prompt"></p>
+        <ul id="email-bullets"></ul>
+        <p class="write-meta" id="email-to"></p>
+      </article>
+      <article class="exam-card write-compose">
+        <textarea id="email-ta" placeholder="Write your email."></textarea>
+      </article>
+    </div>
+    <div id="disc-wrap" class="write-split hidden">
+      <article class="exam-card">
+        <p class="disc-kicker" id="disc-class"></p>
+        <div class="disc-post" id="disc-prof"></div>
+        <div id="disc-posts"></div>
+      </article>
+      <article class="exam-card write-compose">
+        <textarea id="disc-ta" placeholder="Write your response (at least 100 words)."></textarea>
+      </article>
+    </div>
+  </section>
+  <script>
+    (function () {
+      var A = window.YYSD_APP, W = window.YYSD_TOEFL_WRITE, P = window.YYSD_PLAY;
+      if (!A.requireLogin("writing.html" + location.search)) return;
+      var ti = P.taskIndex(), task, paper, filled = [];
+      var host = document.getElementById("sentence-wrap");
+      P.loadPaper("writing").then(function (p) {
+        paper = p;
+        task = (p.tasks || [])[ti];
+        if (!task) { location.replace("writing-lab.html"); return; }
+        document.getElementById("set-title").textContent = task.type === "sentence" ? "Build a Sentence" : (task.type === "email" ? "Write an Email" : "Academic Discussion");
+        document.getElementById("instruction").textContent = task.instruction || "Write your response.";
+        document.getElementById("q-range").textContent = task.type === "sentence" ? ("Question " + task.id + " of 10") : (task.subject || task.class || "Writing");
+        if (task.type === "sentence") {
+          host.classList.remove("hidden");
+          filled = W.renderSentence(task, host, []);
+          host.onclick = function (ev) {
+            var chip = ev.target.closest(".sc-chip");
+            var slot = ev.target.closest(".sc-slot");
+            if (chip) {
+              var i = filled.indexOf("");
+              if (i < 0) return;
+              filled[i] = chip.getAttribute("data-w");
+            } else if (slot && slot.classList.contains("is-on")) {
+              filled[Number(slot.getAttribute("data-i"))] = "";
+            } else return;
+            W.renderSentence(task, host, filled);
+          };
+        } else if (task.type === "email") {
+          document.getElementById("email-wrap").classList.remove("hidden");
+          document.getElementById("email-prompt").textContent = task.prompt || "";
+          document.getElementById("email-bullets").innerHTML = (task.bullets || []).map(function (b) { return "<li>" + W.esc(b) + "</li>"; }).join("");
+          document.getElementById("email-to").textContent = "To: " + (task.to || "") + " · Subject: " + (task.subject || "");
+        } else {
+          document.getElementById("disc-wrap").classList.remove("hidden");
+          document.getElementById("disc-class").textContent = task.class || "";
+          document.getElementById("disc-prof").innerHTML = "<div><b>" + W.esc((task.professor && task.professor.name) || "Professor") + "</b><p>" + W.esc((task.professor && task.professor.text) || "") + "</p></div>";
+          document.getElementById("disc-posts").innerHTML = (task.posts || []).map(function (x) {
+            return '<div class="disc-post"><div><b>' + W.esc(x.name) + "</b><p>" + W.esc(x.text) + "</p></div></div>";
+          }).join("");
+        }
+        document.getElementById("next-btn").onclick = submit;
+      });
+      function submit() {
+        var answers = {}, score = 0, total = 1;
+        if (task.type === "sentence") {
+          answers[task.id] = W.collectSentence(host, W.slotCount(task));
+          score = W.sameSeq(answers[task.id], task.answer) ? 1 : 0;
+        } else {
+          var ta = document.getElementById(task.type === "email" ? "email-ta" : "disc-ta");
+          answers[task.id] = ta.value;
+          score = String(ta.value || "").trim() ? 1 : 0;
+        }
+        P.finish("writing", { skill: "writing", paper: paper, tasks: [ti], answers: answers, score: score, total: total });
+      }
+    })();
+  </script>
+</body>
+</html>

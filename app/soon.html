@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>即将开放</title>
+  <link rel="stylesheet" href="assets/css/hit.css">
+  <script src="assets/js/gate.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/hit-shell.js"></script>
+</head>
+<body class="hit">
+  <main class="hit-main">
+    <p class="hit-kicker" id="k">COMING SOON</p>
+    <h1 id="t">即将开放</h1>
+    <div class="hit-soon" id="d">这一页第一期先占位，题库练完四科后再做。</div>
+  </main>
+  <script>
+    (function () {
+      var map = {
+        wordbook: { key: "wordbook", t: "生词本", d: "生词本随后加入。先去四科题库练习。" },
+        history: { key: "history", t: "练习记录", d: "History / 错题本随后加入。做完题可在复习页回看解析。" },
+        mock: { key: "mock", t: "模考", d: "整套 / 单科模考随后加入。第一期只开放按题型精练。" }
+      };
+      var p = map[new URLSearchParams(location.search).get("p")] || { key: "home", t: "即将开放", d: "这一页第一期先占位。" };
+      if (!YYSD_HIT.mount(p.key)) return;
+      document.getElementById("t").textContent = p.t;
+      document.getElementById("d").textContent = p.d;
+    })();
+  </script>
+</body>
+</html>

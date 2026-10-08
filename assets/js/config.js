@@ -13,7 +13,7 @@ window.YYSD = (function () {
   var SAVED_WORDS_KEY = "yysd:saved-words";
 
   // Homepage display order: 单词区 → 练习区 → 真题区
-  var ZONES = ["study", "practice", "mock", "toefl"];
+  var ZONES = ["study", "practice", "mock"];
 
   var ZONE = {
     study:    { label: "单词区", en: "Words", icon: "📚",

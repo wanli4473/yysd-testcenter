@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>复习</title>
+  <link rel="stylesheet" href="assets/css/hit.css">
+  <script src="assets/js/gate.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/hit-shell.js"></script>
+  <script src="assets/js/play.js"></script>
+</head>
+<body class="hit">
+  <main class="hit-main">
+    <p class="hit-kicker">REVIEW</p>
+    <h1 id="title">查看记录</h1>
+    <p class="hit-lead" id="score"></p>
+    <div id="list"></div>
+    <p style="margin-top:24px"><a class="hit-card" href="#" id="back" style="display:inline-block">回到题库</a></p>
+  </main>
+  <script>
+    (function () {
+      var P = window.YYSD_PLAY;
+      var skill = new URLSearchParams(location.search).get("skill") || "reading";
+      if (!YYSD_HIT.mount(skill)) return;
+      document.getElementById("back").href = P.labOf(skill);
+      var att = P.readAttempt();
+      if (!att || !att.paper) {
+        document.getElementById("score").textContent = "没有本次作答记录。";
+        return;
+      }
+      document.getElementById("title").textContent = (att.paper.title || "Set 1") + " · 复习";
+      if (att.total != null) document.getElementById("score").textContent = "得分 " + (att.score || 0) + " / " + att.total;
+      var html = "";
+      (att.tasks || []).forEach(function (ti) {
+        var task = att.paper.tasks[ti];
+        if (!task) return;
+        html += '<article class="hit-set"><div class="meta"><strong>' + esc(task.title || task.code || task.type) + "</strong></div>";
+        if (task.type === "complete_words") {
+          html += row("完整短文", fullCW(task));
+          if (task.translation) html += row("中文译文", task.translation);
+          (task.passage || []).forEach(function (p) {
+            if (!p.id) return;
+            var ua = (att.answers || {})[p.id];
+            html += row("空 " + p.id, "你的答案：" + (ua || "未作答") + " · 正确答案：" + (p.word || p.answer));
+          });
+        } else if (task.type === "sentence") {
+          var ua = (att.answers || {})[task.id];
+          html += row("Context", task.context || "");
+          html += row("你的答案", Array.isArray(ua) ? ua.join(" ") : (ua || "未作答"));
+          html += row("正确答案", (task.answer || []).join(" "));
+          if (task.analysis) html += row("解析", task.analysis);
+        } else if (task.type === "email" || task.type === "discussion") {
+          html += row("你的作答", (att.answers || {})[task.id] || "未作答");
+          if (task.sample) html += row("范文", task.sample);
+          if (task.analysis) html += row("解析", task.analysis);
+        } else if (task.type === "repeat" || task.type === "interview") {
+          html += row("题目", task.stem || task.sample || task.instruction || "");
+          if (task.sample && task.type === "repeat") html += row("应复述", task.sample);
+          if (task.analysis) html += row("提示", task.analysis);
+        } else {
+          if (task.transcript) html += row("原文", task.transcript);
+          (task.questions || []).forEach(function (q) {
+            var ua = (att.answers || {})[q.id];
+            var ok = String(ua || "") === String(q.answer || "");
+            html += row("Q" + q.id + " " + (q.stem || ""), "你的答案：" + label(q, ua) + (ok ? " · 正确" : " · 正确答案：" + label(q, q.answer)));
+            if (q.transcript) html += row("原文", q.transcript);
+            if (q.analysis) html += row("解析", q.analysis);
+          });
+        }
+        html += "</article>";
+      });
+      document.getElementById("list").innerHTML = html;
+      function row(k, v) {
+        return '<div class="hit-status" style="margin:10px 0 4px;font-weight:600">' + esc(k) + '</div><p style="margin:0 0 12px;white-space:pre-wrap;line-height:1.65">' + esc(v) + "</p>";
+      }
+      function label(q, k) {
+        if (!k) return "未作答";
+        return k + (q.options && q.options[k] ? ". " + q.options[k] : "");
+      }
+      function fullCW(task) {
+        return (task.passage || []).map(function (p) { return p.t || p.word || ((p.prefix || "") + (p.answer || "")); }).join("");
+      }
+      function esc(s) {
+        return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+    })();
+  </script>
+</body>
+</html>
