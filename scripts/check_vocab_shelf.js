@@ -49,7 +49,7 @@ assert.strictEqual(shelf.legacyHsSourceLabel("unit:3"), "单元3");
 });
 var zone = fs.readFileSync(path.join(root, "assets/js/zone.js"), "utf8");
 assert.ok(zone.indexOf("vocab-shelf.html") >= 0, "zone links shelf");
-assert.ok(zone.indexOf('vocab-entry__title">词库') >= 0 || zone.indexOf(">词库</p>") >= 0, "zone 词库 module");
+assert.ok(zone.indexOf("vocab-shelf.html") >= 0 && zone.indexOf('"词库"') >= 0, "zone 词库 module");
 var learnJs = fs.readFileSync(path.join(root, "assets/js/vocab-learn.js"), "utf8");
 assert.ok(learnJs.indexOf("去学后自测") < 0, "no quick-test CTA");
 assert.ok(learnJs.indexOf("learnView") >= 0, "card/list toggle");

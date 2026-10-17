@@ -17,7 +17,7 @@ rsync -a --delete \
   "$REPO_DIR/app/" "$APP_ROOT/"
 
 echo "==> 校验"
-for f in index.html login.html home.html reading.html reading-lab.html listening.html writing.html speaking.html review.html assets/js/gate.js assets/js/hit-shell.js assets/js/toefl-writing.js library/toefl/set-1-reading.json library/toefl/set-1-listening.json; do
+for f in index.html login.html home.html mock.html reading.html reading-lab.html listening.html writing.html speaking.html review.html assets/js/gate.js assets/js/hit-shell.js assets/js/mock.js assets/js/toefl-writing.js library/toefl/set-1-reading.json library/toefl/set-1-listening.json; do
   if [ -f "$APP_ROOT/$f" ]; then
     echo "  ✓ $f"
   else

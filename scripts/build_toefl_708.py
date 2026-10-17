@@ -3,6 +3,9 @@
 import json
 import os
 import shutil
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from toefl_sent import scramble
 import stat
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -114,7 +117,7 @@ def sent(sid, context, lead, bank, answer, tail="."):
         parts.append({"t": tail})
     return {
         "type": "sentence", "module": 1, "id": sid,
-        "context": context, "parts": parts, "bank": bank, "answer": answer,
+        "context": context, "parts": parts, "bank": scramble(bank, answer), "answer": answer,
     }
 
 

@@ -8,14 +8,19 @@ var MAX_REVIEW_WRONG = 3;
 // ponytail: linear weight bump; raise REVIEW_WEIGHT_FACTOR if weak words under-sampled
 var REVIEW_WEIGHT_FACTOR = 3;
 
-var scheduleCache = null;
+var scheduleCache = {};
+var SCHEDULE_FILE = {
+  gaozhong: "gaozhong-ebbinghaus-schedule.json",
+  "cet4-lite": "cet4-lite-ebbinghaus-schedule.json"
+};
 
 function loadSchedule(bookId) {
-  if (bookId !== "gaozhong") return null;
-  if (scheduleCache) return scheduleCache;
-  var file = path.join(__dirname, "schedules", "gaozhong-ebbinghaus-schedule.json");
-  scheduleCache = JSON.parse(fs.readFileSync(file, "utf8"));
-  return scheduleCache;
+  var name = SCHEDULE_FILE[bookId];
+  if (!name) return null;
+  if (scheduleCache[bookId]) return scheduleCache[bookId];
+  var file = path.join(__dirname, "schedules", name);
+  scheduleCache[bookId] = JSON.parse(fs.readFileSync(file, "utf8"));
+  return scheduleCache[bookId];
 }
 
 function getDayPlan(bookId, dayNo) {
@@ -33,7 +38,7 @@ function getDayPlan(bookId, dayNo) {
 }
 
 function isEbbinghausBook(bookId) {
-  return bookId === "gaozhong";
+  return !!SCHEDULE_FILE[bookId];
 }
 
 function programComplete(progressDay, bookId) {

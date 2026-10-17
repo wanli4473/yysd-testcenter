@@ -147,7 +147,7 @@ assert(/cal-dual/.test(teach) && /row\.id \+ "-explain"/.test(teach), "teacher q
 assert(/function isExplainExerciseId/.test(server) && /practiceExerciseIds/.test(server), "server skips explain complete");
 assert(/function isExplainMode/.test(bridge) && /mountExplainTranscript/.test(bridge), "bridge explain transcript");
 assert(/dataset.explain/.test(exam) && /src \+= "&explain=1"/.test(exam), "exam explain qs");
-assert(/20260908explain1/.test(cfg), "CONTENT_VER explain");
+assert(/20260909jtopen/.test(cfg), "CONTENT_VER explain");
 
 var c9 = fs.readFileSync("library/mock/cambridge-listening/cambridge-9-test-4.html", "utf8");
 function c9clip(title, start, end) {

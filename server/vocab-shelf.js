@@ -8,6 +8,7 @@
 
 var fs = require("fs");
 var path = require("path");
+var grade = require("./vocab-grade");
 
 var THEME_PREFIX = "theme:";
 var THEME_CHUNK = 50;
@@ -49,6 +50,7 @@ function sampleWords(words, ratio) {
 var MAIN_BOOKS = [
   { id: "gaozhong", label: "高中词汇", tag: "雅思基础", subjects: ["vocab"] },
   { id: "cet4", label: "四级词汇", tag: "CET-4", subjects: ["vocab-cet4"] },
+  { id: "cet4-lite", label: "四级词汇（精简版）", tag: "CET-4 精简", subjects: ["vocab-cet4-lite"] },
   {
     id: "special",
     label: "雅思专项词汇",
@@ -87,6 +89,7 @@ function listLabel(item, bookId) {
   if (!n) return (item && item.title) || item.id;
   if (bookId === "gaozhong" || s === "vocab") return "List " + n;
   if (bookId === "cet4" || s === "vocab-cet4") return "List " + n;
+  if (bookId === "cet4-lite" || s === "vocab-cet4-lite") return "List " + n;
   if (s === "vocab-special-listening") return "听力 List " + n;
   if (s === "vocab-special-reading") return "阅读 List " + n;
   if (s === "vocab-special-writing") return "写作 List " + n;
@@ -283,7 +286,17 @@ function ensureSchema(db) {
       "flag TEXT NOT NULL," +
       "done_at TEXT NOT NULL," +
       "PRIMARY KEY (student_id, flag)" +
-    ");"
+    ");" +
+    "CREATE TABLE IF NOT EXISTS vocab_quiz_pending (" +
+      "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+      "student_id INTEGER NOT NULL," +
+      "book_id TEXT NOT NULL," +
+      "list_ids TEXT NOT NULL," +
+      "list_labels TEXT," +
+      "words_json TEXT NOT NULL," +
+      "created_at TEXT NOT NULL" +
+    ");" +
+    "CREATE INDEX IF NOT EXISTS idx_vocab_quiz_pending_stu ON vocab_quiz_pending(student_id, id DESC);"
   );
   // ponytail: older DBs created sessions without is_removed
   try {
@@ -311,8 +324,9 @@ function sessionTitle(date, bookLabel, listLabels) {
   return formatQuizDate(date) + " · " + (bookLabel || "词书") + " · " + listPart;
 }
 
-function parseWordData(html) {
-  var m = String(html || "").match(/(?:const|var|let)\s+wordData\s*=\s*(\[[\s\S]*?\]);/);
+function readJsArray(html, name) {
+  var re = new RegExp("(?:const|var|let)\\s+" + name + "\\s*=\\s*(\\[[\\s\\S]*?\\]);");
+  var m = String(html || "").match(re);
   if (!m) return [];
   try {
     var arr = Function('"use strict"; return (' + m[1] + ");")();
@@ -320,6 +334,31 @@ function parseWordData(html) {
   } catch (e) {
     return [];
   }
+}
+
+// Writing units store collocations in phraseData (en/cn/detail), not wordData.
+function phrasesAsWords(arr) {
+  return arr.map(function (p) {
+    if (!p) return null;
+    var phrase = String(p.en || p.word || "").trim();
+    var meaning = String(p.cn || p.meaning || "").trim();
+    if (!phrase || !meaning) return null;
+    var syn = String(p.synonym || "").trim();
+    return {
+      word: phrase,
+      meaning: meaning,
+      example: p.example || "",
+      note: String(p.detail || "").trim(),
+      synonyms: syn ? [syn] : [],
+      acceptCN: [meaning]
+    };
+  }).filter(Boolean);
+}
+
+function parseWordData(html) {
+  var words = readJsArray(html, "wordData");
+  if (words.length) return words;
+  return phrasesAsWords(readJsArray(html, "phraseData"));
 }
 
 function normalizeWord(w) {
@@ -338,9 +377,34 @@ function normalizeWord(w) {
     }).filter(function (c) { return c.phrase; });
   }
   if (!Array.isArray(coll)) coll = [];
+  var ipaUs = String(w.ipaUs || "").trim();
+  var ipaUk = String(w.ipaUk || "").trim();
+  var ipa = String(w.ipa || w.phonetic || "").trim();
+  if (!ipaUs && !ipaUk && ipa) {
+    var parts = ipa.split(/\s*·\s*/).map(function (p) { return p.trim(); }).filter(Boolean);
+    if (parts.length >= 2) {
+      ipaUk = parts[0];
+      ipaUs = parts[1];
+    } else {
+      ipaUs = ipaUk = parts[0] || ipa;
+    }
+  }
+  var wordUs = String(w.wordUs || word).trim();
+  var wordUk = String(w.wordUk || word).trim();
+  var spellings = Array.isArray(w.spellings)
+    ? w.spellings.map(function (s) { return String(s || "").trim(); }).filter(Boolean)
+    : [];
+  [word, wordUs, wordUk].forEach(function (s) {
+    if (s && spellings.indexOf(s) < 0) spellings.push(s);
+  });
   return {
     word: word,
-    ipa: String(w.ipa || w.phonetic || "").trim(),
+    wordUs: wordUs,
+    wordUk: wordUk,
+    spellings: spellings,
+    ipa: ipaUs || ipa,
+    ipaUs: ipaUs || ipa,
+    ipaUk: ipaUk || ipa,
     pos: String(w.pos || "").trim(),
     meaning: meaning,
     exampleEn: w.exampleEn || w.exampleEN || (em ? em[1].trim() : ex),
@@ -350,6 +414,7 @@ function normalizeWord(w) {
     synonyms: Array.isArray(w.synonyms) ? w.synonyms : [],
     antonyms: Array.isArray(w.antonyms) ? w.antonyms : [],
     examTag: w.examTag || null,
+    note: String(w.note || "").trim(),
     acceptCN: Array.isArray(w.acceptCN)
       ? w.acceptCN.map(function (s) { return String(s || "").trim(); }).filter(Boolean).slice(0, 4)
       : []
@@ -486,8 +551,31 @@ function mountRoutes(app, opts) {
     ),
     setMigrateFlag: db.prepare(
       "INSERT OR IGNORE INTO vocab_migrate_flags (student_id, flag, done_at) VALUES (?, ?, ?)"
+    ),
+    insertQuizPending: db.prepare(
+      "INSERT INTO vocab_quiz_pending (student_id, book_id, list_ids, list_labels, words_json, created_at) " +
+      "VALUES (?, ?, ?, ?, ?, ?)"
+    ),
+    findQuizPending: db.prepare(
+      "SELECT * FROM vocab_quiz_pending WHERE id = ? AND student_id = ?"
+    ),
+    deleteQuizPending: db.prepare(
+      "DELETE FROM vocab_quiz_pending WHERE id = ? AND student_id = ?"
     )
   };
+
+  function issueQuizPool(db, stmts, studentId, payload) {
+    var now = payload.now;
+    var token = stmts.insertQuizPending.run(
+      studentId,
+      payload.bookId,
+      JSON.stringify(payload.listIds),
+      JSON.stringify(payload.listLabels || []),
+      JSON.stringify(payload.words),
+      now
+    ).lastInsertRowid;
+    return Object.assign({}, payload.response, { quizToken: token });
+  }
 
   function parseJsonArr(raw) {
     try {
@@ -503,6 +591,7 @@ function mountRoutes(app, opts) {
     if (b) return b.label;
     if (bookId === "gaozhong") return "高中词汇";
     if (bookId === "cet4") return "四级词汇";
+    if (bookId === "cet4-lite") return "四级词汇（精简版）";
     if (bookId === "special") return "雅思专项词汇";
     return bookId;
   }
@@ -960,19 +1049,27 @@ function mountRoutes(app, opts) {
       var bookLabel = multi.bookIds.map(function (id) {
         return (cat.byId[id] && cat.byId[id].label) || id;
       }).join(" · ");
-      return res.json({
-        ok: true,
-        book: bookSummary(primary),
+      var listIdsOut = refs.map(function (r) { return r.raw; });
+      return res.json(issueQuizPool(db, stmts, req.user.sub, {
+        now: now,
         bookId: multi.bookIds[0],
-        bookLabel: bookLabel,
-        listIds: refs.map(function (r) { return r.raw; }),
+        listIds: listIdsOut,
         listLabels: multi.labels,
-        poolTotal: multi.words.length,
-        quizCount: sampledM.length,
-        maxLives: QUIZ_MAX_LIVES,
-        timeLimitSec: QUIZ_TIME_SEC,
-        words: sampledM
-      });
+        words: sampledM,
+        response: {
+          ok: true,
+          book: bookSummary(primary),
+          bookId: multi.bookIds[0],
+          bookLabel: bookLabel,
+          listIds: listIdsOut,
+          listLabels: multi.labels,
+          poolTotal: multi.words.length,
+          quizCount: sampledM.length,
+          maxLives: QUIZ_MAX_LIVES,
+          timeLimitSec: QUIZ_TIME_SEC,
+          words: sampledM
+        }
+      }));
     }
 
     var bookId = String(req.query.bookId || "").trim();
@@ -989,19 +1086,26 @@ function mountRoutes(app, opts) {
     var pool = buildPool(book, listIds);
     if (!pool.words.length) return res.status(400).json({ error: "所选 List 没有可测单词" });
     var sampled = sampleWords(pool.words, QUIZ_RATIO);
-    res.json({
-      ok: true,
-      book: bookSummary(book),
+    return res.json(issueQuizPool(db, stmts, req.user.sub, {
+      now: now,
       bookId: bookId,
-      bookLabel: book.label || bookId,
       listIds: listIds,
       listLabels: pool.labels,
-      poolTotal: pool.words.length,
-      quizCount: sampled.length,
-      maxLives: QUIZ_MAX_LIVES,
-      timeLimitSec: QUIZ_TIME_SEC,
-      words: sampled
-    });
+      words: sampled,
+      response: {
+        ok: true,
+        book: bookSummary(book),
+        bookId: bookId,
+        bookLabel: book.label || bookId,
+        listIds: listIds,
+        listLabels: pool.labels,
+        poolTotal: pool.words.length,
+        quizCount: sampled.length,
+        maxLives: QUIZ_MAX_LIVES,
+        timeLimitSec: QUIZ_TIME_SEC,
+        words: sampled
+      }
+    }));
   });
 
   app.post("/api/vocab-shelf/quiz/finish", authMiddleware, function (req, res) {
@@ -1011,6 +1115,8 @@ function mountRoutes(app, opts) {
     var listLabels = Array.isArray(body.listLabels)
       ? body.listLabels.map(function (x) { return String(x || ""); })
       : [];
+    var quizToken = Math.floor(Number(body.quizToken) || 0);
+    var results = Array.isArray(body.results) ? body.results : [];
     var total = Math.max(0, Math.floor(Number(body.total) || 0));
     var correct = Math.max(0, Math.floor(Number(body.correct) || 0));
     var wrongCount = Math.max(0, Math.floor(Number(body.wrong) || 0));
@@ -1019,6 +1125,46 @@ function mountRoutes(app, opts) {
     if (!bookId || !listIds.length) return res.status(400).json({ error: "缺少 bookId 或 listIds" });
     var cat = loadCatalog();
     var now = new Date().toISOString();
+    if (quizToken) {
+      var pending = stmts.findQuizPending.get(quizToken, req.user.sub);
+      if (!pending) return res.status(400).json({ error: "测验已过期，请重新组卷" });
+      var pendingWords = [];
+      try {
+        pendingWords = JSON.parse(pending.words_json || "[]");
+      } catch (e) {
+        pendingWords = [];
+      }
+      if (!pendingWords.length) return res.status(400).json({ error: "测验数据无效" });
+      bookId = pending.book_id || bookId;
+      listIds = parseJsonArr(pending.list_ids);
+      listLabels = parseJsonArr(pending.list_labels);
+      var scored = grade.gradeQuizResults(pendingWords, results, QUIZ_MAX_LIVES);
+      total = scored.total;
+      correct = scored.correct;
+      wrongCount = scored.wrong;
+      passed = scored.passed ? 1 : 0;
+      mistakes = [];
+      var wordByKey = {};
+      pendingWords.forEach(function (w) {
+        var m = grade.metaFromWord(w);
+        if (m.word) wordByKey[m.word] = w;
+      });
+      results.forEach(function (r) {
+        if (!r || !r.word) return;
+        var meta = grade.metaFromWord(wordByKey[r.word] || { word: r.word });
+        if (grade.gradeVocabAnswer(meta, r)) return;
+        var src = wordByKey[r.word] || meta;
+        mistakes.push({
+          word: r.word,
+          ipa: src.ipa,
+          meaning: src.meaning,
+          listId: src.listId || null,
+          userAnswer: r.userAnswer != null ? String(r.userAnswer) : "",
+          word_json: src
+        });
+      });
+      stmts.deleteQuizPending.run(quizToken, req.user.sub);
+    }
     var finishRefs = listIds.map(parseVocabRef).filter(Boolean);
     if (finishRefs.length) {
       for (var fi = 0; fi < finishRefs.length; fi++) {
@@ -1311,6 +1457,7 @@ if (require.main === module) {
   var cat = buildCatalog(root);
   if (cat.books.length < 4) throw new Error("catalog too small");
   if (!cat.byId.gaozhong || cat.byId.gaozhong.listCount < 40) throw new Error("gaozhong lists");
+  if (!cat.byId["cet4-lite"] || cat.byId["cet4-lite"].listCount !== 30) throw new Error("cet4-lite lists");
   var gzN = (cat.byId.gaozhong.lists || []).filter(function (l) {
     return /^高中单词list\d+$/.test(String(l.id));
   }).length;
@@ -1322,6 +1469,26 @@ if (require.main === module) {
   var gzList1 = (cat.byId.gaozhong.lists || []).filter(function (l) {
     return l.id === "高中单词list1";
   })[0];
+  var special = cat.byId.special;
+  if (!special) throw new Error("missing special");
+  var writingLists = (special.lists || []).filter(function (l) {
+    return l.subject === "vocab-special-writing";
+  });
+  if (writingLists.length < 14) throw new Error("writing lists " + writingLists.length);
+  writingLists.forEach(function (l) {
+    var lesson = resolveLesson(root, special, l.id);
+    if (!lesson || !lesson.words.length) throw new Error("empty " + l.id);
+  });
+  var w1 = resolveLesson(root, special, "writing-vocab-01");
+  if (!w1 || w1.words[0].word !== "Acquire knowledge" || w1.words[0].meaning !== "获得知识") {
+    throw new Error("writing phrase map");
+  }
+  if (!w1.words[0].note || w1.words[0].note.indexOf("knowledge") < 0) throw new Error("writing note");
+  var listen = (special.lists || []).filter(function (l) {
+    return l.subject === "vocab-special-listening";
+  })[0];
+  var heard = listen && resolveLesson(root, special, listen.id);
+  if (!heard || heard.words[0].word !== "Football") throw new Error("listening wordData");
   var gz = resolveLesson(root, cat.byId.gaozhong, gzList1 ? gzList1.id : cat.byId.gaozhong.lists[0].id);
   if (!gz || !gz.words.length) throw new Error("gaozhong lesson empty");
   if (gz.words.length !== 57 || gz.words[0].word !== "include") throw new Error("list1 excel order");

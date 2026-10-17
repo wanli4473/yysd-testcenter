@@ -51,9 +51,42 @@ if (bpre.join(",") !== "su+ch,a+nd,cre+ated,wo+rks,b+y,melo+dies,inve+ntion,n+ew
 var host = { innerHTML: "" };
 T.renderPassage({ title: "T", paras: ["Hello world"] }, host, false);
 if (host.innerHTML.indexOf("hl-body") < 0) throw new Error("passage should wrap text for highlight");
+T.renderPassage({
+  title: "T",
+  paras: ["filmmakers sought new ways to tell compelling stories within set boundaries."]
+}, host, false, { stem: "The word \"compelling\" in the passage is closest in meaning to" });
+if (host.innerHTML.indexOf("vocab-hl") < 0 || host.innerHTML.indexOf("compelling") < 0) {
+  throw new Error("vocab question should highlight the word in the passage");
+}
+T.renderPassage({
+  instruction: "Read an email.",
+  layout: { kind: "card", kicker: "Email", title: "Career Fair", body: "Hi Team,\n\nThanks,\nRyan" }
+}, host, false);
+if (host.innerHTML.indexOf("dl-body") < 0 || host.innerHTML.indexOf("dl-card--email") < 0) {
+  throw new Error("email daily_life should keep breaks and email chrome");
+}
 
 var ets = fs.readFileSync(path.join(__dirname, "../assets/js/toefl-reading.js"), "utf8");
 if (ets.indexOf("function removeSelectionHighlight") < 0) throw new Error("remove highlight missing");
 if (ets.indexOf("function selectionHitsHighlight") < 0) throw new Error("hit highlight missing");
+
+function assertPassageLeft(file) {
+  var html = fs.readFileSync(path.join(__dirname, file), "utf8");
+  var m = html.match(/id="split-wrap"[\s\S]*?<\/div>/);
+  if (!m) throw new Error(file + " missing split-wrap");
+  var pass = m[0].indexOf("right-pass");
+  var stem = m[0].indexOf("q-stem");
+  if (pass < 0 || stem < 0 || pass > stem) {
+    throw new Error(file + " passage must sit left of questions");
+  }
+}
+assertPassageLeft("../toefl-reading.html");
+assertPassageLeft("../app/reading.html");
+["../assets/css/toefl-exam.css", "../app/assets/css/exam.css"].forEach(function (file) {
+  var css = fs.readFileSync(path.join(__dirname, file), "utf8");
+  if (css.indexOf("grid-template-columns: 1fr minmax(280px, 42%)") < 0) {
+    throw new Error(file + " split must be passage-wide left, questions-narrow right");
+  }
+});
 
 console.log("ok toefl-58-reading 50 items");

@@ -7,7 +7,7 @@ function read(rel) { return fs.readFileSync(path.join(root, rel), "utf8"); }
 function assert(c, m) { if (!c) { console.error("FAIL:", m); process.exit(1); } }
 
 var server = read("server/server.js");
-["shadow", "judge", "translate"].forEach(function (name) {
+["shadow", "judge", "translate", "gloss"].forEach(function (name) {
   var re = new RegExp("app\\.post\\(\"/api/jingting/" + name + "\",\\s*authMiddleware");
   assert(re.test(server), "jingting/" + name + " auth");
 });

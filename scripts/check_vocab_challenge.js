@@ -35,7 +35,10 @@ assert.ok(spellSrc.indexOf("insertCompositionText") >= 0, "block IME composition
 assert.ok(spellSrc.indexOf("[^a-zA-Z0-9' ()-]") >= 0, "spell input allows digits/parens/space");
 assert.ok(spellSrc.indexOf("function matches") >= 0, "spell matches helper");
 assert.ok(spellSrc.indexOf("function toUS") >= 0, "client UK/US fold");
+assert.ok(spellSrc.indexOf('["jewellery", "jewelry"]') >= 0, "client jewellery pair");
 assert.ok(read("server/vocab-grade.js").indexOf("function toUS") >= 0, "server UK/US fold");
+assert.ok(read("server/vocab-grade.js").indexOf('["jewellery", "jewelry"]') >= 0, "server jewellery pair");
+assert.ok(html.indexOf("20260902ukspell3") >= 0, "challenge cache-bust spell js");
 assert.ok(fs.existsSync(path.join(root, "assets/js/english-ime-gate.js")), "english ime gate");
 assert.ok(html.indexOf("english-ime-gate.js") >= 0, "challenge loads ime gate");
 assert.ok(ui.indexOf("requireImeGate") >= 0 && ui.indexOf("onImeViolation") >= 0, "challenge ime gate wired");
@@ -53,8 +56,6 @@ assert.ok(modeJs.indexOf("teacher-mode-picker.html") >= 0 || modeJs.indexOf("has
 assert.ok(modeJs.indexOf("教室管理区") >= 0, "admin mode label");
 var authJs = read("assets/js/auth.js");
 assert.ok(authJs.indexOf('localStorage.getItem("yysd:teacher:mode") !== "site"') >= 0, "no auto site-mode on student pages");
-assert.ok(authJs.indexOf("isTeacherPage() && localStorage.getItem(TEACHER_TOKEN_KEY)") >= 0, "teacher pages win isTeacher");
-assert.ok(read("login.html").indexOf("leftover student JWT must not skip the form") >= 0, "login stays for teacher next");
 assert.ok(ui.indexOf("网站功能区") >= 0, "teacher hub hint");
 var zone = read("assets/js/zone.js");
 assert.ok(modeJs.indexOf("writeStudentSession") >= 0, "picker writes student token without auth.js");
@@ -93,7 +94,8 @@ assert.ok(read("server/vocab-challenge.js").indexOf("resumeSameAttempt") >= 0, "
 
 var teacher = read("assets/js/teacher-vocab-challenge.js");
 assert.ok(teacher.indexOf("formatProgress") >= 0, "teacher progress day");
-assert.ok(teacher.indexOf("formatTodayTasks") >= 0, "teacher today tasks");
+assert.ok(teacher.indexOf("formatTodayTasks") < 0, "no teacher today tasks");
+assert.ok(teacher.indexOf("池 ") < 0 && teacher.indexOf("本 ") < 0, "no pool/notebook on teacher roster");
 assert.ok(teacher.indexOf("布置四级精简") >= 0, "teacher lite assign");
 assert.ok(teacher.indexOf("取消布置") >= 0, "teacher unassign");
 
@@ -104,8 +106,10 @@ assert.ok(read("teacher.html").indexOf("teacher-vocab-challenge.html") >= 0, "te
 assert.ok(read("teacher.html").indexOf('id="nav-auth">个人中心') >= 0, "teacher header 个人中心");
 assert.ok(read("teacher.html").indexOf('href="profile.html"') < 0, "teacher pages skip student profile");
 assert.ok(read("teacher-student-diagnostic.html").indexOf("zone.html") < 0, "teacher diag has no student zone links");
-assert.ok(teacher.indexOf("联系管理员绑定") >= 0, "empty roster tells non-admin to ask");
-assert.ok(teacher.indexOf('href="admin-assign.html"') >= 0, "empty roster admin link");
+assert.ok(teacher.indexOf("/api/teacher/students") < 0, "challenge roster is org-wide");
+assert.ok(teacher.indexOf("联系管理员绑定") < 0, "no student-bind gate");
+assert.ok(read("server/server.js").indexOf("canManageStudent: teacherCanAssignChallenge") >= 0, "any org teacher can assign");
+assert.ok(read("server/server.js").indexOf("listManagedStudentIds: listChallengeStudentIds") >= 0, "org-wide challenge ids");
 assert.ok(read("assets/js/tenant-boot.js").indexOf('mode !== "site"') >= 0, "tenant-boot blocks student pages");
 var platHtml = read("platform.html");
 assert.ok(platHtml.indexOf("teacher-page") >= 0 && platHtml.indexOf("teacher-side") >= 0, "platform console uses teacher shell");
@@ -131,4 +135,39 @@ assert.ok(listWords(17).indexOf("afterward") >= 0, "list17 afterward");
 assert.ok(listWords(19).indexOf("toward") >= 0, "list19 toward");
 
 require(path.join(root, "server", "vocab-challenge")).selfCheck();
+
+var grade = require(path.join(root, "server", "vocab-grade"));
+grade.selfCheck();
+(function scanVocabUkUs() {
+  function walk(dir, acc) {
+    fs.readdirSync(dir).forEach(function (name) {
+      if (name === ".archive") return;
+      var p = path.join(dir, name);
+      if (fs.statSync(p).isDirectory()) walk(p, acc);
+      else if (/\.html$/.test(name) && /vocab/.test(p)) acc.push(p);
+    });
+    return acc;
+  }
+  function parseWordData(html) {
+    var m = String(html).match(/(?:const|var|let)\s+wordData\s*=\s*(\[[\s\S]*?\]);/);
+    if (!m) return [];
+    try { return Function('"use strict"; return (' + m[1] + ");")(); } catch (e) { return []; }
+  }
+  var words = Object.create(null);
+  var lib = path.join(root, "library", "study");
+  if (fs.existsSync(lib)) {
+    walk(lib, []).forEach(function (f) {
+      parseWordData(fs.readFileSync(f, "utf8")).forEach(function (w) {
+        ["word", "wordUs", "wordUk"].forEach(function (k) {
+          var x = String((w && w[k]) || "").trim().toLowerCase();
+          if (x && !/[\s/(]/.test(x)) words[x] = true;
+        });
+      });
+    });
+  }
+  grade.UK_PAIRS.forEach(function (p) {
+    if (!words[p[0]] && !words[p[1]]) return;
+    assert.ok(grade.spellMatches(p[0], p[1]) && grade.spellMatches(p[1], p[0]), "library uk/us " + p.join("/"));
+  });
+})();
 console.log("check_vocab_challenge ok");

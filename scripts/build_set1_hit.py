@@ -2,6 +2,9 @@
 """Build Set 1 JSON from OCR of 验收样本. User reviews 解析/选项."""
 import json
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from toefl_sent import scramble
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(ROOT, "app/library/toefl")
@@ -50,7 +53,7 @@ def sent(i, context, answer, extra=None):
         "id": i,
         "context": context,
         "parts": [{"slot": True} for _ in words] + [{"t": "?" if answer.endswith("?") else "."}],
-        "bank": bank,
+        "bank": scramble(bank, words),
         "answer": words,
         "analysis": "正确顺序：" + answer
     }
@@ -306,15 +309,15 @@ listening = {
                   "options": {"A": "To identify where he heard about some upcoming events", "B": "To explain why he is unavailable", "C": "To encourage the woman to join new activities", "D": "To point out why he would be a strong candidate"},
                   "answer": "B", "analysis": "他已有两个社团，解释自己没空参加。"}
              ]),
-        conv(5, "Conversation C05", 5,
-             "Excuse me, is this the line for advising appointments? Yes. I just need to change one course. The wait shouldn't be long. Good. I have a lab in twenty minutes. You can fill out the add/drop form while you wait. Thanks.",
+        conv(5, "Cancelled Yoga Class", 5,
+             "Wasn't there supposed to be a yoga class in the conference room at noon today? I stopped in right at noon and no one was there. I was really looking forward to it. Didn't you get the email? The instructor had a personal conflict and had to cancel. When did she send it? I don't know, maybe quarter after eleven? Oh, that makes sense. I've been away from my desk since mid-morning and haven't checked my email. Then you probably don't know that she is rescheduled for tomorrow.",
              [
-                 {"id": 1, "stem": "Why is the woman waiting in line?",
-                  "options": {"A": "To buy lab materials", "B": "To change a course", "C": "To meet a professor after class", "D": "To pick up a transcript"},
-                  "answer": "B", "analysis": "她说 I just need to change one course。"},
-                 {"id": 2, "stem": "What will the woman probably do while she waits?",
-                  "options": {"A": "Call her lab partner", "B": "Fill out a form", "C": "Go to another office", "D": "Cancel the appointment"},
-                  "answer": "B", "analysis": "对方让她边等边填 add/drop form。"}
+                 {"id": 1, "stem": "What did the man do at noon?",
+                  "options": {"A": "He signed up for a yoga class.", "B": "He entered an empty conference room.", "C": "He read an email sent by the yoga instructor.", "D": "He forwarded an email to the woman."},
+                  "answer": "B", "analysis": "男士说 I stopped in right at noon and no one was there，中午进了空的会议室。"},
+                 {"id": 2, "stem": "What does the woman imply the man can do tomorrow?",
+                  "options": {"A": "Check his email more frequently", "B": "Send the yoga instructor an email", "C": "Attend a yoga class", "D": "Attend a meeting in the conference room"},
+                  "answer": "C", "analysis": "女士说 she is rescheduled for tomorrow，课改到明天，暗示男士明天可以去上瑜伽课。"}
              ]),
         {
             "type": "announcement",
@@ -353,18 +356,18 @@ listening = {
         {
             "type": "announcement",
             "module": 1,
-            "title": "Announcement A03",
+            "title": "Business Independent Study",
             "code": "A03",
             "instruction": "Listen to an announcement.",
             "audio": AUD + "/Set1-L-ANO3.mp3",
-            "transcript": "Attention students living in West Hall. The water will be turned off tomorrow morning from 8 to 11 for pipe repairs. Please fill bottles tonight. The dining hall will stay open as usual.",
+            "transcript": "As you know, this is the final course required for your business degree. The course will operate as an independent study. You will each select an area of focus that interests you. Some examples are available on my website. Then, every week, you'll be required to submit short essays that respond to questions I give you on this topic. You'll need to refer to what you've learned in your other business courses so you can cite theories or strategies that support your responses.",
             "questions": [
-                {"id": 1, "stem": "Who is the announcement mainly for?",
-                 "options": {"A": "Dining hall staff", "B": "Students in West Hall", "C": "Campus visitors", "D": "Repair contractors"},
-                 "answer": "B", "analysis": "点名 West Hall 住宿学生。"},
-                {"id": 2, "stem": "What are students asked to do?",
-                 "options": {"A": "Eat off campus tomorrow", "B": "Move to another dorm", "C": "Prepare water in advance", "D": "Help repair the pipes"},
-                 "answer": "C", "analysis": "Please fill bottles tonight。"}
+                {"id": 1, "stem": "What is available on the speaker's website?",
+                 "options": {"A": "Some topic ideas", "B": "Some examples of essays", "C": "An updated course schedule", "D": "A new degree requirement"},
+                 "answer": "A", "analysis": "Some examples are available on my website，网站上是选题示例。"},
+                {"id": 2, "stem": "Where should the listeners look for theories and strategies?",
+                 "options": {"A": "In books assigned by the speaker", "B": "In work from previous classes", "C": "In the university library", "D": "On an academic website"},
+                 "answer": "B", "analysis": "refer to what you've learned in your other business courses，到以往商科课里找理论。"}
             ]
         },
         {

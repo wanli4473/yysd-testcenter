@@ -3,6 +3,7 @@ var fs = require("fs");
 var path = require("path");
 var W = require("../assets/js/toefl-writing.js");
 var root = path.join(__dirname, "..");
+require("./check_toefl_paper").checkFile("library/toefl/2025-09-02-writing.json");
 var paper = JSON.parse(fs.readFileSync(path.join(root, "library/toefl/2025-09-02-writing.json"), "utf8"));
 
 var screens = W.screensOf(paper);
@@ -19,6 +20,35 @@ sents.forEach(function (t) {
     if (t.bank.indexOf(w) < 0) throw new Error("Q" + t.id + " answer missing from bank: " + w);
   });
 });
+
+var leak = { bank: ["Sorry", "but", "I", "have", "not", "had", "time"] };
+var first = W.unusedBank(leak, []);
+if (JSON.stringify(W.unusedBank(leak, [])) !== JSON.stringify(first)) {
+  throw new Error("chip order must stay put after the first shuffle");
+}
+var same = 0;
+for (var i = 0; i < 30; i++) {
+  var t = { bank: ["a", "b", "c", "d", "e", "f"] };
+  if (JSON.stringify(W.unusedBank(t, [])) === JSON.stringify(t.bank)) same += 1;
+}
+if (same === 30) throw new Error("sentence chips never shuffled");
+
+if (W.chipLabel("Do") !== "do" || W.chipLabel("Have") !== "have" || W.chipLabel("I") !== "I") {
+  throw new Error("sentence chips must hide sentence-initial capitals");
+}
+if (W.chipLabel("I received") !== "I received" || W.chipLabel("I haven't") !== "I haven't") {
+  throw new Error("multi-word chips starting with I must keep I");
+}
+var host = { innerHTML: "" };
+W.renderSentence({
+  context: "She sent out the meeting notes this morning.",
+  parts: [{ slot: true }, { slot: true }, { t: "?" }],
+  bank: ["Do", "you"],
+  answer: ["Do", "you"]
+}, host, []);
+if (host.innerHTML.indexOf(">Do<") >= 0) throw new Error("bank leaked capital Do");
+if (host.innerHTML.indexOf(">do<") < 0) throw new Error("bank should show do");
+if (!W.sameSeq(["do", "you"], ["Do", "you"])) throw new Error("sentence score must ignore chip case");
 
 if (sents[2].bank.indexOf("did") < 0) throw new Error("Q3 should keep distractor 'did'");
 

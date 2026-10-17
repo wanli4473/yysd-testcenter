@@ -1,6 +1,6 @@
 "use strict";
 
-/** One Mac, one student or teacher. Admins are not seated.
+/** One computer, one student or teacher. Admins are not seated.
  *  device_key = hardware UUID + file id. File lives outside the app so
  *  reinstall/OS upgrade keep it; disk erase deletes it. */
 
@@ -88,7 +88,7 @@ function init(db) {
     var on = switchOn();
     if (!key) {
       if (on && (opts.purpose === "login" || opts.purpose === "register" || opts.purpose === "reset")) {
-        return { error: "请下载 Mac 程序后继续", status: 403, code: "seat_required" };
+        return { error: "请下载机考程序后继续", status: 403, code: "seat_required" };
       }
       return { ok: true };
     }
@@ -103,23 +103,29 @@ function init(db) {
       return { ok: true, claim: key };
     }
     if (held && held.device_key && held.device_key !== key && !opts.code) {
-      return { error: "这张激活码已绑定另一台 Mac，请联系管理员解除", status: 403 };
+      return { error: "这张激活码已绑定另一台电脑，请联系管理员解除", status: 403 };
     }
 
     var code = normalizeCode(opts.code);
-    if (!code) return { error: "这台 Mac 尚未激活，请填写激活码", status: 403 };
+    if (!code) return { error: "这台电脑尚未激活，请填写激活码", status: 403 };
     var row = stmts.byCode.get(code);
-    if (!row || row.role !== role) return { error: "激活码无效", status: 400 };
+    if (!row) return { error: "激活码无效", status: 400 };
+    if (row.role !== role) {
+      return {
+        error: row.role === "teacher" ? "这是老师激活码，请用该老师账号登录" : "这是学生激活码，请用学生账号登录",
+        status: 400
+      };
+    }
     if (row.disabled) return { error: "账号已停用", status: 403 };
     if (row.phone && row.phone !== phone) return { error: "这张激活码不属于该手机号", status: 400 };
     if (!row.phone && opts.purpose === "login") {
       return { error: "这是一张新用户激活码，请先注册", status: 400 };
     }
     if (row.device_key && row.device_key !== key) {
-      return { error: "这张激活码已绑定另一台 Mac，请联系管理员解除", status: 403 };
+      return { error: "这张激活码已绑定另一台电脑，请联系管理员解除", status: 403 };
     }
     var taken = stmts.byDevice.get(key);
-    if (taken && taken.id !== row.id) return { error: "这台 Mac 已绑定其他账号", status: 400 };
+    if (taken && taken.id !== row.id) return { error: "这台电脑已绑定其他账号", status: 400 };
     return { ok: true, claim: key, bindId: row.id, bindPhone: phone };
   }
 
@@ -132,9 +138,9 @@ function init(db) {
     if (!user || user.platformImpersonate || user.adminSeat) return null;
     if (user.role !== "student" && user.role !== "teacher") return null;
     if (!switchOn()) return null;
-    if (!user.device) return "请下载 Mac 程序后登录";
+    if (!user.device) return "请下载机考程序后登录";
     var row = stmts.bound.get(user.phone, user.role, user.device);
-    if (!row) return "这台 Mac 未绑定该账号";
+    if (!row) return "这台电脑未绑定该账号";
     if (row.disabled) return "账号已停用";
     return null;
   }
@@ -149,6 +155,14 @@ function init(db) {
     commitBind: commitBind,
     rejectToken: rejectToken,
     list: function () { return stmts.list.all(); },
+    peek: function (code) {
+      var n = normalizeCode(code);
+      return n ? stmts.byCode.get(n) || null : null;
+    },
+    boundDevice: function (device) {
+      var k = deviceKey(device);
+      return k ? stmts.byDevice.get(k) || null : null;
+    },
     get: function (id) { return db.prepare("SELECT * FROM seats WHERE id = ?").get(id); },
     unbind: function (id) { stmts.clearDevice.run(id); },
     setDisabled: function (id, disabled) { stmts.setDisabled.run(disabled ? 1 : 0, id); }

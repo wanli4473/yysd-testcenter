@@ -28,6 +28,23 @@ git fetch origin "$BRANCH"
 git checkout "$BRANCH"
 git pull --ff-only origin "$BRANCH"
 
+# ponytail: abort before --delete; these papers live on the server but are not in git yet
+need=(
+  "library/mock/cambridge-listening/secret-set-1.html"
+  "library/mock/cambridge-listening/secret-set-1-audio1.mp3"
+  "library/mock/cambridge-listening/secret-set-2.html"
+  "library/mock/cambridge-listening/secret-set-2-audio1.mp3"
+  "library/mock/cambridge-reading/secret-set-3-reading.html"
+  "library/mock/cambridge-reading/secret-set-4-reading.html"
+)
+for f in "${need[@]}"; do
+  if [ ! -f "$REPO_DIR/$f" ]; then
+    echo "!! 仓库缺少 $f — 中止，避免 rsync --delete 把线上绝密套卷删掉"
+    echo "   先把本机 library/mock/**/secret-set-* 提交并推送后再同步"
+    exit 1
+  fi
+done
+
 mkdir -p "$WEB_ROOT"
 
 if command -v rsync &>/dev/null; then
@@ -39,6 +56,7 @@ if command -v rsync &>/dev/null; then
     --exclude 'node_modules/' \
     --exclude '.staging/' \
     --exclude '.github/' \
+    --exclude 'app/' \
     --exclude '.env' \
     --exclude '.env.local' \
     "$REPO_DIR/" "$WEB_ROOT/"
@@ -114,6 +132,13 @@ check "assets/js/vocab-challenge-ui.js"
 check "assets/js/teacher-vocab-challenge.js"
 check "assets/css/vocab-shelf.css"
 check "assets/css/vocab-learn.css"
+# ponytail: manifest already lists these; --delete drops them if they never landed in git
+check "library/mock/cambridge-listening/secret-set-1.html"
+check "library/mock/cambridge-listening/secret-set-1-audio1.mp3"
+check "library/mock/cambridge-listening/secret-set-2.html"
+check "library/mock/cambridge-listening/secret-set-2-audio1.mp3"
+check "library/mock/cambridge-reading/secret-set-3-reading.html"
+check "library/mock/cambridge-reading/secret-set-4-reading.html"
 if ! grep -q 'data-ex-cat="lsecret"' "$WEB_ROOT/teacher-calendar.html"; then
   echo "  ✗ teacher-calendar.html 缺少听力绝密套卷芯片"
   missing=1

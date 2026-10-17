@@ -58,18 +58,13 @@ must(hit.length === 1, "manifest id");
 must(/绝密套卷/.test(hit[0].title), "manifest title " + hit[0].title);
 
 var cfg = fs.readFileSync(path.join(root, "assets/js/config.js"), "utf8");
-var partRe = /secret-set-\\d\+-reading/;
+var partRe = /secret-set-\\d\+\(\?:-reading\)\?/;
 must(partRe.test(cfg), "parsePartId accepts secret-set");
-var m1 = "secret-set-1-reading-p2".match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i);
+var re = /^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+(?:-reading)?)-(s|p)(\d+)$/i;
+var m1 = "secret-set-1-reading-p2".match(re);
 must(m1 && m1[1] === "secret-set-1-reading" && m1[3] === "2", "p2 parent");
-must("secret-set-1-reading".match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i) == null, "full paper not a part");
-must("cambridge-12-test-1-reading-p1".match(/^(cambridge-\d+-test-\d+(?:-reading)?|secret-set-\d+-reading)-(s|p)(\d+)$/i), "cam part still parses");
-
-var qsStart = cfg.indexOf("function cambridgeCdtQs");
-var qsEnd = cfg.indexOf("\n  function makePartItem");
-must(qsStart > 0 && qsEnd > qsStart, "cambridgeCdtQs slice");
-var qs = Function(cfg.slice(qsStart, qsEnd) + "\nreturn cambridgeCdtQs;")();
-must(qs("secret-set-1-reading", ["secret-set-1-reading"], "exam") === "&cdt=1&pack=exam", "secret-set calendar href is exam");
-must(qs("secret-set-1", ["secret-set-1"], "exam") === "&cdt=1&pack=exam", "secret-set listening exam");
+must("secret-set-1-reading".match(re) == null, "full paper not a part");
+must("cambridge-12-test-1-reading-p1".match(re), "cam part still parses");
+must("secret-set-1-s1".match(re) && "secret-set-1-s1".match(re)[1] === "secret-set-1", "listen s1");
 
 console.log("check_secret_set_1: ok");

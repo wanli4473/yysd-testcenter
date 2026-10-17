@@ -151,28 +151,44 @@ function buildAdvice(stageResults, recommended) {
   return (parts.length ? parts.join("；") + "。" : "") + tip;
 }
 
-function parseWordData(html) {
-  var m = String(html || "").match(/(?:const|var|let)\s+wordData\s*=\s*(\[[\s\S]*?\]);/);
+function readJsArray(html, name) {
+  var re = new RegExp("(?:const|var|let)\\s+" + name + "\\s*=\\s*(\\[[\\s\\S]*?\\]);");
+  var m = String(html || "").match(re);
   if (!m) return [];
   try {
     var arr = Function('"use strict"; return (' + m[1] + ");")();
-    if (!Array.isArray(arr)) return [];
-    return arr.map(function (w) {
-      var word = String(w.word || "").trim();
-      var meaning = String(w.meaning || "").trim();
-      if (!word || !meaning) return null;
-      return {
-        word: word,
-        meaning: meaning,
-        ipa: String(w.ipa || "").trim(),
-        acceptCN: Array.isArray(w.acceptCN) ? w.acceptCN : [],
-        example: String(w.example || "").trim(),
-        pos: String(w.pos || "").trim()
-      };
-    }).filter(Boolean);
+    return Array.isArray(arr) ? arr : [];
   } catch (e) {
     return [];
   }
+}
+
+function mapBankWord(w) {
+  var word = String((w && w.word) || "").trim();
+  var meaning = String((w && w.meaning) || "").trim();
+  if (!word || !meaning) return null;
+  return {
+    word: word,
+    meaning: meaning,
+    ipa: String((w && w.ipa) || "").trim(),
+    acceptCN: Array.isArray(w.acceptCN) ? w.acceptCN : [],
+    example: String((w && w.example) || "").trim(),
+    pos: String((w && w.pos) || "").trim()
+  };
+}
+
+function parseWordData(html) {
+  var words = readJsArray(html, "wordData").map(mapBankWord).filter(Boolean);
+  if (words.length) return words;
+  // same shape as shelf: writing lists are phraseData {en, cn, detail}
+  return readJsArray(html, "phraseData").map(function (p) {
+    return mapBankWord({
+      word: String((p && (p.en || p.word)) || "").trim(),
+      meaning: String((p && (p.cn || p.meaning)) || "").trim(),
+      acceptCN: p && p.cn ? [String(p.cn).trim()] : [],
+      example: p && p.example
+    });
+  }).filter(Boolean);
 }
 
 function walkHtmlFiles(dir, out) {
@@ -291,7 +307,17 @@ function rebuildVocabBank(db, repoRoot) {
 function ensureVocabBank(db, repoRoot) {
   ensureSchema(db);
   var row = db.prepare("SELECT COUNT(*) AS n FROM vocab_bank").get();
-  if (row && row.n > 0) return { rebuilt: false, count: row.n };
+  if (row && row.n > 0) {
+    var writing = db.prepare(
+      "SELECT COUNT(*) AS n FROM vocab_bank WHERE source_file LIKE '%vocab-special-writing%'"
+    ).get();
+    if (writing && writing.n > 0) return { rebuilt: false, count: row.n };
+    // ponytail: banks built before phraseData was read stay empty for writing; rebuild once
+    var probe = path.join(repoRoot, "library/study/vocab-special-writing/writing-vocab-01.html");
+    if (!fs.existsSync(probe) || !parseWordData(fs.readFileSync(probe, "utf8")).length) {
+      return { rebuilt: false, count: row.n };
+    }
+  }
   var counts = rebuildVocabBank(db, repoRoot);
   var total = counts.high_school + counts.cet4 + counts.ielts;
   return { rebuilt: true, count: total, counts: counts };

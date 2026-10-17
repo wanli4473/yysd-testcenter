@@ -42,6 +42,7 @@ listening.tasks.forEach(function (task) {
 });
 if (lItems[0].q.answer !== "A" || lItems[46].q.answer !== "C") throw new Error("L keys");
 
+require("./check_toefl_paper").checkFile("library/toefl/2025-09-19-writing.json");
 var writing = load("2025-09-19-writing.json");
 if (W.screensOf(writing).length !== 12) throw new Error("writing screens");
 if (writing.tasks.filter(function (t) { return t.type === "sentence"; }).length !== 10) throw new Error("10 sentences");

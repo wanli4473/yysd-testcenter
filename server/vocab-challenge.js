@@ -171,7 +171,61 @@ function parseDraft(raw) {
 }
 
 function emptyDraft() {
-  return { poolByWord: {}, notebookUpserts: {}, wordMeta: {}, remaining: [], notices: [] };
+  return { poolByWord: {}, notebookUpserts: {}, wordMeta: {}, remaining: [], notices: [], optionBank: [] };
+}
+
+function hasCnGloss(s) {
+  return /[\u4e00-\u9fff]/.test(String(s || ""));
+}
+
+function glossFromWord(w) {
+  if (!w) return "";
+  var wj = w;
+  if (typeof w.word_json === "string") {
+    wj = parseWordJson(w.word_json) || w;
+  } else if (w.word_json && typeof w.word_json === "object") {
+    wj = w.word_json;
+  }
+  var accept = Array.isArray(w.acceptCN)
+    ? w.acceptCN
+    : (wj && Array.isArray(wj.acceptCN) ? wj.acceptCN : []);
+  if (accept.length) {
+    var cn = accept.filter(Boolean).join(" / ");
+    if (hasCnGloss(cn)) return cn;
+  }
+  var m = String(w.meaning || (wj && wj.meaning) || "").trim();
+  return hasCnGloss(m) ? m : "";
+}
+
+function optionBankFromWords(words) {
+  var seen = {};
+  var out = [];
+  (words || []).forEach(function (w) {
+    var g = glossFromWord(w);
+    if (!g || seen[g]) return;
+    seen[g] = true;
+    out.push(g);
+  });
+  return out;
+}
+
+function optionBankFromDraft(draft) {
+  if (draft && Array.isArray(draft.optionBank) && draft.optionBank.length) {
+    return draft.optionBank.slice();
+  }
+  var words = [];
+  if (draft && draft.wordMeta) {
+    Object.keys(draft.wordMeta).forEach(function (k) { words.push(draft.wordMeta[k]); });
+  }
+  if (draft && draft.poolByWord) {
+    Object.keys(draft.poolByWord).forEach(function (k) { words.push(draft.poolByWord[k]); });
+  }
+  return optionBankFromWords(words);
+}
+
+function stampOptionBank(payload, draft) {
+  if (payload) payload.optionBank = optionBankFromDraft(draft);
+  return payload;
 }
 
 function clonePoolRow(r) {
@@ -240,11 +294,21 @@ function getProgress(db, studentId, bookId) {
     var clearedNew = maxClearedNewList(db, studentId, bookId);
     var plan = complete ? null : schedule.getDayPlan(bookId, progressDay);
     var nextListNo = plan && plan.new ? plan.new : clearedNew + 1;
+    var sched = schedule.loadSchedule(bookId);
+    var totalDays = sched ? sched.totalDays : 0;
+    var totalLists = sched && sched.totalLists ? sched.totalLists : 0;
+    if (!totalLists && sched) {
+      Object.keys(sched.days || {}).forEach(function (k) {
+        if (sched.days[k] && sched.days[k].new) totalLists += 1;
+      });
+    }
     return {
       progressDay: progressDay,
       programComplete: complete,
       clearedListNo: clearedNew,
-      nextListNo: complete ? 40 : nextListNo,
+      nextListNo: complete ? totalLists : nextListNo,
+      totalDays: totalDays,
+      totalLists: totalLists,
       updatedAt: row ? row.updated_at : null
     };
   }
@@ -858,6 +922,7 @@ function startListChallenge(db, opts) {
   draft.progressDay = today ? today.progressDay : null;
   draft.poolByWord = loadPoolMap(db, studentId, bookId);
   words.forEach(function (w) { rememberMeta(draft, w); });
+  draft.optionBank = optionBankFromWords(words);
   draft.notices = [NOTICE.enterList];
 
   var attemptId;
@@ -881,7 +946,7 @@ function startListChallenge(db, opts) {
   tx();
 
   var attempt = s.getAttempt.get(attemptId, studentId);
-  return {
+  return stampOptionBank({
     ok: true,
     attemptId: attemptId,
     phase: PHASE_NEW,
@@ -895,7 +960,7 @@ function startListChallenge(db, opts) {
     items: publicItems(s.listItems.all(attemptId), draft),
     progress: prog,
     todayTasks: today
-  };
+  }, draft);
 }
 
 function startScheduledReview(db, opts) {
@@ -950,6 +1015,7 @@ function startScheduledReview(db, opts) {
   draft.taskType = TASK_REVIEW;
   draft.progressDay = today.progressDay;
   drawn.forEach(function (w) { rememberMeta(draft, w); });
+  draft.optionBank = optionBankFromWords(words);
   draft.notices = [NOTICE.enterReview];
 
   var attemptId;
@@ -972,7 +1038,7 @@ function startScheduledReview(db, opts) {
   });
   tx();
 
-  return {
+  return stampOptionBank({
     ok: true,
     attemptId: attemptId,
     phase: PHASE_SCHEDULED_REVIEW,
@@ -987,7 +1053,7 @@ function startScheduledReview(db, opts) {
     items: publicItems(s.listItems.all(attemptId), draft),
     progress: getProgress(db, studentId, bookId),
     todayTasks: today
-  };
+  }, draft);
 }
 
 function submitScheduledReview(db, attemptId, studentId, answers, now) {
@@ -1292,6 +1358,7 @@ function submitNewWords(db, attemptId, studentId, answers, now) {
       notices: draft.notices.slice(),
       items: publicItems(s.listItems.all(attemptId), draft)
     };
+    stampOptionBank(out, draft);
   });
   tx();
   return out;
@@ -1390,6 +1457,7 @@ function submitReview(db, attemptId, studentId, answers, now) {
       notices: notices.slice(),
       items: publicItems(s.listItems.all(attemptId), draft)
     };
+    stampOptionBank(result, draft);
   });
   tx();
   return result;
@@ -1403,7 +1471,7 @@ function getAttemptView(db, attemptId, studentId) {
   var livesMax = attempt.phase === PHASE_SCHEDULED_REVIEW
     ? schedule.MAX_REVIEW_WRONG
     : MAX_NEW_WRONG;
-  return {
+  var view = {
     ok: true,
     attemptId: attempt.id,
     bookId: attempt.book_id,
@@ -1424,20 +1492,43 @@ function getAttemptView(db, attemptId, studentId) {
       ? getTodayTasks(db, attempt.student_id, attempt.book_id)
       : null
   };
+  return stampOptionBank(view, draft);
 }
 
 function columnNames(db, table) {
   return db.prepare("PRAGMA table_info(" + table + ")").all().map(function (c) { return c.name; });
 }
 
-function ensureSchema(db) {
+function migrateAssignmentPk(db) {
+  var info = db.prepare("PRAGMA table_info(vocab_challenge_assignment)").all();
+  if (!info.length) return;
+  var pk = info.filter(function (c) { return c.pk; });
+  var hasBookPk = pk.some(function (c) { return c.name === "book_id"; });
+  if (hasBookPk && pk.length >= 2) return;
   db.exec(
-    // Current book only (one row per student). History rows keep archived assignments.
-    "CREATE TABLE IF NOT EXISTS vocab_challenge_assignment (" +
-      "student_id INTEGER NOT NULL PRIMARY KEY," +
+    "CREATE TABLE vocab_challenge_assignment_v2 (" +
+      "student_id INTEGER NOT NULL," +
       "book_id TEXT NOT NULL," +
       "teacher_id INTEGER NOT NULL," +
-      "assigned_at TEXT NOT NULL" +
+      "assigned_at TEXT NOT NULL," +
+      "PRIMARY KEY (student_id, book_id)" +
+    ");" +
+    "INSERT OR IGNORE INTO vocab_challenge_assignment_v2 " +
+      "SELECT student_id, book_id, teacher_id, assigned_at FROM vocab_challenge_assignment;" +
+    "DROP TABLE vocab_challenge_assignment;" +
+    "ALTER TABLE vocab_challenge_assignment_v2 RENAME TO vocab_challenge_assignment;"
+  );
+}
+
+function ensureSchema(db) {
+  db.exec(
+    // One assignment row per student×book. Unassign deletes the row; progress stays.
+    "CREATE TABLE IF NOT EXISTS vocab_challenge_assignment (" +
+      "student_id INTEGER NOT NULL," +
+      "book_id TEXT NOT NULL," +
+      "teacher_id INTEGER NOT NULL," +
+      "assigned_at TEXT NOT NULL," +
+      "PRIMARY KEY (student_id, book_id)" +
     ");" +
     "CREATE TABLE IF NOT EXISTS vocab_challenge_assignment_history (" +
       "id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -1576,6 +1667,8 @@ function ensureSchema(db) {
     db.exec("ALTER TABLE vocab_challenge_progress ADD COLUMN progress_day INTEGER NOT NULL DEFAULT 1");
   }
 
+  migrateAssignmentPk(db);
+
   // ponytail: one-time cutover to Ebbinghaus schedule (Aug 2026). Runs once per DB; never re-run after meta row exists.
   var migrated = db.prepare("SELECT value FROM vocab_challenge_meta WHERE key = 'ebbinghaus_reset_v1'").get();
   if (!migrated) {
@@ -1602,6 +1695,11 @@ function selfCheck() {
   if (adminIds.join(",") !== "9,44") throw new Error("roster admin ids: " + adminIds.join(","));
   var boundIds = resolveRosterStudentIds(function () { return [1, 2]; }, { query: { studentIds: "9" } });
   if (boundIds.join(",") !== "1,2") throw new Error("roster bound ids: " + boundIds.join(","));
+  var orgWide = resolveRosterStudentIds(function () { return [7, 8, 9]; }, { query: { studentIds: "1" } });
+  if (orgWide.join(",") !== "7,8,9") throw new Error("roster org-wide ignores query ids");
+  if ("13800138000".replace(/^(\d{3})\d+(\d{4})$/, "$1****$2") !== "138****8000") {
+    throw new Error("roster phone mask");
+  }
 
   var Database = require("better-sqlite3");
   var db = new Database(":memory:");
@@ -1629,6 +1727,16 @@ function selfCheck() {
     )
     .all();
   if (idx.length < 3) throw new Error("missing indexes");
+
+  var bank = optionBankFromWords([
+    { word: "include", acceptCN: ["包括", "包含"] },
+    { word: "desk", meaning: "桌子" },
+    { word: "run", acceptCN: ["跑步"] },
+    { word: "enonly", meaning: "only-english" }
+  ]);
+  if (bank.length !== 3 || bank.indexOf("桌子") < 0 || bank.indexOf("包括 / 包含") < 0) {
+    throw new Error("optionBankFromWords " + JSON.stringify(bank));
+  }
 
   // smoke: unique word per student×book; null last_review ok
   db.prepare(
@@ -2068,23 +2176,25 @@ function selfCheck() {
   if (!revPass.passed) throw new Error("review pass");
   if (getProgressDay(db, 1, "gaozhong") !== 3) throw new Error("day2 advance");
 
-  // assign + switch archives
+  // assign multiple books; unassign one keeps the other and its progress
   require("./vocab-shelf").ensureSchema(db);
   var a1 = assignBook(db, { studentId: 9, bookId: "gaozhong", teacherId: 2, now: now });
   if (!a1.ok) throw new Error("assign");
   db.prepare(
     "UPDATE vocab_challenge_progress SET progress_day = 5 WHERE student_id = 9 AND book_id = 'gaozhong'"
   ).run();
-  var a2 = assignBook(db, { studentId: 9, bookId: "cet4", teacherId: 2, now: now });
-  if (!a2.ok || !a2.switched) throw new Error("switch");
-  var hist = db.prepare(
-    "SELECT book_id FROM vocab_challenge_assignment_history WHERE student_id=9"
-  ).get();
-  if (!hist || hist.book_id !== "gaozhong") throw new Error("history");
-  if (getAssignment(db, 9).book_id !== "cet4") throw new Error("current book");
-  var a3 = assignBook(db, { studentId: 9, bookId: "gaozhong", teacherId: 2, now: now });
-  if (!a3.ok || !a3.switched) throw new Error("switch back gaozhong");
+  var a2 = assignBook(db, { studentId: 9, bookId: "cet4-lite", teacherId: 2, now: now });
+  if (!a2.ok || a2.unchanged) throw new Error("assign lite");
+  if (!getAssignment(db, 9, "gaozhong") || !getAssignment(db, 9, "cet4-lite")) {
+    throw new Error("multi assign");
+  }
   if (getProgressDay(db, 9, "gaozhong") !== 5) throw new Error("assign must preserve gaozhong progress");
+  var u = unassignBook(db, { studentId: 9, bookId: "cet4-lite" });
+  if (!u.ok || getAssignment(db, 9, "cet4-lite")) throw new Error("unassign lite");
+  if (!getAssignment(db, 9, "gaozhong")) throw new Error("keep gaozhong after unassign");
+  var a3 = assignBook(db, { studentId: 9, bookId: "gaozhong", teacherId: 2, now: now });
+  if (!a3.ok || !a3.unchanged) throw new Error("reassign same book is no-op");
+  if (getProgressDay(db, 9, "gaozhong") !== 5) throw new Error("reassign must preserve gaozhong progress");
 
   grade.selfCheck();
 
@@ -2138,18 +2248,59 @@ function resumeSameAttempt(db, studentId, bookId, listNo, phase) {
   return null;
 }
 
-function getAssignment(db, studentId) {
+function bookLabelOfId(bookId) {
+  if (bookId === "gaozhong") return "高中词汇";
+  if (bookId === "cet4") return "四级词汇";
+  if (bookId === "cet4-lite") return "四级词汇（精简版）";
+  if (bookId === "special") return "雅思专项词汇";
+  return bookId;
+}
+
+function listAssignments(db, studentId) {
   return db
     .prepare(
       "SELECT student_id, book_id, teacher_id, assigned_at FROM vocab_challenge_assignment " +
-        "WHERE student_id = ?"
+        "WHERE student_id = ? ORDER BY assigned_at ASC"
     )
-    .get(studentId);
+    .all(studentId);
+}
+
+function getAssignment(db, studentId, bookId) {
+  bookId = String(bookId || "").trim();
+  if (bookId) {
+    return db
+      .prepare(
+        "SELECT student_id, book_id, teacher_id, assigned_at FROM vocab_challenge_assignment " +
+          "WHERE student_id = ? AND book_id = ?"
+      )
+      .get(studentId, bookId) || null;
+  }
+  var rows = listAssignments(db, studentId);
+  return rows.length === 1 ? rows[0] : null;
+}
+
+function pickAssigned(db, studentId, bookId) {
+  var all = listAssignments(db, studentId);
+  if (!all.length) return { error: "老师尚未布置词册", status: 400 };
+  bookId = String(bookId || "").trim();
+  if (bookId) {
+    var hit = all.filter(function (r) { return r.book_id === bookId; })[0];
+    if (!hit) return { error: "该词册尚未布置", status: 400 };
+    return { asg: hit };
+  }
+  if (all.length === 1) return { asg: all[0] };
+  return {
+    error: "请选择词册",
+    status: 400,
+    needsBook: true,
+    assignments: all.map(function (r) {
+      return { bookId: r.book_id, bookLabel: bookLabelOfId(r.book_id) };
+    })
+  };
 }
 
 /**
- * Teacher assigns current book. Switching archives previous assignment row into history.
- * Also ensures vocab_bookshelf has the book (for learn pages).
+ * Teacher assigns a book. Other books stay assigned. Re-assign of the same book is a no-op.
  */
 function assignBook(db, opts) {
   opts = opts || {};
@@ -2160,32 +2311,12 @@ function assignBook(db, opts) {
   if (!studentId || !bookId || !teacherId) {
     return { ok: false, error: "缺少 studentId / bookId / teacherId" };
   }
-  var cur = getAssignment(db, studentId);
-  if (cur && cur.book_id === bookId) {
+  var cur = getAssignment(db, studentId, bookId);
+  if (cur) {
     return { ok: true, unchanged: true, bookId: bookId, assignedAt: cur.assigned_at };
   }
 
-  var tx = db.transaction(function () {
-    if (cur) {
-      db.prepare(
-        "INSERT INTO vocab_challenge_assignment_history " +
-          "(student_id, book_id, teacher_id, assigned_at, archived_at) VALUES (?, ?, ?, ?, ?)"
-      ).run(cur.student_id, cur.book_id, cur.teacher_id, cur.assigned_at, nowIso);
-      db.prepare(
-        "UPDATE vocab_challenge_attempt SET status = ?, updated_at = ? " +
-          "WHERE student_id = ? AND book_id = ? AND status = ?"
-      ).run(STATUS_VOIDED, nowIso, studentId, cur.book_id, STATUS_IN_PROGRESS);
-    }
-    db.prepare(
-      "INSERT INTO vocab_challenge_assignment (student_id, book_id, teacher_id, assigned_at) " +
-        "VALUES (?, ?, ?, ?) " +
-        "ON CONFLICT(student_id) DO UPDATE SET " +
-        "book_id = excluded.book_id, teacher_id = excluded.teacher_id, assigned_at = excluded.assigned_at"
-    ).run(studentId, bookId, teacherId, nowIso);
-    // ponytail: reuse shelf so learn/quiz pages keep working
-    db.prepare(
-      "INSERT OR IGNORE INTO vocab_bookshelf (student_id, book_id, added_at) VALUES (?, ?, ?)"
-    ).run(studentId, bookId, nowIso);
+  function writeProgress() {
     if (schedule.isEbbinghausBook(bookId)) {
       ensureEbbinghausProgress(db, studentId, bookId, nowIso);
     } else {
@@ -2194,39 +2325,47 @@ function assignBook(db, opts) {
           "(student_id, book_id, cleared_list_no, progress_day, updated_at) VALUES (?, ?, 0, 1, ?)"
       ).run(studentId, bookId, nowIso);
     }
+  }
+
+  var tx = db.transaction(function () {
+    db.prepare(
+      "INSERT INTO vocab_challenge_assignment (student_id, book_id, teacher_id, assigned_at) " +
+        "VALUES (?, ?, ?, ?)"
+    ).run(studentId, bookId, teacherId, nowIso);
+    db.prepare(
+      "INSERT OR IGNORE INTO vocab_bookshelf (student_id, book_id, added_at) VALUES (?, ?, ?)"
+    ).run(studentId, bookId, nowIso);
+    writeProgress();
   });
   try {
     tx();
   } catch (e) {
-    // bookshelf table may be missing if shelf schema not mounted yet
     if (String(e.message).indexOf("vocab_bookshelf") >= 0) {
       db.transaction(function () {
-        if (cur) {
-          db.prepare(
-            "INSERT INTO vocab_challenge_assignment_history " +
-              "(student_id, book_id, teacher_id, assigned_at, archived_at) VALUES (?, ?, ?, ?, ?)"
-          ).run(cur.student_id, cur.book_id, cur.teacher_id, cur.assigned_at, nowIso);
-        }
         db.prepare(
           "INSERT INTO vocab_challenge_assignment (student_id, book_id, teacher_id, assigned_at) " +
-            "VALUES (?, ?, ?, ?) " +
-            "ON CONFLICT(student_id) DO UPDATE SET " +
-            "book_id = excluded.book_id, teacher_id = excluded.teacher_id, assigned_at = excluded.assigned_at"
+            "VALUES (?, ?, ?, ?)"
         ).run(studentId, bookId, teacherId, nowIso);
-        if (schedule.isEbbinghausBook(bookId)) {
-          ensureEbbinghausProgress(db, studentId, bookId, nowIso);
-        } else {
-          db.prepare(
-            "INSERT OR IGNORE INTO vocab_challenge_progress " +
-              "(student_id, book_id, cleared_list_no, progress_day, updated_at) VALUES (?, ?, 0, 1, ?)"
-          ).run(studentId, bookId, nowIso);
-        }
+        writeProgress();
       })();
     } else {
       throw e;
     }
   }
-  return { ok: true, bookId: bookId, assignedAt: nowIso, switched: !!(cur && cur.book_id !== bookId) };
+  return { ok: true, bookId: bookId, assignedAt: nowIso };
+}
+
+function unassignBook(db, opts) {
+  opts = opts || {};
+  var studentId = opts.studentId;
+  var bookId = String(opts.bookId || "").trim();
+  if (!studentId || !bookId) return { ok: false, error: "缺少 studentId / bookId" };
+  var cur = getAssignment(db, studentId, bookId);
+  if (!cur) return { ok: true, unchanged: true, bookId: bookId };
+  db.prepare(
+    "DELETE FROM vocab_challenge_assignment WHERE student_id = ? AND book_id = ?"
+  ).run(studentId, bookId);
+  return { ok: true, unassigned: true, bookId: bookId };
 }
 
 function poolOverview(db, studentId, bookId) {
@@ -2254,32 +2393,65 @@ function poolOverview(db, studentId, bookId) {
   };
 }
 
-function studentChallengeSummary(db, studentId) {
-  var asg = getAssignment(db, studentId);
-  if (!asg) {
-    return { ok: true, assigned: false, assignment: null, progress: null, pool: null };
-  }
-  var prog = getProgress(db, studentId, asg.book_id);
-  var active = findActiveAttempt(db, studentId, asg.book_id);
-  var todayTasks = schedule.isEbbinghausBook(asg.book_id)
-    ? getTodayTasks(db, studentId, asg.book_id)
+function assignmentCard(db, row) {
+  var prog = getProgress(db, row.student_id, row.book_id);
+  var active = findActiveAttempt(db, row.student_id, row.book_id);
+  var todayTasks = schedule.isEbbinghausBook(row.book_id)
+    ? getTodayTasks(db, row.student_id, row.book_id)
     : null;
   return {
-    ok: true,
-    assigned: true,
-    assignment: {
-      bookId: asg.book_id,
-      teacherId: asg.teacher_id,
-      assignedAt: asg.assigned_at
-    },
+    bookId: row.book_id,
+    bookLabel: bookLabelOfId(row.book_id),
+    teacherId: row.teacher_id,
+    assignedAt: row.assigned_at,
     progress: prog,
-    pool: poolOverview(db, studentId, asg.book_id),
+    pool: poolOverview(db, row.student_id, row.book_id),
     activeAttemptId: active ? active.id : null,
     todayPlan: todayTasks ? todayTasks.plan : null,
     todayTasks: todayTasks ? todayTasks.tasks : null,
     programComplete: todayTasks ? todayTasks.programComplete : false,
     progressDay: todayTasks ? todayTasks.progressDay : null
   };
+}
+
+function flattenAssignmentCard(card) {
+  return {
+    assignment: {
+      bookId: card.bookId,
+      bookLabel: card.bookLabel,
+      teacherId: card.teacherId,
+      assignedAt: card.assignedAt
+    },
+    progress: card.progress,
+    pool: card.pool,
+    activeAttemptId: card.activeAttemptId,
+    todayPlan: card.todayPlan,
+    todayTasks: card.todayTasks,
+    programComplete: card.programComplete,
+    progressDay: card.progressDay
+  };
+}
+
+function studentChallengeSummary(db, studentId, bookId) {
+  var all = listAssignments(db, studentId);
+  var cards = all.map(function (row) { return assignmentCard(db, row); });
+  if (!all.length) {
+    return { ok: true, assigned: false, needsBook: false, assignments: [], assignment: null, progress: null, pool: null };
+  }
+  var chosen = null;
+  bookId = String(bookId || "").trim();
+  if (bookId) {
+    chosen = cards.filter(function (c) { return c.bookId === bookId; })[0] || null;
+    if (!chosen) {
+      return { ok: true, assigned: true, needsBook: true, assignments: cards, assignment: null, progress: null, pool: null };
+    }
+  } else if (cards.length === 1) {
+    chosen = cards[0];
+  }
+  if (!chosen) {
+    return { ok: true, assigned: true, needsBook: true, assignments: cards, assignment: null, progress: null, pool: null };
+  }
+  return Object.assign({ ok: true, assigned: true, needsBook: false, assignments: cards }, flattenAssignmentCard(chosen));
 }
 
 function findListByNo(book, listNo) {
@@ -2331,17 +2503,34 @@ function mountRoutes(app, opts) {
     return typeof loadCatalog === "function" ? loadCatalog() : loadCatalog;
   }
 
+  function reqBookId(req) {
+    return String((req.query && req.query.bookId) || (req.body && req.body.bookId) || "").trim();
+  }
+
+  function assignedOrFail(req, res) {
+    var picked = pickAssigned(db, req.user.sub, reqBookId(req));
+    if (picked.error) {
+      res.status(picked.status || 400).json({
+        error: picked.error,
+        needsBook: !!picked.needsBook,
+        assignments: picked.assignments || []
+      });
+      return null;
+    }
+    return picked.asg;
+  }
+
   // ---- student ----
 
   app.get("/api/vocab-challenge/me", authMiddleware, function (req, res) {
     if (!requireStudent(req, res)) return;
-    res.json(studentChallengeSummary(db, req.user.sub));
+    res.json(studentChallengeSummary(db, req.user.sub, req.query.bookId));
   });
 
   app.get("/api/vocab-challenge/lists", authMiddleware, function (req, res) {
     if (!requireStudent(req, res)) return;
-    var asg = getAssignment(db, req.user.sub);
-    if (!asg) return res.status(400).json({ error: "老师尚未布置词册" });
+    var asg = assignedOrFail(req, res);
+    if (!asg) return;
     var cat = catalog();
     var book = cat.byId[asg.book_id];
     if (!book) return res.status(404).json({ error: "词册不存在" });
@@ -2414,8 +2603,8 @@ function mountRoutes(app, opts) {
 
   app.post("/api/vocab-challenge/start", authMiddleware, function (req, res) {
     if (!requireStudent(req, res)) return;
-    var asg = getAssignment(db, req.user.sub);
-    if (!asg) return res.status(400).json({ error: "老师尚未布置词册" });
+    var asg = assignedOrFail(req, res);
+    if (!asg) return;
     var body = req.body || {};
     var taskType = String(body.taskType || TASK_NEW).trim();
     var cat = catalog();
@@ -2502,7 +2691,7 @@ function mountRoutes(app, opts) {
 
   app.get("/api/vocab-challenge/notebook", authMiddleware, function (req, res) {
     if (!requireStudent(req, res)) return;
-    var asg = getAssignment(db, req.user.sub);
+    var asg = getAssignment(db, req.user.sub, req.query.bookId);
     var bookId = String(req.query.bookId || (asg && asg.book_id) || "").trim();
     if (!bookId) return res.status(400).json({ error: "缺少 bookId" });
     var rows = db
@@ -2538,8 +2727,8 @@ function mountRoutes(app, opts) {
   // Voluntary practice for a passed list task — does not touch draw_pool or progress
   app.get("/api/vocab-challenge/list-practice-pool", authMiddleware, function (req, res) {
     if (!requireStudent(req, res)) return;
-    var asg = getAssignment(db, req.user.sub);
-    if (!asg) return res.status(400).json({ error: "老师尚未布置词册" });
+    var asg = assignedOrFail(req, res);
+    if (!asg) return;
     var listNo = Math.floor(Number(req.query.listNo) || 0);
     var taskType = String(req.query.taskType || TASK_NEW).trim();
     if (!listNo) return res.status(400).json({ error: "缺少 listNo" });
@@ -2574,6 +2763,7 @@ function mountRoutes(app, opts) {
       listNo: listNo,
       taskType: tt,
       notice: "已通过关卡练习不影响闯关进度与抽测池。",
+      optionBank: optionBankFromWords(lesson.words),
       words: words.map(function (w) {
         return {
           word: w.word,
@@ -2589,7 +2779,7 @@ function mountRoutes(app, opts) {
   // Voluntary practice pool — does not touch draw_pool (spec Q24)
   app.get("/api/vocab-challenge/notebook/practice-pool", authMiddleware, function (req, res) {
     if (!requireStudent(req, res)) return;
-    var asg = getAssignment(db, req.user.sub);
+    var asg = getAssignment(db, req.user.sub, req.query.bookId);
     var bookId = String(req.query.bookId || (asg && asg.book_id) || "").trim();
     var limit = Math.max(1, Math.min(100, Math.floor(Number(req.query.limit) || 20)));
     if (!bookId) return res.status(400).json({ error: "缺少 bookId" });
@@ -2599,10 +2789,19 @@ function mountRoutes(app, opts) {
           "WHERE student_id = ? AND book_id = ? ORDER BY last_missed_at DESC, id DESC LIMIT ?"
       )
       .all(req.user.sub, bookId, limit);
+    var bank = optionBankFromWords(rows);
+    if (bank.length < 8 && asg) {
+      var cat = catalog();
+      var book = cat.byId[asg.book_id];
+      var list0 = book && book.lists && book.lists[0];
+      var pad = list0 ? shelf.resolveLesson(resolveRoot, book, list0.id) : null;
+      if (pad && pad.words) bank = optionBankFromWords(pad.words.concat(rows));
+    }
     res.json({
       ok: true,
       bookId: bookId,
       notice: "错题本练习不影响闯关抽测池。",
+      optionBank: bank,
       words: rows.map(function (r) {
         var wj = null;
         if (r.word_json) {
@@ -2647,6 +2846,20 @@ function mountRoutes(app, opts) {
       teacherId: req.user.sub
     });
     if (!result.ok) return res.status(400).json(result);
+    res.json(Object.assign({ ok: true }, result, studentChallengeSummary(db, studentId, bookId)));
+  });
+
+  app.post("/api/vocab-challenge/teacher/unassign", authMiddleware, function (req, res) {
+    if (!requireTeacher(req, res)) return;
+    var body = req.body || {};
+    var studentId = Number(body.studentId);
+    var bookId = String(body.bookId || "").trim();
+    if (!studentId || !bookId) return res.status(400).json({ error: "缺少 studentId / bookId" });
+    if (!canManageStudent(req, studentId)) {
+      return res.status(403).json({ error: "无权操作该学生" });
+    }
+    var result = unassignBook(db, { studentId: studentId, bookId: bookId });
+    if (!result.ok) return res.status(400).json(result);
     res.json(Object.assign({ ok: true }, result, studentChallengeSummary(db, studentId)));
   });
 
@@ -2687,9 +2900,12 @@ function mountRoutes(app, opts) {
       var sum = studentChallengeSummary(db, id);
       return {
         studentId: id,
-        phone: u ? u.phone : null,
+        phone: u && u.phone
+          ? String(u.phone).replace(/^(\d{3})\d+(\d{4})$/, "$1****$2")
+          : null,
         displayName: u ? u.display_name : null,
         assignment: sum.assignment,
+        assignments: sum.assignments || [],
         progress: sum.progress,
         progressDay: sum.progressDay,
         todayTasks: sum.todayTasks,
@@ -2724,7 +2940,9 @@ module.exports = {
   getTodayTasks: getTodayTasks,
   getStageSummaries: getStageSummaries,
   getAssignment: getAssignment,
+  listAssignments: listAssignments,
   assignBook: assignBook,
+  unassignBook: unassignBook,
   ensureEbbinghausProgress: ensureEbbinghausProgress,
   resetEbbinghausStudent: resetEbbinghausStudent,
   studentChallengeSummary: studentChallengeSummary,

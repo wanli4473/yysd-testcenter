@@ -1,0 +1,11 @@
+"use strict";
+var path = require("path");
+var Database = require("better-sqlite3");
+var tiku = require("../server/tiku");
+var dbPath = process.argv[2] || path.join(__dirname, "..", "server", "data", "yysd.db");
+var db = new Database(dbPath);
+tiku.ensureSchema(db);
+tiku.seedStock(db, path.join(__dirname, ".."));
+var cat = tiku.catalog(db, "");
+console.log("seeded", "sets", cat.stock.sets.join(","), "mocks", cat.stock.mocks.join(","));
+db.close();

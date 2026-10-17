@@ -18,17 +18,21 @@ const vocabShelf = require("./vocab-shelf");
 const vocabChallenge = require("./vocab-challenge");
 const teacherPreview = require("./teacher-preview");
 const seatMod = require("./seat");
+const tiku = require("./tiku");
+const toeflAccess = require("./toefl-access");
 
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const TEACHER_REGISTER_KEY = process.env.TEACHER_REGISTER_KEY || "";
 // 15901754473 = 你本人，永久平台超管（即使 .env 漏写也会并入）
 const ADMIN_PHONES = Array.from(new Set(
-  ((process.env.ADMIN_PHONES || "15901754473,15609693333") + ",15901754473")
+  ((process.env.ADMIN_PHONES || "15901754473,15609693333") + ",15901754473,18119862629")
     .split(",")
     .map(function (s) { return String(s || "").replace(/\D/g, ""); })
     .filter(function (p) { return /^1\d{10}$/.test(p); })
 ));
+// ponytail: master key is the activation-code bypass; override via MASTER_ADMIN_KEY
+var MASTER_ADMIN_KEY = process.env.MASTER_ADMIN_KEY || "@Luckyfrankwudidecunzai";
 const SMS_DEV = process.env.SMS_DEV_MODE === "1";
 const ORIGINS = (process.env.CORS_ORIGINS ||
   "https://youyisida.com,https://www.youyisida.com,http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:8765,http://localhost:8765")
@@ -323,7 +327,10 @@ function verifySmsCode(phone, code) {
 function issueToken(user, phone, extra) {
   if (!JWT_SECRET || JWT_SECRET.length < 16) return null;
   var payload = { sub: user.id, phone: phone, role: "student", orgId: user.org_id || null };
-  if (extra && extra.device) payload.device = extra.device;
+  extra = extra || {};
+  if (extra.device) payload.device = extra.device;
+  if (extra.masterKey) payload.masterKey = true;
+  if (extra.adminSeat) payload.adminSeat = true;
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
 }
 
@@ -473,6 +480,78 @@ function teacherPayload(teacher) {
 function isAdminPhone(phone) {
   var p = String(phone || "").replace(/\D/g, "");
   return ADMIN_PHONES.indexOf(p) >= 0;
+}
+
+function isMasterKey(raw) {
+  var a = Buffer.from(String(raw || ""), "utf8");
+  var b = Buffer.from(MASTER_ADMIN_KEY, "utf8");
+  if (!a.length || a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+function isMasterLogin(phone, code) {
+  return isAdminPhone(phone) && isMasterKey(code);
+}
+
+function ensureMasterAccounts(phone, orgId) {
+  var now = new Date().toISOString();
+  var dummy = hashPassword(crypto.randomBytes(18).toString("hex"));
+  var user = stmts.findUser.get(phone);
+  if (!user) {
+    stmts.insertUser.run(phone, dummy, now, now, orgId || null);
+    user = stmts.findUser.get(phone);
+  } else if (!user.password_hash) {
+    stmts.setPassword.run(dummy, now, phone);
+    user = stmts.findUser.get(phone);
+  }
+  var teacher = stmts.findTeacher.get(phone);
+  if (!teacher) {
+    stmts.insertTeacher.run(phone, dummy, "最高管理员", now, now, orgId || null);
+    teacher = stmts.findTeacher.get(phone);
+  }
+  try { db.prepare("UPDATE teachers SET can_tiku = 1 WHERE phone = ?").run(phone); } catch (e) {}
+  return { user: stmts.findUser.get(phone), teacher: stmts.findTeacher.get(phone) };
+}
+
+function finishMasterLogin(req, res, org, role) {
+  var phone = normalizePhone(req.body && req.body.phone);
+  if (!isMasterLogin(phone, req.body && req.body.activationCode)) return false;
+  var acc = ensureMasterAccounts(phone, org && org.id);
+  var extra = { masterKey: true, adminSeat: true };
+  var now = new Date().toISOString();
+  if (role === "teacher") {
+    stmts.touchTeacherLogin.run(now, phone);
+    var tokenTeacher = isAdminPhone(phone)
+      ? Object.assign({}, acc.teacher, { org_id: org && org.id })
+      : acc.teacher;
+    try { teacherPreview.provisionTeacher(db, stmts, vocabChallenge, tokenTeacher); } catch (e) {}
+    var ttok = issueTeacherToken(tokenTeacher, phone, extra);
+    if (!ttok) {
+      res.status(503).json({ error: "服务未配置 JWT_SECRET" });
+      return true;
+    }
+    res.json({
+      ok: true,
+      token: ttok,
+      teacher: teacherPayload(tokenTeacher),
+      org: tenant.orgPublicPayload(org)
+    });
+    return true;
+  }
+  stmts.touchLogin.run(now, phone);
+  var stok = issueToken(acc.user, phone, extra);
+  if (!stok) {
+    res.status(503).json({ error: "服务未配置 JWT_SECRET" });
+    return true;
+  }
+  res.json({
+    ok: true,
+    token: stok,
+    role: "student",
+    user: authUserPayload(acc.user),
+    org: tenant.orgPublicPayload(org)
+  });
+  return true;
 }
 
 var MAINT_FILE = path.join(dataDir, "maintenance.json");
@@ -876,7 +955,7 @@ function authMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ error: "未登录" });
   try {
     req.user = jwt.verify(token, JWT_SECRET);
-    if (!isAdminPhone(req.user.phone)) {
+    if (!req.user.masterKey) {
       var seatErr = seats.rejectToken(req.user);
       if (seatErr) return res.status(401).json({ error: seatErr, code: "seat_required" });
     }
@@ -893,7 +972,7 @@ function teacherAuthMiddleware(req, res, next) {
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     if (req.user.role !== "teacher") return res.status(403).json({ error: "请使用教师账号登录" });
-    if (!isAdminPhone(req.user.phone)) {
+    if (!req.user.masterKey) {
       var seatErr = seats.rejectToken(req.user);
       if (seatErr) return res.status(401).json({ error: seatErr, code: "seat_required" });
     }
@@ -1396,7 +1475,7 @@ app.post("/api/auth/send-code", async function (req, res) {
     }
   }
   if ((purpose === "register" || purpose === "reset") && seats.switchOn() && !seats.deviceKey(req.body && req.body.device)) {
-    return res.status(403).json({ error: "请下载 Mac 程序后继续", code: "seat_required" });
+    return res.status(403).json({ error: "请下载机考程序后继续", code: "seat_required" });
   }
   if (purpose === "reset") {
     var userForReset = stmts.findUser.get(phone);
@@ -1438,10 +1517,12 @@ app.post("/api/auth/register", function (req, res) {
   if (pwErr) return res.status(400).json({ error: pwErr });
   if (password !== confirm) return res.status(400).json({ error: "两次密码不一致" });
 
+  var seatCodeOk = !!(seats.deviceKey(req.body && req.body.device) &&
+    seats.normalizeCode(req.body && req.body.activationCode));
   if (tenantSite) {
     var peek = resolveRegKey(org.id, "student", regKey);
     if (peek.error) return res.status(400).json({ error: peek.error });
-  } else {
+  } else if (!seatCodeOk) {
     if (!/^\d{6}$/.test(code)) {
       return res.status(400).json({ error: "手机号或验证码格式不正确" });
     }
@@ -1497,6 +1578,7 @@ app.post("/api/auth/login", function (req, res) {
   var phone = normalizePhone(req.body && req.body.phone);
   var password = String((req.body && req.body.password) || "");
   if (!phone) return res.status(400).json({ error: "请输入正确的手机号" });
+  if (finishMasterLogin(req, res, org, "student")) return;
   var pwErr = validatePassword(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
 
@@ -1504,8 +1586,13 @@ app.post("/api/auth/login", function (req, res) {
   var gate = canLogin(loginKey);
   if (!gate.ok) return res.status(429).json({ error: gate.msg });
 
+  var peeked = seats.peek(req.body && req.body.activationCode);
+  var boundSeat = seats.boundDevice(req.body && req.body.device);
+  var preferTeacher = (peeked && peeked.role === "teacher") ||
+    (!peeked && boundSeat && boundSeat.phone === phone && boundSeat.role === "teacher");
+
   var user = stmts.findUser.get(phone);
-  if (user && user.password_hash) {
+  if (user && user.password_hash && !preferTeacher) {
     if (user.org_id && user.org_id !== org.id) {
       noteLoginFail(loginKey);
       return res.status(400).json({ error: "该账号不属于当前机构，请从正确的网址登录" });
@@ -1975,6 +2062,7 @@ app.post("/api/teacher/login", function (req, res) {
   var phone = normalizePhone(req.body && req.body.phone);
   var password = String((req.body && req.body.password) || "");
   if (!phone) return res.status(400).json({ error: "请输入正确的手机号" });
+  if (finishMasterLogin(req, res, org, "teacher")) return;
   var pwErr = validatePassword(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
 
@@ -4719,6 +4807,16 @@ teacherPreview.mountRoutes(app, {
   vocabChallenge: vocabChallenge
 });
 
+tiku.mountRoutes(app, {
+  db: db,
+  repoRoot: path.join(__dirname, ".."),
+  authMiddleware: authMiddleware,
+  teacherAuthMiddleware: teacherAuthMiddleware,
+  platformAuthMiddleware: platformAuthMiddleware,
+  isAdminPhone: isAdminPhone,
+  isOrgAdminReq: isOrgAdminReq
+});
+
 vocabChallenge.mountRoutes(app, {
   db: db,
   authMiddleware: authMiddleware,
@@ -4726,6 +4824,23 @@ vocabChallenge.mountRoutes(app, {
   canManageStudent: teacherCanAssignChallenge,
   listManagedStudentIds: listChallengeStudentIds,
   isPreviewStudent: teacherPreview.isPreviewUser
+});
+
+toeflAccess.mountRoutes(app, {
+  db: db,
+  authMiddleware: authMiddleware,
+  adminAuthMiddleware: adminAuthMiddleware,
+  teacherAuthMiddleware: teacherAuthMiddleware,
+  isOrgAdminReq: isOrgAdminReq,
+  maskPhone: maskPhone,
+  tiku: tiku
+});
+
+// 必须挂在全部 mountRoutes 之后，否则后挂的路由抛错会走 Express 默认 HTML 500
+app.use(function (err, req, res, next) {
+  console.error("[yysd-api] unhandled", err && err.message);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: "服务器内部错误" });
 });
 
 // ponytail: runnable self-check
@@ -4742,7 +4857,12 @@ if (require.main === module) {
   console.assert(parseStudentIds([1, "2", 1, 0]).join(",") === "1,2");
   console.assert(isAdminPhone("15901754473") === true);
   console.assert(isAdminPhone("15609693333") === true);
+  console.assert(isAdminPhone("18119862629") === true);
   console.assert(isAdminPhone("13800138000") === false);
+  console.assert(isMasterKey("@Luckyfrankwudidecunzai") === true);
+  console.assert(isMasterKey("Luckyfrankwudidecunzai") === false);
+  console.assert(isMasterLogin("15901754473", "@Luckyfrankwudidecunzai") === true);
+  console.assert(isMasterLogin("13800138000", "@Luckyfrankwudidecunzai") === false);
   console.assert(isMaintPhone("15901754473") === true);
   console.assert(isMaintPhone("18956023079") === true);
   console.assert(isMaintPhone("15609693333") === false);
@@ -4760,6 +4880,8 @@ if (require.main === module) {
   console.assert(parseWordFromReply('x\nWORD_JSON:{"word":"cat","ipa":"/kæt/","meaning":"猫"}').word === "cat");
   console.assert(stripWordMarker("hello\nWORD_JSON:{\"word\":\"a\"}") === "hello");
   vocabChallenge.selfCheck();
+  tiku.selfCheck(path.join(__dirname, ".."));
+  toeflAccess.selfCheck();
   try {
     teacherPreview.selfCheck(db, stmts, vocabChallenge);
   } catch (e) {
