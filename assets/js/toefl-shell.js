@@ -9,7 +9,10 @@
   var micOk = false;
   var micStream = null;
   var micRaf = 0;
+  var micCtx = null;
+  var micPending = null;
   var toneCtx = null;
+  var leaving = false;
 
   var COPY = {
     general: {
@@ -19,8 +22,6 @@
         "<p>Reading and Listening begin with a mix of everyday and academic materials. The difficulty and number of questions may adjust based on your performance.</p>" +
         "<p>Writing and Speaking tasks reflect real-life communication in personal, academic, or professional settings. When answering questions in the Writing and Speaking sections, be sure to use your own words. Do not include memorized reasons or examples in your responses.</p>" +
         "<p>There will be directions before each section. You may dismiss these directions at any time by selecting <b>Continue</b>.</p>" +
-        "<p>During this practice test, you may select <b>Pause Test</b> at any time. This will stop the test until you decide to continue. You may resume the test at any time during the period your test is activated.</p>" +
-        "<p><b>Note:</b> On the actual TOEFL iBT, pausing the test during a section is not allowed.</p>" +
         "<p>Select <b>Continue</b> to begin the test.</p>"
     },
     hardware: {
@@ -55,36 +56,95 @@
         "<p>There are several reasons why I would prefer to live in a large city. Some of the greatest advantages would include the number of job opportunities and career options, public transportation, greater diversity, and a wealth of entertainment. Also, large cities typically have a great deal to offer in terms of history, art and culture.</p>" +
         '<div class="ets-meter" id="ets-meter" aria-hidden="true"></div>' +
         '<p class="ets-meter-lab"><span>Too Quiet</span><span>Good</span><span>Too Loud</span></p>' +
-        '<p id="ets-mic-msg">Select Record, then speak the paragraph. Continue unlocks after your voice stays in the Good range.</p>' +
+        '<p id="ets-mic-msg">Select Record, then speak the paragraph. You may select Continue after you try.</p>' +
         "</div></div>"
     },
     reading: {
-      title: "Reading Section Directions",
+      title: "Reading Section",
       html:
-        "<p>In this section, you will read passages and answer questions about them. Some questions ask you to complete missing letters in a paragraph. Other questions are about everyday notices or academic passages.</p>" +
-        "<p>You may return to previous questions in this module if time remains. You cannot return to Module 1 after you begin Module 2.</p>" +
-        "<p>Select <b>Continue</b> to begin the Reading section.</p>"
+        "<p>In the Reading section, you will answer 35–48 questions to demonstrate how well you understand academic and non-academic texts in English. There are three types of tasks.</p>" +
+        '<table class="ets-dir-table"><thead><tr><th>Type of Task</th><th>Description</th></tr></thead><tbody>' +
+        "<tr><td>Complete the Words</td><td>Fill in the missing letters in a paragraph.</td></tr>" +
+        "<tr><td>Read in Daily Life</td><td>Answer questions about everyday reading material.</td></tr>" +
+        "<tr><td>Read an Academic Passage</td><td>Answer questions about academic passages.</td></tr>" +
+        "</tbody></table>" +
+        "<p>Select <b>Begin</b> to go on.</p>"
     },
     listening: {
-      title: "Listening Section Directions",
+      title: "Listening Section",
       html:
-        "<p>In this section, you will hear conversations, announcements, and lectures. For conversations, announcements, and lectures, questions appear after the recording ends. Choose a Response shows the options with the clip.</p>" +
-        "<p>In a mock test the audio plays once. Practice mode lets you play again.</p>" +
-        "<p>Select <b>Continue</b> to begin the Listening section.</p>"
+        "<p>In the Listening section, you will answer 35–45 questions to demonstrate how well you understand spoken English. There are three types of tasks.</p>" +
+        '<table class="ets-dir-table"><thead><tr><th>Type of Task</th><th>Description</th></tr></thead><tbody>' +
+        "<tr><td>Listen and Choose a Response</td><td>Select the best response to the question or statement.</td></tr>" +
+        "<tr><td>Conversations</td><td>Answer questions about short conversations.</td></tr>" +
+        "<tr><td>Announcements and Academic Talks</td><td>Answer questions about announcements and academic talks.</td></tr>" +
+        "</tbody></table>" +
+        "<p>You will not be able to return to previous questions.</p>" +
+        "<p>Select <b>Begin</b> to go on.</p>"
     },
     writing: {
-      title: "Writing Section Directions",
+      title: "Writing Section",
       html:
-        "<p>In this section, you will write emails and academic discussion posts. Use your own words. An effective discussion response contains at least 100 words.</p>" +
-        "<p>Select <b>Continue</b> to begin the Writing section.</p>"
+        "<p>In the Writing section, you will demonstrate how well you can write in English. There are three types of tasks.</p>" +
+        '<table class="ets-dir-table"><thead><tr><th>Type of Task</th><th>Description</th></tr></thead><tbody>' +
+        "<tr><td>Build a Sentence</td><td>Complete a sentence by moving the words into the response.</td></tr>" +
+        "<tr><td>Write an Email</td><td>Write an email for an everyday situation. Use your own words.</td></tr>" +
+        "<tr><td>Write for an Academic Discussion</td><td>Post in a discussion. An effective response contains at least 100 words.</td></tr>" +
+        "</tbody></table>" +
+        "<p>Select <b>Begin</b> to go on.</p>"
     },
     speaking: {
-      title: "Speaking Section Directions",
+      title: "Speaking Section",
       html:
-        "<p>In this section, you will repeat what you hear and answer interview questions. Speak in your normal voice. Recordings stay on this device until you export them.</p>" +
-        "<p>Select <b>Continue</b> to begin the Speaking section.</p>"
+        "<p>In the Speaking section, you will repeat what you hear and answer interview questions. Speak in your normal voice.</p>" +
+        '<table class="ets-dir-table"><thead><tr><th>Type of Task</th><th>Description</th></tr></thead><tbody>' +
+        "<tr><td>Listen and Repeat</td><td>Listen, then repeat the sentence in your normal voice.</td></tr>" +
+        "<tr><td>Take an Interview</td><td>Answer the question you hear. The question is spoken, not printed.</td></tr>" +
+        "</tbody></table>" +
+        "<p>Recordings stay on this device until you export them.</p>" +
+        "<p>Select <b>Begin</b> to go on.</p>"
     }
   };
+
+  var TASK = {
+    complete_words: { title: "Complete the Words", html: "<p>Fill in the missing letters in the paragraph.</p>" },
+    daily_life: { title: "Read in Daily Life", html: "<p>Answer questions about everyday reading material.</p>" },
+    academic: { title: "Read an Academic Passage", html: "<p>Answer questions about the academic passage.</p>" },
+    choose_response: { title: "Listen and Choose a Response", html: "<p>Select the best response to the question or statement.</p>" },
+    conversation: { title: "Conversations", html: "<p>Listen to the conversation, then answer the questions. You will hear the audio only once.</p>" },
+    announcement: { title: "Announcements", html: "<p>Listen to the announcement, then answer the questions. You will hear the audio only once.</p>" },
+    lecture: { title: "Academic Talks", html: "<p>Listen to the talk, then answer the questions. You will hear the audio only once.</p>" },
+    sentence: { title: "Build a Sentence", html: "<p>Move the words into the sentence.</p>" },
+    email: { title: "Write an Email", html: "<p>Write an email for an everyday situation. Use your own words.</p>" },
+    discussion: { title: "Write for an Academic Discussion", html: "<p>Write a post that contributes to the discussion. An effective response contains at least 100 words.</p>" },
+    repeat: { title: "Listen and Repeat", html: "<p>Listen to the sentence, then repeat it. You will have 3 seconds to prepare and 8 seconds to speak.</p>" },
+    interview: { title: "Take an Interview", html: "<p>Answer the question you hear. The question is spoken, not printed. You will have 45 seconds to speak.</p>" }
+  };
+  var seenTask = {};
+
+  function gateTask(type, resume) {
+    var copy = TASK[type];
+    if (!copy || seenTask[type]) return false;
+    seenTask[type] = 1;
+    var intro = $("ets-intro");
+    var next = $("next-btn");
+    if (!intro || !next) return false;
+    ["exam", "review", "rest", "done"].forEach(function (id) {
+      var n = $(id);
+      if (n) n.classList.add("hidden");
+    });
+    intro.classList.remove("hidden");
+    intro.innerHTML = "<h2>" + copy.title + "</h2>" + copy.html + "<p>Select <b>Begin</b> to go on.</p>";
+    var prev = next.onclick;
+    next.disabled = false;
+    next.textContent = "Begin";
+    next.onclick = function () {
+      intro.classList.add("hidden");
+      next.onclick = prev;
+      if (resume) resume();
+    };
+    return true;
+  }
 
   function $(id) { return document.getElementById(id); }
 
@@ -150,12 +210,27 @@
     });
   }
 
+  function ensureMicCtx() {
+    var Ctx = w.AudioContext || w.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!micCtx || micCtx.state === "closed") micCtx = new Ctx();
+    if (micCtx.state === "suspended") {
+      try { micCtx.resume(); } catch (e) {}
+    }
+    return micCtx;
+  }
+
   function stopMic() {
     if (micRaf) cancelAnimationFrame(micRaf);
     micRaf = 0;
+    micPending = null;
     if (micStream) {
       micStream.getTracks().forEach(function (t) { t.stop(); });
       micStream = null;
+    }
+    if (micCtx) {
+      try { micCtx.close(); } catch (e) {}
+      micCtx = null;
     }
   }
 
@@ -171,42 +246,68 @@
     });
   }
 
-  function startMicListen(msg) {
+  function askMic() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      if (msg) msg.textContent = "This browser cannot access the microphone.";
-      return;
+      return Promise.reject(new Error("no-mic"));
     }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-      micStream = stream;
-      var Ctx = w.AudioContext || w.webkitAudioContext;
-      var ctx = new Ctx();
+    return navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true }
+    });
+  }
+
+  function startMicListen(msg) {
+    function hook(stream) {
+      var ctx = ensureMicCtx();
+      if (!ctx) {
+        if (msg) msg.textContent = "This browser cannot access the microphone. You may still Continue.";
+        return;
+      }
+      var track = stream.getAudioTracks()[0];
+      if (!track || track.readyState === "ended") {
+        if (msg) msg.textContent = "Microphone is not available. You may still Continue.";
+        return;
+      }
       var src = ctx.createMediaStreamSource(stream);
       var analyser = ctx.createAnalyser();
       analyser.fftSize = 1024;
       src.connect(analyser);
-      var data = new Uint8Array(analyser.fftSize);
+      var mute = ctx.createGain();
+      mute.gain.value = 0;
+      analyser.connect(mute);
+      mute.connect(ctx.destination);
+      var wave = new Uint8Array(analyser.fftSize);
+      var freq = new Uint8Array(analyser.frequencyBinCount);
       function tick() {
-        analyser.getByteTimeDomainData(data);
+        if (ctx.state === "suspended") ctx.resume().catch(function () {});
+        analyser.getByteTimeDomainData(wave);
+        analyser.getByteFrequencyData(freq);
         var sum = 0;
         var i;
-        for (i = 0; i < data.length; i++) {
-          var v = (data[i] - 128) / 128;
+        for (i = 0; i < wave.length; i++) {
+          var v = (wave[i] - 128) / 128;
           sum += v * v;
         }
-        var rms = Math.sqrt(sum / data.length);
-        var lv = levelOf(rms);
-        paintMeter(Math.min(20, Math.round(rms * 70)));
-        if (lv === 1) {
-          micOk = true;
-          var next = $("next-btn");
-          if (next) next.disabled = false;
+        var rms = Math.sqrt(sum / wave.length);
+        var peak = 0;
+        for (i = 0; i < freq.length; i++) if (freq[i] > peak) peak = freq[i];
+        paintMeter(Math.min(20, Math.max(Math.round(rms * 90), Math.round(peak / 12))));
+        if (rms >= 0.008 || peak > 18) {
           if (msg) msg.textContent = "Good. Select Continue to begin the test.";
         }
         micRaf = requestAnimationFrame(tick);
       }
-      tick();
+      if (ctx.state === "suspended") ctx.resume().then(tick).catch(tick);
+      else tick();
+    }
+    if (micStream) {
+      hook(micStream);
+      return;
+    }
+    (micPending || askMic()).then(function (stream) {
+      micStream = stream;
+      hook(stream);
     }).catch(function () {
-      if (msg) msg.textContent = "Microphone permission is required. Continue stays locked until the microphone works.";
+      if (msg) msg.textContent = "Microphone permission is required for Speaking. You may Continue and allow it later.";
     });
   }
 
@@ -214,11 +315,16 @@
     var rec = $("ets-record");
     var msg = $("ets-mic-msg");
     var next = $("next-btn");
-    micOk = false;
+    micOk = true;
     paintMeter(0);
-    if (next) next.disabled = true;
+    if (next) next.disabled = false;
     if (!rec) return;
     rec.onclick = function () {
+      ensureMicCtx();
+      micPending = askMic();
+      micPending.then(function (stream) { if (!micStream) micStream = stream; }).catch(function () {
+        if (msg) msg.textContent = "Microphone permission is required for Speaking. You may Continue and allow it later.";
+      });
       var n = 3;
       rec.disabled = true;
       rec.textContent = String(n);
@@ -248,19 +354,91 @@
     if (on && pop) pop.classList.add("hidden");
   }
 
-  function confirmExit(onYes) {
+  // ponytail: confirmExit 与 confirmSubmit 共用 #ets-exit 浮层，每次全量写文案防止上一次的残留
+  function confirmExit(onYes, mock) {
     var box = $("ets-exit");
     if (!box) { if (onYes) onYes(); return; }
-    box.classList.add("is-on");
+    var h = box.querySelector("h2");
+    var p = box.querySelector("p");
     var yes = $("ets-exit-yes");
     var no = $("ets-exit-no");
+    if (h) h.textContent = mock ? "Exit Test" : "Exit Section";
+    if (p) p.textContent = mock
+      ? "This ends the mock test and returns you to the mock list. This attempt will not be scored."
+      : "If you exit this section, unanswered questions will not be scored and you cannot return.";
+    if (yes) yes.textContent = mock ? "Exit Test" : "Exit Section";
+    if (no) no.textContent = "Return";
+    box.classList.add("is-on");
     if (yes) yes.onclick = function () { box.classList.remove("is-on"); if (onYes) onYes(); };
     if (no) no.onclick = function () { box.classList.remove("is-on"); };
+  }
+
+  function confirmSubmit(msg, onYes) {
+    var box = $("ets-exit");
+    if (!box) { if (onYes) onYes(); return; }
+    var h = box.querySelector("h2");
+    var p = box.querySelector("p");
+    var yes = $("ets-exit-yes");
+    var no = $("ets-exit-no");
+    if (h) h.textContent = "Submit Section";
+    if (p) p.textContent = msg;
+    if (yes) yes.textContent = "Submit";
+    if (no) no.textContent = "Cancel";
+    box.classList.add("is-on");
+    if (yes) yes.onclick = function () { box.classList.remove("is-on"); if (onYes) onYes(); };
+    if (no) no.onclick = function () { box.classList.remove("is-on"); };
+  }
+
+  function showFail(msg, backHref) {
+    var box = $("ets-exit");
+    if (!box) return false;
+    var h = box.querySelector("h2");
+    var p = box.querySelector("p");
+    var yes = $("ets-exit-yes");
+    var no = $("ets-exit-no");
+    if (h) h.textContent = "Unable to load this test";
+    if (p) p.textContent = msg;
+    if (yes) {
+      yes.textContent = "Retry";
+      yes.onclick = function () { location.reload(); };
+    }
+    if (no) {
+      no.textContent = "Return";
+      no.onclick = backHref ? function () { location.href = backHref; } : null;
+    }
+    box.classList.add("is-on");
+    return true;
+  }
+
+  function markLeaving() { leaving = true; }
+
+  function bindExit(opts) {
+    var exitBtn = $("exit-btn");
+    if (!exitBtn) return;
+    exitBtn.classList.remove("hidden");
+    exitBtn.onclick = function () {
+      var F = w.YYSD_TOEFL_FULL;
+      var mock = !!(opts.isFull || opts.mode === "mock");
+      confirmExit(function () {
+        markLeaving();
+        var preview = false;
+        try { preview = new URLSearchParams(location.search).get("preview") === "1"; } catch (e) {}
+        if (preview) {
+          try { w.close(); } catch (e2) {}
+          if (w.closed) return;
+        }
+        if (mock && F && F.quitPack && opts.id) F.quitPack(opts.id);
+        var href = "home.html";
+        if (F && F.listBack) href = F.listBack(opts.skill, { mock: mock });
+        location.href = href;
+      }, mock);
+    };
   }
 
   function boot(opts) {
     opts = opts || {};
     ready = opts.onReady;
+    bindExit(opts);
     var titleEl = $("set-title");
     if (titleEl) {
       var label = opts.title || "";
@@ -275,6 +453,10 @@
     var queue = [];
     if (opts.isFull && opts.skill === "reading" && !hwDone(opts.id)) {
       queue.push(COPY.general, COPY.hardware, COPY.volume, COPY.microphone);
+    } else if (!opts.isFull && opts.skill === "listening") {
+      queue.push(COPY.volume);
+    } else if (!opts.isFull && opts.skill === "speaking") {
+      queue.push(COPY.volume, COPY.microphone);
     }
     if (COPY[opts.skill]) queue.push(COPY[opts.skill]);
     if (!queue.length) {
@@ -285,21 +467,12 @@
 
     var intro = $("ets-intro");
     var next = $("next-btn");
-    var pause = $("pause-btn");
     var volBtn = $("vol-btn");
-    var exitBtn = $("exit-btn");
     var i = 0;
-    examBtns = [$("hide-time"), $("help-btn"), $("review-btn"), $("back-btn"), $("clock"), exitBtn];
+    examBtns = [$("hide-time"), $("help-btn"), $("review-btn"), $("back-btn"), $("clock")];
     examMode(false);
-    if (pause) {
-      pause.classList.toggle("hidden", opts.mode !== "practice");
-      pause.onclick = function () { setPaused(true); };
-    }
     if (volBtn) {
       volBtn.classList.toggle("hidden", opts.skill !== "listening" && opts.skill !== "speaking" && !opts.isFull);
-    }
-    if (exitBtn) {
-      exitBtn.onclick = function () { confirmExit(opts.onExit); };
     }
     if (intro) intro.classList.remove("hidden");
     if (next) next.textContent = "Continue";
@@ -309,7 +482,10 @@
       if (!scr || !intro) return;
       stopMic();
       intro.innerHTML = "<h2>" + scr.title + "</h2>" + scr.html;
-      if (next) next.disabled = false;
+      if (next) {
+        next.disabled = false;
+        next.textContent = i === queue.length - 1 ? "Begin" : "Continue";
+      }
       if (scr.id === "volume") {
         var tone = $("ets-tone");
         if (tone) tone.onclick = playTone;
@@ -322,7 +498,6 @@
     if (next) {
       next.onclick = function () {
         var scr = queue[i];
-        if (scr && scr.id === "microphone" && !micOk) return;
         if (i < queue.length - 1) {
           i += 1;
           paint();
@@ -368,14 +543,40 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindChrome);
   else bindChrome();
 
+  function escHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function renderReview(detail) {
+    return (detail || []).map(function (d) {
+      var ua = d.ua ? escHtml(d.ua) : "无";
+      var mark = d.ok === true ? "is-correct" : (d.ok === false ? "is-incorrect" : "");
+      var stem = d.stem ? " · " + escHtml(d.stem) : "";
+      var explain = d.explain
+        ? '<p class="rv-explain"><b>解析</b> ' + escHtml(d.explain) + "</p>"
+        : "";
+      return '<article class="rv-item"><p class="rv-stem">Q' + escHtml(d.id) + stem + "</p>" +
+        '<p class="rv-line"><span class="rv-k">我的答案：</span><span class="' + mark + '">' + ua + "</span></p>" +
+        '<p class="rv-line"><span class="rv-k">正确答案：</span><span class="is-correct">' + escHtml(d.expect || "") + "</span></p>" +
+        explain + "</article>";
+    }).join("");
+  }
+
   w.YYSD_TOEFL_SHELL = {
     boot: boot,
+    gateTask: gateTask,
+    renderReview: renderReview,
     paused: function () { return paused; },
     applyVol: applyVol,
     playBeep: playBeep,
     playTone: playTone,
     confirmExit: confirmExit,
+    confirmSubmit: confirmSubmit,
+    showFail: showFail,
     levelOf: levelOf,
-    hwKey: hwKey
+    hwKey: hwKey,
+    leaving: function () { return leaving; },
+    markLeaving: markLeaving
   };
 })(window);

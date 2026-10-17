@@ -101,6 +101,25 @@ function yysdMeaningForList(raw, accept) {
     window.speechSynthesis.speak(u);
   }
 
+  function accentOf(w) {
+    var usW = String((w && (w.wordUs || w.word)) || "").trim();
+    var ukW = String((w && (w.wordUk || w.word)) || "").trim();
+    var usI = String((w && w.ipaUs) || "").trim();
+    var ukI = String((w && w.ipaUk) || "").trim();
+    if (!usI && !ukI && w && w.ipa) {
+      var parts = String(w.ipa).split(/\s*·\s*/).map(function (p) { return p.trim(); }).filter(Boolean);
+      ukI = parts[0] || "";
+      usI = parts[1] || parts[0] || "";
+    }
+    return {
+      usW: usW,
+      ukW: ukW || usW,
+      usI: usI,
+      ukI: ukI || usI,
+      dual: (usI && ukI && usI !== ukI) || (usW && ukW && usW !== ukW)
+    };
+  }
+
   function saveProgress(done) {
     if (!A || !A.api || !bookId || !listId) return Promise.resolve();
     var wordIdx = state.learnIdx;
@@ -205,19 +224,24 @@ function yysdMeaningForList(raw, accept) {
     document.getElementById("counter").innerHTML =
       esc(meta.title || "") + " · 列表总览 <strong>" + words.length + "</strong> 词 · 点击一行进入卡片";
     var rows = words.map(function (w, i) {
+      var acc = accentOf(w);
+      var ipaHtml = acc.dual
+        ? '<div class="w-ipa">美 ' + esc(acc.usW !== w.word ? acc.usW + " " : "") + esc(acc.usI) +
+          "</div><div class=\"w-ipa\">英 " + esc(acc.ukW !== acc.usW ? acc.ukW + " " : "") + esc(acc.ukI) + "</div>"
+        : '<span class="w-ipa">' + esc(acc.usI || w.ipa || "") + "</span>";
       return '<tr class="word-row" data-i="' + i + '">' +
         '<td class="w-no">' + (i + 1) + "</td>" +
         '<td><div class="w-en' + (blurWord ? " blurred" : "") + '" title="' +
           (blurWord ? "点击暂时显示单词" : "") + '">' + esc(w.word) + "</div></td>" +
-        '<td class="col-ipa"><span class="w-ipa">' + esc(w.ipa || "") + "</span></td>" +
+        '<td class="col-ipa">' + ipaHtml + "</td>" +
         '<td class="col-pos"><span class="w-pos">' + esc(w.pos || "") + "</span></td>" +
         '<td><span class="w-meaning' + (blurMeaning ? " blurred" : "") + '" title="' +
           (blurMeaning ? "点击暂时显示释义" : "") + '">' +
           esc(yysdMeaningForList(w.meaning, w.acceptCN)) + "</span></td>" +
         '<td class="col-speak">' +
-          '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(w.word) +
+          '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(acc.ukW) +
             '" data-accent="1" style="padding:6px 8px;font-size:12px" title="英音">英</button> ' +
-          '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(w.word) +
+          '<button type="button" class="vl-btn btn-speak-row" data-w="' + esc(acc.usW) +
             '" data-accent="2" style="padding:6px 8px;font-size:12px" title="美音">美</button></td>' +
         "</tr>";
     }).join("");
@@ -284,6 +308,10 @@ function yysdMeaningForList(raw, accept) {
         '<span><span class="lbl">用法 </span>' + esc(w.examTag.commonUsage || "") + "</span>" +
         "</div></div>";
     }
+    var note = w.note
+      ? '<div class="vl-section"><div class="vl-section-title">解析</div><div class="vl-root-text">' +
+        esc(w.note) + "</div></div>"
+      : "";
     var root = w.root
       ? '<div class="vl-section"><div class="vl-section-title">词根拆解</div><div class="vl-root-text">' +
         esc(w.root) + "</div></div>"
@@ -308,6 +336,16 @@ function yysdMeaningForList(raw, accept) {
         "</div>";
     }
 
+    var acc = accentOf(w);
+    var wordBlock = acc.dual
+      ? '<div class="vl-accent"><div class="vl-accent-row"><span class="vl-accent-tag">美</span>' +
+          '<div class="vl-word" style="font-size:1.6rem">' + esc(acc.usW) + "</div>" +
+          '<div class="vl-ipa">' + esc(acc.usI) + "</div></div>" +
+          '<div class="vl-accent-row"><span class="vl-accent-tag">英</span>' +
+          '<div class="vl-word" style="font-size:1.35rem">' + esc(acc.ukW) + "</div>" +
+          '<div class="vl-ipa">' + esc(acc.ukI) + "</div></div></div>"
+      : '<div class="vl-word">' + esc(w.word) + "</div>" +
+        '<div class="vl-ipa">' + esc(acc.usI || w.ipa || "") + "</div>";
     var atEnd = state.learnIdx >= words.length - 1;
     document.getElementById("panel").innerHTML =
       '<div class="vl-toolbar">' +
@@ -318,12 +356,11 @@ function yysdMeaningForList(raw, accept) {
         '<button type="button" class="vl-btn" id="btnSpeakUs">🔊 美音</button>' +
         '<button type="button" class="vl-btn" id="btnQuizList">单词检测</button>' +
       "</div>" +
-      '<div class="vl-word">' + esc(w.word) + "</div>" +
-      '<div class="vl-ipa">' + esc(w.ipa || "") + "</div>" +
+      wordBlock +
       (w.pos ? '<div class="vl-pos">' + esc(w.pos) + "</div>" : "") +
       '<div class="vl-meaning' + (blur ? " blurred" : "") + '" id="meaning">' +
         esc(w.meaning) + '<span class="vl-hint">点击显示/隐藏</span></div>' +
-      exam + coll + ex + root + syn +
+      exam + coll + ex + note + root + syn +
       '<div class="vl-nav-row">' +
         '<button type="button" class="vl-btn" id="prev">← 上一个</button>' +
         '<button type="button" class="vl-btn vl-btn-primary" id="next">' +
@@ -332,8 +369,8 @@ function yysdMeaningForList(raw, accept) {
 
     bindLearnChrome();
     bindQuizEntry();
-    document.getElementById("btnSpeakUk").onclick = function () { speak(w.word, 1); };
-    document.getElementById("btnSpeakUs").onclick = function () { speak(w.word, 2); };
+    document.getElementById("btnSpeakUk").onclick = function () { speak(acc.ukW, 1); };
+    document.getElementById("btnSpeakUs").onclick = function () { speak(acc.usW, 2); };
     document.getElementById("meaning").onclick = function () {
       if (state.blurAllOff) return;
       state.blurOne = !state.blurOne;

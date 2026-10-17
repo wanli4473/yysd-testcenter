@@ -34,7 +34,9 @@
     { href: "alevel.html", key: "intl", label: "国际课程" },
     { href: "/rankings", key: "rankings", label: "全球大学排行榜", special: "nav-rankings", rankings: true },
     { href: "/admission", key: "ai-admit", label: "AI升学顾问", special: "nav-ai-admit", aiAdmit: true },
-    { href: "dashboard.html", key: "tasks", label: "任务中心" }
+    { href: "dashboard.html", key: "tasks", label: "任务中心" },
+    { href: "download.html", key: "download", label: "下载机考" },
+    { href: "requirements.html", key: "requirements", label: "录取查询" }
   ].filter(function (l) {
     if ((l.aiAdmit || l.rankings) && !canAiAdmit()) return false;
     return true;
@@ -442,6 +444,8 @@
       return;
     }
     if (path === "zone.html" && zone === "practice") { activate("ielts"); return; }
+    if (path === "download.html") { activate("download"); return; }
+    if (path === "requirements.html") { activate("requirements"); return; }
     if (path === "results.html" || path === "profile.html" || path === "login.html" || path === "register.html" || path === "forgot-password.html") {
       activate("me");
     }

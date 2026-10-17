@@ -2,6 +2,12 @@
 (function () {
   "use strict";
 
+  // ponytail: 1.0.15 desktop still opens the website; bounce it to the exam host
+  if (window.yysdDesktop && location.hostname !== "app.youyisida.com") {
+    location.replace("https://app.youyisida.com/login.html");
+    return;
+  }
+
   // ponytail: block student practice UI before paint unless they clicked 网站功能区
   try {
     var teacherTok = localStorage.getItem("yysd:teacher:token");
@@ -20,10 +26,12 @@
         "teacher-student-report.html": 1,
         "teacher-vocab-challenge.html": 1,
         "admin-assign.html": 1,
+        "admin-perms.html": 1,
         "platform.html": 1,
         "maintenance.html": 1,
         "agreement.html": 1,
-        "privacy.html": 1
+        "privacy.html": 1,
+        "download.html": 1
       };
       if (!teacherOk[page]) {
         location.replace(mode === "admin" ? "teacher.html" : "teacher-mode-picker.html");
@@ -70,7 +78,7 @@
     var m = h.match(/^([a-z0-9-]+)\.youyisida\.com$/);
     if (!m) return "yysd";
     var s = m[1];
-    if (/^(www|api|admin|platform|mail|static|cdn|test|dev|staging)$/.test(s)) return "yysd";
+        if (/^(www|api|admin|platform|mail|static|cdn|test|dev|staging|app|jingting|tiku)$/.test(s)) return "yysd";
     return s;
   }
 

@@ -4,20 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>阅读练习</title>
-  <link rel="stylesheet" href="assets/css/hit.css">
+  <link rel="stylesheet" href="assets/css/hit.css?v=20261015swiss1">
+  <link rel="stylesheet" href="assets/css/access.css?v=20261015swiss1">
   <script src="assets/js/gate.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/hit-shell.js"></script>
+  <script src="assets/js/auth.js?v=20261008ui14"></script>
+  <script src="assets/js/hit-shell.js?v=20261015swiss1"></script>
+  <script src="assets/js/access.js?v=20261014kl1"></script>
 </head>
 <body class="hit">
   <main class="hit-main">
-    <p class="hit-kicker">TOEFL READING LAB</p>
-    <h1>阅读练习</h1>
-    <p class="hit-lead">先选择题型，再点击题目进入练习。</p>
+    <section class="hit-library-intro"><div><p class="hit-greeting">真题题库 / 阅读</p><h1>把每个题型，<br>练成你的强项。</h1></div><p>先选科目，再选题型。<br>专注完成一组，交卷后查看答案与解析。</p></section>
     <div id="lab"></div>
   </main>
   <script>
-    if (YYSD_HIT.mount("reading")) YYSD_HIT.bindLab("reading", "reading.html", document.getElementById("lab"));
+    if (YYSD_HIT.mount("reading")) {
+      YYSD_ACCESS.boot().then(function (ok) {
+        if (ok) YYSD_HIT.bindLab("reading", "reading.html", document.getElementById("lab"));
+      });
+    }
   </script>
 </body>
 </html>

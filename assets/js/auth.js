@@ -25,7 +25,8 @@ window.YYSD_AUTH = (function () {
   var PUBLIC_PAGES = {
     "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
     "agreement.html": 1, "privacy.html": 1, "report.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
-    "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1, "maintenance.html": 1
+    "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1, "maintenance.html": 1,
+    "download.html": 1
   };
   var ORG_KEY = "yysd:org";
 
@@ -40,7 +41,7 @@ window.YYSD_AUTH = (function () {
     var m = h.match(/^([a-z0-9-]+)\.youyisida\.com$/);
     if (!m) return "yysd";
     var s = m[1];
-    if (/^(www|api|admin|platform|mail|static|cdn|test|dev|staging)$/.test(s)) return "yysd";
+        if (/^(www|api|admin|platform|mail|static|cdn|test|dev|staging|app|jingting|tiku)$/.test(s)) return "yysd";
     return s;
   }
 
@@ -296,8 +297,9 @@ window.YYSD_AUTH = (function () {
   function isTeacherPage() {
     var n = pageName();
     return n === "teacher.html" || n === "teacher-calendar.html" ||
-      n === "admin-assign.html" || n === "teacher-login.html" ||
+      n === "admin-assign.html" || n === "admin-perms.html" || n === "teacher-login.html" ||
       n === "teacher-register.html" || n === "platform.html" ||
+      n === "admin-seats.html" ||
       n === "teacher-diagnostic.html" || n === "teacher-student-diagnostic.html" ||
       n === "teacher-student-report.html" ||
       n === "teacher-vocab-challenge.html" || n === "teacher-mode-picker.html";
@@ -800,6 +802,7 @@ window.YYSD_AUTH = (function () {
   }
 
   function requireLogin() {
+    try { if (new URLSearchParams(location.search).get("preview") === "1") return true; } catch (e) {}
     if (!getToken()) {
       (window.YYSD_GO || function (h) { location.href = h; })("login.html?next=" + encodeURIComponent(location.pathname + location.search), "scene");
       return false;
@@ -928,6 +931,7 @@ window.YYSD_AUTH = (function () {
 
   function guardPage() {
     if (isPublicPage()) return true;
+    try { if (new URLSearchParams(location.search).get("preview") === "1") return true; } catch (e) {}
     if (!getToken()) {
       location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
       return false;
@@ -968,7 +972,7 @@ window.YYSD_AUTH = (function () {
       if (!localStorage.getItem(TEACHER_TOKEN_KEY)) return;
       if (document.querySelector("script[data-teacher-mode]")) return;
       var s = document.createElement("script");
-      s.src = "assets/js/teacher-mode.js?v=20260828plat3";
+      s.src = "assets/js/teacher-mode.js?v=20261013dl1";
       s.setAttribute("data-teacher-mode", "1");
       document.body.appendChild(s);
     } catch (e) {}
@@ -1044,10 +1048,12 @@ window.YYSD_AUTH = (function () {
   var PUBLIC = {
     "index.html": 1, "login.html": 1, "register.html": 1, "forgot-password.html": 1,
     "agreement.html": 1, "privacy.html": 1, "report.html": 1, "teacher-login.html": 1, "teacher-register.html": 1,
-    "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1, "maintenance.html": 1
+    "suspended.html": 1, "platform.html": 1, "ielts-upgrade.html": 1, "maintenance.html": 1,
+    "download.html": 1
   };
   var name = location.pathname.split("/").filter(Boolean).pop() || "index.html";
   if (PUBLIC[name]) return;
+  try { if (new URLSearchParams(location.search).get("preview") === "1") return; } catch (e) {}
   try {
     if (!localStorage.getItem("yysd:auth:token") && !localStorage.getItem("yysd:teacher:token")) {
       location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
@@ -1066,7 +1072,7 @@ window.YYSD_AUTH = (function () {
   if (window.yysdDesktop && form && !document.getElementById("activationCode")) {
     var label = document.createElement("label");
     label.className = "auth-field";
-    label.innerHTML = "<span>激活码</span><input id=\"activationCode\" autocomplete=\"off\" placeholder=\"这台 Mac 已绑定可留空\">";
+    label.innerHTML = "<span>激活码</span><input id=\"activationCode\" autocomplete=\"off\" placeholder=\"这台电脑已绑定可留空\">";
     var btn = form.querySelector("button[type=submit], button");
     form.insertBefore(label, btn);
   }
@@ -1075,10 +1081,10 @@ window.YYSD_AUTH = (function () {
     if (!d || !d.on || !form) return;
     var p = document.createElement("p");
     p.className = "auth-msg auth-msg--err";
-    p.textContent = "学生和老师请下载 Mac 程序。管理员仍可在此登录。";
+    p.textContent = "学生和老师请下载机考程序。管理员仍可在此登录。";
     var a = document.createElement("a");
     a.href = "download.html";
-    a.textContent = "下载 Mac 程序";
+    a.textContent = "下载机考程序";
     form.parentNode.insertBefore(p, form);
     form.parentNode.insertBefore(a, form);
   }).catch(function () {});

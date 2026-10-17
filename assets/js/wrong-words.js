@@ -38,7 +38,7 @@
       }
     } catch (e) {}
     var books = [];
-    ["gaozhong", "cet4", "special"].forEach(function (k) {
+    ["gaozhong", "cet4", "cet4-lite", "special"].forEach(function (k) {
       var words = Y.wrongWords(k) || [];
       if (!words.length) return;
       books.push({

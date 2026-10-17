@@ -6,6 +6,14 @@
   var root = document.getElementById("vc-root");
   var params = new URLSearchParams(location.search);
   var view = params.get("view") || "hub"; // hub | notebook | practice
+  var bookParam = params.get("book") || "";
+
+  function bookQs(extra) {
+    var q = [];
+    if (bookParam) q.push("bookId=" + encodeURIComponent(bookParam));
+    if (extra) q.push(String(extra).replace(/^[?&]/, ""));
+    return q.length ? "?" + q.join("&") : "";
+  }
 
   var HP_MAX = 5;
   var HP_REVIEW = 3;
@@ -18,6 +26,7 @@
     listNo: 0,
     bookId: "",
     notices: [],
+    optionBank: [],
     words: [],
     answers: [],
     idx: 0,
@@ -77,51 +86,74 @@
       try { wj = JSON.parse(wj); } catch (e) { wj = null; }
     }
     var accept = (wj && Array.isArray(wj.acceptCN)) ? wj.acceptCN.filter(Boolean) : [];
+    var spellings = [];
+    function add(s) {
+      s = String(s || "").trim();
+      if (s && spellings.indexOf(s) < 0) spellings.push(s);
+    }
+    add(it.word);
+    if (wj) {
+      add(wj.word);
+      add(wj.wordUs);
+      add(wj.wordUk);
+      if (Array.isArray(wj.spellings)) wj.spellings.forEach(add);
+    }
     return {
       word: String(it.word || (wj && wj.word) || ""),
-      ipa: it.ipa || (wj && wj.ipa) || "",
+      wordUs: (wj && wj.wordUs) || String(it.word || ""),
+      wordUk: (wj && wj.wordUk) || "",
+      spellings: spellings,
+      ipa: it.ipa || (wj && (wj.ipaUs || wj.ipa)) || "",
       meaning: it.meaning || (wj && wj.meaning) || "",
       acceptCN: accept,
+      word_json: wj,
       listId: it.listId || it.sourceListId || null
     };
   }
 
   function quizMeaning(w) {
-    if (!w) return "（暂无释义）";
+    if (!w) return "";
     if (w.acceptCN && w.acceptCN.length) {
       var cn = w.acceptCN.filter(Boolean).join(" / ");
       if (cn) return cn;
     }
-    var m = String(w.meaning || "").trim();
-    return m || "（暂无释义）";
+    return String(w.meaning || "").trim();
   }
 
-  // ponytail: real Chinese glosses when the current pool is too small for 4 options
-  var FALLBACK_CN = [
-    "桌子 / 课桌", "跑步 / 奔跑", "窗户 / 窗口", "黄色 / 金黄",
-    "安静 / 平静", "朋友 / 友人", "天气 / 气候", "学校 / 校园"
-  ];
+  function isRealCn(s) {
+    return !!(s && s.indexOf("暂无释义") < 0 && /[\u4e00-\u9fff]/.test(s));
+  }
+
+  function mergeOptionBank(extra) {
+    var seen = {};
+    var out = [];
+    (session.optionBank || []).concat(extra || []).forEach(function (g) {
+      if (!isRealCn(g) || seen[g]) return;
+      seen[g] = true;
+      out.push(g);
+    });
+    session.optionBank = out;
+  }
 
   function meaningOptions(w, pool, n) {
     n = n || 4;
-    var correct = quizMeaning(w);
+    var correct = isRealCn(quizMeaning(w)) ? quizMeaning(w) : "";
     var used = {};
-    used[correct] = true;
+    if (correct) used[correct] = true;
     var distract = [];
-    var poolMeanings = shuffle((pool || []).map(quizMeaning));
-    for (var i = 0; i < poolMeanings.length && distract.length < n - 1; i++) {
-      var m = poolMeanings[i];
-      if (!m || used[m]) continue;
-      used[m] = true;
-      distract.push(m);
+    function take(arr) {
+      var shuffled = shuffle(arr || []);
+      for (var i = 0; i < shuffled.length && distract.length < n - 1; i++) {
+        var m = shuffled[i];
+        if (!isRealCn(m) || used[m]) continue;
+        used[m] = true;
+        distract.push(m);
+      }
     }
-    for (var f = 0; f < FALLBACK_CN.length && distract.length < n - 1; f++) {
-      var filler = FALLBACK_CN[f];
-      if (used[filler]) continue;
-      used[filler] = true;
-      distract.push(filler);
-    }
-    return shuffle([correct].concat(distract));
+    take((pool || []).map(quizMeaning));
+    take(session.optionBank || []);
+    var opts = correct ? [correct].concat(distract) : distract;
+    return shuffle(opts);
   }
 
   var DRAFT_KEY = "yysd:vc:draft:";
@@ -135,7 +167,8 @@
         idx: session.idx,
         lives: session.lives,
         livesMax: session.livesMax,
-        waiting: !!session.waiting
+        waiting: !!session.waiting,
+        optionBank: session.optionBank || []
       }));
     } catch (e) { /* quota */ }
   }
@@ -160,11 +193,43 @@
     return day > 0 ? day : 1;
   }
 
-  function spellMatches(user, expected) {
-    if (window.YYSD_EN_SPELL && YYSD_EN_SPELL.matches) {
-      return YYSD_EN_SPELL.matches(user, expected);
+  function spellForms(w) {
+    var out = [];
+    function add(s) {
+      s = String(s || "").trim();
+      if (s && out.indexOf(s) < 0) out.push(s);
     }
-    return String(user || "").trim().toLowerCase() === String(expected || "").trim().toLowerCase();
+    add(w && w.word);
+    add(w && w.wordUs);
+    add(w && w.wordUk);
+    if (w && Array.isArray(w.spellings)) w.spellings.forEach(add);
+    var wj = w && (w.word_json || w.wordJson);
+    if (wj && typeof wj === "object") {
+      add(wj.word);
+      add(wj.wordUs);
+      add(wj.wordUk);
+      if (Array.isArray(wj.spellings)) wj.spellings.forEach(add);
+    }
+    return out.length ? out : [String((w && w.word) || "")];
+  }
+
+  function spellMatches(user, expected) {
+    if (window.YYSD_EN_SPELL && YYSD_EN_SPELL.matchesAny) {
+      return YYSD_EN_SPELL.matchesAny(user, Array.isArray(expected) ? expected : [expected]);
+    }
+    if (window.YYSD_EN_SPELL && YYSD_EN_SPELL.matches) {
+      var list = Array.isArray(expected) ? expected : [expected];
+      for (var i = 0; i < list.length; i++) {
+        if (YYSD_EN_SPELL.matches(user, list[i])) return true;
+      }
+      return false;
+    }
+    var u = String(user || "").trim().toLowerCase();
+    var list2 = Array.isArray(expected) ? expected : [expected];
+    for (var j = 0; j < list2.length; j++) {
+      if (u === String(list2[j] || "").trim().toLowerCase()) return true;
+    }
+    return false;
   }
 
   function bindEnglishSpellInput(el) {
@@ -559,8 +624,8 @@
   function renderHub() {
     shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>加载进度…</div>', "进度");
     Promise.all([
-      A.api("/api/vocab-challenge/me"),
-      A.api("/api/vocab-challenge/lists").catch(function (e) { return e; })
+      A.api("/api/vocab-challenge/me" + bookQs()),
+      A.api("/api/vocab-challenge/lists" + bookQs()).catch(function (e) { return e; })
     ]).then(function (pair) {
       var me = pair[0];
       var lists = pair[1];
@@ -576,8 +641,23 @@
         );
         return;
       }
+      if (me.needsBook) {
+        var picker = '<p class="vc-notice">老师为你布置了多本闯关词册，请选择一本进入：</p>' +
+          '<div class="vc-actions">' +
+          (me.assignments || []).map(function (a) {
+            return '<a class="vl-btn vl-btn-primary" href="vocab-challenge.html?book=' +
+              encodeURIComponent(a.bookId) + '">' + esc(a.bookLabel || a.bookId) + "</a>";
+          }).join("") +
+          "</div>";
+        if (bookParam) {
+          shell('<p class="vc-notice vc-notice--warn">该词册尚未布置。</p>' + picker, "选词册");
+        } else {
+          shell(picker, "选词册");
+        }
+        return;
+      }
       if (!lists || !lists.ok) {
-        shell('<p class="vs-empty">' + esc((lists && lists.error) || "无法加载 List") + "</p>", "错误");
+        shell('<p class="vs-empty">' + esc((lists && (lists.error || lists.message)) || "无法加载 List") + "</p>", "错误");
         return;
       }
       var prog = lists.progress || me.progress || {};
@@ -621,7 +701,9 @@
       var todayHtml = "";
       if (isEbb) {
         if (programComplete) {
-          todayHtml = '<p class="vc-notice">艾宾浩斯 78 关计划已全部完成。错题本仍可练习。</p>';
+          todayHtml = '<p class="vc-notice">艾宾浩斯 ' +
+            (((lists.ebbinghausPlan && lists.ebbinghausPlan.totalDays) || (prog.totalDays) || 78)) +
+            " 关计划已全部完成。错题本仍可练习。</p>";
         } else {
           todayHtml =
             '<section class="vc-day-card">' +
@@ -643,13 +725,15 @@
         }
       }
 
-      var shownDay = displayProgressDay(progressDay, programComplete);
+      var totalStages = (lists.ebbinghausPlan && lists.ebbinghausPlan.totalDays) ||
+        (lists.stages && lists.stages.totalStages) || (prog.totalDays) || 78;
+      var shownDay = displayProgressDay(progressDay, programComplete, totalStages);
       var metaLine = isEbb
         ? esc(lists.bookLabel || lists.bookId) +
           (programComplete
-            ? " · 已完成 " + shownDay + " / " + ((lists.stages && lists.stages.totalStages) || 78) + " 关"
+            ? " · 已完成 " + shownDay + " / " + totalStages + " 关"
             : " · 进度关 " + shownDay +
-              " · 已通过 " + passedStages + " / " + ((lists.stages && lists.stages.totalStages) || 78) + " 关")
+              " · 已通过 " + passedStages + " / " + totalStages + " 关")
         : esc(lists.bookLabel || lists.bookId) +
           " · 已通关 List " + (prog.clearedListNo || 0) +
           " · 下一关 List " + (prog.nextListNo || 1) +
@@ -758,6 +842,7 @@
       var body = {};
       if (listNo) body.listNo = listNo;
       if (taskType) body.taskType = taskType;
+      if (bookParam) body.bookId = bookParam;
       A.api("/api/vocab-challenge/start", { method: "POST", body: body })
         .then(function (d) {
           if (!d || !d.ok) {
@@ -792,6 +877,8 @@
     session.taskType = d.taskType || session.taskType ||
       (d.phase === "scheduled_review" ? "review" : "new");
     session.notices = d.notices || [];
+    mergeOptionBank(d.optionBank);
+    mergeOptionBank((d.items || []).map(parseWord).map(quizMeaning));
     var saved = loadQuizDraft(session.attemptId, session.phase);
     if (saved) {
       session.words = saved.words;
@@ -804,6 +891,7 @@
       if (session.idx > session.words.length) session.idx = session.words.length;
       session.gameOver = session.lives <= 0;
       session.waiting = false;
+      if (saved.optionBank && saved.optionBank.length) mergeOptionBank(saved.optionBank);
     } else {
       session.words = shuffle((d.items || []).map(parseWord).filter(function (w) { return w.word; }));
       session.answers = [];
@@ -943,7 +1031,7 @@
     var spellRaw = spellEl ? spellEl.value.trim() : "";
     var spell = spellRaw.toLowerCase();
     var meaningOk = !!(session.selectedMeaning && session.selectedMeaning === quizMeaning(w));
-    var spellOk = spellMatches(spellRaw, w.word);
+    var spellOk = spellMatches(spellRaw, spellForms(w));
     var ok = meaningOk && spellOk;
     if (!timeout) {
       if (!session.selectedMeaning) return "needMeaning";
@@ -985,7 +1073,7 @@
 
   function bindQuizQuestion(w) {
     document.getElementById("listen").onclick = function () { speak(w.word); };
-    setTimeout(function () { speak(w.word); }, 250);
+    speak(w.word);
     document.getElementById("opts").onclick = function (e) {
       var b = e.target.closest(".vl-opt");
       if (!b || session.answered) return;
@@ -1118,7 +1206,7 @@
       if (d.failed) {
         var isReviewFail = session.phase === "scheduled_review";
         var maxL = session.livesMax || HP_MAX;
-        A.api("/api/vocab-challenge/me").then(function (me) {
+        A.api("/api/vocab-challenge/me" + bookQs()).then(function (me) {
           var bid = (me && me.assignment && me.assignment.bookId) || "";
           var href = session.listId
             ? ("vocab-learn.html?book=" + encodeURIComponent(bid) +
@@ -1193,7 +1281,7 @@
 
   function renderNotebook() {
     shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>加载错题本…</div>', "错题本");
-    A.api("/api/vocab-challenge/notebook")
+    A.api("/api/vocab-challenge/notebook" + bookQs())
       .then(function (d) {
         if (!d || !d.ok) {
           shell('<p class="vs-empty">' + esc((d && d.error) || "加载失败") + "</p>", "错题本");
@@ -1215,7 +1303,8 @@
             (rows.length
               ? '<button type="button" class="vl-btn vl-btn-primary" id="vc-practice">开始错词测试</button>'
               : "") +
-            '<a class="vl-btn" href="vocab-challenge.html">返回闯关</a>' +
+            '<a class="vl-btn" href="vocab-challenge.html' +
+              (bookParam ? "?book=" + encodeURIComponent(bookParam) : "") + '">返回闯关</a>' +
           "</div>",
           "错题本 · " + (rows.length || 0)
         );
@@ -1231,7 +1320,8 @@
     shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>抽题…</div>', "练习");
     A.api(
       "/api/vocab-challenge/list-practice-pool?listNo=" + encodeURIComponent(listNo) +
-        "&taskType=" + encodeURIComponent(taskType || "new")
+        "&taskType=" + encodeURIComponent(taskType || "new") +
+        (bookParam ? "&bookId=" + encodeURIComponent(bookParam) : "")
     )
       .then(function (d) {
         if (!d || !d.ok || !(d.words || []).length) {
@@ -1251,6 +1341,8 @@
           : ("List " + listNo + " · " + taskTypeLabel(taskType));
         session.notices = [d.notice || "已通过关卡练习不影响闯关进度与抽测池。"];
         session.words = shuffle(d.words.map(parseWord).filter(function (w) { return w.word; }));
+        mergeOptionBank(d.optionBank);
+        mergeOptionBank(session.words.map(quizMeaning));
         session.answers = [];
         session.idx = 0;
         session.livesMax = HP_MAX;
@@ -1274,7 +1366,8 @@
 
   function startPractice() {
     shell('<div class="state state--brand"><div class="spinner spinner--brand"></div>抽题…</div>', "练习");
-    A.api("/api/vocab-challenge/notebook/practice-pool?limit=20")
+    A.api("/api/vocab-challenge/notebook/practice-pool?limit=20" +
+      (bookParam ? "&bookId=" + encodeURIComponent(bookParam) : ""))
       .then(function (d) {
         if (!d || !d.ok || !(d.words || []).length) {
           shell('<p class="vs-empty">没有可练习的词</p>', "练习");
@@ -1285,6 +1378,8 @@
         session.practiceLabel = "错题本练习";
         session.notices = [d.notice || "错题本练习不影响闯关抽测池。"];
         session.words = shuffle(d.words.map(parseWord).filter(function (w) { return w.word; }));
+        mergeOptionBank(d.optionBank);
+        mergeOptionBank(session.words.map(quizMeaning));
         session.answers = [];
         session.idx = 0;
         session.livesMax = HP_MAX;

@@ -41,6 +41,7 @@
 
   function bookForLevel(level) {
     if (level === "cet4") return "cet4";
+    if (level === "cet4_lite") return "cet4-lite";
     if (level === "ielts") return "special";
     return "gaozhong";
   }

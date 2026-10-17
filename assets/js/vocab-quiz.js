@@ -600,7 +600,7 @@
         ? ""
         : ' <span style="color:#8a9e96">（选自 ' + state.poolTotal + " 词的 60%）</span>");
     document.getElementById("listen").onclick = function () { speak(w.word); };
-    setTimeout(function () { speak(w.word); }, 250);
+    speak(w.word);
     document.getElementById("opts").onclick = function (e) {
       var b = e.target.closest(".vl-opt");
       if (!b || state.answered) return;
@@ -643,7 +643,7 @@
     var w = currentWord();
     var meaningOk = state.selectedMeaning === quizMeaning(w);
     var spellOk = window.YYSD_EN_SPELL && YYSD_EN_SPELL.matches
-      ? YYSD_EN_SPELL.matches(spell, w.word)
+      ? YYSD_EN_SPELL.matchesAny(spell, w.spellings && w.spellings.length ? w.spellings : [w.word])
       : spell === w.word.toLowerCase();
     var ok = meaningOk && spellOk;
     paintMeaningResult(meaningOk);
@@ -673,8 +673,8 @@
     var spellRaw = spellEl ? spellEl.value.trim() : "";
     var spell = spellRaw.toLowerCase();
     var meaningOk = !!(state.selectedMeaning && state.selectedMeaning === quizMeaning(w));
-    var spellOk = window.YYSD_EN_SPELL && YYSD_EN_SPELL.matches
-      ? YYSD_EN_SPELL.matches(spellRaw, w.word)
+    var spellOk = window.YYSD_EN_SPELL && YYSD_EN_SPELL.matchesAny
+      ? YYSD_EN_SPELL.matchesAny(spellRaw, w.spellings && w.spellings.length ? w.spellings : [w.word])
       : !!(spell && spell === w.word.toLowerCase());
     var ok = meaningOk && spellOk;
     revealSpellRow(false);

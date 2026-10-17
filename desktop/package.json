@@ -1,11 +1,12 @@
 {
   "name": "youyisida",
-  "version": "1.0.0",
+  "version": "1.0.17",
   "private": true,
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --mac dmg"
+    "dist": "electron-builder --mac dmg zip --universal",
+    "dist:win": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win nsis --x64"
   },
   "devDependencies": {
     "electron": "^33.2.0",
@@ -13,8 +14,28 @@
   },
   "build": {
     "appId": "com.youyisida.desktop",
-    "productName": "优益思达",
-    "mac": { "category": "public.app-category.education", "target": "dmg" },
-    "files": ["main.js", "preload.js"]
+    "productName": "优益思达国际课程中心",
+    "mac": {
+      "icon": "build/icon.png",
+      "identity": null,
+      "extendInfo": {
+        "CFBundleDisplayName": "优益思达国际课程中心",
+        "CFBundleName": "优益思达国际课程中心",
+        "NSMicrophoneUsageDescription": "口语模考需要使用麦克风录音。"
+      },
+      "gatekeeperAssess": false,
+      "category": "public.app-category.education",
+      "target": [{ "target": "dmg", "arch": ["universal"] }]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [{ "target": "nsis", "arch": ["x64"] }]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "YouYiSiDa.exe"
+    },
+    "files": ["main.js", "preload.js", "splash.html", "splash-preload.js"]
   }
 }

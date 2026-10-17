@@ -49,13 +49,89 @@
 
   function label(skill) { return LABELS[skill] || skill; }
 
+  function fromApp() {
+    if (typeof location === "undefined") return false;
+    try { return new URLSearchParams(location.search).get("from") === "app"; }
+    catch (e) { return false; }
+  }
+
+  function mockHubHref(kind) {
+    var q = "mock.html?kind=" + encodeURIComponent(kind || "full");
+    if (typeof location !== "undefined" && location.hostname === "app.youyisida.com") return q;
+    return "app/" + q;
+  }
+
+  /* 全真模考从套题列表进，返回列表而非冲刺包 */
+  function homeHubHref() {
+    if (typeof location !== "undefined" && location.hostname === "app.youyisida.com") return "home.html";
+    return "app/home.html";
+  }
+
+  function fromKl() {
+    if (typeof location === "undefined") return false;
+    try { return new URLSearchParams(location.search).get("from") === "kl"; }
+    catch (e) { return false; }
+  }
+
+  function klListHref() {
+    if (typeof location !== "undefined" && location.hostname === "app.youyisida.com") return "official.html";
+    return "app/official.html";
+  }
+
+  function onAppHost() {
+    if (typeof location === "undefined") return false;
+    var host = location.hostname || "";
+    var path = location.pathname || "";
+    return host.indexOf("app.") === 0 || path.indexOf("/app/") >= 0;
+  }
+
+  function labHref(skill) {
+    return ({
+      reading: "reading-lab.html",
+      listening: "listening-lab.html",
+      writing: "writing-lab.html",
+      speaking: "speaking-lab.html"
+    })[skill] || "home.html";
+  }
+
+  function listBack(skill, opts) {
+    skill = skill || "reading";
+    opts = opts || {};
+    if (fromKl()) return klListHref();
+    // app.youyisida.com has no zone.html; sending Exit or a failed preview there is a nginx 404
+    if (onAppHost()) {
+      if (isFull() || opts.mock) return mockHubHref(isFull() ? "full" : "single");
+      return labHref(skill);
+    }
+    if (isFull() || fromApp()) return mockHubHref(isFull() ? "full" : "single");
+    if (opts.lab) return "zone.html?zone=toefl&s=lab&skill=" + encodeURIComponent(skill);
+    return "zone.html?zone=toefl&s=" + encodeURIComponent(skill);
+  }
+
+  function markLeave() {
+    var S = w.YYSD_TOEFL_SHELL;
+    if (S && S.markLeaving) S.markLeaving();
+  }
+
+  function go(href) {
+    markLeave();
+    if (typeof location !== "undefined") location.replace(href);
+  }
+
+  function withFrom(href) {
+    if (href.indexOf("from=") >= 0) return href;
+    if (fromApp()) return href + "&from=app";
+    if (fromKl()) return href + "&from=kl";
+    return href;
+  }
+
   function skillHref(id, mode, skill) {
-    return PAGES[skill] + "?id=" + encodeURIComponent(id) + "&mode=" + encodeURIComponent(mode) + "&full=1";
+    return withFrom(PAGES[skill] + "?id=" + encodeURIComponent(id) + "&mode=" + encodeURIComponent(mode) + "&full=1");
   }
 
   function introHref(id, mode) {
     var q = "toefl-full.html?id=" + encodeURIComponent(id);
-    return mode ? q + "&mode=" + encodeURIComponent(mode) : q;
+    return withFrom(mode ? q + "&mode=" + encodeURIComponent(mode) : q);
   }
 
   function resultsHref(id, mode) {
@@ -80,20 +156,20 @@
     var pack = load(id);
     if (!pack) {
       if (skill === "reading") { startPack(id, mode); return true; }
-      if (typeof location !== "undefined") location.replace(introHref(id, mode));
+      go(introHref(id, mode));
       return false;
     }
     if (pack.voided) {
-      if (typeof location !== "undefined") location.replace(introHref(id, mode));
+      go(introHref(id, mode));
       return false;
     }
     var need = firstIncomplete(pack);
     if (!need) {
-      if (typeof location !== "undefined") location.replace(resultsHref(id, mode));
+      go(resultsHref(id, mode));
       return false;
     }
     if (need !== skill) {
-      if (typeof location !== "undefined") location.replace(skillHref(id, mode, need));
+      go(skillHref(id, mode, need));
       return false;
     }
     return true;
@@ -105,11 +181,35 @@
     pack.sections[skill] = payload || {};
     save(pack);
     if (skill === "speaking") return "done";
-    if (mode === "mock") {
-      if (typeof location !== "undefined") location.replace(nextHref(id, mode, skill));
-      return "go";
-    }
     return "rest";
+  }
+
+  function paperFile(skill, id) {
+    var stem = String(id || "");
+    var underApp = /^set-\d+$/.test(stem) || stem.indexOf("bank-") === 0;
+    var prefix = (!onAppHost() && underApp) ? "app/" : "";
+    return prefix + "library/toefl/" + stem + "-" + skill + ".json";
+  }
+
+  function paperURL(skill, setN) {
+    return paperFile(skill, "set-" + setN);
+  }
+
+  function handoffApp(skill, paper, payload) {
+    if (!fromApp() || isFull()) return false;
+    payload = payload || {};
+    payload.skill = skill;
+    payload.paper = paper;
+    payload.set = (paper && paper.id) || payload.set || "";
+    var preview = false;
+    try {
+      preview = typeof location !== "undefined" && new URLSearchParams(location.search).get("preview") === "1";
+    } catch (e0) {}
+    try { sessionStorage.setItem("yysd:app-review", JSON.stringify(payload)); } catch (e) {}
+    var href = (onAppHost() ? "" : "app/") + "review.html?skill=" + encodeURIComponent(skill);
+    if (preview) href += "&preview=1";
+    go(href);
+    return true;
   }
 
   function restCopy(skill) {
@@ -124,11 +224,24 @@
     var p = rest.querySelector("p");
     var go = document.getElementById("rest-go");
     if (h) h.textContent = "End of " + label(skill) + " Section";
-    if (p) p.textContent = restCopy(skill);
+    var copy = rest.querySelector("#rest-copy") || p;
+    if (copy) copy.textContent = restCopy(skill);
+    var acts = rest.querySelector("#rest-acts");
+    if (acts) acts.textContent = "";
+    var goNext = function () { go(nextHref(id, mode, skill)); };
     if (go) {
       go.textContent = "Continue";
-      go.onclick = function () { location.replace(nextHref(id, mode, skill)); };
+      go.onclick = goNext;
     }
+    var next = document.getElementById("next-btn");
+    if (next) {
+      next.classList.remove("hidden");
+      next.disabled = false;
+      next.textContent = "Continue";
+      next.onclick = goNext;
+    }
+    var back = document.getElementById("back-btn");
+    if (back) back.classList.add("hidden");
   }
 
   function dressVoidUI() {
@@ -139,15 +252,38 @@
     var exit = box.querySelector("a");
     if (h) h.textContent = "This complete test has been stopped";
     if (p) p.textContent = "Leaving the test window voids this mock test. No section is scored.";
-    if (exit) exit.setAttribute("href", "zone.html?zone=toefl&s=full");
+    if (exit) exit.setAttribute("href", listBack());
+  }
+
+  /* 作废/退出 = 本场结束：上报完成，宽限不再允许续考（best-effort，失败不影响流程） */
+  function examDone(id) {
+    try {
+      var A = w.YYSD_AUTH;
+      if (!A || !A.api || !id) return;
+      A.api("/api/toefl/exam-done", { method: "POST", body: { packageId: id } }).catch(function () {});
+    } catch (e) {}
   }
 
   function markVoid(id) {
     var pack = load(id);
     if (pack) { pack.voided = true; pack.sections = {}; save(pack); }
+    examDone(id);
   }
 
-  function voidRestartHref(id) {
+  function quitPack(id) {
+    examDone(id);
+    if (typeof sessionStorage === "undefined") return;
+    try { sessionStorage.removeItem(storeKey(id)); } catch (e) {}
+    try { sessionStorage.removeItem("yysd:toefl-hw:" + id); } catch (e) {}
+  }
+
+  function voidRestartHref(id, skill) {
+    if (isFull() || fromApp()) {
+      var kind = isFull() ? "full" : "single";
+      var href = mockHubHref(kind) + "&id=" + encodeURIComponent(id);
+      if (kind === "single" && skill) href += "&skill=" + encodeURIComponent(skill);
+      return href;
+    }
     return introHref(id, "mock");
   }
 
@@ -174,6 +310,9 @@
     startPack: startPack,
     nextSkill: nextSkill,
     label: label,
+    fromApp: fromApp,
+    mockHubHref: mockHubHref,
+    listBack: listBack,
     skillHref: skillHref,
     introHref: introHref,
     resultsHref: resultsHref,
@@ -181,10 +320,14 @@
     firstIncomplete: firstIncomplete,
     enterSkill: enterSkill,
     afterSection: afterSection,
+    paperURL: paperURL,
+    paperFile: paperFile,
+    handoffApp: handoffApp,
     restCopy: restCopy,
     fillRest: fillRest,
     dressVoidUI: dressVoidUI,
     markVoid: markVoid,
+    quitPack: quitPack,
     voidRestartHref: voidRestartHref,
     compactScore: compactScore,
     compactWriting: compactWriting

@@ -285,17 +285,12 @@ const TEST = {
         { kind:'table', title:'Questions 7–13',
           instruction:'Complete the table below. Choose ONE WORD ONLY from the passage for each answer.',
           tableTitle:'The study carried out by Rocha\'s team',
-          cols:['Category','Detail'],
+          cols:['',''],
           rows:[
-            [`Aim`,`to investigate the feeding habits of bats in farmland near the Ranomafana National Park`],
-            [`Method`,`ultrasonic recording to identify favourite feeding spots`],
-            [`Method`,`DNA analysis of bat <Q n="7">`],
-            [`Findings – diet`,`ate pests of rice, <Q n="8">, sugarcane, nuts and fruit`],
-            [`Findings – disease`,`prevent the spread of disease by eating <Q n="9">, and blackflies`],
-            [`Findings – attitude`,`they provide food rich in <Q n="10">`],
-            [`Findings – attitude`,`the buildings where they roost become <Q n="11">`],
-            [`Findings – attitude`,`they play an important role in local <Q n="12">`],
-            [`Recommendation`,`farmers should provide special <Q n="13">, to support the bat population`],
+            [`<strong>Aim</strong>`,`• to investigate the feeding habits of bats in farmland near the Ranomafana National Park`],
+            [`<strong>Method</strong>`,`• ultrasonic recording to identify favourite feeding spots<br>• DNA analysis of bat <Q n="7">`],
+            [`<strong>Findings</strong>`,`• the bats<br>– were most active in rice fields located on hills<br>– ate pests of rice, <Q n="8">, sugarcane, nuts and fruit<br>– prevent the spread of disease by eating <Q n="9"> and blackflies<br>• local attitudes to bats are mixed:<br>– they provide food rich in <Q n="10"><br>– the buildings where they roost become <Q n="11"><br>– they play an important role in local <Q n="12">`],
+            [`<strong>Recommendation</strong>`,`• farmers should provide special <Q n="13"> to support the bat population`],
           ],
           questions:[
             {id:'Q7',no:7,answer:['droppings'],explain:`第7段：DNA 条形码分析蝙蝠粪便 droppings。答案：droppings。`},
@@ -494,7 +489,7 @@ function groupHtml(g){
       }).join('')+`</div>`;
   }
   else if(g.kind==='table'){
-    const head=`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+    const head=g.cols.every(c=>!String(c).trim())?'':`<tr>${g.cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
     const rows=g.rows.map(r=>`<tr>${r.map(cell=>`<td>${expandQ(cell)}</td>`).join('')}</tr>`).join('');
     body=`${g.tableTitle?`<div class="note-title">${g.tableTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
   }

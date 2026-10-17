@@ -4,82 +4,241 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>复习</title>
-  <link rel="stylesheet" href="assets/css/hit.css">
-  <script src="assets/js/gate.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/hit-shell.js"></script>
-  <script src="assets/js/play.js"></script>
+  <link rel="stylesheet" href="assets/css/hit.css?v=20261016lcn2">
+  <script src="assets/js/gate.js?v=20261015back1"></script>
+  <script src="assets/js/auth.js?v=20261015prev1"></script>
+  <script src="assets/js/hit-shell.js?v=20261015swiss1"></script>
+  <script src="assets/js/play.js?v=20261015back2"></script>
+  <script src="assets/js/reading.js?v=20261015rev1"></script>
+  <script src="assets/js/toefl-speaking.js?v=20261009iv1"></script>
 </head>
 <body class="hit">
   <main class="hit-main">
-    <p class="hit-kicker">REVIEW</p>
     <h1 id="title">查看记录</h1>
     <p class="hit-lead" id="score"></p>
+    <p class="hit-lead" id="sw-choice" hidden>口语/写作可导出音频和作文；要 AI 分再走原来的评分。只导出则口语写作记「已提交、未评分」。</p>
+    <p><button type="button" class="hit-go" id="export-all" hidden>导出全部录音</button></p>
     <div id="list"></div>
-    <p style="margin-top:24px"><a class="hit-card" href="#" id="back" style="display:inline-block">回到题库</a></p>
+    <audio id="model-clip" hidden></audio>
+    <a class="hit-go" href="#" id="back">回到题库</a>
   </main>
   <script>
     (function () {
       var P = window.YYSD_PLAY;
+      var T = window.YYSD_TOEFL;
+      var S = window.YYSD_TOEFL_SPEAK;
       var skill = new URLSearchParams(location.search).get("skill") || "reading";
-      if (!YYSD_HIT.mount(skill)) return;
-      document.getElementById("back").href = P.labOf(skill);
+      if (!P.isPreview() && !YYSD_HIT.mount(skill)) return;
       var att = P.readAttempt();
+      var back = document.getElementById("back");
+      back.href = P.backHref(skill);
+      back.addEventListener("click", function (e) {
+        e.preventDefault();
+        P.goBack(skill);
+      });
+      var recs = S && S.readRecs ? S.readRecs() : {};
       if (!att || !att.paper) {
         document.getElementById("score").textContent = "没有本次作答记录。";
         return;
       }
-      document.getElementById("title").textContent = (att.paper.title || "Set 1") + " · 复习";
-      if (att.total != null) document.getElementById("score").textContent = "得分 " + (att.score || 0) + " / " + att.total;
-      var html = "";
-      (att.tasks || []).forEach(function (ti) {
-        var task = att.paper.tasks[ti];
-        if (!task) return;
-        html += '<article class="hit-set"><div class="meta"><strong>' + esc(task.title || task.code || task.type) + "</strong></div>";
-        if (task.type === "complete_words") {
-          html += row("完整短文", fullCW(task));
-          if (task.translation) html += row("中文译文", task.translation);
-          (task.passage || []).forEach(function (p) {
-            if (!p.id) return;
-            var ua = (att.answers || {})[p.id];
-            html += row("空 " + p.id, "你的答案：" + (ua || "未作答") + " · 正确答案：" + (p.word || p.answer));
-          });
-        } else if (task.type === "sentence") {
-          var ua = (att.answers || {})[task.id];
-          html += row("Context", task.context || "");
-          html += row("你的答案", Array.isArray(ua) ? ua.join(" ") : (ua || "未作答"));
-          html += row("正确答案", (task.answer || []).join(" "));
-          if (task.analysis) html += row("解析", task.analysis);
-        } else if (task.type === "email" || task.type === "discussion") {
-          html += row("你的作答", (att.answers || {})[task.id] || "未作答");
-          if (task.sample) html += row("范文", task.sample);
-          if (task.analysis) html += row("解析", task.analysis);
-        } else if (task.type === "repeat" || task.type === "interview") {
-          html += row("题目", task.stem || task.sample || task.instruction || "");
-          if (task.sample && task.type === "repeat") html += row("应复述", task.sample);
-          if (task.analysis) html += row("提示", task.analysis);
-        } else {
-          if (task.transcript) html += row("原文", task.transcript);
-          (task.questions || []).forEach(function (q) {
-            var ua = (att.answers || {})[q.id];
-            var ok = String(ua || "") === String(q.answer || "");
-            html += row("Q" + q.id + " " + (q.stem || ""), "你的答案：" + label(q, ua) + (ok ? " · 正确" : " · 正确答案：" + label(q, q.answer)));
-            if (q.transcript) html += row("原文", q.transcript);
-            if (q.analysis) html += row("解析", q.analysis);
-          });
+      if (skill === "speaking" || skill === "writing") {
+        var sw = document.getElementById("sw-choice");
+        if (sw) sw.hidden = false;
+      }
+      if (skill === "speaking" && att.paper.id) {
+        fetch("library/toefl/" + att.paper.id + "-speaking.json", { cache: "no-store" })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (live) {
+            if (live && live.tasks) {
+              var byId = {};
+              live.tasks.forEach(function (t) { byId[t.id] = t; });
+              (att.paper.tasks || []).forEach(function (t) {
+                var n = byId[t.id];
+                if (!n) return;
+                t.audio = n.audio;
+                t.sample = n.sample;
+                delete t.fromSec;
+                delete t.toSec;
+              });
+            }
+            paint();
+          })
+          .catch(paint);
+      } else paint();
+
+      function paint() {
+        document.getElementById("title").textContent = (att.paper.title || "Set 1") + " · 复习";
+        if (att.total != null) document.getElementById("score").textContent = "得分 " + (att.score || 0) + " / " + att.total;
+        var list = document.getElementById("list");
+        list.innerHTML = "";
+        (att.tasks || []).forEach(function (ti) {
+          var task = att.paper.tasks[ti];
+          if (!task) return;
+          var title = heading(task);
+          if (task.type === "complete_words") mountCW(list, task, title);
+          else if (task.type === "sentence") {
+            var ua = (att.answers || {})[task.id];
+            var mine = Array.isArray(ua) ? ua.filter(Boolean).join(" ") : String(ua || "");
+            var key = (task.answer || []).join(" ");
+            var ok = sameSeq(Array.isArray(ua) ? ua : [], task.answer || []);
+            list.insertAdjacentHTML("beforeend", card(ok ? "is-ok" : "is-bad", title, note("Context", task.context) + pair(mine || "未作答", key, ok) + note("解析", explainOf(task))));
+          } else if (task.type === "email" || task.type === "discussion") {
+            list.insertAdjacentHTML("beforeend", card("is-done", "已提交 · " + title, note("你的作答", (att.answers || {})[task.id] || "未作答") + note("范文", task.sample) + note("解析", explainOf(task))));
+          } else if (task.type === "repeat" || task.type === "interview") {
+            var rec = recs[task.id];
+            var audio = rec && rec.data
+              ? '<div class="rev-note"><span>你的录音</span><audio controls src="' + rec.data + '"></audio><p><button type="button" class="hit-go exp-one" data-id="' + task.id + '">导出本题</button></p></div>'
+              : note("你的录音", "未录音");
+            var model = task.audio
+              ? '<div class="rev-note"><span>原句</span><audio controls src="' + encodeURI(task.audio) + '"></audio></div>'
+              : "";
+            list.insertAdjacentHTML("beforeend", card("is-done", "已提交 · " + title,
+              (task.type === "interview" ? note("题目", task.stem || task.sample) : note("应复述", task.sample)) +
+              model + audio + note("提示", explainOf(task))));
+          } else if (hasSource(task) && (task.questions || []).length) {
+            mountSplit(list, task, ti, title);
+          } else {
+            (task.questions || []).forEach(function (q) {
+              var picked = pick(ti, q);
+              var qok = String(picked || "") === String(q.answer || "");
+              list.insertAdjacentHTML("beforeend", card(qok ? "is-ok" : "is-bad", "Question " + q.id, note("题目", q.stem) + pair(label(q, picked), label(q, q.answer), qok) + note("原文", q.transcript) + note("解析", explainOf(q))));
+            });
+          }
+        });
+        if (skill === "speaking" && S) {
+          var exp = document.getElementById("export-all");
+          exp.hidden = false;
+          exp.onclick = function () { S.exportAll(att.paper, recs); };
+          var modelClip = document.getElementById("model-clip");
+          var cancelModel = null;
+          list.onclick = function (e) {
+            var b = e.target.closest ? e.target.closest(".exp-one") : null;
+            if (b) {
+              S.exportRec(att.paper, b.getAttribute("data-id"), recs[b.getAttribute("data-id")]);
+              return;
+            }
+            var m = e.target.closest ? e.target.closest(".play-model") : null;
+            if (!m) return;
+            var task = att.paper.tasks[Number(m.getAttribute("data-i"))];
+            if (!task || !S.playClip) return;
+            if (cancelModel) cancelModel();
+            cancelModel = S.playClip(modelClip, task, function () {});
+          };
         }
-        html += "</article>";
-      });
-      document.getElementById("list").innerHTML = html;
-      function row(k, v) {
-        return '<div class="hit-status" style="margin:10px 0 4px;font-weight:600">' + esc(k) + '</div><p style="margin:0 0 12px;white-space:pre-wrap;line-height:1.65">' + esc(v) + "</p>";
+      }
+
+      function mountCW(list, task, title) {
+        var blanks = T.blanksOf(task);
+        var allOk = blanks.every(function (b) { return T.matchBlank(b, (att.answers || {})[b.id]); });
+        var art = document.createElement("article");
+        art.className = "rev-card " + (allOk ? "is-ok" : "is-bad");
+        art.innerHTML = '<header class="rev-head"><span class="rev-mark" aria-hidden="true"></span><strong>' +
+          esc(title) + '</strong></header><div class="rev-cw"></div>';
+        T.renderBlanksReview(task, art.querySelector(".rev-cw"), att.answers || {});
+        var extra = note("翻译", task.translation) + note("解析", explainOf(task));
+        if (extra) art.insertAdjacentHTML("beforeend", extra);
+        list.appendChild(art);
+      }
+
+      function mountSplit(list, task, ti, title) {
+        var qs = task.questions || [];
+        var sec = document.createElement("section");
+        sec.className = "rev-block";
+        sec.innerHTML = '<header class="rev-block-head">' + esc(title) + "</header>" +
+          '<nav class="rev-qnav">' + qs.map(function (q, i) {
+            var ok = String(pick(ti, q) || "") === String(q.answer || "");
+            return '<button type="button" class="rev-qnav-item ' + (ok ? "is-ok" : "is-bad") +
+              (i === 0 ? " is-on" : "") + '" data-i="' + i + '">' + (i + 1) + "</button>";
+          }).join("") + "</nav>" +
+          '<div class="rev-split"><article class="rev-pass"></article><article class="rev-q"></article></div>';
+        list.appendChild(sec);
+        var pass = sec.querySelector(".rev-pass");
+        var panel = sec.querySelector(".rev-q");
+        var chips = sec.querySelectorAll(".rev-qnav-item");
+        function show(i) {
+          var q = qs[i];
+          var picked = pick(ti, q);
+          chips.forEach(function (c, j) { c.classList.toggle("is-on", j === i); });
+          paintSource(pass, task, q, picked);
+          paintQuestion(panel, q, picked);
+        }
+        sec.querySelector(".rev-qnav").onclick = function (e) {
+          var b = e.target.closest ? e.target.closest("[data-i]") : null;
+          if (b) show(Number(b.getAttribute("data-i")));
+        };
+        show(0);
+      }
+
+      function paintSource(pass, task, q, picked) {
+        var text = task.transcript || q.transcript || "";
+        if ((task.paras || task.layout || task.image) && !text) {
+          T.renderPassage(task, pass, T.isInsertQ(q), q);
+          if (T.isInsertQ(q)) T.markInsertReview(pass, q, picked, T.insertSentence(task, q));
+          return;
+        }
+        if (task.paras || task.layout) {
+          T.renderPassage(task, pass, T.isInsertQ(q), q);
+          if (T.isInsertQ(q)) T.markInsertReview(pass, q, picked, T.insertSentence(task, q));
+        } else if (task.image) {
+          pass.innerHTML = '<img class="passage-img" src="' + esc(task.image) + '" alt="">';
+        } else {
+          pass.innerHTML = "";
+        }
+        if (text) pass.insertAdjacentHTML("beforeend", '<div class="rev-transcript">' + esc(text) + "</div>");
+      }
+
+      function paintQuestion(panel, q, picked) {
+        var ok = String(picked || "") === String(q.answer || "");
+        var opts = Object.keys(q.options || {}).map(function (k) {
+          var cls = "rev-opt";
+          if (k === q.answer) cls += " is-key";
+          if (picked && k === picked && picked !== q.answer) cls += " is-mine";
+          return '<p class="' + cls + '"><b>' + esc(k) + "</b> " + esc(q.options[k]) + "</p>";
+        }).join("");
+        panel.className = "rev-q " + (ok ? "is-ok" : "is-bad");
+        panel.innerHTML = '<header class="rev-head"><span class="rev-mark" aria-hidden="true"></span><strong>Question ' +
+          esc(q.id) + "</strong></header><p class=\"rev-stem\">" + esc(q.stem) + "</p>" + opts +
+          pair(label(q, picked), label(q, q.answer), ok) + note("解析", explainOf(q));
+      }
+
+      function hasSource(task) {
+        return !!(task.paras || task.layout || task.transcript || task.image ||
+          (task.questions || []).some(function (q) { return q.transcript; }));
+      }
+      function pick(ti, q) {
+        var a = att.answers || {};
+        if (a[ti + ":" + q.id] != null) return a[ti + ":" + q.id];
+        return a[q.id];
+      }
+      function explainOf(obj) { return (obj && (obj.analysis || obj.explain)) || ""; }
+      function heading(task) {
+        return task.title || task.subject || task.code || ({
+          sentence: "Build a Sentence",
+          email: "Write an Email",
+          discussion: "Academic Discussion",
+          complete_words: "Complete the Words",
+          repeat: "Listen and Repeat",
+          interview: "Interview"
+        })[task.type] || task.type;
+      }
+      function card(cls, name, inner) {
+        return '<article class="rev-card ' + cls + '"><header class="rev-head"><span class="rev-mark" aria-hidden="true"></span><strong>' + esc(name) + "</strong></header>" + inner + "</article>";
+      }
+      function pair(mine, key, ok) {
+        return '<div class="rev-pair"><div><span>你的答案</span><p class="' + (ok ? "" : "is-strike") + '">' + esc(mine || "未作答") + "</p></div><div><span>正确答案</span><p>" + esc(key) + "</p></div></div>";
+      }
+      function note(k, v) {
+        if (!v) return "";
+        return '<div class="rev-note"><span>' + esc(k) + "</span><p>" + esc(v) + "</p></div>";
       }
       function label(q, k) {
         if (!k) return "未作答";
         return k + (q.options && q.options[k] ? ". " + q.options[k] : "");
       }
-      function fullCW(task) {
-        return (task.passage || []).map(function (p) { return p.t || p.word || ((p.prefix || "") + (p.answer || "")); }).join("");
+      function sameSeq(got, want) {
+        if (!got || got.length !== want.length) return false;
+        for (var i = 0; i < want.length; i++) if (String(got[i] || "") !== String(want[i] || "")) return false;
+        return true;
       }
       function esc(s) {
         return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

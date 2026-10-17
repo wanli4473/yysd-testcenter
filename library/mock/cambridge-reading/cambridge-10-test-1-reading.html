@@ -656,27 +656,27 @@ const TEST = {
             {
               "id": "Q27",
               "no": 27,
-              "q": "The example of the 'million-dollar quartet' is used to illustrate",
+              "q": "The example of the 'million-dollar quartet' underlines the writer's point about",
               "options": {
-                "A": "the importance of having the right mix of people for a creative team.",
-                "B": "the need for a good leader to get the best out of a creative team.",
-                "C": "the role of the media in promoting the work of creative individuals.",
-                "D": "the benefits that a creative environment can bring to a project."
+                "A": "recognising talent.",
+                "B": "working as a team.",
+                "C": "having a shared objective.",
+                "D": "being an effective leader."
               },
               "answer": [
-                "A"
+                "C"
               ],
-              "explain": "答案：A。"
+              "explain": "答案：C。"
             },
             {
               "id": "Q28",
               "no": 28,
-              "q": "What does Cialdini say about people's response to change?",
+              "q": "James Watson suggests that he and Francis Crick won the race to discover the DNA code because they",
               "options": {
-                "A": "They may take more risks when they fear a negative outcome.",
-                "B": "They may reject change if they feel it threatens their status.",
-                "C": "They may take greater interest in change if it brings a reward.",
-                "D": "They may dislike change if they are not consulted about it."
+                "A": "were conscious of their own limitations.",
+                "B": "brought complementary skills to their partnership.",
+                "C": "were determined to outperform their brighter rivals.",
+                "D": "encouraged each other to realise their joint ambition."
               },
               "answer": [
                 "A"
@@ -686,12 +686,12 @@ const TEST = {
             {
               "id": "Q29",
               "no": 29,
-              "q": "Cialdini cites the example of Watson and Crick to show that",
+              "q": "The writer mentions competitions on breakfast cereal packets as an example of how to",
               "options": {
-                "A": "a competitive approach is best in some situations.",
-                "B": "it is possible to find the answer without seeking advice.",
-                "C": "team members can feel under pressure to produce results.",
-                "D": "successful problem-solving often relies on collaboration."
+                "A": "inspire creative thinking.",
+                "B": "generate concise writing.",
+                "C": "promote loyalty to a group.",
+                "D": "strengthen commitment to an idea."
               },
               "answer": [
                 "D"
@@ -701,12 +701,12 @@ const TEST = {
             {
               "id": "Q30",
               "no": 30,
-              "q": "What point does Cialdini make about the importance of writing?",
+              "q": "In the last paragraph, the writer suggests that it is important for employees to",
               "options": {
-                "A": "It encourages people to think through their ideas more carefully.",
-                "B": "It makes people more likely to accept their own ideas.",
-                "C": "It ensures that a project has the support of the whole team.",
-                "D": "It helps people to express their ideas more clearly."
+                "A": "be aware of their company's goals.",
+                "B": "feel that their contributions are valued.",
+                "C": "have respect for their co-workers' achievements.",
+                "D": "understand why certain management decisions are made."
               },
               "answer": [
                 "B"
@@ -780,7 +780,7 @@ const TEST = {
         {
           "kind": "tfng",
           "title": "Questions 36–40",
-          "instruction": "Do the following statements agree with the views of the writer in Reading Passage 3? Write YES, NO or NOT GIVEN.",
+          "instruction": "Do the following statements agree with the claims of the writer in Reading Passage 3? Write YES, NO or NOT GIVEN.",
           "labels": [
             "YES",
             "NO",
@@ -790,7 +790,7 @@ const TEST = {
             {
               "id": "Q36",
               "no": 36,
-              "q": "Most creative people are unable to work in a conventional environment.",
+              "q": "The physical surroundings in which a person works play a key role in determining their creativity.",
               "answer": [
                 "NO"
               ],
@@ -799,7 +799,7 @@ const TEST = {
             {
               "id": "Q37",
               "no": 37,
-              "q": "A company's recruitment policy is one factor which affects its capacity to innovate.",
+              "q": "Most people have the potential to be creative.",
               "answer": [
                 "YES"
               ],
@@ -808,7 +808,7 @@ const TEST = {
             {
               "id": "Q38",
               "no": 38,
-              "q": "It is easy for managers to control innovation.",
+              "q": "Teams work best when their members are of equally matched intelligence.",
               "answer": [
                 "NOT GIVEN"
               ],
@@ -817,7 +817,7 @@ const TEST = {
             {
               "id": "Q39",
               "no": 39,
-              "q": "The Memphis design collective was an unsuccessful experiment.",
+              "q": "It is easier for smaller companies to be innovative.",
               "answer": [
                 "NOT GIVEN"
               ],
@@ -826,13 +826,14 @@ const TEST = {
             {
               "id": "Q40",
               "no": 40,
-              "q": "Bosses should not be involved in the creative work of their teams.",
+              "q": "A manager's approval of an idea is more persuasive than that of a colleague.",
               "answer": [
                 "NO"
               ],
               "explain": "答案：NO。"
             }
-          ]
+          ],
+          "variant": "yn"
         }
       ]
     }
@@ -912,7 +913,7 @@ function groupHtml(g){
     body=`${(g.tableTitle||g.noteTitle)?`<div class="note-title">${g.tableTitle||g.noteTitle}</div>`:''}<table class="note-table">${head}${rows}</table>`;
   }
   else if(g.kind==='tfng'){
-    const opts = g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN'];
+    const opts = (g.labels && g.labels.length) ? g.labels : (g.variant==='yn' ? ['YES','NO','NOT GIVEN'] : ['TRUE','FALSE','NOT GIVEN']);
     body=g.questions.map(q=>{
       const radios=opts.map(v=>`<label><input type="radio" name="${q.id}" value="${v}"> <span>${v}</span></label>`).join('');
       return `<div class="mcq"><div class="qtext"><span class="qnum-badge">${q.no}</span><span>${q.q}</span></div><div class="tfng-opts">${radios}</div></div>`;
@@ -938,11 +939,13 @@ function groupHtml(g){
   }
   else if(g.kind==='wbank'){
     // 选词填空：词库 A–H + 文中下拉
+    const src=g.box||g.bank||{};
     const cols=g.boxCols||2;
-    const box=`<div class="match-box wbank-box" style="columns:${cols};">${Object.entries(g.box).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
-    const letters=Object.keys(g.box);
+    const box=`<div class="match-box wbank-box" style="columns:${cols};">${Object.entries(src).map(([k,v])=>`<div class="mb-row"><strong>${k}</strong><span>${v}</span></div>`).join('')}</div>`;
+    const letters=Object.keys(src);
     const expand=html=>(html==null?'':String(html)).replace(/<Q n="(\d+)">/g,(m,n)=>`<span class="qnum-badge">${n}</span><select id="Q${n}"><option value="">—</option>${letters.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`);
-    const para=(g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:'')+g.lines.map(l=>`<div class="note-li plain" style="display:block;">${expand(l.html)}</div>`).join('');
+    const rawLines=g.lines||(g.text?[{html:g.text}]:[]);
+    const para=(g.noteTitle?`<div class="note-title">${g.noteTitle}</div>`:'')+rawLines.map(l=>`<div class="note-li plain" style="display:block;">${expand(l.html)}</div>`).join('');
     body=box+`<div class="note-box">${para}</div>`;
   }
   return `<div class="qgroup"><h4>${g.title}</h4><div class="instruction">${g.instruction}</div>${body}</div>`;

@@ -9,12 +9,20 @@
   var zone = params.get("zone");
   if (!Y.ZONE[zone]) zone = "mock";
   var focusSubject = params.get("s") || "";
+  if (zone === "toefl" && focusSubject === "full") {
+    location.replace("app/mock.html?kind=full");
+    return;
+  }
   var z = Y.ZONE[zone];
   var nav = Y.navOf(zone);
   var activeCat = "all";
   var searchQuery = "";
   var camTier = "all";
   var jtVol = (params.get("vol") || "").trim();
+  var labIndex = null;
+  var labSkill = params.get("skill") || "reading";
+  var labType = params.get("type") || "";
+  var labFilter = params.get("f") || "all";
 
   document.body.classList.add("zone-page", "zone-page--" + zone);
 
@@ -178,6 +186,9 @@
     b.classList.add("is-active");
     activeCat = next;
     jtVol = "";
+    if (searchInput && zone === "toefl") {
+      searchInput.placeholder = next === "lab" ? "搜索题目名称…" : "搜索托福套题…";
+    }
     syncZoneQuery();
     buildSubFilters();
     if (zone === "study" && next === "vocab" && window.YYSD_DIAG_GATE) {
@@ -188,6 +199,60 @@
     }
     render();
   });
+
+  contentEl.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-lab]");
+    if (!b || !contentEl.contains(b)) return;
+    var kind = b.getAttribute("data-lab");
+    var v = b.getAttribute("data-v") || "";
+    if (kind === "record") { showLabSheet(b.getAttribute("data-rec") || ""); return; }
+    if (kind === "sheet-close") { hideLabSheet(); return; }
+    if (kind === "skill") { labSkill = v; labType = ""; }
+    else if (kind === "type") labType = v;
+    else if (kind === "filter") labFilter = v;
+    else return;
+    syncZoneQuery();
+    render();
+  });
+
+  function hideLabSheet() {
+    var el = document.getElementById("lab-sheet");
+    if (el) el.remove();
+  }
+  function showLabSheet(rec) {
+    var Lab = window.YYSD_TOEFL_LAB;
+    if (!Lab || !labIndex) return;
+    hideLabSheet();
+    var parts = String(rec || "").split("|");
+    var items = [];
+    if (parts[0] === "set") {
+      items = Lab.setResults(labIndex.filter(function (it) {
+        return it.skill === "listening" && it.paperId === parts[1] && it.type === parts[2];
+      })).items;
+    } else {
+      var card = labIndex.filter(function (it) {
+        return it.skill === parts[1] && it.paperId === parts[2] && Number(it.taskIndex) === Number(parts[3]);
+      })[0];
+      items = card ? Lab.cardResults(card).items : [];
+    }
+    var box = document.createElement("div");
+    box.id = "lab-sheet";
+    box.className = "hit-lab-sheet";
+    box.innerHTML = '<div class="hit-lab-sheet__box"><h3>查看记录</h3>' +
+      (items.length
+        ? '<div class="hit-lab-sheet__list">' + items.map(function (d) {
+          return '<div class="hit-lab-sheet__row ' + (d.ok ? "is-ok" : "is-bad") + '"><b>Q' +
+            Y.esc(String(d.no)) + "</b><span>" + (d.ok ? "正确" : "错误") +
+            "</span><span>你的：" + Y.esc(d.ua || "（未作答）") +
+            (d.expect ? " · 正解：" + Y.esc(d.expect) : "") + "</span></div>";
+        }).join("") + "</div>"
+        : "<p>还没有作答记录。</p>") +
+      '<button type="button" class="btn btn--ghost btn--sm" data-lab="sheet-close">关闭</button></div>';
+    document.body.appendChild(box);
+    box.addEventListener("click", function (e) {
+      if (e.target === box || e.target.closest("[data-lab=sheet-close]")) hideLabSheet();
+    });
+  }
 
   if (subFiltersEl) {
     subFiltersEl.addEventListener("click", function (e) {
@@ -202,7 +267,7 @@
 
   if (searchInput) {
     searchInput.placeholder = zone === "mock" ? "搜索模考、册数、Test…"
-      : (zone === "toefl" ? "搜索托福套题…" : "搜索内容名称…");
+      : (zone === "toefl" ? (activeCat === "lab" ? "搜索题目名称…" : "搜索托福套题…") : "搜索内容名称…");
     var onSearch = window.YYSD_DEBOUNCE ? window.YYSD_DEBOUNCE(function () {
       searchQuery = searchInput.value.trim();
       buildSubFilters();
@@ -562,9 +627,11 @@
     }).join("") + "</div>";
   }
 
-  function toeflHubHTML() {
-    var en = { full: "Full Test", listening: "Listening", reading: "Reading", speaking: "Speaking", writing: "Writing" };
-    var cards = nav.map(function (cat) {
+  function toeflDoorCards(keys, opts) {
+    opts = opts || {};
+    var en = { lab: "By Type", dates: "By Date", full: "Full Test", listening: "Listening", reading: "Reading", speaking: "Speaking", writing: "Writing" };
+    var kindOf = { lab: "reading", dates: "mock", full: "mock" };
+    var cards = nav.filter(function (cat) { return keys.indexOf(cat.key) >= 0; }).map(function (cat) {
       var soon = !!cat.soon;
       var headHref = soon ? "" : ("zone.html?zone=toefl&s=" + encodeURIComponent(cat.key));
       var hit = soon
@@ -574,10 +641,11 @@
       var go = soon
         ? '<span class="ielts-hub__go is-soon">即将上线</span>'
         : '<a class="ielts-hub__go" href="' + Y.esc(headHref) + '">进入' + Y.esc(cat.label) + ' <span aria-hidden="true">›</span></a>';
-      var kind = cat.key === "full" ? "mock" : cat.key;
+      var kind = kindOf[cat.key] || cat.key;
+      var glyph = cat.key === "lab" ? "reading" : (cat.key === "dates" ? "mock" : cat.key);
       return '<article class="ielts-hub__card ielts-hub__card--' + Y.esc(kind) + (soon ? " is-soon" : "") + '">' +
         hit +
-          '<span class="ielts-hub__ico" aria-hidden="true">' + (Y.skillGlyph ? Y.skillGlyph(cat.key) : "") + "</span>" +
+          '<span class="ielts-hub__ico" aria-hidden="true">' + (Y.skillGlyph ? Y.skillGlyph(glyph) : "") + "</span>" +
           '<span class="ielts-hub__eyebrow">' + Y.esc(en[cat.key] || "") + "</span>" +
           "<h3>" + Y.esc(cat.label) + "</h3>" +
           '<p class="ielts-hub__desc">' + Y.esc(cat.desc || "") + "</p>" +
@@ -585,13 +653,135 @@
         go +
       "</article>";
     }).join("");
-    return '<section class="ielts-hub" aria-label="托福入口">' +
+    return '<section class="ielts-hub" aria-label="' + Y.esc(opts.aria || "托福入口") + '">' +
       '<header class="ielts-hub__intro">' +
         '<p class="ielts-hub__kicker">Enhanced TOEFL iBT</p>' +
-        "<h2>选择你的训练路径</h2>" +
-        "<p>可单项练习，也可按网考顺序完整连考：阅读 → 听力 → 写作 → 口语，无休息。</p>" +
+        "<h2>" + Y.esc(opts.h2 || "选择训练方式") + "</h2>" +
+        "<p>" + Y.esc(opts.p || "") + "</p>" +
       "</header>" +
-      '<div class="ielts-hub__grid">' + cards + "</div>" +
+      '<div class="' + Y.esc(opts.grid || "ielts-hub__grid") + '">' + cards + "</div>" +
+    "</section>";
+  }
+
+  function toeflHubHTML() {
+    return toeflDoorCards(["lab", "dates"], {
+      aria: "托福入口",
+      h2: "选择训练方式",
+      p: "按题型拆开精练一篇，或按考试日进入整卷练习与模考。",
+      grid: "ielts-hub__grid ielts-hub__grid--2"
+    });
+  }
+
+  function toeflDateHubHTML() {
+    return toeflDoorCards(["reading", "listening", "speaking", "writing"], {
+      aria: "按考试日模考",
+      h2: "按考试日模考",
+      p: "按考试日进入单项练习与模考。完整连考请到机考系统 Mock Test。",
+      grid: "ielts-hub__grid"
+    });
+  }
+
+  function loadLabThen(cb) {
+    if (labIndex) { cb(); return; }
+    fetch("library/toefl/lab-index.json", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("lab"); return r.json(); })
+      .then(function (d) { labIndex = d.items || []; cb(); })
+      .catch(function () { labIndex = []; cb(); });
+  }
+
+  function toeflLabHTML() {
+    var Lab = window.YYSD_TOEFL_LAB;
+    if (!Lab) return emptyBox("精练目录未加载", "请刷新后重试。", "zone.html?zone=toefl", "返回托福总览");
+    if (!labIndex) {
+      loadLabThen(render);
+      return '<div class="state state--brand"><p>正在加载题型目录…</p></div>';
+    }
+    var types = Lab.TYPES[labSkill] || Lab.TYPES.reading;
+    if (!types.some(function (t) { return t.key === labType; })) labType = types[0].key;
+    var filters = labSkill === "listening" ? Lab.FILTERS_LISTEN : Lab.FILTERS;
+    if (!filters.some(function (f) { return f.key === labFilter; })) labFilter = "all";
+    var q = (searchQuery || "").toLowerCase();
+    var cards = labIndex.filter(function (it) {
+      if (it.skill !== labSkill || it.type !== labType) return false;
+      if (labFilter === "todo" && Lab.isDone(it)) return false;
+      if (labFilter === "hot" && !it.hot) return false;
+      if (labFilter === "fav" && !Lab.isFavCard(it)) return false;
+      var blob = (it.titleEn || it.title || "") + " " + (it.titleZh || "") + " " + it.date + " " + (it.listenCode || "");
+      if (q && blob.toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    function chipRow(kind, items, cur) {
+      return '<div class="chip-row">' + items.map(function (it) {
+        return '<button type="button" class="chip' + (cur === it.key ? " is-active" : "") +
+          '" data-lab="' + kind + '" data-v="' + Y.esc(it.key) + '">' + Y.esc(it.label) + "</button>";
+      }).join("") + "</div>";
+    }
+    function statusTxt(st, kind) {
+      if (!st.attempted) return "未做";
+      if (kind === "speaking") return st.ok + "/" + st.total + " 已录";
+      if (st.done >= st.total && st.total) return (st.ok === st.total ? "全部正确" : (st.ok + "/" + st.total + " 正确"));
+      return st.ok + "/" + st.total;
+    }
+    function acts(href, recId, attempted) {
+      return '<div class="hit-lab__acts">' +
+        '<a class="hit-lab__go" href="' + Y.esc(href) + '">' + (attempted ? "再做一遍" : "开始练习") + "</a>" +
+        (attempted ? '<button type="button" class="hit-lab__rec" data-lab="record" data-rec="' + Y.esc(recId) + '">查看记录</button>' : "") +
+      "</div>";
+    }
+    var body;
+    if (labSkill === "listening") {
+      var sets = {};
+      cards.forEach(function (it) {
+        if (!sets[it.paperId]) sets[it.paperId] = { date: it.date, paperId: it.paperId, items: [] };
+        sets[it.paperId].items.push(it);
+      });
+      var blocks = Object.keys(sets).sort().reverse().map(function (pid) {
+        var set = sets[pid];
+        set.items.sort(function (a, b) { return a.taskIndex - b.taskIndex; });
+        var st = Lab.setResults(set.items);
+        if (labFilter === "todo" && st.attempted && st.done >= st.total) return "";
+        var setHref = Lab.hrefSet("listening", pid, labType, "practice");
+        var rows = set.items.map(function (it) {
+          var row = Lab.cardResults(it);
+          var label = (it.listenCode || "") + (it.titleEn && !/^(q\d+|choose a response)/i.test(it.titleEn)
+            ? " · " + Lab.displayTitle(it) : "");
+          var href = Lab.hrefOf(it, "practice");
+          var cls = "hit-lab__row" + (row.attempted ? (row.ok === row.total && row.total ? " is-ok" : " is-bad") : "");
+          return '<a class="' + cls + '" href="' + Y.esc(href) + '"><span>' + Y.esc(label) +
+            "</span><em>" + Y.esc(statusTxt(row, "listening")) + "</em></a>";
+        }).join("");
+        return '<article class="hit-lab__set">' +
+          '<header class="hit-lab__set-head">' +
+            "<h3>Set " + Y.esc(set.date) + "</h3>" +
+            "<span>" + st.done + "/" + st.total + "</span>" +
+            acts(setHref, "set|" + pid + "|" + labType, st.attempted) +
+          "</header>" + rows +
+        "</article>";
+      }).filter(Boolean).join("");
+      body = blocks || emptyBox("没有符合筛选的题目", "换一个题型或筛选再试。", "zone.html?zone=toefl&s=lab", "查看全部");
+    } else {
+      var countWord = labSkill === "reading" && labType === "complete_words" ? "空" : "题";
+      body = cards.length
+        ? '<div class="hit-lab__grid">' + cards.map(function (it) {
+          var href = Lab.hrefOf(it, "practice");
+          var st = Lab.cardResults(it);
+          return '<article class="hit-lab__card">' +
+            '<p class="hit-lab__kicker">' + Y.esc(Lab.typeLabel(it.skill, it.type)) +
+              (it.hot ? " · 高频" : "") + " · " + it.itemCount + " " + countWord + "</p>" +
+            "<h3>" + Y.esc(Lab.displayTitle(it)) + "</h3>" +
+            "<p>" + Y.esc(it.date) + "</p>" +
+            '<p class="hit-lab__stat">' + Y.esc(statusTxt(st, labSkill)) + "</p>" +
+            acts(href, "card|" + it.skill + "|" + it.paperId + "|" + it.taskIndex, st.attempted) +
+          "</article>";
+        }).join("") + "</div>"
+        : emptyBox("没有符合筛选的题目", "换一个题型或筛选再试。", "zone.html?zone=toefl&s=lab", "查看全部");
+    }
+    return '<section class="hit-lab" aria-label="按题型精练">' +
+      '<header class="hit-lab__intro"><h2>按题型精练</h2><p>先选择题型，再点题目进入 ETS 机考界面。</p></header>' +
+      chipRow("skill", Lab.SKILLS, labSkill) +
+      chipRow("type", types, labType) +
+      chipRow("filter", filters, labFilter) +
+      body +
     "</section>";
   }
 
@@ -680,6 +870,17 @@
         u.searchParams.delete("vol");
         changed = true;
       }
+      if (activeCat === "lab") {
+        if (u.searchParams.get("skill") !== labSkill) { u.searchParams.set("skill", labSkill); changed = true; }
+        if (labType && u.searchParams.get("type") !== labType) { u.searchParams.set("type", labType); changed = true; }
+        if (labFilter && labFilter !== "all") {
+          if (u.searchParams.get("f") !== labFilter) { u.searchParams.set("f", labFilter); changed = true; }
+        } else if (u.searchParams.has("f")) { u.searchParams.delete("f"); changed = true; }
+      } else {
+        ["skill", "type", "f"].forEach(function (k) {
+          if (u.searchParams.has(k)) { u.searchParams.delete(k); changed = true; }
+        });
+      }
       if (!changed) return;
       history.replaceState(null, "", u.pathname + u.search + u.hash);
     } catch (e) { /* ignore */ }
@@ -706,7 +907,9 @@
   function render() {
     syncToolbar();
     var html;
-    if (searchQuery) {
+    if (searchQuery && zone === "toefl" && activeCat === "lab") {
+      html = toeflLabHTML();
+    } else if (searchQuery) {
       var matched = Y.searchItems(allItems, searchQuery);
       html = '<div class="catalog-search-meta">找到 ' + matched.length + " 条结果</div>" +
         Y.searchResultsHTML(matched, "");
@@ -714,6 +917,10 @@
       html = ieltsHubHTML();
     } else if (zone === "toefl" && activeCat === "all") {
       html = toeflHubHTML();
+    } else if (zone === "toefl" && activeCat === "lab") {
+      html = toeflLabHTML();
+    } else if (zone === "toefl" && activeCat === "dates") {
+      html = toeflDateHubHTML();
     } else {
       var aiTutorHTML = zone === "practice"
         ? '<a class="ai-tutor-entry pressable" href="ai-tutor.html">' +

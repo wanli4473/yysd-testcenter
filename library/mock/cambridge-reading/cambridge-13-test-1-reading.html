@@ -272,62 +272,35 @@ const TEST = {
       },
       "groups": [
         {
-          "kind": "note",
+          "kind": "table",
           "title": "Questions 1–7",
           "instruction": "Complete the table below. Choose ONE WORD ONLY from the passage for each answer.",
-          "noteTitle": "Website sections and comments",
-          "lines": [
-            {
-              "h": "Database of tourism services"
-            },
-            {
-              "bullet": true,
-              "html": "easy for tourism-related businesses to get on the list"
-            },
-            {
-              "bullet": true,
-              "html": "allowed businesses to <Q n=\"1\">"
-            },
-            {
-              "bullet": true,
-              "html": "information regularly updated"
-            },
-            {
-              "bullet": true,
-              "html": "provided a country-wide evaluation of businesses, including their impact on the <Q n=\"2\">"
-            },
-            {
-              "h": "Special features on local topics"
-            },
-            {
-              "bullet": true,
-              "html": "e.g. an interview with a former sports <Q n=\"3\">"
-            },
-            {
-              "bullet": true,
-              "html": "and an interactive tour of various locations used in <Q n=\"4\">"
-            },
-            {
-              "h": "Information on driving routes"
-            },
-            {
-              "bullet": true,
-              "html": "varied depending on the <Q n=\"5\">"
-            },
-            {
-              "h": "Travel Planner"
-            },
-            {
-              "bullet": true,
-              "html": "included a map showing selected places, details of public transport and local <Q n=\"6\">"
-            },
-            {
-              "h": "'Your Words'"
-            },
-            {
-              "bullet": true,
-              "html": "travellers could send a link to their <Q n=\"7\">"
-            }
+          "tableTitle": "",
+          "cols": [
+            "Section of website",
+            "Comments"
+          ],
+          "rows": [
+            [
+              "Database of tourism services",
+              "• easy for tourism-related businesses to get on the list<br>• allowed businesses to <Q n=\"1\"> information regularly<br>• provided a country-wide evaluation of businesses, including their impact on the <Q n=\"2\">"
+            ],
+            [
+              "Special features on local topics",
+              "• e.g. an interview with a former sports <Q n=\"3\">, and an interactive tour of various locations used in <Q n=\"4\">"
+            ],
+            [
+              "Information on driving routes",
+              "• varied depending on the <Q n=\"5\">"
+            ],
+            [
+              "Travel Planner",
+              "• included a map showing selected places, details of public transport and local <Q n=\"6\">"
+            ],
+            [
+              "'Your Words'",
+              "• travellers could send a link to their <Q n=\"7\">"
+            ]
           ],
           "questions": [
             {
@@ -541,50 +514,51 @@ const TEST = {
         {
           "kind": "match",
           "title": "Questions 20–23",
-          "instruction": "Look at the following statements and the list of people below. Match each statement with the correct person, A–D.",
-          "boxTitle": "List of People",
+          "instruction": "Look at the following people (Questions 20–23) and the list of ideas below. Match each person with the correct idea, A–E.",
+          "boxTitle": "List of Ideas",
           "box": {
-            "A": "Peter Toohey",
-            "B": "Thomas Goetz",
-            "C": "John Eastwood",
-            "D": "Francoise Wemelsfelder"
+            "A": "The way we live today may encourage boredom.",
+            "B": "One sort of boredom is worse than all the others.",
+            "C": "Levels of boredom may fall in the future.",
+            "D": "Trying to cope with boredom can increase its negative effects.",
+            "E": "Boredom may encourage us to avoid an unpleasant experience."
           },
           "questions": [
             {
               "id": "Q20",
               "no": 20,
-              "q": "Boredom may cause us to avoid an unpleasant experience.",
+              "q": "Peter Toohey",
               "answer": [
-                "A"
+                "E"
               ],
-              "explain": "答案：A。原文 Peter Toohey 将 boredom 类比为 disgust，帮助人避开某些情境。"
+              "explain": "Toohey 将 boredom 比作 disgust，可让人避开某些情境。E。"
             },
             {
               "id": "Q21",
               "no": 21,
-              "q": "One sort of boredom is worse than all the others.",
+              "q": "Thomas Goetz",
               "answer": [
                 "B"
               ],
-              "explain": "答案：B。"
+              "explain": "Goetz：reactant boredom 危害最大。B。"
             },
             {
               "id": "Q22",
               "no": 22,
-              "q": "Trying to cope with boredom can increase its negative effects.",
+              "q": "John Eastwood",
               "answer": [
-                "C"
+                "D"
               ],
-              "explain": "答案：C。"
+              "explain": "Eastwood：试图改善状况反而更糟。D。"
             },
             {
               "id": "Q23",
               "no": 23,
-              "q": "The way we live today may encourage boredom.",
+              "q": "Francoise Wemelsfelder",
               "answer": [
-                "D"
+                "A"
               ],
-              "explain": "答案：D。"
+              "explain": "Wemelsfelder：过度连接的生活方式可能是无聊的新来源。A。"
             }
           ]
         },
@@ -839,6 +813,7 @@ const TEST = {
     }
   ]
 };
+
 const allQs = sec => sec.groups.flatMap(g=>g.questions);
 const totalQs = () => TEST.passages.reduce((n,p)=>n+allQs(p).length,0);
 

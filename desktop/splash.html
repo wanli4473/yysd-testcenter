@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>优益思达国际课程中心</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #f4f1ea; color: #1c1915; font-family: "Songti SC", "Noto Serif SC", serif; }
+    body { display: flex; align-items: center; justify-content: center; }
+    main { width: 420px; text-align: center; }
+    h1 { font-size: 22px; font-weight: 600; letter-spacing: 0.08em; margin: 0 0 28px; }
+    p { font-size: 14px; letter-spacing: 0.08em; margin: 0 0 16px; }
+    .track { height: 3px; background: #ddd6c8; border-radius: 2px; overflow: hidden; }
+    .bar { height: 100%; width: 0; background: #1c1915; transition: width 0.25s ease; }
+    button { margin-top: 18px; border: 0; background: transparent; color: #1c1915; text-decoration: underline; cursor: pointer; font: inherit; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>优益思达国际课程中心</h1>
+    <p id="label">系统预加载中</p>
+    <div class="track"><div class="bar" id="bar"></div></div>
+    <button id="retry" hidden type="button">重试</button>
+  </main>
+  <script>
+    var bar = document.getElementById("bar");
+    var label = document.getElementById("label");
+    var retry = document.getElementById("retry");
+    window.yysdSplash.onLabel(function (text) { label.textContent = text; });
+    window.yysdSplash.onProgress(function (n) {
+      bar.style.width = Math.max(0, Math.min(100, n)) + "%";
+      retry.hidden = true;
+    });
+    window.yysdSplash.onFail(function () {
+      label.textContent = "加载失败";
+      retry.hidden = false;
+    });
+    retry.onclick = function () {
+      label.textContent = "系统预加载中";
+      retry.hidden = true;
+      bar.style.width = "0";
+      window.yysdSplash.retry();
+    };
+  </script>
+</body>
+</html>

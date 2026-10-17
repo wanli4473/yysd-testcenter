@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>即将开放</title>
-  <link rel="stylesheet" href="assets/css/hit.css">
+  <link rel="stylesheet" href="assets/css/hit.css?v=20261015swiss1">
   <script src="assets/js/gate.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/hit-shell.js"></script>
+  <script src="assets/js/auth.js?v=20261008ui14"></script>
+  <script src="assets/js/hit-shell.js?v=20261015swiss1"></script>
 </head>
 <body class="hit">
   <main class="hit-main">
@@ -23,7 +23,7 @@
         mock: { key: "mock", t: "模考", d: "整套 / 单科模考随后加入。第一期只开放按题型精练。" }
       };
       var p = map[new URLSearchParams(location.search).get("p")] || { key: "home", t: "即将开放", d: "这一页第一期先占位。" };
-      if (!YYSD_HIT.mount(p.key)) return;
+      if (!YYSD_HIT.mount("profile")) return;
       document.getElementById("t").textContent = p.t;
       document.getElementById("d").textContent = p.d;
     })();

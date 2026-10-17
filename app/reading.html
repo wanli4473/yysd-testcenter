@@ -2,94 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reading</title>
-  <link rel="stylesheet" href="assets/css/app.css">
-  <link rel="stylesheet" href="assets/css/exam.css">
-  <script src="assets/js/gate.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/hit-shell.js"></script>
-  <script src="assets/js/play.js"></script>
-  <script src="assets/js/reading.js"></script>
+  <script src="assets/js/gate.js?v=20261016exam1"></script>
+  <script src="assets/js/auth.js?v=20261015prev1"></script>
+  <script src="assets/js/access.js?v=20261014kl1"></script>
 </head>
-<body class="exam-ets">
-  <header class="ets-bar">
-    <div class="ets-bar-left"><b id="set-title">Reading</b><span id="mode-tag">Practice</span></div>
-    <div class="ets-bar-right">
-      <button type="button" id="back-btn">Back</button>
-      <button type="button" id="next-btn">Next</button>
-    </div>
-  </header>
-  <div class="ets-sub"><span id="q-range">Reading</span></div>
-  <section id="exam" class="exam-body">
-    <p class="exam-title" id="instruction"></p>
-    <div id="cw-wrap" class="hidden"><div class="passage exam-card" id="passage"></div></div>
-    <div id="split-wrap" class="exam-split hidden">
-      <article class="exam-card"><p class="q-stem" id="q-stem"></p><div id="opts"></div></article>
-      <article class="exam-card passage" id="right-pass"></article>
-    </div>
-  </section>
+<body>
   <script>
     (function () {
-      var A = window.YYSD_APP, T = window.YYSD_TOEFL, P = window.YYSD_PLAY;
-      if (!A.requireLogin("reading.html" + location.search)) return;
-      var ti = P.taskIndex(), answers = {}, qi = 0, task, paper;
-      P.loadPaper("reading").then(function (p) {
-        paper = p;
-        task = (p.tasks || [])[ti];
-        if (!task) { location.replace("reading-lab.html"); return; }
-        document.getElementById("set-title").textContent = task.title || "Reading";
-        document.getElementById("instruction").textContent = task.instruction || "";
-        document.getElementById("back-btn").onclick = function () {
-          if (task.type === "complete_words" || qi === 0) location.href = "reading-lab.html";
-          else { qi -= 1; paint(); }
-        };
-        document.getElementById("next-btn").onclick = next;
-        paint();
-      });
-      function qs() { return task.questions || []; }
-      function paint() {
-        var cw = document.getElementById("cw-wrap");
-        var split = document.getElementById("split-wrap");
-        if (task.type === "complete_words") {
-          cw.classList.remove("hidden");
-          split.classList.add("hidden");
-          T.renderBlanks(task, document.getElementById("passage"), answers);
-          document.getElementById("q-range").textContent = "Complete the Words · 10 blanks";
-          document.getElementById("next-btn").textContent = "Submit";
-          return;
-        }
-        cw.classList.add("hidden");
-        split.classList.remove("hidden");
-        var q = qs()[qi];
-        document.getElementById("q-range").textContent = "Question " + (qi + 1) + " of " + qs().length;
-        document.getElementById("q-stem").textContent = q.stem;
-        T.renderOptions(q, document.getElementById("opts"), answers[q.id]);
-        if (task.type === "daily_life" && task.layout) {
-          var L = task.layout;
-          document.getElementById("right-pass").innerHTML = "<h2>" + T.esc(L.title || task.title) + "</h2><p>" + T.esc(L.body || "").replace(/\n/g, "<br>") + "</p>";
-        } else T.renderPassage(task, document.getElementById("right-pass"), false);
-        document.getElementById("next-btn").textContent = qi === qs().length - 1 ? "Submit" : "Next";
+      var A = window.YYSD_APP;
+      if (A && A.requireLogin && !A.requireLogin("reading.html" + location.search)) return;
+      function go() {
+        var q = new URLSearchParams(location.search);
+        if (!q.get("mode")) q.set("mode", "practice");
+        if (!q.get("from")) q.set("from", "app");
+        var root = location.pathname.indexOf("/app/") >= 0 ? "../" : "";
+        location.replace(root + "toefl-reading.html?" + q.toString());
       }
-      function grab() {
-        if (task.type === "complete_words") {
-          Object.assign(answers, T.collectBlanks(document.getElementById("passage")));
-          return;
-        }
-        var q = qs()[qi];
-        var sel = document.querySelector("#opts input:checked");
-        if (sel) answers[q.id] = sel.value;
-      }
-      function next() {
-        grab();
-        if (task.type !== "complete_words" && qi < qs().length - 1) { qi += 1; paint(); return; }
-        var fake = { tasks: [task] };
-        var r = T.scorePaper(fake, answers);
-        P.finish("reading", {
-          skill: "reading", paper: paper, tasks: [ti], answers: answers,
-          score: r.score, total: r.total, perTask: { }
-        });
-      }
+      if (window.YYSD_ACCESS && YYSD_ACCESS.paper) {
+        YYSD_ACCESS.paper(function () {}).then(function (ok) { if (ok) go(); });
+      } else go();
     })();
   </script>
 </body>

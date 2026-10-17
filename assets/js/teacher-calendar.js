@@ -40,12 +40,13 @@
     rscene: "阅读场景练习：选场景与册，再勾 Passage（整篇练习规则）。",
     skill: "单项模考：先选册与 Test，再勾单科整卷（机考模考规则）。",
     suite: "全套模考：先选册，再勾某套 Test 的听力+阅读+写作。",
-    rsecret: "阅读绝密套卷：勾选整卷布置。"
+    rsecret: "阅读绝密套卷：勾选整卷布置。",
+    lsecret: "听力绝密套卷：勾选整卷或 Section 布置。"
   };
 
   function cdtPackForCat(cat) {
     if (cat === "part" || cat === "qtype" || cat === "scene" || cat === "rqtype" || cat === "rscene") return "drill";
-    if (cat === "skill" || cat === "suite" || cat === "rsecret") return "exam";
+    if (cat === "skill" || cat === "suite" || cat === "rsecret" || cat === "lsecret") return "exam";
     if (cat === "vocab") return "vocab-quiz";
     return "";
   }
@@ -211,14 +212,20 @@
   }
 
   function isSecretReading(it) {
-    var hay = String((it && it.id) || "") + " " + String((it && it.title) || "");
-    return /secret-set|绝密套卷/.test(hay);
+    if (!it || it.subject !== "cambridge-reading") return false;
+    return /^secret-set-\d+/.test(it.id || "");
+  }
+
+  function isSecretListening(it) {
+    if (!it || it.subject !== "cambridge-listening") return false;
+    return /^secret-set-\d+/.test(it.id || "");
   }
 
   function itemInCat(it, cat) {
     if (!cat) return true;
     if (cat === "rsecret") return isSecretReading(it);
-    if (isSecretReading(it)) return false;
+    if (cat === "lsecret") return isSecretListening(it);
+    if (isSecretReading(it) || isSecretListening(it)) return false;
     if (cat === "vocab") return isVocabSubject(it.subject);
     if (cat === "part") {
       if (!it.partNum) return false;
@@ -420,6 +427,7 @@
   }
 
   function openCreate() {
+    if (Y.ensureSecretCatChips) Y.ensureSecretCatChips();
     showMsg("");
     document.getElementById("create-form").reset();
     selectedStudents = {};
@@ -847,18 +855,32 @@
         if (!itemInCat(it, exerciseCat)) return false;
         if (searching) {
           var hay = (Y.displayTitle(it) + " " + it.title + " " + it.id + " " +
-            (it.subject || "") + " " + (Y.partSearchText ? Y.partSearchText(it) : "")).toLowerCase();
+            (it.subject || "") + " " + (Y.partSearchText ? Y.partSearchText(it) : "") + " " +
+            (Y.secretSearchText ? Y.secretSearchText(it) : "")).toLowerCase();
           return hay.indexOf(q) >= 0;
         }
         if (isCambridgeBrowse() && !matchVolTest(it)) return false;
         return true;
       });
+      if (exerciseCat === "rsecret" || exerciseCat === "lsecret") {
+        items.sort(function (a, b) {
+          function key(it) {
+            var m = String(it.id || "").match(/^secret-set-(\d+)(?:-reading)?(?:-(s|p)(\d+))?$/i);
+            return m ? [Number(m[1]), m[3] ? Number(m[3]) : 0] : [9999, 0];
+          }
+          var ka = key(a), kb = key(b);
+          return ka[0] - kb[0] || ka[1] - kb[1];
+        });
+      }
       items = items.slice(0, searching ? 120 : 40);
       html = items.map(function (it) {
         var checked = selectedExercises[it.id] ? " checked" : "";
+        var topic = (Y.secretTopicLine && Y.secretTopicLine(it)) || (Y.secretPaperTopics && Y.secretPaperTopics(it));
         var label = exerciseCat === "skill"
           ? ("单项模考 · " + itemCatLabel(it))
-          : (exerciseCat === "rsecret" ? "阅读绝密套卷" : itemCatLabel(it));
+          : exerciseCat === "rsecret" ? (topic || "阅读绝密套卷")
+          : exerciseCat === "lsecret" ? (topic || "听力绝密套卷")
+          : itemCatLabel(it);
         return '<label class="cal-check">' +
           '<input type="checkbox" data-exercise="' + esc(it.id) + '"' + checked + ">" +
           "<span><b>" + esc(Y.displayTitle(it)) + "</b><small>" + esc(label) + "</small></span></label>";
@@ -872,8 +894,10 @@
         : (isTaxonomyBrowse()
           ? "该筛选下暂无题目，换题型 / 场景或换一册试试"
           : (isCambridgeBrowse() ? "该册 / Test 下暂无内容，换一册试试" : "没有匹配的练习")));
-    document.getElementById("exercise-list").innerHTML =
-      html || '<p class="profile-hint">' + emptyMsg + "</p>";
+    var listEl = document.getElementById("exercise-list");
+    listEl.classList.toggle("cal-check-list--lsecret", exerciseCat === "lsecret");
+    listEl.classList.toggle("cal-check-list--rsecret", exerciseCat === "rsecret");
+    listEl.innerHTML = html || '<p class="profile-hint">' + emptyMsg + "</p>";
     updateExercisePicked();
   }
 

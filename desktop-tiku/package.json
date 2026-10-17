@@ -1,0 +1,43 @@
+{
+  "name": "youyisida-tiku",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac dmg zip --universal",
+    "dist:win": "electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.youyisida.tiku",
+    "productName": "优益思达题库中心",
+    "mac": {
+      "icon": "build/icon.png",
+      "identity": null,
+      "extendInfo": {
+        "CFBundleDisplayName": "优益思达题库中心",
+        "CFBundleName": "优益思达题库中心"
+      },
+      "gatekeeperAssess": false,
+      "category": "public.app-category.education",
+      "target": [{ "target": "dmg", "arch": ["universal"] }]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [{ "target": "nsis", "arch": ["x64"] }]
+    },
+    "dmg": {
+      "artifactName": "YouYiSiDa-Tiku.dmg"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "YouYiSiDa-Tiku.exe"
+    },
+    "files": ["main.js", "preload.js", "splash.html", "splash-preload.js"]
+  }
+}

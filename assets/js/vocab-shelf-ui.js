@@ -56,6 +56,7 @@
   var BOOK_EMOJI = {
     gaozhong: "📚",
     cet4: "📗",
+    "cet4-lite": "📘",
     special: "🎯",
     cet6: "📘",
     tem: "🎓",

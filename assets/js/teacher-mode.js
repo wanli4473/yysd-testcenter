@@ -213,7 +213,8 @@
   function boot() {
     if (pageName() === "teacher-mode-picker.html") return;
     if (pageName() === "teacher-student-report.html") return;
-    if (pageName() === "platform.html") {
+    if (pageName() === "download.html") return;
+    if (pageName() === "platform.html" || pageName() === "admin-seats.html") {
       if (document.body.classList.contains("teacher-page")) mountAdminSwitch();
       return;
     }

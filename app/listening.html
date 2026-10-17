@@ -2,82 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Listening</title>
-  <link rel="stylesheet" href="assets/css/app.css">
-  <link rel="stylesheet" href="assets/css/exam.css">
-  <script src="assets/js/gate.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/hit-shell.js"></script>
-  <script src="assets/js/play.js"></script>
-  <script src="assets/js/reading.js"></script>
+  <script src="assets/js/gate.js?v=20261016exam1"></script>
+  <script src="assets/js/auth.js?v=20261015prev1"></script>
+  <script src="assets/js/access.js?v=20261014kl1"></script>
 </head>
-<body class="exam-ets">
-  <header class="ets-bar">
-    <div class="ets-bar-left"><b id="set-title">Listening</b><span id="mode-tag">Practice</span></div>
-    <div class="ets-bar-right">
-      <button type="button" id="vol-btn">Volume</button>
-      <button type="button" id="next-btn" disabled>Next</button>
-    </div>
-  </header>
-  <div class="ets-sub"><span id="q-range">Listening</span></div>
-  <section id="listen-stage" class="ets-listen-stage">
-    <div class="ets-headset" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 22a16 16 0 1 1 32 0v10a5 5 0 0 1-5 5h-3V24h6v-2a14 14 0 1 0-28 0v2h6v13H13a5 5 0 0 1-5-5V22z"/></svg></div>
-    <p class="ets-phase">LISTEN</p>
-    <p id="listen-caption">Listen to the recording.</p>
-    <audio id="clip" preload="auto"></audio>
-  </section>
-  <section id="exam" class="exam-body hidden">
-    <p class="exam-title" id="instruction"></p>
-    <article class="exam-card"><p class="q-stem" id="q-stem"></p><div id="opts"></div></article>
-  </section>
+<body>
   <script>
     (function () {
-      var A = window.YYSD_APP, T = window.YYSD_TOEFL, P = window.YYSD_PLAY;
-      if (!A.requireLogin("listening.html" + location.search)) return;
-      var ti = P.taskIndex(), qi = 0, answers = {}, task, paper, heard = false;
-      var clip = document.getElementById("clip");
-      var nextBtn = document.getElementById("next-btn");
-      P.loadPaper("listening").then(function (p) {
-        paper = p;
-        task = (p.tasks || [])[ti];
-        if (!task) { location.replace("listening-lab.html"); return; }
-        document.getElementById("set-title").textContent = task.title || "Listening";
-        document.getElementById("instruction").textContent = task.instruction || "";
-        clip.src = task.audio || "";
-        var cr = task.type === "choose_response";
-        if (cr) showQ();
-        clip.play().catch(function () {});
-        clip.onended = function () { heard = true; if (!cr) showQ(); nextBtn.disabled = false; };
-        clip.onerror = function () { heard = true; if (!cr) showQ(); nextBtn.disabled = false; };
-        if (cr) nextBtn.disabled = false;
-        nextBtn.onclick = next;
-        document.getElementById("vol-btn").onclick = function () { clip.muted = !clip.muted; };
-      });
-      function qs() { return task.questions || []; }
-      function showQ() {
-        document.getElementById("listen-stage").classList.add("hidden");
-        document.getElementById("exam").classList.remove("hidden");
-        var q = qs()[qi];
-        document.getElementById("q-range").textContent = (task.code || "Q") + " · " + (qi + 1) + "/" + qs().length;
-        document.getElementById("q-stem").textContent = q.stem;
-        T.renderOptions(q, document.getElementById("opts"), answers[q.id]);
-        nextBtn.textContent = qi === qs().length - 1 ? "Submit" : "Next";
-        nextBtn.disabled = task.type !== "choose_response" && !heard && qi === 0;
+      var A = window.YYSD_APP;
+      if (A && A.requireLogin && !A.requireLogin("listening.html" + location.search)) return;
+      function go() {
+        var q = new URLSearchParams(location.search);
+        if (!q.get("mode")) q.set("mode", "practice");
+        if (!q.get("from")) q.set("from", "app");
+        var root = location.pathname.indexOf("/app/") >= 0 ? "../" : "";
+        location.replace(root + "toefl-listening.html?" + q.toString());
       }
-      function grab() {
-        var q = qs()[qi];
-        var sel = document.querySelector("#opts input:checked");
-        if (sel) answers[q.id] = sel.value;
-      }
-      function next() {
-        if (document.getElementById("exam").classList.contains("hidden")) return;
-        grab();
-        if (qi < qs().length - 1) { qi += 1; showQ(); return; }
-        var fake = { tasks: [task] };
-        var r = T.scorePaper(fake, answers);
-        P.finish("listening", { skill: "listening", paper: paper, tasks: [ti], answers: answers, score: r.score, total: r.total });
-      }
+      if (window.YYSD_ACCESS && YYSD_ACCESS.paper) {
+        YYSD_ACCESS.paper(function () {}).then(function (ok) { if (ok) go(); });
+      } else go();
     })();
   </script>
 </body>

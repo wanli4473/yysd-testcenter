@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册 · 机考系统</title>
+  <link rel="stylesheet" href="assets/css/app.css?v=20261015swiss1">
+  <script src="assets/js/gate.js"></script>
+  <script src="assets/js/auth.js?v=20261008ui15"></script>
+</head>
+<body class="auth-page">
+  <header class="top"><b>优益思达机考系统<small lang="en">YYSD TEST CENTER</small></b>
+    <span class="top-acts"><button type="button" id="hit-reload">刷新</button></span>
+  </header>
+  <main class="shell">
+    <div class="card">
+      <p class="auth-eyebrow" lang="en">CREATE ACCOUNT</p>
+      <h1>注册</h1>
+      <p class="lead">用管理员发给你的激活码开户并绑定这台电脑。</p>
+      <form id="f">
+        <label class="field">手机号
+          <input type="tel" id="phone" maxlength="11" inputmode="numeric" autocomplete="tel" required>
+        </label>
+        <label class="field">设置密码
+          <input type="password" id="password" minlength="6" maxlength="64" autocomplete="new-password" required>
+        </label>
+        <label class="field">确认密码
+          <input type="password" id="confirm" minlength="6" maxlength="64" autocomplete="new-password" required>
+        </label>
+        <label class="field">激活码
+          <input id="activationCode" autocomplete="off" placeholder="ABCD-EFGH" required>
+        </label>
+        <p class="msg" id="msg"></p>
+        <button class="btn btn-block" type="submit">注册并进入</button>
+      </form>
+      <p class="auth-switch">已有账号？<a href="login.html">去登录</a></p>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var A = window.YYSD_APP;
+      if (A.token()) { location.replace("home.html"); return; }
+      A.bindReload(document.getElementById("hit-reload"));
+      document.getElementById("f").addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var msg = document.getElementById("msg");
+        var password = document.getElementById("password").value;
+        var confirm = document.getElementById("confirm").value;
+        msg.textContent = "";
+        if (password !== confirm) { msg.textContent = "两次密码不一致"; return; }
+        A.api("/api/auth/register", {
+          method: "POST",
+          body: {
+            phone: document.getElementById("phone").value.trim(),
+            password: password,
+            confirm: confirm,
+            activationCode: document.getElementById("activationCode").value.trim()
+          }
+        }).then(function (d) {
+          A.applyLogin(d);
+          location.replace("home.html");
+        }).catch(function (e) {
+          msg.textContent = e.message || "注册失败";
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

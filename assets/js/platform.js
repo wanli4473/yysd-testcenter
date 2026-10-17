@@ -328,20 +328,7 @@
       }).catch(function (e) { msg(e.message || "保存失败"); });
     });
 
-    function ensureMaintBox() {
-      if (document.getElementById("maint-toggle")) return;
-      var create = document.getElementById("plat-create");
-      if (!create) return;
-      var box = document.createElement("section");
-      box.className = "plat-form";
-      box.id = "plat-maint";
-      box.innerHTML = "<h2>全站维护</h2>" +
-        "<p class=\"minimal-page-desc\">打开后，只有 15901754473、18956023079 能进网站，其他人只看到更新中页面。改完记得关掉。</p>" +
-        "<button type=\"button\" class=\"btn btn--primary\" id=\"maint-toggle\">打开维护</button>";
-      create.parentNode.insertBefore(box, create);
-    }
     function loadMaint() {
-      ensureMaintBox();
       return A.api("/api/maintenance").then(function (d) {
         var btn = document.getElementById("maint-toggle");
         if (!btn) return;
@@ -349,11 +336,8 @@
         btn.textContent = d.on ? "关闭维护（恢复大家访问）" : "打开维护（只留自己能进）";
       });
     }
-    function bindMaint() {
-      ensureMaintBox();
-      var maintBtn = document.getElementById("maint-toggle");
-      if (!maintBtn || maintBtn.getAttribute("data-bound") === "1") return;
-      maintBtn.setAttribute("data-bound", "1");
+    var maintBtn = document.getElementById("maint-toggle");
+    if (maintBtn) {
       maintBtn.addEventListener("click", function () {
         var on = maintBtn.getAttribute("data-on") !== "1";
         A.api("/api/maintenance", { method: "POST", body: { on: on } })
@@ -364,9 +348,62 @@
           .catch(function (e) { msg(e.message || "切换失败"); });
       });
     }
-    bindMaint();
 
-    gateThenLoad().then(loadMaint).catch(function (e) {
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function loadTiku() {
+      var box = document.getElementById("tiku-teachers");
+      var ips = document.getElementById("tiku-ips");
+      if (!box || !ips) return Promise.resolve();
+      return Promise.all([
+        A.api("/api/platform/tiku/teachers"),
+        A.api("/api/platform/tiku/ips")
+      ]).then(function (xs) {
+        box.innerHTML = (xs[0].teachers || []).map(function (t) {
+          return '<label style="display:block;margin:.35rem 0"><input type="checkbox" data-tiku="' + t.id + '"' +
+            (t.canTiku ? " checked" : "") + "> " + esc(t.name || "") + " " + esc(t.phone) + "</label>";
+        }).join("") || "<p>还没有老师账号。</p>";
+        ips.innerHTML = (xs[1].ips || []).map(function (x) {
+          return "<li>" + esc(x.ip) + (x.note ? " · " + esc(x.note) : "") +
+            ' <button type="button" class="btn btn--ghost btn--sm" data-del-ip="' + esc(x.ip) + '">删</button></li>';
+        }).join("");
+      });
+    }
+    var tikuTeachers = document.getElementById("tiku-teachers");
+    if (tikuTeachers) {
+      tikuTeachers.addEventListener("change", function (ev) {
+        var el = ev.target.closest("[data-tiku]");
+        if (!el) return;
+        A.api("/api/platform/tiku/teachers/" + el.getAttribute("data-tiku"), {
+          method: "POST",
+          body: { canTiku: !!el.checked }
+        }).then(function () { msg("已更新题库权限", true); }).catch(function (e) { msg(e.message); });
+      });
+    }
+    var tikuAdd = document.getElementById("tiku-ip-add");
+    if (tikuAdd) {
+      tikuAdd.onclick = function () {
+        var ip = (document.getElementById("tiku-ip") || {}).value || "";
+        var note = (document.getElementById("tiku-ip-note") || {}).value || "";
+        msg("正在添加…", true);
+        A.api("/api/platform/tiku/ips", {
+          method: "POST",
+          body: { ip: ip.trim(), note: note.trim() }
+        }).then(function () { msg("已添加 IP", true); return loadTiku(); }).catch(function (e) { msg(e.message); });
+      };
+    }
+    var tikuIps = document.getElementById("tiku-ips");
+    if (tikuIps) {
+      tikuIps.addEventListener("click", function (ev) {
+        var btn = ev.target.closest("[data-del-ip]");
+        if (!btn) return;
+        A.api("/api/platform/tiku/ips", { method: "DELETE", body: { ip: btn.getAttribute("data-del-ip") } })
+          .then(function () { return loadTiku(); }).catch(function (e) { msg(e.message); });
+      });
+    }
+
+    gateThenLoad().then(loadMaint).then(loadTiku).catch(function (e) {
       msg((e && e.message) || "无法进入平台主控台");
     });
   });

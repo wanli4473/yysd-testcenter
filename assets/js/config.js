@@ -106,7 +106,6 @@ window.YYSD = (function () {
       { key: "jingting", label: "听力精听", subject: "jingting", desc: "听力真题精听" }
     ],
     toefl: [
-      { key: "full", label: "完整模考", desc: "四科连考 · 网考顺序", skill: "full" },
       { key: "reading", label: "阅读", subject: "toefl-reading", desc: "阅读真题顺序练习", skill: "reading" },
       { key: "listening", label: "听力", subject: "toefl-listening", desc: "听力真题顺序练习", skill: "listening" },
       { key: "speaking", label: "口语", subject: "toefl-speaking", desc: "口语真题顺序练习", skill: "speaking" },
@@ -1106,102 +1105,13 @@ window.YYSD = (function () {
     }
   ];
   // ponytail: 9.05 为题库而非标准 47 题听力全卷；完整模考链同一套 id 的四科
+  // ponytail: only the 3 full-form papers stay in Mock Test; other dates remain on disk
   var TOEFL_FULL = [
-    {
-      id: "2025-07-04",
-      title: "新托福 7.04 国内线下 · 完整模考",
-      duration: 163,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 163 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-07-05",
-      title: "新托福 7.05 国内线下 · 完整模考",
-      duration: 128,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 128 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-07-08",
-      title: "新托福 7.08 · 完整模考",
-      duration: 101,
-      desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
-    },
-    {
-      id: "2025-07-11",
-      title: "新托福 7.11 国内线下 · 完整模考",
-      duration: 82,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 82 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-07-13",
-      title: "新托福 7.13 · 完整模考",
-      duration: 101,
-      desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
-    },
     {
       id: "2025-07-16",
       title: "新托福 7.16 · 完整模考",
       duration: 101,
       desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
-    },
-    {
-      id: "2025-07-18",
-      title: "新托福 7.18 国内线下 · 完整模考",
-      duration: 175,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 175 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-07-19",
-      title: "新托福 7.19 国内线下 · 完整模考",
-      duration: 126,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 126 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-07-25",
-      title: "新托福 7.25 国内线下 · 完整模考",
-      duration: 116,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 116 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-07-29",
-      title: "新托福 7.29 国内线下 · 完整模考",
-      duration: 134,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 134 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-08-08",
-      title: "新托福 8.08 · 完整模考",
-      duration: 100,
-      desc: "阅读→听力→写作→口语 · 约 100 分钟 · 无休息"
-    },
-    {
-      id: "2025-08-12",
-      title: "新托福 8.12 国内线下 · 完整模考",
-      duration: 145,
-      desc: "阅读→听力→写作→口语 · 约 145 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-08-19",
-      title: "新托福 8.19 国内线下 · 完整模考",
-      duration: 193,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 193 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-08-22",
-      title: "新托福 8.22 国内线下 · 完整模考",
-      duration: 252,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 252 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-08-26",
-      title: "新托福 8.26 国内线下 · 完整模考",
-      duration: 100,
-      desc: "阅读→听力→写作→口语 · 约 100 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2025-08-30",
-      title: "新托福 8.30 国内线下 · 完整模考",
-      duration: 182,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 182 分钟 · 无休息 · 国内线下"
     },
     {
       id: "2025-09-02",
@@ -1210,34 +1120,10 @@ window.YYSD = (function () {
       desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
     },
     {
-      id: "2025-09-05",
-      title: "新托福 9.05 · 完整模考",
-      duration: 175,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 175 分钟 · 无休息"
-    },
-    {
-      id: "2025-09-13",
-      title: "新托福 9.13 · 完整模考",
-      duration: 167,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 167 分钟 · 无休息"
-    },
-    {
       id: "2025-09-19",
       title: "新托福 9.19 海外线下 · 完整模考",
       duration: 101,
       desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息 · 海外线下"
-    },
-    {
-      id: "2025-09-23",
-      title: "新托福 9.23 国内线下 · 完整模考",
-      duration: 212,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 212 分钟 · 无休息 · 国内线下"
-    },
-    {
-      id: "2026-09-23",
-      title: "新托福 9.23 · 完整模考",
-      duration: 97,
-      desc: "阅读→听力→写作→口语 Form 1 · 约 97 分钟 · 无休息"
     }
   ];
   function navOf(zone) { return NAV[zone] || []; }

@@ -6,6 +6,11 @@
   var root = document.getElementById("tvc-root");
   if (!T || !root) return;
 
+  var ASSIGNABLE = [
+    { id: "gaozhong", label: "布置高中词库" },
+    { id: "cet4-lite", label: "布置四级精简" }
+  ];
+
   function esc(s) {
     return Y && Y.esc ? Y.esc(String(s == null ? "" : s)) : String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -15,69 +20,76 @@
     return (s && (s.displayName || s.name || s.phone)) || ("学生 #" + (s && s.id));
   }
 
-  function formatProgress(s) {
-    var prog = s.progress;
+  function formatProgress(b) {
+    var prog = b && b.progress;
     if (!prog) return "—";
+    var total = prog.totalDays || 78;
     if (prog.progressDay) {
-      var tasks = s.todayTasks || [];
-      var done = tasks.filter(function (t) { return t.status === "completed"; }).length;
-      var total = tasks.length;
-      var line = "第 " + Math.min(prog.progressDay, 78) + " 关";
-      if (s.programComplete) line = "已完成 78 关";
-      else if (total) line += " · 本关 " + done + "/" + total;
-      return line;
+      if (b.programComplete) return "已完成 " + total + " 关";
+      return "第 " + Math.min(prog.progressDay, total) + " 关";
     }
-    return "已通 L" + prog.clearedListNo + " · 下一 L" + prog.nextListNo;
-  }
-
-  function formatTodayTasks(s) {
-    var tasks = s.todayTasks || [];
-    if (!tasks.length) return "—";
-    return tasks.map(function (t) {
-      var mark = t.status === "completed" ? "✓" : t.status === "failed" ? "!" : "○";
-      return mark + " L" + t.listNo + (t.taskType === "review" ? "复" : "新");
-    }).join(" ");
+    return "已通 L" + prog.clearedListNo;
   }
 
   function paint(students) {
     if (!students.length) {
-      var hint = (T.isAdmin && T.isAdmin())
-        ? '请先在<a href="admin-assign.html">学生分配</a>中把学生绑到教师账号。'
-        : "还没有分配给你的学生。请联系管理员绑定后再布置闯关。";
       root.innerHTML = '<div class="state state--brand teacher-empty"><h3>暂无学生</h3><p>' +
-        hint + "</p></div>";
+        "当前机构还没有学生账号。</p></div>";
       return;
     }
     root.innerHTML =
       '<div class="table-wrap"><table class="data teacher-table">' +
-        "<thead><tr><th>学生</th><th>当前词册</th><th>进度</th><th>本关任务</th><th>抽测池 / 错题本</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>学生</th><th>已布置词册</th><th>操作</th></tr></thead>" +
         "<tbody>" +
         students.map(function (s) {
-          var asg = s.assignment;
-          var pool = s.pool;
+          var books = s.assignments && s.assignments.length
+            ? s.assignments
+            : (s.assignment ? [{
+                bookId: s.assignment.bookId,
+                bookLabel: s.assignment.bookLabel || s.assignment.bookId,
+                progress: s.progress,
+                todayTasks: s.todayTasks,
+                programComplete: s.programComplete,
+                pool: s.pool
+              }] : []);
+          var assigned = {};
+          books.forEach(function (b) { assigned[b.bookId] = true; });
+          var bookHtml = books.length
+            ? books.map(function (b) {
+                return '<div style="margin-bottom:8px">' +
+                  "<b>" + esc(b.bookLabel || b.bookId) + "</b><br>" +
+                  '<span class="teacher-card__meta">' + esc(formatProgress(b)) + "</span><br>" +
+                  '<button type="button" class="btn btn--ghost btn--sm" data-unassign="' +
+                    s.studentId + '" data-book="' + esc(b.bookId) + '">取消布置</button>' +
+                  "</div>";
+              }).join("")
+            : "未布置";
+          var btns = ASSIGNABLE.map(function (a) {
+            if (assigned[a.id]) return "";
+            return '<button type="button" class="btn btn--ghost btn--sm" data-assign="' +
+              s.studentId + '" data-book="' + a.id + '">' + esc(a.label) + "</button> ";
+          }).join("") +
+            '<button type="button" class="btn btn--ghost btn--sm" data-refresh="' +
+              s.studentId + '">刷新</button>';
           return "<tr data-id=\"" + s.studentId + "\">" +
             "<td><b>" + esc(label(s)) + "</b><br><span class=\"teacher-card__meta\">" +
               esc(s.phone || "") + "</span></td>" +
-            "<td>" + (asg ? esc(asg.bookId) : "未布置") + "</td>" +
-            "<td>" + esc(formatProgress(s)) + "</td>" +
-            "<td><span class=\"teacher-card__meta\">" + esc(formatTodayTasks(s)) + "</span></td>" +
-            "<td>" + (pool
-              ? ("池 " + pool.active + " · 顽固 " + pool.stubborn + " · 本 " + pool.notebook)
-              : "—") + "</td>" +
-            "<td><button type=\"button\" class=\"btn btn--ghost btn--sm\" data-assign=\"" +
-              s.studentId + "\">布置高中词库</button> " +
-              "<button type=\"button\" class=\"btn btn--ghost btn--sm\" data-refresh=\"" +
-              s.studentId + "\">刷新</button></td>" +
+            "<td>" + bookHtml + "</td>" +
+            "<td>" + btns + "</td>" +
             "</tr>";
         }).join("") +
-        "</tbody></table></div>" +
-        '<p class="auth-msg" id="tvc-msg" role="status"></p>';
+        "</tbody></table></div>";
 
     root.onclick = function (e) {
-      var assignBtn = e.target.closest("[data-assign]");
-      var refreshBtn = e.target.closest("[data-refresh]");
+      var t = e.target && e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement);
+      if (!t || !t.closest) return;
+      var assignBtn = t.closest("[data-assign]");
+      var unassignBtn = t.closest("[data-unassign]");
+      var refreshBtn = t.closest("[data-refresh]");
       if (assignBtn) {
-        doAssign(Number(assignBtn.getAttribute("data-assign")));
+        doAssign(Number(assignBtn.getAttribute("data-assign")), assignBtn.getAttribute("data-book"));
+      } else if (unassignBtn) {
+        doUnassign(Number(unassignBtn.getAttribute("data-unassign")), unassignBtn.getAttribute("data-book"));
       } else if (refreshBtn) {
         loadOne(Number(refreshBtn.getAttribute("data-refresh")));
       }
@@ -91,20 +103,37 @@
     el.style.color = ok ? "#1f553f" : "#8a3b2a";
   }
 
-  function doAssign(studentId) {
+  function doAssign(studentId, bookId) {
     msg("布置中…", true);
     T.api("/api/vocab-challenge/teacher/assign", {
       method: "POST",
-      body: { studentId: studentId, bookId: "gaozhong" }
+      body: { studentId: studentId, bookId: bookId }
     }).then(function (d) {
       if (!d || !d.ok) {
         msg((d && d.error) || "布置失败", false);
         return;
       }
-      msg(d.unchanged ? "已是该词册" : (d.switched ? "已换书并归档旧进度" : "布置成功"), true);
+      msg(d.unchanged ? "已是该词册" : "布置成功", true);
       load();
     }).catch(function (e) {
       msg((e && e.message) || "布置失败", false);
+    });
+  }
+
+  function doUnassign(studentId, bookId) {
+    msg("取消中…", true);
+    T.api("/api/vocab-challenge/teacher/unassign", {
+      method: "POST",
+      body: { studentId: studentId, bookId: bookId }
+    }).then(function (d) {
+      if (!d || !d.ok) {
+        msg((d && d.error) || "取消失败", false);
+        return;
+      }
+      msg("已取消布置（进度保留）", true);
+      load();
+    }).catch(function (e) {
+      msg((e && e.message) || "取消失败", false);
     });
   }
 
@@ -115,31 +144,9 @@
   }
 
   function load() {
-    T.api("/api/teacher/students")
-      .then(function (d) {
-        var list = (d && d.students) || d || [];
-        if (!Array.isArray(list)) list = [];
-        var ids = list.map(function (s) { return s.id; }).filter(Boolean);
-        if (!ids.length) {
-          paint([]);
-          return;
-        }
-        return T.api(
-          "/api/vocab-challenge/teacher/roster?studentIds=" + encodeURIComponent(ids.join(","))
-        ).then(function (roster) {
-          // roster uses managed ids; merge names from students list
-          var byId = {};
-          list.forEach(function (s) { byId[s.id] = s; });
-          var rows = (roster && roster.students) || [];
-          rows.forEach(function (r) {
-            var src = byId[r.studentId];
-            if (src) {
-              r.phone = r.phone || src.phone;
-              r.displayName = r.displayName || src.displayName || src.name;
-            }
-          });
-          paint(rows);
-        });
+    T.api("/api/vocab-challenge/teacher/roster")
+      .then(function (roster) {
+        paint((roster && roster.students) || []);
       })
       .catch(function () {
         root.innerHTML = '<p class="vs-empty">加载失败，请确认已登录教师账号。</p>';

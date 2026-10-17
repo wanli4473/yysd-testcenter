@@ -25,10 +25,20 @@
     });
   }
 
+  function chipLabel(w) {
+    var s = String(w || "");
+    if (/^I('|$|\s)/.test(s) || /^[A-Z]{2,}$/.test(s)) return s;
+    return s.replace(/^[A-Z]/, function (c) { return c.toLowerCase(); });
+  }
+
+  function foldWord(w) {
+    return String(w || "").toLowerCase();
+  }
+
   function sameSeq(got, want) {
     if (!got || got.length !== want.length) return false;
     for (var i = 0; i < want.length; i++) {
-      if (String(got[i] || "") !== String(want[i] || "")) return false;
+      if (foldWord(got[i]) !== foldWord(want[i])) return false;
     }
     return true;
   }
@@ -77,15 +87,30 @@
     return { score: ok, total: sentenceN, detail: detail };
   }
 
+  function shownBank(task) {
+    if (task._shownBank) return task._shownBank;
+    var src = (task.bank || []).slice();
+    for (var i = src.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = src[i];
+      src[i] = src[j];
+      src[j] = tmp;
+    }
+    task._shownBank = src;
+    return src;
+  }
+
   function unusedBank(task, filled) {
     var used = {};
     (filled || []).forEach(function (w) {
       if (!w) return;
-      used[w] = (used[w] || 0) + 1;
+      var k = foldWord(w);
+      used[k] = (used[k] || 0) + 1;
     });
     var leftover = [];
-    (task.bank || []).forEach(function (w) {
-      if (used[w]) used[w] -= 1;
+    shownBank(task).forEach(function (w) {
+      var k = foldWord(w);
+      if (used[k]) used[k] -= 1;
       else leftover.push(w);
     });
     return leftover;
@@ -102,13 +127,13 @@
       if (p.slot) {
         var v = filled[si] || "";
         html += '<button type="button" class="sc-slot' + (v ? " is-on" : "") + '" data-i="' + si + '">' +
-          (v ? esc(v) : "______") + "</button>";
+          (v ? esc(chipLabel(v)) : "______") + "</button>";
         si += 1;
       } else html += esc(p.t || "");
     });
     html += "</p><div class=\"sc-bank\">";
     unusedBank(task, filled).forEach(function (w) {
-      html += '<button type="button" class="sc-chip" data-w="' + esc(w) + '">' + esc(w) + "</button>";
+      html += '<button type="button" class="sc-chip" draggable="true" data-w="' + esc(w) + '">' + esc(chipLabel(w)) + "</button>";
     });
     html += "</div>";
     host.innerHTML = html;
@@ -129,6 +154,7 @@
     esc: esc,
     screensOf: screensOf,
     slotCount: slotCount,
+    chipLabel: chipLabel,
     sameSeq: sameSeq,
     filledSlots: filledSlots,
     wordCount: wordCount,

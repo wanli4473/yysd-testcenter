@@ -2,100 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Speaking</title>
-  <link rel="stylesheet" href="assets/css/app.css">
-  <link rel="stylesheet" href="assets/css/exam.css">
-  <script src="assets/js/gate.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/hit-shell.js"></script>
-  <script src="assets/js/play.js"></script>
-  <script src="assets/js/toefl-speaking.js"></script>
+  <script src="assets/js/gate.js?v=20261016exam1"></script>
+  <script src="assets/js/auth.js?v=20261015prev1"></script>
+  <script src="assets/js/access.js?v=20261014kl1"></script>
 </head>
-<body class="exam-ets">
-  <header class="ets-bar">
-    <div class="ets-bar-left"><b id="set-title">Speaking</b><span id="mode-tag">Practice</span></div>
-    <div class="ets-bar-right"><button type="button" id="next-btn" disabled>Next</button></div>
-  </header>
-  <div class="ets-sub"><span id="q-range">Speaking</span></div>
-  <section id="speak-stage" class="ets-speak-stage">
-    <div class="ets-headset" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 22a16 16 0 1 1 32 0v10a5 5 0 0 1-5 5h-3V24h6v-2a14 14 0 1 0-28 0v2h6v13H13a5 5 0 0 1-5-5V22z"/></svg></div>
-    <p class="ets-phase" id="speak-phase">LISTEN</p>
-    <p class="q-stem" id="q-stem"></p>
-  </section>
-  <audio id="clip" preload="auto" class="hidden"></audio>
-  <article class="exam-card hidden" id="speak-card" style="max-width:640px;margin:24px auto;">
-    <p id="speak-status">Tap Record, then speak.</p>
-    <button type="button" class="btn" id="rec-btn">Record</button>
-    <audio id="playback" controls class="hidden"></audio>
-  </article>
+<body>
   <script>
     (function () {
-      var A = window.YYSD_APP, S = window.YYSD_TOEFL_SPEAK, P = window.YYSD_PLAY;
-      if (!A.requireLogin("speaking.html" + location.search)) return;
-      var from = P.taskIndex(), end = P.taskEnd(), cur = from, paper, recs = {}, rec = null;
-      var clip = document.getElementById("clip");
-      var nextBtn = document.getElementById("next-btn");
-      var recBtn = document.getElementById("rec-btn");
-      var play = document.getElementById("playback");
-      P.loadPaper("speaking").then(function (p) {
-        paper = p;
-        if (!(p.tasks || [])[cur]) { location.replace("speaking-lab.html"); return; }
-        recBtn.onclick = toggle;
-        nextBtn.onclick = goNext;
-        start();
-      });
-      function task() { return paper.tasks[cur]; }
-      function start() {
-        var t = task();
-        document.getElementById("set-title").textContent = t.type === "repeat" ? "Listen and Repeat" : "Interview";
-        document.getElementById("q-range").textContent = "Question " + (cur - from + 1) + " of " + (end - from + 1);
-        document.getElementById("speak-phase").textContent = "LISTEN";
-        document.getElementById("q-stem").textContent = t.instruction || "";
-        document.getElementById("speak-card").classList.add("hidden");
-        nextBtn.disabled = true;
-        nextBtn.textContent = cur === end ? "Submit" : "Next";
-        clip.src = t.audio || "";
-        clip.play().catch(function () {});
-        clip.onended = function () {
-          document.getElementById("speak-phase").textContent = "SPEAK";
-          document.getElementById("q-stem").textContent = t.stem || t.sample || t.instruction || "";
-          document.getElementById("speak-card").classList.remove("hidden");
-          nextBtn.disabled = false;
-        };
+      var A = window.YYSD_APP;
+      if (A && A.requireLogin && !A.requireLogin("speaking.html" + location.search)) return;
+      function go() {
+        var q = new URLSearchParams(location.search);
+        if (!q.get("mode")) q.set("mode", "practice");
+        if (!q.get("from")) q.set("from", "app");
+        var root = location.pathname.indexOf("/app/") >= 0 ? "../" : "";
+        location.replace(root + "toefl-speaking.html?" + q.toString());
       }
-      function toggle() {
-        if (rec && rec.state === "recording") { rec.stop(); return; }
-        var mime = S.recMime();
-        if (!mime) { document.getElementById("speak-status").textContent = "This browser cannot record."; return; }
-        navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-          rec = new MediaRecorder(stream, { mimeType: mime });
-          var chunks = [];
-          rec.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
-          rec.onstop = function () {
-            stream.getTracks().forEach(function (x) { x.stop(); });
-            recs[task().id] = new Blob(chunks, { type: mime });
-            play.src = URL.createObjectURL(recs[task().id]);
-            play.classList.remove("hidden");
-            recBtn.textContent = "Record";
-            document.getElementById("speak-status").textContent = "Recorded. You can re-record or continue.";
-          };
-          rec.start();
-          recBtn.textContent = "Stop";
-          document.getElementById("speak-status").textContent = "Recording…";
-        }).catch(function () {
-          document.getElementById("speak-status").textContent = "Microphone permission is required.";
-        });
-      }
-      function goNext() {
-        if (cur < end) { cur += 1; start(); return; }
-        var tasks = [];
-        for (var i = from; i <= end; i++) tasks.push(i);
-        P.finish("speaking", {
-          skill: "speaking", paper: paper, tasks: tasks, answers: {},
-          score: Object.keys(recs).length, total: tasks.length
-        });
-      }
+      if (window.YYSD_ACCESS && YYSD_ACCESS.paper) {
+        YYSD_ACCESS.paper(function () {}).then(function (ok) { if (ok) go(); });
+      } else go();
     })();
   </script>
 </body>
