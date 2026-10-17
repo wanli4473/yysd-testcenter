@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
+  <script src="assets/js/tenant-boot.js?v=20261013perm1"></script>
   <title>我的成绩 · 优益思达国际课程中心</title>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,8 +72,8 @@
   </footer>
 
   <script src="assets/js/config.js?v=20260716nav"></script>
-  <script src="assets/js/auth.js?v=20260812scores304"></script>
-  <script src="assets/js/nav.js?v=20260723hub"></script>
+  <script src="assets/js/auth.js?v=20261013perm1"></script>
+  <script src="assets/js/nav.js?v=20261016req1"></script>
   <script src="assets/js/ui.js?v=20260702f"></script>
   <script>
   (function () {
@@ -131,8 +131,12 @@
             '<span class="results-row__pts">' + Y.esc(score) + '</span>' +
           '</div>' +
           '<div class="results-row__acts">' +
-            '<a class="btn btn--ghost btn--sm" href="exam.html?id=' + encodeURIComponent(r.id) + '">再练一次</a>' +
-            '<span class="btn btn--ghost btn--sm is-disabled" title="AI 错题讲解即将上线">查看错题</span>' +
+            (String(r.id || "").indexOf("toefl-") === 0
+              ? '<span class="btn btn--ghost btn--sm is-disabled" title="系统试卷只在桌面端打开">请在桌面端打开</span>'
+              : '<a class="btn btn--ghost btn--sm" href="exam.html?id=' + encodeURIComponent(r.id) + '">再练一次</a>') +
+            (r.wrong && r.wrong.length
+              ? '<a class="btn btn--ghost btn--sm" href="wrong-record.html?item=' + encodeURIComponent(r.id) + '&local=1">查看错题</a>'
+              : '<span class="btn btn--ghost btn--sm is-disabled" title="本次无错题或尚未收录">查看错题</span>') +
           '</div></article>';
       });
       html += '</div>';
