@@ -4,30 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>优益思达机考系统</title>
-  <link rel="stylesheet" href="assets/css/hit.css">
+  <link rel="stylesheet" href="assets/css/hit.css?v=20261015swiss1">
+  <link rel="stylesheet" href="assets/css/access.css?v=20261015swiss1">
   <script src="assets/js/gate.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/hit-shell.js"></script>
+  <script src="assets/js/auth.js?v=20261008ui14"></script>
+  <script src="assets/js/hit-shell.js?v=20261015swiss1"></script>
+  <script src="assets/js/access.js?v=20261014kl1"></script>
 </head>
 <body class="hit">
-  <main class="hit-main">
-    <p class="hit-kicker">TOEFL PRACTICE HUB</p>
-    <h1 id="hello">今天练哪一项？</h1>
-    <p class="hit-lead">先选择题型，再点题目进入 ETS 机考界面。</p>
-    <div class="hit-home-grid">
-      <a href="reading-lab.html"><b>R</b><span>填空、日常阅读、学术阅读</span></a>
-      <a href="listening-lab.html"><b>L</b><span>听答、对话、通知、讲座</span></a>
-      <a href="speaking-lab.html"><b>S</b><span>复述、面试</span></a>
-      <a href="writing-lab.html"><b>W</b><span>造句、邮件、学术讨论</span></a>
-    </div>
-  </main>
+  <main class="hit-main" id="home"></main>
   <script>
-    (function () {
-      if (!YYSD_HIT.mount("home")) return;
-      var u = YYSD_APP.user();
-      var name = u.displayName || u.phone || "";
-      if (name) document.getElementById("hello").textContent = name + "，今天练哪一项？";
-    })();
+    if (YYSD_HIT.mount("home")) YYSD_HIT.paintHome(document.getElementById("home"));
   </script>
 </body>
 </html>

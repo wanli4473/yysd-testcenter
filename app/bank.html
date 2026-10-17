@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>组卷</title>
+  <link rel="stylesheet" href="assets/css/hit.css?v=20261015swiss1">
+  <link rel="stylesheet" href="assets/css/access.css?v=20261015swiss1">
+  <script src="assets/js/gate.js?v=20261015back1"></script>
+  <script src="assets/js/auth.js?v=20261013tiku1"></script>
+  <script src="assets/js/hit-shell.js?v=20261015swiss1"></script>
+  <script src="assets/js/tiku-run.js?v=20261016exam1"></script>
+  <script src="assets/js/access.js?v=20261014kl1"></script>
+</head>
+<body class="hit">
+  <main class="hit-main">
+    <h1 id="title">组卷</h1>
+    <p class="hit-lead" id="lead"></p>
+    <div id="list"></div>
+  </main>
+  <script>
+    (function () {
+      var qs = new URLSearchParams(location.search);
+      var id = qs.get("id") || "";
+      var preview = qs.get("preview") === "1";
+      var A = window.YYSD_APP;
+      if (!preview && !A.requireLogin("bank.html" + location.search)) return;
+      if (!preview && !YYSD_HIT.mount("practice")) return;
+      if (preview) document.body.insertAdjacentHTML("afterbegin", "<p class='hit-lead'>预览 · 不记分</p>");
+      function bindPvBack() {
+        var a = document.getElementById("pv-back");
+        if (!a) return;
+        a.onclick = function (e) {
+          e.preventDefault();
+          try { window.close(); } catch (err) {}
+        };
+      }
+      var headers = { "X-Tenant-Slug": "yysd" };
+      var tok = A.token() || (preview && localStorage.getItem("yysd:teacher:token")) || "";
+      if (tok) headers.Authorization = "Bearer " + tok;
+      var API = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+        ? (location.protocol + "//" + location.hostname + ":3000")
+        : "https://api.youyisida.com";
+      function apiPost(path, body) {
+        var h = { "Content-Type": "application/json", "X-Tenant-Slug": "yysd" };
+        if (tok) h.Authorization = "Bearer " + tok;
+        return fetch(API + path, { method: "POST", headers: h, body: JSON.stringify(body) })
+          .then(function (r) {
+            return r.json().then(function (d) {
+              if (!r.ok) throw new Error((d && d.error) || "请求失败");
+              return d;
+            });
+          });
+      }
+      // 考前冲刺包：开始前服务端硬校验开考资格（练习卷不走）；交卷回来时上报完成关掉宽限
+      function examStart(pid) {
+        if (preview) return Promise.resolve();
+        return apiPost("/api/toefl/exam-start", { packageId: pid });
+      }
+      function examDone(pid) {
+        if (preview) return;
+        apiPost("/api/toefl/exam-done", { packageId: pid }).catch(function () {});
+      }
+      fetch(API + "/api/tiku/play/" + encodeURIComponent(id), { headers: headers, cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var p = d.paper;
+          if (!p) { document.getElementById("lead").textContent = (d && d.error) || "找不到这套卷"; return; }
+          if (qs.get("done") === "1" && p.kind !== "practice") examDone(p.id);
+          document.getElementById("title").textContent = p.title;
+          var kind = p.kind === "practice" ? "分开做，做完一题块再回这里。" : "按顺序一套连着做。";
+          document.getElementById("lead").textContent = kind + (qs.get("done") === "1" ? " 已交卷。" : "");
+          if (p.kind !== "practice") {
+            var first = (p.blocks || [])[0] || {};
+            document.getElementById("list").innerHTML =
+              '<button type="button" class="hit-go" id="go">开始</button>' +
+              '<a class="hit-back" href="' + (preview ? "#" : "mock.html") + '" id="pv-back">← 返回</a>' +
+              "<p class='hit-lead'>题块：" + (p.blocks || []).map(function (b) { return b.titleZh || b.title; }).join("、") + "</p>";
+            bindPvBack();
+            document.getElementById("go").onclick = function () {
+              var btn = this;
+              btn.disabled = true;
+              examStart(p.id).then(function () {
+                // ponytail: 日期卷数据在官网根，整套交给模考确认链+考场引擎（app 播放器读不到这些卷）
+                if (first.source === "date" && first.paperId) {
+                  location.href = "mock.html?kind=full&id=" + encodeURIComponent(first.paperId);
+                  return;
+                }
+                var run = YYSD_TIKU_RUN.start({ id: p.id, title: p.title, kind: p.kind, blocks: p.blocks, skillMinutes: p.skillMinutes, preview: preview });
+                location.href = YYSD_TIKU_RUN.href(0, run);
+              }).catch(function (e) {
+                btn.disabled = false;
+                document.getElementById("lead").textContent = (e && e.message) || "暂时不能开始";
+              });
+            };
+            return;
+          }
+          YYSD_TIKU_RUN.start({ id: p.id, title: p.title, kind: "practice", blocks: p.blocks, preview: preview });
+          var drawBlocks = function () {
+            document.getElementById("list").innerHTML =
+              '<a class="hit-back" href="' + (preview ? "#" : "practice.html") + '" id="pv-back">← 返回练习</a>' +
+              '<div class="hit-set-list">' + (p.blocks || []).map(function (b) {
+                return '<a class="hit-set-row" href="' + YYSD_TIKU_RUN.hrefOf(b, "practice", "&bank=" + encodeURIComponent(p.id) + (preview ? "&preview=1" : "")) + '"><div class="hit-set-info"><h4>' +
+                  (b.titleZh || b.title) + "</h4><p>" + (b.skill || "") + "</p></div></a>";
+              }).join("") + "</div>";
+            bindPvBack();
+          };
+          if (preview) { drawBlocks(); return; }
+          YYSD_ACCESS.fetch().then(function (st) {
+            if (!st.on) { YYSD_ACCESS.showLock(st); return; }
+            drawBlocks();
+          });
+        })
+        .catch(function (e) {
+          document.getElementById("lead").textContent = e.message || "加载失败";
+        });
+    })();
+  </script>
+</body>
+</html>

@@ -59,8 +59,66 @@
     localStorage.setItem(USER, JSON.stringify({
       phone: src.phone || "",
       role: d.role || "student",
-      displayName: src.displayName || src.name || ""
+      displayName: src.displayName || src.name || "",
+      avatarUrl: src.avatarUrl || ""
     }));
+  }
+
+  function setUser(next) {
+    var cur = user();
+    var u = {
+      phone: next.phone || cur.phone || "",
+      role: next.role || cur.role || "student",
+      displayName: next.displayName != null ? next.displayName : (cur.displayName || ""),
+      avatarUrl: next.avatarUrl != null ? next.avatarUrl : (cur.avatarUrl || "")
+    };
+    try { localStorage.setItem(USER, JSON.stringify(u)); } catch (e) {}
+    return u;
+  }
+
+  function avatarSrc(url) {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url) || url.indexOf("data:") === 0) return url;
+    return API + url;
+  }
+
+  function compressAvatar(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !/^image\/(jpeg|jpg|png|webp|gif)$/i.test(file.type)) {
+        return reject(new Error("请选择 JPG / PNG / WebP 图片"));
+      }
+      if (file.size > 5 * 1024 * 1024) return reject(new Error("图片不能超过 5MB"));
+      var img = new Image();
+      var objectUrl = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(objectUrl);
+        var canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 256;
+        var ctx = canvas.getContext("2d");
+        var s = Math.min(img.width, img.height);
+        ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 256, 256);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("图片读取失败"));
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  function uploadAvatar(file) {
+    return compressAvatar(file).then(function (dataUrl) {
+      return api("/api/auth/avatar", { method: "POST", body: { image: dataUrl } });
+    }).then(function (d) {
+      var u = d.user || {};
+      setUser({
+        displayName: u.displayName || u.name || user().displayName || "",
+        avatarUrl: d.avatarUrl || u.avatarUrl || ""
+      });
+      return d;
+    });
   }
 
   function logout() {
@@ -72,6 +130,9 @@
 
   function requireLogin(next) {
     if (token()) return true;
+    try {
+      if (new URLSearchParams(w.location.search).get("preview") === "1") return true;
+    } catch (e) {}
     w.location.replace("login.html?next=" + encodeURIComponent(next || "home.html"));
     return false;
   }
@@ -87,9 +148,30 @@
     api: api,
     token: token,
     user: user,
+    setUser: setUser,
+    avatarSrc: avatarSrc,
+    uploadAvatar: uploadAvatar,
+    bindReload: function (el) {
+      if (!el) return;
+      el.onclick = function () {
+        if (w.yysdDesktop && typeof w.yysdDesktop.reload === "function") {
+          w.yysdDesktop.reload();
+          return;
+        }
+        var u = new URL(location.href);
+        u.searchParams.set("_r", String(Date.now()));
+        location.replace(u.pathname + u.search + u.hash);
+      };
+    },
     applyLogin: applyLogin,
     logout: logout,
     requireLogin: requireLogin,
     pushScore: pushScore
+  };
+  // ponytail: exam pages on this host load this auth.js; they call YYSD_AUTH
+  w.YYSD_AUTH = w.YYSD_AUTH || {
+    requireLogin: function () {
+      return requireLogin((location.pathname.split("/").pop() || "home.html") + location.search);
+    }
   };
 })(window);

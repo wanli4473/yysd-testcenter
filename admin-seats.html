@@ -7,7 +7,7 @@
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/style.css?v=20260821tfix1">
 </head>
-<body class="home-minimal">
+<body class="home-minimal teacher-page">
   <main class="minimal-shell minimal-main" style="max-width:880px">
     <p><a href="platform.html">返回主控台</a></p>
     <h1>激活码</h1>
@@ -28,7 +28,7 @@
     </form>
     <div id="list"></div>
   </main>
-  <script src="assets/js/auth.js?v=20260924seat1"></script>
+  <script src="assets/js/auth.js?v=20261013perm1"></script>
   <script>
     var A = window.YYSD_AUTH;
     var msg = document.getElementById("msg");
@@ -36,8 +36,8 @@
     function load() {
       A.api("/api/platform/seats").then(function (d) {
         document.getElementById("switch-line").textContent = d.on
-          ? "总开关已打开：学生和老师只能用 Mac 程序。"
-          : "总开关关着：浏览器仍可登录。程序里登录成功会绑定这台 Mac。";
+          ? "总开关已打开：学生和老师只能用机考程序。"
+          : "总开关关着：浏览器仍可登录。程序里登录成功会绑定这台电脑。";
         var html = "<table><tr><th>码</th><th>身份</th><th>手机号</th><th>电脑</th><th>状态</th><th></th></tr>";
         (d.seats || []).forEach(function (s) {
           html += "<tr><td>" + s.code + "</td><td>" + (s.role === "teacher" ? "老师" : "学生") +

@@ -1,0 +1,30 @@
+---
+trigger: glob
+glob:
+  - toefl-listening.html
+  - library/toefl/**/*listening*.json
+  - app/library/toefl/**/*listening*.json
+  - assets/js/toefl-reading.js
+  - scripts/build_toefl*.py
+  - scripts/check_toefl*listening*
+---
+
+# TOEFL listening — listen first
+
+When making any new TOEFL listening paper:
+
+- `choose_response`: options stay on screen with the clip.
+- `conversation`, `announcement`, `lecture`: play the clip to the end, then show questions. Do not show stems or options during the first play. Next/Review stay off until it ends. Later questions on the same clip appear immediately.
+
+The player already does this via `hideQsUntilHeard`. New JSON only needs the correct `type`. Do not build a second listening UI.
+
+# Exam portraits
+
+Listening photos use the official exam look: a person cutout on a plain white background. No room, no props, no text in the picture. Match the face to the speaker's accent. The same voice reuses the same photo.
+
+- `conversation`: two people facing each other, talking.
+- `choose_response`: one person, usually holding a phone.
+- `announcement`: one person standing.
+- `lecture`: one person standing, dressed like the instructor.
+
+Copy the file to both `library/toefl/img/listen/` and `app/library/toefl/img/listen/`. Set `task.image` to `library/toefl/img/listen/<name>.jpg`, right after `title`. The player shows `task.image` on `#listen-scene` while a conversation, announcement, or lecture plays. `choose_response` keeps the options on screen with the clip.
