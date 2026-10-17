@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TOEFL Complete Test</title>
-  <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
+  <script src="assets/js/tenant-boot.js?v=20261013perm1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets2">
-  <script src="assets/js/config.js?v=20260930toefl708716729"></script>
-  <script src="assets/js/auth.js?v=20260821gate1"></script>
-  <script src="assets/js/toefl-full.js?v=20260930ets3"></script>
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261016exam2">
+  <script src="assets/js/config.js?v=20261008mock3"></script>
+  <script src="assets/js/kl-mocks.js?v=20261014kl1"></script>
+  <script src="assets/js/auth.js?v=20261015prev2"></script>
+  <script src="assets/js/toefl-full.js?v=20261016rev1"></script>
 </head>
 <body class="exam-ets">
 <div class="ets-frame">
@@ -39,7 +40,7 @@
     <h1>Complete Test Results</h1>
     <p id="done-copy">Speaking is not scored automatically, so there is no total score. Reading and Listening show a 1–6 estimate.</p>
     <div class="review" id="summary"></div>
-    <p><a class="btn" href="zone.html?zone=toefl&amp;s=full">Return</a></p>
+    <p><a class="btn" id="back-zone" href="app/mock.html?kind=full">Return</a></p>
   </section>
 </div>
   <script>
@@ -52,9 +53,12 @@
       var paperId = qs.get("id") || "";
       var view = qs.get("view") || "";
       if (A && A.requireLogin && !A.requireLogin()) return;
-      if (!paperId) { location.replace("zone.html?zone=toefl&s=full"); return; }
+      var zoneBack = (F && F.mockHubHref) ? F.mockHubHref("full") : "app/mock.html?kind=full";
+      var backZone = document.getElementById("back-zone");
+      if (backZone) backZone.href = zoneBack;
+      if (!paperId) { location.replace(zoneBack); return; }
       var meta = ((Y && Y.TOEFL_FULL) || []).filter(function (p) { return p.id === paperId; })[0];
-      if (!meta) { location.replace("zone.html?zone=toefl&s=full"); return; }
+      if (!meta) { location.replace(zoneBack); return; }
 
       document.title = (meta.title || "Complete Test") + (mode === "mock" ? " · 模考" : mode === "practice" ? " · 练习" : "");
       document.getElementById("set-title").textContent = meta.title || "Complete Test";
@@ -75,6 +79,10 @@
       if (view === "done") {
         var pack = F.load(paperId);
         if (!pack || pack.voided) { location.replace(F.introHref(paperId, mode)); return; }
+        if (mode === "mock" && A && A.api) {
+          // 完成上报：关掉模考包的关停宽限（best-effort，失败不影响看成绩）
+          A.api("/api/toefl/exam-done", { method: "POST", body: { packageId: paperId } }).catch(function () {});
+        }
         var r = pack.sections.reading || {};
         var l = pack.sections.listening || {};
         var w = pack.sections.writing || {};

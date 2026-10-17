@@ -4,14 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TOEFL Speaking</title>
-  <script src="assets/js/tenant-boot.js?v=20260904maint1"></script>
+  <script src="assets/js/tenant-boot.js?v=20261013perm1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20260930ets2">
-  <script src="assets/js/config.js?v=20260930toefl708716729"></script>
-  <script src="assets/js/auth.js?v=20260821gate1"></script>
-  <script src="assets/js/toefl-speaking.js?v=20260929toefl6"></script>
-  <script src="assets/js/toefl-full.js?v=20260930ets3"></script>
-  <script src="assets/js/toefl-shell.js?v=20260930ets2"></script>
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261016exam2">
+  <script src="assets/js/config.js?v=20261008mock3"></script>
+  <script src="assets/js/kl-mocks.js?v=20261014kl1"></script>
+  <script src="assets/js/auth.js?v=20261015prev2"></script>
+  <script src="assets/js/toefl-speaking.js?v=20261009iv1"></script>
+  <script src="assets/js/toefl-full.js?v=20261016rev1"></script>
+  <script src="assets/js/toefl-lab.js?v=20261016exam1"></script>
+  <script src="assets/js/toefl-shell.js?v=20261016exam3"></script>
 </head>
 <body class="exam-ets ets-booting">
 <div class="ets-frame">
@@ -23,23 +25,26 @@
       <span id="mode-tag"></span>
     </div>
     <div class="ets-bar-right">
-      <span id="clock" class="ets-clock hidden"></span>
-      <button type="button" id="hide-time" class="hidden">Hide Time</button>
-      <button type="button" id="help-btn" class="hidden">Help</button>
+      <button type="button" id="exit-btn">Exit</button>
       <button type="button" id="vol-btn" class="hidden">Volume</button>
-      <button type="button" id="pause-btn" class="hidden">Pause Test</button>
-      <button type="button" id="exit-btn" class="hidden">Exit Section</button>
-      <button type="button" id="back-btn" class="hidden">Back</button>
+      <button type="button" id="help-btn" class="hidden">Help</button>
       <button type="button" id="next-btn">Continue</button>
     </div>
   </header>
-  <div class="ets-sub"><span id="q-range">Speaking</span></div>
+  <div class="ets-sub">
+    <span id="q-range">Speaking</span>
+    <span class="ets-sub-time">
+      <span id="clock" class="ets-clock hidden"></span>
+      <button type="button" id="hide-time" class="hidden">Hide Time</button>
+    </span>
+  </div>
   <section id="ets-intro" class="ets-info hidden"></section>
 
   <section id="exam" class="exam-body hidden">
     <p class="exam-title" id="instruction"></p>
     <div id="speak-stage" class="ets-speak-stage">
-      <div class="ets-headset" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 22a16 16 0 1 1 32 0v10a5 5 0 0 1-5 5h-3V24h6v-2a14 14 0 1 0-28 0v2h6v13H13a5 5 0 0 1-5-5V22z"/></svg></div>
+      <img id="speak-scene" class="ets-scene hidden" alt="">
+      <div class="ets-person hidden" id="speak-person" aria-hidden="true"></div>
       <p class="ets-phase" id="speak-phase">LISTEN</p>
       <p class="ets-big-clock" id="speak-timer"></p>
       <p class="q-stem" id="q-stem"></p>
@@ -96,8 +101,8 @@
       <h2>This mock test has been stopped</h2>
       <p>Leaving the test window voids this mock test. It cannot be continued and will not be scored.</p>
       <div class="void-acts">
-        <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=speaking">退出</a>
-        <button class="btn" type="button" id="void-restart">重新开始</button>
+        <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=speaking">Return</a>
+        <button class="btn" type="button" id="void-restart">Begin again</button>
       </div>
     </div>
   </div>
@@ -105,8 +110,8 @@
   <div id="help-box" class="hidden">
     <div>
       <h2>Help</h2>
-      <p>Listen and Repeat: listen once, then repeat the sentence. In a mock test you may record only once.</p>
-      <p>Interview: listen to the researcher, then speak. You cannot return to an earlier part after you leave it.</p>
+      <p>Listen and Repeat: one sentence, 3 seconds to think, a beep, then 8 seconds to speak. The sample sentence stays hidden. You record once.</p>
+      <p>Interview: the scenario text stays on screen. The question is not printed. After the prompt you have 45 seconds to speak — no preparation time and no beep. You record once.</p>
       <p><button class="btn" type="button" id="help-close">Return</button></p>
     </div>
   </div>
@@ -118,13 +123,25 @@
       var F = window.YYSD_TOEFL_FULL;
       var qs = new URLSearchParams(location.search);
       var mode = qs.get("mode") === "mock" ? "mock" : (qs.get("mode") === "practice" ? "practice" : "");
-      var paperId = qs.get("id") || "";
-      var zoneBack = (F && F.isFull()) ? "zone.html?zone=toefl&s=full" : "zone.html?zone=toefl&s=speaking";
+      var setN = qs.get("set");
+      var paperId = qs.get("id") || (setN ? ("set-" + setN) : "");
+      var Lab = window.YYSD_TOEFL_LAB;
+      var taskQ = qs.get("task");
+      var taskEndQ = qs.get("taskEnd");
+      if (taskEndQ == null || taskEndQ === "") taskEndQ = qs.get("end");
+      var qJump = qs.get("q");
+      var labClip = taskQ !== "" && taskQ != null;
+      var zoneBack = (F && F.listBack) ? F.listBack("speaking", { lab: labClip })
+        : (labClip ? "zone.html?zone=toefl&s=lab&skill=speaking" : "zone.html?zone=toefl&s=speaking");
       if (A && A.requireLogin && !A.requireLogin()) return;
       if (!mode || !paperId) { location.replace(zoneBack); return; }
+      document.querySelectorAll('a[href*="zone=toefl"]').forEach(function (a) { a.href = zoneBack; });
       var list = (window.YYSD && window.YYSD.TOEFL_SPEAKING) || [];
       var meta = list.filter(function (p) { return p.id === paperId; })[0] || null;
-      if (!meta) { location.replace(zoneBack); return; }
+      if ((!meta || !meta.file) && F && F.paperFile && paperId) {
+        meta = { file: F.paperFile("speaking", paperId), title: setN ? ("Set " + setN) : paperId };
+      }
+      if (!meta || !meta.file) { location.replace(zoneBack); return; }
       if (F && F.isFull() && !F.enterSkill(paperId, mode, "speaking")) return;
 
       var paper = null;
@@ -144,6 +161,8 @@
       var recLeft = 0;
       var recTick = null;
       var prepTick = null;
+      var cancelClip = null;
+      var introDone = {};
       var played = {};
       var phase = "listen";
 
@@ -165,10 +184,10 @@
 
       function fmt(sec) {
         sec = Math.max(0, Math.floor(sec || 0));
-        return String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
+        return "00:" + String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
       }
       function showClock() {
-        clock.textContent = hideTime ? "" : (mode === "practice" ? "Practice" : fmt(remain));
+        clock.textContent = hideTime ? "" : fmt(remain);
       }
       function moduleOf(n) {
         return paper.modules.filter(function (m) { return m.n === n; })[0];
@@ -177,11 +196,12 @@
         return screens.filter(function (s) { return s.module === mod; });
       }
       function setNav(on) {
-        [nextBtn, backBtn, document.getElementById("hide-time"), document.getElementById("help-btn")].forEach(function (b) { b.disabled = !on; });
+        [nextBtn, document.getElementById("hide-time"), document.getElementById("help-btn")].forEach(function (b) { if (b) b.disabled = !on; });
       }
       function show(el) {
         [exam, rest, done].forEach(function (n) { n.classList.add("hidden"); });
         el.classList.remove("hidden");
+        document.body.classList.toggle("ets-results", el === done);
         setNav(el === exam);
       }
 
@@ -200,23 +220,52 @@
         speakStage.classList.toggle("hidden", !on);
         speakCard.classList.toggle("hidden", on);
       }
+      function showScene(task) {
+        var src = S.sceneOf(task);
+        var img = document.getElementById("speak-scene");
+        var person = document.getElementById("speak-person");
+        if (src) {
+          img.src = encodeURI(src);
+          img.alt = task.title || "";
+          img.classList.remove("hidden");
+          if (person) person.classList.add("hidden");
+        } else {
+          img.removeAttribute("src");
+          img.classList.add("hidden");
+          if (person) person.classList.remove("hidden");
+        }
+      }
       function startListen(task) {
-        phase = "listen";
+        if (cancelClip) cancelClip();
         nextBtn.disabled = true;
         showStage(true);
-        speakPhase.textContent = "LISTEN";
-        speakTimer.textContent = "";
         recBtn.classList.add("hidden");
         playback.classList.add("hidden");
-        if (clip.getAttribute("data-src") !== task.audio) {
-          clip.pause();
-          clip.src = task.audio;
-          clip.setAttribute("data-src", task.audio);
+        showScene(task);
+        var intro = S.moduleIntro(paper, task);
+        if (task.type === "repeat" && intro && !introDone[task.module]) {
+          introDone[task.module] = 1;
+          phase = "intro";
+          speakPhase.textContent = "DIRECTIONS";
+          speakTimer.textContent = "";
+          document.getElementById("q-range").textContent = "Directions";
+          document.getElementById("q-stem").textContent = "";
+          cancelClip = S.playClip(clip, intro, function () { startListen(task); });
+          return;
         }
-        clip.play().then(function () { played[task.id] = 1; }).catch(function () {});
+        phase = "listen";
+        speakPhase.textContent = "LISTEN";
+        var lab = ((moduleOf(task.module) || {}).label) || "Speaking";
+        document.getElementById("q-range").textContent = "Speaking | " + lab + " | Question " + Lab.localQ(screens, { module: task.module, from: task.id }, task.id);
+        speakTimer.textContent = "";
+        document.getElementById("q-stem").textContent = S.examPrompt(task);
+        cancelClip = S.playClip(clip, task, function () {
+          played[task.id] = 1;
+          startPrep(task);
+        });
       }
       function startPrep(task) {
-        var sec = task.prepSec != null ? task.prepSec : (task.type === "interview" ? 15 : 3);
+        var sec = S.prepSecs(task);
         if (sec <= 0) { startResponse(task); return; }
         phase = "prep";
         showStage(true);
@@ -237,15 +286,9 @@
         phase = "record";
         showStage(true);
         speakPhase.textContent = "RESPONSE TIME";
-        if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.playBeep) YYSD_TOEFL_SHELL.playBeep();
+        if (task.type === "repeat") S.playBeep();
         startRec(true);
       }
-      clip.addEventListener("ended", function () {
-        var scr = screens[si];
-        if (!scr || phase !== "listen") return;
-        played[scr.task.id] = 1;
-        startPrep(scr.task);
-      });
 
       function stopTracks() {
         if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
@@ -259,8 +302,7 @@
         var prev = recs[id];
         if (prev && prev.url) URL.revokeObjectURL(prev.url);
         recs[id] = { blob: blob, mime: mime, url: URL.createObjectURL(blob) };
-        playback.src = recs[id].url;
-        playback.classList.remove("hidden");
+        playback.classList.add("hidden");
       }
       function startRec(auto) {
         var scr = screens[si];
@@ -286,19 +328,15 @@
             phase = "done";
             nextBtn.disabled = false;
             speakTimer.textContent = "";
-            speakPhase.textContent = "RECORDED";
-            if (mode === "practice" && recs[scr.task.id]) {
-              showStage(false);
-              recBtn.classList.remove("hidden");
-              playback.classList.remove("hidden");
-              statusEl.textContent = "Recorded. You may play it back or record again.";
-            } else {
-              statusEl.textContent = recs[scr.task.id] ? "Recorded. Select Next." : "No audio captured.";
-            }
+            speakPhase.textContent = "RESPONSE TIME";
+            recBtn.classList.add("hidden");
+            playback.classList.add("hidden");
+            statusEl.textContent = "Response time has ended.";
+            setTimeout(function () { if (view === "exam") nextBtn.click(); }, 700);
           };
           recorder.start();
           recBtn.textContent = "Stop";
-          recLeft = scr.task.speakSec || 15;
+          recLeft = S.recSecs(scr.task);
           speakTimer.textContent = fmt(recLeft);
           recClock.textContent = fmt(recLeft);
           statusEl.textContent = "Recording…";
@@ -319,47 +357,40 @@
       };
 
       function renderExam() {
+        var scr = screens[si];
+        if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.gateTask(scr.task.type, function () { renderExam(); })) return;
         view = "exam";
         stopRec();
         clearPhase();
+        if (cancelClip) cancelClip();
         clip.pause();
-        var scr = screens[si];
         moduleN = scr.module;
         show(exam);
         var lab = (moduleOf(moduleN) || {}).label || "Speaking";
-        document.getElementById("q-range").textContent = "Speaking | " + lab + " | Question " + scr.from;
+        document.getElementById("q-range").textContent = "Speaking | " + Lab.qLabel(screens, scr);
         document.getElementById("instruction").textContent = scr.task.instruction || "";
-        document.getElementById("q-stem").textContent = scr.task.stem || (scr.type === "repeat" ? "Repeat what you hear." : "");
+        document.getElementById("q-stem").textContent = S.examPrompt(scr.task);
+        showScene(scr.task);
         nextBtn.textContent = "Next";
-        backBtn.disabled = mode === "mock" || si === 0 || scr.module !== screens[si - 1].module;
-        recBtn.disabled = mode === "mock" && !!recs[scr.task.id];
-        recBtn.textContent = "Record";
+        nextBtn.disabled = true;
+        recBtn.classList.add("hidden");
+        playback.classList.add("hidden");
         recClock.textContent = "";
         if (recs[scr.task.id]) {
           phase = "done";
           nextBtn.disabled = false;
-          speakPhase.textContent = "RECORDED";
-          speakTimer.textContent = "";
-          if (mode === "practice") {
-            showStage(false);
-            playback.src = recs[scr.task.id].url;
-            playback.classList.remove("hidden");
-            recBtn.classList.remove("hidden");
-            statusEl.textContent = "Recorded. You may play it back or record again.";
-          } else {
-            showStage(true);
-            playback.classList.add("hidden");
-            recBtn.classList.add("hidden");
-          }
+          speakPhase.textContent = "RESPONSE TIME";
+          statusEl.textContent = "Response time has ended.";
+          setTimeout(function () { if (view === "exam" && screens[si] === scr) nextBtn.click(); }, 700);
         } else {
-          playback.removeAttribute("src");
           startListen(scr.task);
         }
+        if (Lab && Lab.paintFav) Lab.paintFav();
       }
 
       function startModule(n) {
         moduleN = n;
-        remain = mode === "mock" ? ((moduleOf(n) || {}).timeSec || 0) : 0;
+        remain = ((moduleOf(n) || {}).timeSec) || 0;
         var first = screens.findIndex(function (s) { return s.module === n; });
         si = first < 0 ? 0 : first;
         renderExam();
@@ -368,26 +399,54 @@
       function leaveModule() {
         stopRec();
         clip.pause();
-        if (moduleN < paper.modules.length) {
-          if (mode === "practice") {
-            var nextLab = (moduleOf(moduleN + 1) || {}).label || "the next part";
-            document.getElementById("rest-title").textContent = "End of " + ((moduleOf(moduleN) || {}).label || "this part");
-            document.getElementById("rest-copy").textContent = "You cannot return. Select Continue to begin " + nextLab + ".";
-            document.getElementById("rest-go").onclick = function () { startModule(moduleN + 1); };
+        var next = labClip && Lab ? Lab.nextModule(screens, moduleN)
+          : (moduleN < paper.modules.length ? moduleN + 1 : 0);
+        if (next) {
+          if (!labClip) {
+            document.getElementById("rest-title").textContent = "Time Remaining";
+            document.getElementById("rest-copy").textContent =
+              "You have seen all the questions in this part. As long as there is time remaining, you can check your work. Once you leave, you WILL NOT be able to return. Select Continue to go on.";
+            document.getElementById("rest-go").onclick = function () { startModule(next); };
             view = "rest";
             show(rest);
             return;
           }
-          startModule(moduleN + 1);
+          startModule(next);
           return;
         }
-        finish();
+        askFinish();
+      }
+
+      function askFinish() {
+        var shell = window.YYSD_TOEFL_SHELL;
+        if (mode !== "practice" || (F && F.isFull()) || !shell || !shell.confirmSubmit) { finish(); return; }
+        var pending = 0;
+        screens.forEach(function (s) { if (!recs[s.task.id]) pending += 1; });
+        var msg = pending
+          ? "You have " + pending + " missing recording" + (pending > 1 ? "s" : "") + " of " + screens.length +
+            ". Missing recordings are not scored. Submit anyway?"
+          : "You have completed all " + screens.length + " recordings. Submit?";
+        shell.confirmSubmit(msg, finish);
       }
       function finish() {
         clearInterval(tick);
         lockOn = false;
         stopRec();
         clip.pause();
+        if (Lab) {
+          Lab.markSessionDone("speaking", paperId, paper, taskQ, taskEndQ);
+          if (Lab.saveSpeakingResults) Lab.saveSpeakingResults("speaking", paperId, paper, screens, recs);
+        }
+        if (F && F.fromApp && F.fromApp() && !(F.isFull && F.isFull())) {
+          var sliced = Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ) : paper;
+          S.stashRecs(recs, function () {
+            F.handoffApp("speaking", sliced, {
+              tasks: (sliced.tasks || []).map(function (_, i) { return i; }),
+              answers: {}
+            });
+          });
+          return;
+        }
         view = "done";
         show(done);
         if (F && F.isFull()) {
@@ -399,18 +458,23 @@
           var rec = recs[s.task.id];
           var play = rec ? '<audio controls src="' + rec.url + '"></audio>' : "<span>未录音</span>";
           var dl = rec ? '<button type="button" class="btn exp-one" data-id="' + s.task.id + '">下载本题</button>' : "";
-          return '<div class="review-row"><span>Q' + s.task.id + " · " +
+          return '<article class="rv-item"><p class="rv-stem">Q' + s.task.id + " · " +
             (s.type === "repeat" ? "Listen and Repeat" : "Interview") +
-            "</span>" + dl + "</div>" + play +
-            (s.task.stem ? "<p class=\"sample\"><b>Question</b> " + S.esc(s.task.stem) + "</p>" : "") +
-            "<p class=\"sample\"><b>Sample</b> " + S.esc(s.task.sample || "") + "</p>";
+            "</p>" + dl +
+            '<p class="rv-line"><span class="rv-k">我的回答</span></p>' + play +
+            (s.type === "interview" && s.task.stem
+              ? "<p class=\"sample\"><b>题目</b> " + S.esc(s.task.stem) + "</p>" : "") +
+            (s.type === "repeat"
+              ? "<p class=\"sample\"><b>应复述</b> " + S.esc(s.task.sample || "") + "</p>"
+              : "") +
+            "</article>";
         }).join("");
         if (F && F.isFull()) {
           var extra = document.createElement("p");
           extra.innerHTML = '<a class="btn" href="' + F.resultsHref(paperId, mode) + '">查看全卷成绩</a>';
           document.getElementById("done").appendChild(extra);
           var back = document.querySelector("#done a.btn[href*='speaking']");
-          if (back) back.setAttribute("href", "zone.html?zone=toefl&s=full");
+          if (back) back.setAttribute("href", zoneBack);
         }
       }
       document.getElementById("wrong-preview").onclick = function (e) {
@@ -441,20 +505,13 @@
         if (si === screens.indexOf(last[last.length - 1])) leaveModule();
         else { si += 1; renderExam(); }
       };
-      backBtn.onclick = function () {
-        if (mode === "mock") return;
-        stopRec();
-        if (si > 0 && screens[si - 1].module === screens[si].module) {
-          si -= 1;
-          renderExam();
-        }
-      };
       document.getElementById("void-restart").onclick = function () {
-        location.replace((F && F.isFull()) ? F.voidRestartHref(paperId) : "toefl-speaking.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
+        if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.markLeaving) YYSD_TOEFL_SHELL.markLeaving();
+        location.replace((F && F.voidRestartHref) ? F.voidRestartHref(paperId, "speaking") : "toefl-speaking.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
       };
 
       function triggerVoid() {
-        if (voided || !lockOn) return;
+        if (voided || !lockOn || (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.leaving())) return;
         voided = true;
         lockOn = false;
         clearInterval(tick);
@@ -477,7 +534,7 @@
         });
         window.addEventListener("pagehide", function () { if (armed) triggerVoid(); });
         window.addEventListener("beforeunload", function (e) {
-          if (!lockOn || voided) return;
+          if (!lockOn || voided || (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.leaving())) return;
           e.preventDefault();
           e.returnValue = "";
         });
@@ -488,20 +545,34 @@
         .then(function (p) {
           paper = p;
           screens = S.screensOf(p);
+          if (Lab) screens = Lab.clipScreens(p, screens, taskQ, taskEndQ);
+          if (!screens.length) throw new Error("Unable to load this task");
           document.title = (p.title || "TOEFL Speaking") + (mode === "mock" ? " · 模考" : " · 练习");
           document.getElementById("mode-tag").textContent = mode === "mock" ? "Mock" : "Practice";
           function goStart() {
-            startModule(1);
-            if (mode === "mock") {
-              bindLock();
+            startModule(Lab ? Lab.firstModule(screens) : 1);
+            if (qJump && Lab) {
+              si = Lab.screenIndexForQ(screens, qJump);
+              renderExam();
+            }
+            if (mode === "mock") bindLock();
+            if (remain > 0) {
               tick = setInterval(function () {
                 if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.paused()) return;
+                if (remain <= 0) return;
                 remain -= 1;
                 showClock();
                 if (remain <= 0) leaveModule();
               }, 1000);
             } else showClock();
           }
+          if (Lab) Lab.bindBar({
+            skill: "speaking",
+            paperId: paperId,
+            taskStart: taskQ,
+            taskEnd: taskEndQ,
+            getCursor: function () { return Lab.cursorOf(paper, screens, si, labClip, taskQ, taskEndQ); }
+          });
           var Sh = window.YYSD_TOEFL_SHELL;
           if (Sh) {
             Sh.boot({
@@ -518,6 +589,8 @@
         .catch(function (e) {
           exam.classList.remove("hidden");
           document.getElementById("instruction").textContent = e.message || "Unable to load this test";
+          var Sh = window.YYSD_TOEFL_SHELL;
+          if (Sh && Sh.showFail) Sh.showFail("Check your connection and try again. If it keeps failing, go back and pick another test.", zoneBack);
         });
     })();
   </script>
