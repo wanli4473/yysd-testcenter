@@ -378,34 +378,37 @@ body.exam-ets .blank {
   margin: 0 1px;
 }
 body.exam-ets .blank-pre { font-weight: 500; }
+/* CW：一个空 = 一个 input，「一字母一横线」是底纹画出来的（1:1 照 wofo.cc） */
 body.exam-ets .blank input {
-  width: 5.2em;
-  border: 0;
-  border-bottom: 2px solid #9aa8b5;
-  background: #f3f8fb;
-  padding: 0 4px;
-  text-align: center;
-  font: inherit;
-}
-body.exam-ets .blank.is-long input { width: 7.2em; }
-body.exam-ets .blank.blank--letters {
-  background: transparent;
-  box-shadow: none;
-  align-items: baseline;
-}
-body.exam-ets .blank input.blank-ch {
-  width: 1.15ch;
-  height: 1.2em;
+  width: calc(var(--n) * 1.3ch);
+  margin: 0 1px;
   padding: 0;
-  margin: 0;
   border: 0;
-  border-bottom: 1.5px solid #3a3637;
   border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  text-align: center;
-  vertical-align: middle;
-  font: 1em ui-monospace, Consolas, monospace;
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #696969 0, #696969 1ch,
+    transparent 1ch, transparent 1.3ch
+  );
+  background-position: 0 100%;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  font: inherit;
+  color: inherit;
+  height: 1.25em;
+  line-height: 1.25;
+  letter-spacing: 0.12em;
+}
+/* 考场里不要蓝色圆角焦点框；焦点用加深加粗的底纹横线表达 */
+body.exam-ets .blank input:focus {
+  outline: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #1f1f1f 0, #1f1f1f 1ch,
+    transparent 1ch, transparent 1.3ch
+  );
+  background-size: 100% 2px;
 }
 body.exam-ets mark.vocab-hl {
   background: #ffe566;
@@ -731,3 +734,30 @@ body.exam-ets .review audio { display: block; width: 100%; margin: 0 0 8px; }
   body.exam-ets .dl-fields--4,
   body.exam-ets .dl-cols { grid-template-columns: 1fr; }
 }
+
+/* wofo: 交卷后的「生成成绩单」屏 */
+body.exam-ets.ets-gate-on .ets-frame > section { display: none !important; }
+body.exam-ets .ets-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 62vh;
+  max-width: 1024px;
+  margin: 0 auto;
+}
+body.exam-ets .ets-gate-in { text-align: center; }
+body.exam-ets .ets-gate-in p { margin: 0 0 22px; font-size: 17px; color: #1f1f1f; }
+body.exam-ets .ets-gate-in button {
+  min-height: 44px;
+  padding: 0 24px;
+  background: #077f83;
+  color: #fff;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  cursor: pointer;
+}
+body.exam-ets .ets-gate-in button:hover { background: #066e72; }

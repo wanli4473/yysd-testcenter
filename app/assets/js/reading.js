@@ -339,6 +339,7 @@
     return "";
   }
 
+  /* 复盘三态（照 wofo.cc）：填对=绿字母；填错=红字母+绿(正确答案)；未填=红虚线段+绿(正确答案) */
   function blankReviewHTML(part, raw) {
     var ok = matchBlank(part, raw);
     var got = savedSuffix(part, raw);
@@ -347,13 +348,13 @@
     if (ok) {
       inner += '<span class="rev-blank-got">' + esc(got || key) + "</span>";
     } else if (!norm(raw)) {
-      inner += '<span class="rev-blank-empty">' + Array(Math.max(1, key.length) + 1).join("·") + "</span>";
-      inner += '<span class="rev-blank-key">' + esc(key) + "</span>";
+      inner += '<span class="rev-blank-empty" style="--n:' + Math.max(1, key.length) + '"></span>';
+      inner += '<span class="rev-blank-key">(' + esc(key) + ")</span>";
     } else {
-      inner += '<s class="rev-blank-got">' + esc(got) + "</s>";
-      inner += '<span class="rev-blank-key">' + esc(key) + "</span>";
+      inner += '<span class="rev-blank-got">' + esc(got) + "</span>";
+      inner += '<span class="rev-blank-key">(' + esc(key) + ")</span>";
     }
-    return '<span class="rev-blank ' + (ok ? "is-ok" : "is-bad") + '">' + inner + "</span>";
+    return '<span class="rev-blank ' + (ok ? "is-ok" : "is-bad") + '" id="revb' + part.id + '">' + inner + "</span>";
   }
 
   function renderBlanksReview(task, host, saved) {

@@ -6,14 +6,14 @@
   <title>TOEFL Speaking</title>
   <script src="assets/js/tenant-boot.js?v=20261013perm1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261016exam2">
-  <script src="assets/js/config.js?v=20261008mock3"></script>
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261020gate1">
+  <script src="assets/js/config.js?v=20261020full22"></script>
   <script src="assets/js/kl-mocks.js?v=20261014kl1"></script>
   <script src="assets/js/auth.js?v=20261015prev2"></script>
   <script src="assets/js/toefl-speaking.js?v=20261009iv1"></script>
-  <script src="assets/js/toefl-full.js?v=20261016rev1"></script>
-  <script src="assets/js/toefl-lab.js?v=20261016exam1"></script>
-  <script src="assets/js/toefl-shell.js?v=20261016exam3"></script>
+  <script src="assets/js/toefl-full.js?v=20261020lib2"></script>
+  <script src="assets/js/toefl-lab.js?v=20261020lib2"></script>
+  <script src="assets/js/toefl-shell.js?v=20261020gate1"></script>
 </head>
 <body class="exam-ets ets-booting">
 <div class="ets-frame">
@@ -437,45 +437,21 @@
           Lab.markSessionDone("speaking", paperId, paper, taskQ, taskEndQ);
           if (Lab.saveSpeakingResults) Lab.saveSpeakingResults("speaking", paperId, paper, screens, recs);
         }
-        if (F && F.fromApp && F.fromApp() && !(F.isFull && F.isFull())) {
-          var sliced = Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ) : paper;
-          S.stashRecs(recs, function () {
-            F.handoffApp("speaking", sliced, {
-              tasks: (sliced.tasks || []).map(function (_, i) { return i; }),
-              answers: {}
-            });
-          });
-          return;
-        }
-        view = "done";
-        show(done);
         if (F && F.isFull()) {
           var n = 0;
           Object.keys(recs).forEach(function (k) { if (recs[k] && recs[k].blob) n += 1; });
           F.afterSection("speaking", paperId, mode, { recorded: n, total: screens.length });
         }
-        document.getElementById("wrong-preview").innerHTML = screens.map(function (s) {
-          var rec = recs[s.task.id];
-          var play = rec ? '<audio controls src="' + rec.url + '"></audio>' : "<span>未录音</span>";
-          var dl = rec ? '<button type="button" class="btn exp-one" data-id="' + s.task.id + '">下载本题</button>' : "";
-          return '<article class="rv-item"><p class="rv-stem">Q' + s.task.id + " · " +
-            (s.type === "repeat" ? "Listen and Repeat" : "Interview") +
-            "</p>" + dl +
-            '<p class="rv-line"><span class="rv-k">我的回答</span></p>' + play +
-            (s.type === "interview" && s.task.stem
-              ? "<p class=\"sample\"><b>题目</b> " + S.esc(s.task.stem) + "</p>" : "") +
-            (s.type === "repeat"
-              ? "<p class=\"sample\"><b>应复述</b> " + S.esc(s.task.sample || "") + "</p>"
-              : "") +
-            "</article>";
-        }).join("");
-        if (F && F.isFull()) {
-          var extra = document.createElement("p");
-          extra.innerHTML = '<a class="btn" href="' + F.resultsHref(paperId, mode) + '">查看全卷成绩</a>';
-          document.getElementById("done").appendChild(extra);
-          var back = document.querySelector("#done a.btn[href*='speaking']");
-          if (back) back.setAttribute("href", zoneBack);
-        }
+        var sliced = Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ) : paper;
+        // wofo: 交卷先停在「生成成绩单」屏，点 View 才进成绩+解析合一页
+        YYSD_TOEFL_SHELL.reportGate(function () {
+          S.stashRecs(recs, function () {
+            F.reviewGo("speaking", sliced, {
+              tasks: (sliced.tasks || []).map(function (_, i) { return i; }),
+              answers: {}
+            });
+          });
+        });
       }
       document.getElementById("wrong-preview").onclick = function (e) {
         var b = e.target.closest ? e.target.closest(".exp-one") : null;

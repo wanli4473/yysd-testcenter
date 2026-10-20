@@ -658,6 +658,8 @@
         '<p class="ielts-hub__kicker">Enhanced TOEFL iBT</p>' +
         "<h2>" + Y.esc(opts.h2 || "选择训练方式") + "</h2>" +
         "<p>" + Y.esc(opts.p || "") + "</p>" +
+        (opts.link ? '<p><a class="ielts-hub__go" href="' + Y.esc(opts.link.href) + '">' +
+          Y.esc(opts.link.label) + ' <span aria-hidden="true">›</span></a></p>' : "") +
       "</header>" +
       '<div class="' + Y.esc(opts.grid || "ielts-hub__grid") + '">' + cards + "</div>" +
     "</section>";
@@ -668,6 +670,7 @@
       aria: "托福入口",
       h2: "选择训练方式",
       p: "按题型拆开精练一篇，或按考试日进入整卷练习与模考。",
+      link: { href: "toefl-score.html", label: "成绩单与模考历史" },
       grid: "ielts-hub__grid ielts-hub__grid--2"
     });
   }

@@ -6,14 +6,14 @@
   <title>TOEFL Writing</title>
   <script src="assets/js/tenant-boot.js?v=20261013perm1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261016exam2">
-  <script src="assets/js/config.js?v=20261008mock3"></script>
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261020gate1">
+  <script src="assets/js/config.js?v=20261020full22"></script>
   <script src="assets/js/kl-mocks.js?v=20261014kl1"></script>
   <script src="assets/js/auth.js?v=20261015prev2"></script>
   <script src="assets/js/toefl-writing.js?v=20261016exam1"></script>
-  <script src="assets/js/toefl-full.js?v=20261016rev1"></script>
-  <script src="assets/js/toefl-lab.js?v=20261016exam1"></script>
-  <script src="assets/js/toefl-shell.js?v=20261016exam3"></script>
+  <script src="assets/js/toefl-full.js?v=20261020lib2"></script>
+  <script src="assets/js/toefl-lab.js?v=20261020lib2"></script>
+  <script src="assets/js/toefl-shell.js?v=20261020gate1"></script>
 </head>
 <body class="exam-ets ets-booting">
 <div class="ets-frame">
@@ -459,32 +459,12 @@
           if (act === "go") return;
           if (act === "rest") { F.fillRest("writing", paperId, mode); view = "rest"; show(rest); return; }
         }
-        if (F && F.fromApp && F.fromApp() && !(F.isFull && F.isFull())) {
-          var sliced = Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ) : paper;
-          var tasks = (sliced.tasks || []).map(function (_, i) { return i; });
-          if (F.handoffApp("writing", sliced, { tasks: tasks, answers: answers, score: r.score, total: r.total })) return;
-        }
-        view = "done";
-        show(done);
-        document.getElementById("score-line").textContent = r.total
-          ? ("Sentence construction " + r.score + " / " + r.total)
-          : ("Emails " + r.detail.filter(function (d) { return d.type === "email"; }).length +
-            " · Discussions " + r.detail.filter(function (d) { return d.type === "discussion"; }).length);
-        document.getElementById("pct-line").textContent = "Essays are not scored automatically. Compare the sample responses.";
-        document.getElementById("wrong-preview").innerHTML = r.detail.map(function (d) {
-          if (d.type === "sentence") {
-            return YYSD_TOEFL_SHELL.renderReview([d]);
-          }
-          var samples = d.samples && d.samples.length
-            ? d.samples.map(function (s) {
-                return "<p><b>范文 · " + W.esc(s.title) + "</b></p><p class=\"sample\">" + W.esc(s.text) + "</p>";
-              }).join("")
-            : "<p class=\"sample\">" + W.esc(d.sample || "") + "</p>";
-          return '<article class="rv-item"><p class="rv-stem">' + (d.type === "email" ? "Email" : "Discussion") +
-            " · " + d.words + ' 词</p>' +
-            '<p class="rv-line"><span class="rv-k">我的回答</span></p><p class="sample">' + W.esc(d.ua || "无") + "</p>" +
-            '<p class="rv-line"><span class="rv-k">参考</span></p>' + samples + "</article>";
-        }).join("");
+        var sliced = Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ) : paper;
+        var tasks = (sliced.tasks || []).map(function (_, i) { return i; });
+        // wofo: 交卷先停在「生成成绩单」屏，点 View 才进成绩+解析合一页
+        YYSD_TOEFL_SHELL.reportGate(function () {
+          F.reviewGo("writing", sliced, { tasks: tasks, answers: answers, score: r.score, total: r.total });
+        });
       }
 
       nextBtn.onclick = function () {

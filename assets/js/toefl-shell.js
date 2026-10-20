@@ -354,6 +354,25 @@
     if (on && pop) pop.classList.add("hidden");
   }
 
+  /* wofo: 交卷后先停在「生成成绩单」屏，点 View 才把答卷交给复盘页 */
+  function reportGate(onView) {
+    examMode(false);
+    document.body.classList.add("ets-gate-on");
+    var next = $("next-btn");
+    if (next) next.classList.add("hidden");
+    var box = $("ets-gate");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "ets-gate";
+      box.className = "ets-gate";
+      box.innerHTML = '<div class="ets-gate-in"><p>Generate your score report when you are ready.</p>' +
+        '<p><button type="button" id="ets-gate-go">View Score Report</button></p></div>';
+      (document.querySelector(".ets-frame") || document.body).appendChild(box);
+    }
+    box.classList.remove("hidden");
+    $("ets-gate-go").onclick = function () { if (onView) onView(); };
+  }
+
   // ponytail: confirmExit 与 confirmSubmit 共用 #ets-exit 浮层，每次全量写文案防止上一次的残留
   function confirmExit(onYes, mock) {
     var box = $("ets-exit");
@@ -573,6 +592,7 @@
     playTone: playTone,
     confirmExit: confirmExit,
     confirmSubmit: confirmSubmit,
+    reportGate: reportGate,
     showFail: showFail,
     levelOf: levelOf,
     hwKey: hwKey,

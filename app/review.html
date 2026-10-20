@@ -4,43 +4,210 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>复习</title>
-  <link rel="stylesheet" href="assets/css/hit.css?v=20261016lcn2">
-  <script src="assets/js/gate.js?v=20261015back1"></script>
+  <link rel="stylesheet" href="assets/css/hit.css?v=20261020lib7">
+  <script src="assets/js/gate.js?v=20261020gate1"></script>
   <script src="assets/js/auth.js?v=20261015prev1"></script>
-  <script src="assets/js/hit-shell.js?v=20261015swiss1"></script>
-  <script src="assets/js/play.js?v=20261015back2"></script>
-  <script src="assets/js/reading.js?v=20261015rev1"></script>
+  <script src="assets/js/hit-shell.js?v=20261020lib4"></script>
+  <script src="assets/js/play.js?v=20261020lib2"></script>
+  <script src="assets/js/reading.js?v=20261018rev3"></script>
   <script src="assets/js/toefl-speaking.js?v=20261009iv1"></script>
+  <script src="../assets/js/toefl-lab.js?v=20261020lib2"></script>
 </head>
-<body class="hit">
+<body class="hit rev-shell">
   <main class="hit-main">
+  <section id="pane-rep" hidden>
+    <iframe id="rep-frame" title="成绩单 Score Report" scrolling="no"></iframe>
+    <div class="rep-foot">
+      <p class="rep-note">成绩单按本次考试（同一场）的四科汇总；未考科目显示「--」。</p>
+      <p><button type="button" class="rep-btn" id="rep-print">保存成绩单</button></p>
+    </div>
+  </section>
+  <section id="pane-rev">
     <h1 id="title">查看记录</h1>
     <p class="hit-lead" id="score"></p>
+    <p class="rev-sub" id="rev-sub"></p>
     <p class="hit-lead" id="sw-choice" hidden>口语/写作可导出音频和作文；要 AI 分再走原来的评分。只导出则口语写作记「已提交、未评分」。</p>
     <p><button type="button" class="hit-go" id="export-all" hidden>导出全部录音</button></p>
     <div id="list"></div>
     <audio id="model-clip" hidden></audio>
-    <a class="hit-go" href="#" id="back">回到题库</a>
+  </section>
+  <div id="rev-ov" hidden>
+    <div class="rev-ov-in">
+      <header><b>索引</b><button type="button" id="rev-ov-x" aria-label="关闭">关闭</button></header>
+      <div id="rev-index"></div>
+    </div>
+  </div>
   </main>
   <script>
     (function () {
       var P = window.YYSD_PLAY;
       var T = window.YYSD_TOEFL;
       var S = window.YYSD_TOEFL_SPEAK;
+      var LAB = window.YYSD_TOEFL_LAB;
       var skill = new URLSearchParams(location.search).get("skill") || "reading";
       if (!P.isPreview() && !YYSD_HIT.mount(skill)) return;
       var att = P.readAttempt();
-      var back = document.getElementById("back");
-      back.href = P.backHref(skill);
-      back.addEventListener("click", function (e) {
-        e.preventDefault();
-        P.goBack(skill);
-      });
       var recs = S && S.readRecs ? S.readRecs() : {};
+      var rows = [];
       if (!att || !att.paper) {
         document.getElementById("score").textContent = "没有本次作答记录。";
         return;
       }
+
+      /* wofo: 分数与各科解析在同一页，靠顶栏 Tab 切换；其余科目按 sid 从模考历史重建 */
+      var NAMES = { report: "分数", reading: "阅读", listening: "听力", writing: "写作", speaking: "口语" };
+      var ORDER = ["report", "reading", "listening", "writing", "speaking"];
+      var sid = att.sid || 0;
+      var sit = {};
+      if (LAB && LAB.attempts && sid) {
+        LAB.attempts().forEach(function (a) { if (a.sid === sid) sit[a.skill] = a; });
+      }
+      var own = { paperId: att.set || att.paper.id || "", title: att.paper.title || "" };
+      if (own.paperId && !sit[skill]) sit[skill] = own;
+      var tab = "report";
+      var REP = (location.pathname.indexOf("/app/") === 0 ? "../" : "") + "toefl-score.html" +
+        (sid ? "?sid=" + sid : "");
+      // preview=1 时上面那行会跳过 mount，这里补挂，否则 Tab 栏无处可插
+      var top = document.querySelector(".hit-top");
+      if (!top && YYSD_HIT.mount(skill)) top = document.querySelector(".hit-top");
+      var mid = document.createElement("div");
+      mid.className = "rev-mid";
+      top.insertBefore(mid, top.querySelector(".hit-user"));
+      top.querySelector(".hit-brand").insertAdjacentHTML("afterend",
+        '<a class="rev-out" id="rev-exit" href="' + esc(P.backHref(skill)) + '">退出复习</a>');
+      document.getElementById("rev-exit").addEventListener("click", function (e) {
+        e.preventDefault();
+        P.goBack(skill);
+      });
+
+      go("report");
+
+      function go(t) {
+        tab = t;
+        if (t !== "report" && t !== skill && sit[t]) { otherSection(t, finish); return; }
+        if (t !== "report") t = skill;
+        tab = t;
+        panes();
+        if (t === "report") openReport();
+        else paint();
+        finish();
+      }
+      function panes() {
+        document.getElementById("pane-rep").hidden = tab !== "report";
+        document.getElementById("pane-rev").hidden = tab === "report";
+      }
+      function finish() {
+        paintBar();
+      }
+      function mockLabel() {
+        var r = sit[skill] || own;
+        var n = 0;
+        ORDER.forEach(function (k) { if (k !== "report" && sit[k]) n += 1; });
+        return (r.title || r.paperId || "模考") + " · " + NAMES[skill] + (n > 1 ? " · 全卷" : " · 单科");
+      }
+      function paintBar() {
+        mid.innerHTML = '<span class="rev-mock">' + esc(mockLabel()) + '</span><nav class="rev-tabs">' +
+          ORDER.map(function (k) {
+            var dis = k !== "report" && !sit[k];
+            return '<button type="button" class="rev-tab' + (tab === k ? " is-on" : "") + '" data-t="' + k + '"' +
+              (dis ? " disabled" : "") + ">" + NAMES[k] + "</button>";
+          }).join("") + "</nav>" +
+          (tab === "report" ? "" : '<span class="rev-acts">' +
+            '<button type="button" id="rev-index-btn"' + (rows.length ? "" : " disabled") + ">索引</button>" +
+            '<button type="button" id="rev-prev"' + (rows.length ? "" : " disabled") + ">Back</button>" +
+            '<button type="button" id="rev-next"' + (rows.length ? "" : " disabled") + ">Next</button></span>");
+        mid.querySelector(".rev-tabs").onclick = function (e) {
+          var b = e.target.closest ? e.target.closest("[data-t]") : null;
+          if (b && !b.disabled && b.getAttribute("data-t") !== tab) go(b.getAttribute("data-t"));
+        };
+        var ib = document.getElementById("rev-index-btn");
+        if (ib) ib.onclick = function () { document.getElementById("rev-ov").hidden = false; };
+        var ox = document.getElementById("rev-ov-x");
+        if (ox) ox.onclick = function () { document.getElementById("rev-ov").hidden = true; };
+        var pv = document.getElementById("rev-prev");
+        if (pv) pv.onclick = function () { step(-1); };
+        var nx = document.getElementById("rev-next");
+        if (nx) nx.onclick = function () { step(1); };
+      }
+      function otherSection(s, cb) {
+        var rec = sit[s] || {};
+        var pid = rec.paperId || rec.set;
+        if (!pid) { cb(); return; }
+        fetch("library/toefl/" + encodeURIComponent(pid) + "-" + s + ".json", { cache: "no-store" })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (paper) {
+            if (!paper || !paper.tasks) { cb(); return; }
+            skill = s;
+            att = {
+              paper: paper, set: pid, skill: s, sid: sid,
+              tasks: paper.tasks.map(function (_, i) { return i; }),
+              answers: rebuild(s, pid, paper),
+              score: rec.correct || 0, total: rec.total || 0
+            };
+            tab = s;
+            panes();
+            paint();
+            cb();
+          })
+          .catch(cb);
+      }
+      function rebuild(s, pid, paper) {
+        var out = {};
+        if (!LAB || !LAB.cardResults) return out;
+        (paper.tasks || []).forEach(function (_, i) {
+          LAB.cardResults({ skill: s, paperId: pid, taskIndex: i, taskEnd: i }).items.forEach(function (it) {
+            out[it.no] = it.ua;
+          });
+        });
+        return out;
+      }
+      function openReport() {
+        var f = document.getElementById("rep-frame");
+        if (!f.getAttribute("data-on")) {
+          f.setAttribute("data-on", "1");
+          f.onload = function () { sizeFrame(); setTimeout(sizeFrame, 400); };
+          f.src = REP;
+        } else sizeFrame();
+        document.getElementById("rep-print").onclick = function () {
+          try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { window.print(); }
+        };
+      }
+      function sizeFrame() {
+        var f = document.getElementById("rep-frame");
+        try {
+          var d = f.contentDocument;
+          if (!d || !d.body) return;
+          var act = d.querySelector(".tf-actions");
+          if (act) act.hidden = true;
+          d.body.style.background = "#fff";
+          var page = d.querySelector(".tf-page");
+          if (page) page.style.minHeight = "0";
+          f.style.height = Math.max(480, d.body.scrollHeight + 8) + "px";
+        } catch (e) { f.style.height = "80vh"; }
+      }
+      window.addEventListener("resize", function () { if (tab === "report") sizeFrame(); });
+
+      function step(d) {
+        if (!rows.length) return;
+        var i = Math.max(0, Math.min(rows.length - 1, (stepAt < 0 ? (d > 0 ? -1 : 0) : stepAt) + d));
+        jump(i);
+      }
+      var stepAt = -1;
+      function jump(i) {
+        var r = rows[i];
+        if (!r) return;
+        var el = document.getElementById(r.el);
+        if (!el) return;
+        if (r.qi != null) {
+          var chip = el.querySelector('.rev-qnav-item[data-i="' + r.qi + '"]');
+          if (chip) chip.click();
+        }
+        stepAt = i;
+        el.scrollIntoView({ block: "start" });
+        var sub = document.getElementById("rev-sub");
+        if (sub) sub.textContent = NAMES[skill] + " · Question " + (i + 1) + " of " + rows.length;
+      }
+
       if (skill === "speaking" || skill === "writing") {
         var sw = document.getElementById("sw-choice");
         if (sw) sw.hidden = false;
@@ -71,6 +238,9 @@
         if (att.total != null) document.getElementById("score").textContent = "得分 " + (att.score || 0) + " / " + att.total;
         var list = document.getElementById("list");
         list.innerHTML = "";
+        rows = [];
+        stepAt = -1;
+        document.getElementById("rev-sub").textContent = "";
         (att.tasks || []).forEach(function (ti) {
           var task = att.paper.tasks[ti];
           if (!task) return;
@@ -101,10 +271,13 @@
             (task.questions || []).forEach(function (q) {
               var picked = pick(ti, q);
               var qok = String(picked || "") === String(q.answer || "");
-              list.insertAdjacentHTML("beforeend", card(qok ? "is-ok" : "is-bad", "Question " + q.id, note("题目", q.stem) + pair(label(q, picked), label(q, q.answer), qok) + note("原文", q.transcript) + note("解析", explainOf(q))));
+              var id = "revq" + ti + "-" + q.id;
+              list.insertAdjacentHTML("beforeend", card(qok ? "is-ok" : "is-bad", "Question " + q.id, note("题目", q.stem) + pair(label(q, picked), label(q, q.answer), qok) + note("原文", q.transcript) + note("解析", explainOf(q)), id));
+              rows.push({ no: q.id, label: q.stem, res: resOf(q, picked), el: id });
             });
           }
         });
+        paintIndex();
         if (skill === "speaking" && S) {
           var exp = document.getElementById("export-all");
           exp.hidden = false;
@@ -135,9 +308,29 @@
         art.innerHTML = '<header class="rev-head"><span class="rev-mark" aria-hidden="true"></span><strong>' +
           esc(title) + '</strong></header><div class="rev-cw"></div>';
         T.renderBlanksReview(task, art.querySelector(".rev-cw"), att.answers || {});
-        var extra = note("翻译", task.translation) + note("解析", explainOf(task));
+        var zh = task.translation || "";
+        var extra = (zh
+          ? '<button class="rev-zh-btn" type="button">显示中文</button>' +
+            '<div class="rev-note rev-zh"><span>中文</span><p>' + esc(zh) + "</p></div>"
+          : "") + (blankNotes(blanks) || note("解析", explainOf(task)));
         if (extra) art.insertAdjacentHTML("beforeend", extra);
+        if (zh) {
+          var zb = art.querySelector(".rev-zh-btn"), zx = art.querySelector(".rev-zh");
+          zb.onclick = function () {
+            var on = zx.classList.toggle("is-on");
+            zb.textContent = on ? "隐藏中文" : "显示中文";
+          };
+        }
         list.appendChild(art);
+        blanks.forEach(function (b) {
+          var raw = (att.answers || {})[b.id];
+          rows.push({
+            no: b.id,
+            label: title + " · " + (b.word || b.answer || ""),
+            res: resOfBlank(b, raw),
+            el: "revb" + b.id
+          });
+        });
       }
 
       function mountSplit(list, task, ti, title) {
@@ -152,6 +345,10 @@
           }).join("") + "</nav>" +
           '<div class="rev-split"><article class="rev-pass"></article><article class="rev-q"></article></div>';
         list.appendChild(sec);
+        sec.id = "revt" + ti;
+        qs.forEach(function (q, qi) {
+          rows.push({ no: q.id, label: q.stem || title, res: resOf(q, pick(ti, q)), el: sec.id, qi: qi });
+        });
         var pass = sec.querySelector(".rev-pass");
         var panel = sec.querySelector(".rev-q");
         var chips = sec.querySelectorAll(".rev-qnav-item");
@@ -191,9 +388,16 @@
         var ok = String(picked || "") === String(q.answer || "");
         var opts = Object.keys(q.options || {}).map(function (k) {
           var cls = "rev-opt";
-          if (k === q.answer) cls += " is-key";
-          if (picked && k === picked && picked !== q.answer) cls += " is-mine";
-          return '<p class="' + cls + '"><b>' + esc(k) + "</b> " + esc(q.options[k]) + "</p>";
+          var tag = "";
+          if (k === q.answer) {
+            cls += " is-key";
+            tag = '<span class="rev-opt-tag">✓ 正确答案</span>';
+          }
+          if (picked && k === picked && picked !== q.answer) {
+            cls += " is-mine";
+            tag = '<span class="rev-opt-tag">✗ 你选的</span>';
+          }
+          return '<p class="' + cls + '"><b>' + esc(k) + "</b> " + esc(q.options[k]) + tag + "</p>";
         }).join("");
         panel.className = "rev-q " + (ok ? "is-ok" : "is-bad");
         panel.innerHTML = '<header class="rev-head"><span class="rev-mark" aria-hidden="true"></span><strong>Question ' +
@@ -211,6 +415,12 @@
         return a[q.id];
       }
       function explainOf(obj) { return (obj && (obj.analysis || obj.explain)) || ""; }
+      function blankNotes(blanks) {
+        var lines = (blanks || []).filter(explainOf).map(function (b) {
+          return b.id + ". " + (b.word || b.answer || "") + " — " + explainOf(b);
+        });
+        return lines.length ? note("解析", lines.join("\n")) : "";
+      }
       function heading(task) {
         return task.title || task.subject || task.code || ({
           sentence: "Build a Sentence",
@@ -221,15 +431,38 @@
           interview: "Interview"
         })[task.type] || task.type;
       }
-      function card(cls, name, inner) {
-        return '<article class="rev-card ' + cls + '"><header class="rev-head"><span class="rev-mark" aria-hidden="true"></span><strong>' + esc(name) + "</strong></header>" + inner + "</article>";
+      function card(cls, name, inner, id) {
+        return '<article class="rev-card ' + cls + '"' + (id ? ' id="' + id + '"' : "") + '><header class="rev-head"><span class="rev-mark" aria-hidden="true"></span><strong>' + esc(name) + "</strong></header>" + inner + "</article>";
+      }
+      function resOf(q, picked) {
+        if (!String(picked || "").trim()) return "未答";
+        return String(picked) === String(q.answer || "") ? "对" : "错";
+      }
+      function resOfBlank(b, raw) {
+        if (T.matchBlank(b, raw)) return "对";
+        return String(raw || "").trim() ? "错" : "未答";
+      }
+      function paintIndex() {
+        var host = document.getElementById("rev-index");
+        if (!rows.length) { host.innerHTML = ""; return; }
+        host.innerHTML = '<table class="rev-index"><thead><tr><th>题号</th><th>题目</th><th>结果</th></tr></thead><tbody>'
+          + rows.map(function (r, i) {
+            var cls = r.res === "对" ? "is-ok" : r.res === "错" ? "is-bad" : "is-skip";
+            return '<tr data-i="' + i + '"><td>' + esc(r.no) + "</td><td>" + esc(r.label) + '</td><td class="' + cls + '">' + esc(r.res) + "</td></tr>";
+          }).join("") + "</tbody></table>";
+        host.onclick = function (e) {
+          var tr = e.target.closest ? e.target.closest("[data-i]") : null;
+          if (!tr) return;
+          document.getElementById("rev-ov").hidden = true;
+          jump(Number(tr.getAttribute("data-i")));
+        };
       }
       function pair(mine, key, ok) {
         return '<div class="rev-pair"><div><span>你的答案</span><p class="' + (ok ? "" : "is-strike") + '">' + esc(mine || "未作答") + "</p></div><div><span>正确答案</span><p>" + esc(key) + "</p></div></div>";
       }
       function note(k, v) {
         if (!v) return "";
-        return '<div class="rev-note"><span>' + esc(k) + "</span><p>" + esc(v) + "</p></div>";
+        return '<div class="rev-note' + (k === "解析" ? " rev-note--explain" : "") + '"><span>' + esc(k) + "</span><p>" + esc(v) + "</p></div>";
       }
       function label(q, k) {
         if (!k) return "未作答";

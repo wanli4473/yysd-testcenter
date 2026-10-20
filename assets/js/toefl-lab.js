@@ -3,8 +3,9 @@
   "use strict";
 
   var FAV_KEY = "yysd:toefl-favs";
-  var DONE_KEY = "yysd:toefl-lab-done";
-  var RES_KEY = "yysd:toefl-lab-results";
+  // 一套本地键：三套旧键只做一次性只读迁移，旧键不删也不再写
+  var STATE_KEY = "yysd:toefl-item-state";
+  var LEGACY = { done: "yysd:toefl-lab-done", res: "yysd:toefl-lab-results", app: "yysd:app-toefl-done" };
 
   var TYPES = {
     reading: [
@@ -61,9 +62,40 @@
     return d;
   }
   function saveFavs(d) { w.localStorage.setItem(FAV_KEY, JSON.stringify(d)); }
-  function doneMap() { return parse(w.localStorage.getItem(DONE_KEY) || "{}", {}) || {}; }
+  function canon(skill, set, taskIndex) {
+    var s = String(set == null || set === "" ? "set-1" : set);
+    if (/^\d+$/.test(s)) s = "set-" + s;
+    return skill + "|" + s + "|" + Number(taskIndex);
+  }
+  function migrate() {
+    var out = {};
+    var res = parse(w.localStorage.getItem(LEGACY.res) || "{}", {}) || {};
+    Object.keys(res).forEach(function (k) { out[k] = res[k]; });
+    var done = parse(w.localStorage.getItem(LEGACY.done) || "{}", {}) || {};
+    Object.keys(done).forEach(function (k) { if (!out[k]) out[k] = { at: 0 }; });
+    var app = parse(w.localStorage.getItem(LEGACY.app) || "{}", {}) || {};
+    Object.keys(app).forEach(function (k) {
+      var p = k.split("|");
+      if (p.length < 2) return;
+      var key = p.length === 2 ? canon(p[0], "set-1", p[1]) : canon(p[0], p[1], p[2]);
+      out[key] = Object.assign({}, app[k] || {}, out[key] || {});
+    });
+    w.localStorage.setItem(STATE_KEY, JSON.stringify(out));
+    return out;
+  }
+  function state() {
+    var raw = w.localStorage.getItem(STATE_KEY);
+    return raw === null ? migrate() : parse(raw, {}) || {};
+  }
+  function writeState(map) { w.localStorage.setItem(STATE_KEY, JSON.stringify(map)); }
+  function markState(skill, set, taskIndex, rec) {
+    var m = state();
+    m[canon(skill, set, taskIndex)] = rec || { at: Date.now() };
+    writeState(m);
+  }
+  function doneMap() { return state(); }
   function doneKey(skill, paperId, taskIndex) {
-    return skill + "|" + paperId + "|" + Number(taskIndex);
+    return canon(skill, paperId, taskIndex);
   }
   function sameTask(a, skill, paperId, taskIndex) {
     return a.skill === skill && a.paperId === paperId && Number(a.taskIndex) === Number(taskIndex);
@@ -79,8 +111,8 @@
   function isDone(card) { return !!doneMap()[doneKey(card.skill, card.paperId, card.taskIndex)]; }
   function markDone(skill, paperId, taskIndex) {
     var m = doneMap();
-    m[doneKey(skill, paperId, taskIndex)] = 1;
-    w.localStorage.setItem(DONE_KEY, JSON.stringify(m));
+    m[doneKey(skill, paperId, taskIndex)] = { at: Date.now() };
+    writeState(m);
   }
   function markSessionDone(skill, paperId, paper, taskStart, taskEnd, type) {
     var tasks = (paper && paper.tasks) || [];
@@ -95,9 +127,9 @@
     for (var i = a; i <= b; i++) markDone(skill, paperId, i);
   }
 
-  function resultsMap() { return parse(w.localStorage.getItem(RES_KEY) || "{}", {}) || {}; }
+  function resultsMap() { return state(); }
   function resultKey(skill, paperId, taskIndex) {
-    return skill + "|" + paperId + "|" + Number(taskIndex);
+    return canon(skill, paperId, taskIndex);
   }
   function findTaskIndex(paper, no) {
     var tasks = (paper && paper.tasks) || [];
@@ -122,7 +154,7 @@
       map[k].items.push({ no: d.id, ok: !!d.ok, ua: d.ua || "", expect: d.expect || "" });
       map[k].at = Date.now();
     });
-    w.localStorage.setItem(RES_KEY, JSON.stringify(map));
+    writeState(map);
   }
   function saveSpeakingResults(skill, paperId, paper, screens, recs) {
     var map = resultsMap();
@@ -136,7 +168,42 @@
         at: Date.now()
       };
     });
-    w.localStorage.setItem(RES_KEY, JSON.stringify(map));
+    writeState(map);
+  }
+  /* 模考历史：一次交卷追加一条 attempt，MyBest 按科取最高档，不回写旧记录 */
+  var ATT_KEY = "yysd:toefl-attempts";
+  var SID = Date.now();
+  function attempts() {
+    var list = parse(w.localStorage.getItem(ATT_KEY) || "[]", []) || [];
+    return Array.isArray(list) ? list : [];
+  }
+  function logAttempt(skill, paperId, title, r) {
+    if (!r || !r.total) return null;
+    var detail = r.detail || [];
+    var correct = 0, blank = 0;
+    detail.forEach(function (d) {
+      if (d.ok) correct += 1;
+      if (!String(d.ua == null ? "" : d.ua).trim()) blank += 1;
+    });
+    var F = w.YYSD_TOEFL_FULL;
+    var entry = {
+      sid: (F && F.currentSid && F.currentSid()) || SID, at: Date.now(),
+      skill: skill, paperId: paperId, title: title || "",
+      correct: correct, wrong: detail.length - correct - blank, blank: blank,
+      total: detail.length, band: r.band
+    };
+    var list = attempts();
+    list.push(entry);
+    try { w.localStorage.setItem(ATT_KEY, JSON.stringify(list.slice(-200))); } catch (e) {}
+    return entry;
+  }
+  function bestAttempts() {
+    var out = {};
+    attempts().forEach(function (a) {
+      if (!a || a.band == null) return;
+      if (!out[a.skill] || a.band > out[a.skill].band) out[a.skill] = a;
+    });
+    return out;
   }
   function cardResults(card) {
     var map = resultsMap();
@@ -342,6 +409,12 @@
   w.YYSD_TOEFL_LAB = {
     TYPES: TYPES,
     SKILLS: SKILLS,
+    state: state,
+    canon: canon,
+    doneKey: doneKey,
+    markDone: markDone,
+    markState: markState,
+    resultsMap: resultsMap,
     FILTERS: FILTERS,
     FILTERS_LISTEN: FILTERS_LISTEN,
     PAGES: PAGES,
@@ -353,6 +426,9 @@
     isFavCard: isFavCard,
     markSessionDone: markSessionDone,
     saveScore: saveScore,
+    logAttempt: logAttempt,
+    attempts: attempts,
+    bestAttempts: bestAttempts,
     saveSpeakingResults: saveSpeakingResults,
     cardResults: cardResults,
     setResults: setResults,

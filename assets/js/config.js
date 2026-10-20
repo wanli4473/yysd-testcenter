@@ -1104,28 +1104,20 @@ window.YYSD = (function () {
       desc: "做果昔 · 听后复述 7 题"
     }
   ];
-  // ponytail: 9.05 为题库而非标准 47 题听力全卷；完整模考链同一套 id 的四科
-  // ponytail: only the 3 full-form papers stay in Mock Test; other dates remain on disk
-  var TOEFL_FULL = [
-    {
-      id: "2025-07-16",
-      title: "新托福 7.16 · 完整模考",
+  // ponytail: 完整模考 = 四科同 id 齐全的日期卷，从上面四张表派生；加套只改四科表
+  // 官方新托福连考 101 分钟无休息，卡面时长用统一口径（各科目页仍按自己的卷时限跑）
+  var TOEFL_FULL = TOEFL_READING.filter(function (r) {
+    return [TOEFL_LISTENING, TOEFL_WRITING, TOEFL_SPEAKING].every(function (L) {
+      return L.some(function (p) { return p.id === r.id; });
+    });
+  }).map(function (r) {
+    return {
+      id: r.id,
+      title: String(r.title || "").replace(/·\s*阅读$/, "· 完整模考"),
       duration: 101,
       desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
-    },
-    {
-      id: "2025-09-02",
-      title: "新托福 9.02 · 完整模考",
-      duration: 101,
-      desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息"
-    },
-    {
-      id: "2025-09-19",
-      title: "新托福 9.19 海外线下 · 完整模考",
-      duration: 101,
-      desc: "阅读→听力→写作→口语 · 约 101 分钟 · 无休息 · 海外线下"
-    }
-  ];
+    };
+  });
   function navOf(zone) { return NAV[zone] || []; }
 
   function esc(s) {

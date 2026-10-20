@@ -181,39 +181,6 @@
     return v;
   }
 
-  function bindLetterNav(host) {
-    if (!host || !host.querySelectorAll) return;
-    host.querySelectorAll(".blank").forEach(function (wrap) {
-      var inputs = wrap.querySelectorAll(".blank-ch");
-      Array.prototype.forEach.call(inputs, function (inp, i) {
-        inp.addEventListener("input", function () {
-          inp.value = String(inp.value || "").replace(/\s/g, "").slice(-1);
-          if (inp.value && i < inputs.length - 1) inputs[i + 1].focus();
-        });
-        inp.addEventListener("keydown", function (ev) {
-          if (ev.key === "Backspace" && !inp.value && i > 0) {
-            ev.preventDefault();
-            inputs[i - 1].value = "";
-            inputs[i - 1].focus();
-          } else if (ev.key === "ArrowLeft" && i > 0) {
-            inputs[i - 1].focus();
-          } else if (ev.key === "ArrowRight" && i < inputs.length - 1) {
-            inputs[i + 1].focus();
-          }
-        });
-        inp.addEventListener("paste", function (ev) {
-          var text = ((ev.clipboardData || window.clipboardData).getData("text") || "").replace(/\s/g, "");
-          if (!text) return;
-          ev.preventDefault();
-          for (var j = 0; j < text.length && i + j < inputs.length; j++) {
-            inputs[i + j].value = text.charAt(j);
-          }
-          inputs[Math.min(i + text.length, inputs.length) - 1].focus();
-        });
-      });
-    });
-  }
-
   function renderBlanks(task, host, saved) {
     host.innerHTML = "";
     if (task.title) {
@@ -231,39 +198,31 @@
       }
       var wrap = document.createElement("span");
       var n = Math.max(1, missingOf(part).length);
-      wrap.className = "blank blank--letters";
+      wrap.className = "blank";
       wrap.dataset.id = String(part.id);
       var pre = document.createElement("span");
       pre.className = "blank-pre";
       pre.textContent = part.prefix || "";
       wrap.appendChild(pre);
-      var got = saved && saved[part.id] != null ? savedSuffix(part, saved[part.id]) : "";
-      for (var i = 0; i < n; i++) {
-        var inp = document.createElement("input");
-        inp.type = "text";
-        inp.className = "blank-ch";
-        inp.maxLength = 1;
-        inp.autocomplete = "off";
-        inp.spellcheck = false;
-        inp.setAttribute("aria-label", "blank " + part.id + " letter " + (i + 1));
-        if (got.charAt(i)) inp.value = got.charAt(i);
-        wrap.appendChild(inp);
-      }
+      // 一个空 = 一个 input；「一字母一横线」由底纹画出，宽度 = n × 1.3ch
+      var inp = document.createElement("input");
+      inp.type = "text";
+      inp.maxLength = n;
+      inp.autocomplete = "off";
+      inp.spellcheck = false;
+      inp.style.setProperty("--n", n);
+      inp.setAttribute("aria-label", "blank " + part.id);
+      if (saved && saved[part.id] != null) inp.value = savedSuffix(part, saved[part.id]);
+      wrap.appendChild(inp);
       host.appendChild(wrap);
     });
-    bindLetterNav(host);
   }
 
   function collectBlanks(host) {
     var out = {};
     host.querySelectorAll(".blank").forEach(function (el) {
-      var letters = el.querySelectorAll(".blank-ch");
-      if (letters.length) {
-        out[el.dataset.id] = Array.prototype.map.call(letters, function (i) { return i.value; }).join("");
-      } else {
-        var inp = el.querySelector("input");
-        out[el.dataset.id] = inp ? inp.value : "";
-      }
+      var inp = el.querySelector("input");
+      out[el.dataset.id] = inp ? inp.value : "";
     });
     return out;
   }

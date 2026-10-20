@@ -192,7 +192,7 @@ if (ui.indexOf("yysd-preview") < 0 || ui.indexOf("function openPreview") < 0) {
   if (hrefFor("?preview=1") !== "https://tiku.youyisida.com/") throw new Error("preview block back");
   if (hrefFor("?preview=1&bank=p1") !== "bank.html?id=p1&preview=1") throw new Error("preview paper back");
   if (hrefFor("?bank=p1") !== "bank.html?id=p1") throw new Error("student bank back");
-  if (hrefFor("") !== "reading-lab.html") throw new Error("student lab back");
+  if (hrefFor("") !== "practice.html?skill=reading") throw new Error("student lab back");
 })();
 var rev = fs.readFileSync(path.join(__dirname, "..", "app/review.html"), "utf8");
 if (rev.indexOf("P.backHref") < 0 || rev.indexOf("P.goBack") < 0) throw new Error("review back uses play helper");

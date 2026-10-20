@@ -1,7 +1,6 @@
-/* ponytail: HIT hub shell — template nav, one row per set */
+/* HIT hub shell — 顶栏/首页/个人页 + 真题题库一屏列表 */
 (function (w) {
   "use strict";
-  var DONE = "yysd:app-toefl-done";
   var LINKS = [
     { href: "home.html", key: "home", zh: "首页" },
     { href: "practice.html", key: "practice", zh: "真题题库" },
@@ -9,35 +8,24 @@
     { href: "profile.html", key: "profile", zh: "个人" }
   ];
   var SUBJECTS = [
-    { skill: "reading", href: "reading-lab.html", zh: "阅读", cls: "read",
-      chips: ["单词填空", "日常阅读", "学术文章"], total: 30 },
-    { skill: "listening", href: "listening-lab.html", zh: "听力", cls: "listen",
-      chips: ["听句选回应", "对话", "讲座"], total: 210 },
-    { skill: "speaking", href: "speaking-lab.html", zh: "口语", cls: "speak",
-      chips: ["听力复述", "模拟面试"], total: 110 },
-    { skill: "writing", href: "writing-lab.html", zh: "写作", cls: "write",
-      chips: ["句子构建", "邮件", "学术讨论"], total: 120 }
+    { skill: "reading", zh: "阅读", chips: ["单词填空", "日常阅读", "学术文章"] },
+    { skill: "listening", zh: "听力", chips: ["听句选回应", "对话", "讲座"] },
+    { skill: "speaking", zh: "口语", chips: ["听力复述", "模拟面试"] },
+    { skill: "writing", zh: "写作", chips: ["句子构建", "邮件", "学术讨论"] }
   ];
   var SKILL_ZH = { reading: "阅读", listening: "听力", speaking: "口语", writing: "写作" };
 
   function parse(raw, fallback) {
     try { return JSON.parse(raw); } catch (e) { return fallback; }
   }
-  function doneMap() { return parse(w.localStorage.getItem(DONE) || "{}", {}) || {}; }
-  // set 可为数字套号或字符串来源（如 free-<qid> 免费题库卷）
-  function doneKey(skill, task, set) { return skill + "|" + (set == null || set === "" ? "1" : String(set)) + "|" + Number(task); }
-  function legacyKey(skill, task) { return skill + "|" + Number(task); }
+  // 进度存储只有一套：assets/js/toefl-lab.js 的 yysd:toefl-item-state
+  function L() { return w.YYSD_TOEFL_LAB; }
+  function doneMap() { return L().state(); }
   function lookup(skill, task, set, records) {
-    var d = records || doneMap();
-    return d[doneKey(skill, task, set)] || ((Number(set || 1) === 1 && d[legacyKey(skill, task)]) || null);
+    return (records || doneMap())[L().canon(skill, set, task)] || null;
   }
   function isDone(skill, task, set, records) { return !!lookup(skill, task, set, records); }
-  function markDone(skill, task, rec) {
-    var d = doneMap();
-    d[doneKey(skill, task, rec && rec.set)] = rec || { at: Date.now() };
-    w.localStorage.setItem(DONE, JSON.stringify(d));
-  }
-  function resultOf(skill, task, set) { return lookup(skill, task, set); }
+  function markDone(skill, task, rec) { L().markState(skill, rec && rec.set, task, rec); }
 
   function initial(name) {
     var s = String(name || "").trim();
@@ -122,308 +110,274 @@
     return true;
   }
 
-  function examHref(page, it) {
-    var href = page + "?set=" + encodeURIComponent(it.set || 1) + "&task=" + encodeURIComponent(it.task) + "&mode=practice";
-    if (it.end != null) href += "&end=" + encodeURIComponent(it.end);
-    return href;
-  }
-
-  var CAT = {
+  /* ---------- 真题题库：科目 tab + 题型 segmented + 题目列表，一屏到底 ----------
+     版式与文案照 hanginthere：idx 决定序号写法，cells 决定行式题号格，其余走大卡；皮肤瑞士黑红、圆角 0。 */
+  var LIB = {
     reading: [
-      { key: "complete_words", en: "Complete the Words", zh: "单词填空",
-        items: [
-          { set: 1, task: 0, title: "South Pacific History", titleZh: "南太平洋历史", meta: "10 blanks" },
-          { set: 2, task: 0, title: "Tigers", titleZh: "老虎", meta: "10 blanks" }
-        ] },
-      { key: "daily_life", en: "Read in Daily Life", zh: "生活阅读",
-        items: [
-          { set: 1, task: 1, title: "Career Fair", titleZh: "招聘会", meta: "2 questions" },
-          { set: 2, task: 1, title: "Introduction to Glassblowing", titleZh: "玻璃吹制入门", meta: "2 questions" }
-        ] },
-      { key: "academic", en: "Academic Passage", zh: "学术文章",
-        items: [
-          { set: 1, task: 2, title: "The Dynamics of Hollywood's Golden Age", titleZh: "好莱坞黄金时代", meta: "5 questions" },
-          { set: 2, task: 2, title: "Augmented Reality in Training", titleZh: "增强现实培训", meta: "5 questions" }
-        ] }
+      { type: "complete_words", en: "Complete the Words", zh: "单词填空", idx: "set" },
+      { type: "daily_life", en: "Read in Daily Life", zh: "生活阅读", idx: "set", count: 1 },
+      { type: "academic", en: "Academic Passage", head: "Read an Academic Passage", zh: "学术文章", idx: "set" }
     ],
     listening: [
-      { key: "choose_response", en: "Choose a Response", zh: "听句选回应",
-        items: [
-          { set: 1, task: 0, end: 11, title: "Choose a Response", meta: "12 questions" },
-          { set: 2, task: 0, end: 11, title: "Choose a Response", meta: "12 questions" }
-        ] },
-      { key: "conversation", en: "Conversation", zh: "对话",
-        items: [
-          { set: 1, task: 12, end: 16, title: "Conversation", meta: "5 conversations" },
-          { set: 2, task: 12, end: 16, title: "Conversation", meta: "5 conversations" }
-        ] },
-      { key: "announcement", en: "Announcement", zh: "通知",
-        items: [
-          { set: 1, task: 17, end: 19, title: "Announcement", meta: "3 announcements" },
-          { set: 2, task: 17, end: 19, title: "Announcement", meta: "3 announcements" }
-        ] },
-      { key: "lecture", en: "Academic Talk", zh: "学术讲座",
-        items: [
-          { set: 1, task: 20, title: "Bicycle Turning and Inertia", titleZh: "自行车转弯与惯性", meta: "4 questions" },
-          { set: 2, task: 20, title: "Lean Startup and MVP", titleZh: "精益创业与最小可行产品", meta: "4 questions" }
-        ] }
-    ],
-    writing: [
-      { key: "sentence", en: "Build a Sentence", zh: "句子构建",
-        items: [
-          { set: 1, task: 0, end: 9, title: "Build a Sentence", meta: "10 sentences" }
-        ] },
-      { key: "email", en: "Write an Email", zh: "邮件写作",
-        items: [
-          { set: 1, task: 10, title: "Printing Services", titleZh: "印刷服务", meta: "1 email" },
-          { set: 2, task: 10, title: "Car Rental Feedback", titleZh: "租车反馈", meta: "1 email" }
-        ] },
-      { key: "discussion", en: "Academic Discussion", zh: "学术讨论",
-        items: [
-          { set: 1, task: 11, title: "The Driving Force of History", titleZh: "历史的推动力", meta: "1 discussion" },
-          { set: 2, task: 11, title: "Brand Loyalty", titleZh: "品牌忠诚度", meta: "1 discussion" }
-        ] }
+      { type: "choose_response", en: "Choose a Response", head: "Listen and Choose a Response", zh: "听句选回应", idx: "set", prog: 1 },
+      { type: "conversation", en: "Conversation", zh: "对话", idx: "set", prog: 1 },
+      { type: "announcement", en: "Announcement", zh: "通知", idx: "set", prog: 1 },
+      { type: "lecture", en: "Academic Talk", zh: "学术讲座", idx: "set" }
     ],
     speaking: [
-      { key: "repeat", en: "Listen and Repeat", zh: "听力复述",
-        items: [
-          { set: 1, task: 0, end: 6, title: "Gym", titleZh: "健身房", meta: "7 sentences" },
-          { set: 2, task: 0, end: 6, title: "Wood Shop", titleZh: "木工坊", meta: "7 sentences" }
-        ] },
-      { key: "interview", en: "Take an Interview", zh: "模拟面试",
-        items: [
-          { set: 1, task: 7, end: 10, title: "Time Management", titleZh: "时间管理", meta: "4 questions" },
-          { set: 2, task: 7, end: 10, title: "Transportation Habits", titleZh: "交通习惯", meta: "4 questions" }
-        ] }
+      { type: "repeat", en: "Listen and Repeat", zh: "听后跟读", idx: "hash", sub: 1 },
+      { type: "interview", en: "Take an Interview", zh: "面试问答", idx: "hash", sub: 1 }
+    ],
+    writing: [
+      { type: "sentence", en: "Build a Sentence", zh: "句子构建", idx: "set" },
+      { type: "email", en: "Write an Email", zh: "邮件写作", idx: "pad", sub: 1 },
+      { type: "discussion", en: "Academic Discussion", zh: "学术讨论", idx: "pad", sub: 1 }
     ]
   };
+  var LIB_SKILLS = ["reading", "listening", "speaking", "writing"];
+  var LIB_FILTERS = [{ key: "all", zh: "全部" }, { key: "todo", zh: "未做" }, { key: "hot", zh: "高频" }];
+  var LIB_HEAD = {
+    reading: { kicker: "TOEFL READING LAB", zh: "阅读练习", lead: "先选择题型，再点击题号进入练习。" },
+    listening: { kicker: "TOEFL LISTENING LAB", zh: "听力练习", lead: "先选择题型，再点击题目进入练习。" },
+    speaking: { kicker: "TOEFL SPEAKING LAB", zh: "口语练习", lead: "先选择题型，再点击题目进入练习。" },
+    writing: { kicker: "TOEFL WRITING LAB", zh: "写作练习", lead: "按题型练习真题，草稿会自动保存在本机。" }
+  };
+  var libCatalog = {};
+  var libHost = null;
+  var libView = { skill: "reading", type: "", filter: "all", query: "", records: null };
 
-  function spanOf(it) {
-    var from = it.task != null ? Number(it.task) : 0;
-    var end = it.end != null ? Number(it.end) : from;
-    return { from: from, end: end, n: end - from + 1 };
+  function libMeta(skill, type) {
+    return (LIB[skill] || []).filter(function (m) { return m.type === type; })[0] ||
+      { type: type, en: type, zh: type, idx: "set" };
   }
-
-  function doneInSpan(skill, it, records) {
-    var sp = spanOf(it);
+  function libGroups(skill, type) {
+    return (libCatalog[skill] || []).filter(function (g) { return g.type === type; });
+  }
+  function itemHref(skill, paperId, task, end) {
+    return skill + ".html?id=" + encodeURIComponent(paperId) + "&mode=practice&task=" + encodeURIComponent(task) +
+      (end > task ? "&taskEnd=" + encodeURIComponent(end) : "");
+  }
+  // 一次列表只解析一遍进度表
+  function doneInSpan(skill, paperId, from, to, records) {
     var d = records || doneMap();
     var n = 0;
-    for (var i = sp.from; i <= sp.end; i++) if (isDone(skill, i, it.set, d)) n++;
+    for (var i = from; i <= to; i++) if (d[L().canon(skill, paperId, i)]) n++;
     return n;
   }
-
-  function filterLabItems(items, skill, status, query, records) {
-    var text = query.trim().toLocaleLowerCase();
+  function libStateOf(skill, g, records) {
+    var total = g.end - g.task + 1;
+    var done = doneInSpan(skill, g.paperId, g.task, g.end, records);
+    return { total: total, done: done, cls: done >= total ? "done" : (done ? "mid" : "todo") };
+  }
+  function stateLabel(st) {
+    return st.cls === "done" ? "已完成" : (st.cls === "mid" ? "进行中 " + st.done + "/" + st.total : "未开始");
+  }
+  function hotChip(g) {
+    if (!g.hot) return "";
+    var tier = g.hot > 1 ? ["🔥🔥", "超高频题"] : ["🔥", "高频题"];
+    return '<span class="hit-lib-hot" role="img" title="' + tier[1] + '">' + tier[0] + "</span>";
+  }
+  function idxLabel(meta, g, i) {
+    var n = g.sort || i + 1;
+    if (meta.idx === "hash") return "#" + n;
+    if (meta.idx === "pad") return (n < 10 ? "0" : "") + n;
+    return "Set " + n;
+  }
+  function cardHTML(skill, meta, g, i, records) {
+    var st = libStateOf(skill, g, records);
+    return '<a class="hit-lib-card is-' + st.cls + '" href="' + itemHref(skill, g.paperId, g.task, g.end) + '">' +
+      '<div class="hit-lib-meta"><span class="hit-lib-idx">' + idxLabel(meta, g, i) + "</span>" +
+      (meta.count ? '<span class="hit-lib-n" lang="en">' + g.n + " question" + (g.n > 1 ? "s" : "") + "</span>" : "") + hotChip(g) + "</div>" +
+      '<h3 class="hit-lib-title" lang="en">' + esc(g.title || meta.en) + "</h3>" +
+      (meta.sub ? '<p class="hit-lib-sub">' + esc(g.zh || meta.zh) + "</p>" : "") +
+      '<div class="hit-lib-foot">' + stateLabel(st) + "</div></a>";
+  }
+  function rowHTML(skill, meta, g, i, records) {
+    var cells = g.cells || [];
     var d = records || doneMap();
-    return items.filter(function (it) {
-      var done = doneInSpan(skill, it, d);
-      var count = spanOf(it).n;
-      return (status === "all" || (status === "todo" && !done) ||
-        (status === "progress" && done > 0 && done < count) || (status === "done" && done >= count)) &&
-        [it.title, it.titleZh, it.groupZh].join(" ").toLocaleLowerCase().indexOf(text) >= 0;
+    var done = 0;
+    var nums = cells.map(function (c) {
+      var on = !!d[L().canon(skill, g.paperId, c.task)];
+      if (on) done++;
+      return '<a class="hit-lib-num' + (on ? " is-done" : "") + '" href="' +
+        itemHref(skill, g.paperId, c.task, c.end) + '" title="' + esc(c.label) + '">' + esc(c.label) + "</a>";
+    }).join("");
+    var st = libStateOf(skill, g, records);
+    return '<div class="hit-lib-row is-' + st.cls + '">' +
+      '<div class="hit-lib-meta"><span class="hit-lib-idx">' + idxLabel(meta, g, i) + "</span>" + hotChip(g) + "</div>" +
+      '<div class="hit-lib-foot">' + (meta.prog ? "完成 " + st.done + "/" + st.total : stateLabel(st)) + "</div>" +
+      '<div class="hit-lib-nums">' + nums + "</div></div>";
+  }
+  function libKept(skill, groups, records, hit) {
+    var keep = [];
+    groups.forEach(function (g, i) {
+      if (hit && !hit(g)) return;
+      if (libView.filter === "todo" && libStateOf(skill, g, records).cls === "done") return;
+      if (libView.filter === "hot" && !g.hot) return;
+      keep.push({ g: g, i: i });
     });
+    return keep;
   }
-
-  function rowHTML(skill, page, it, records) {
-    var sp = spanOf(it);
-    var doneN = doneInSpan(skill, it, records);
-    var st = doneN >= sp.n ? "已完成" : (doneN ? "进行中 " + doneN + "/" + sp.n : "未开始");
-    var cls = doneN >= sp.n ? "is-done" : (doneN ? "is-mid" : "");
-    var setLabel = "第 " + (it.set || 1) + " 套";
-    var main = it.title || it.titleZh || setLabel;
-    var meta = it.meta || (sp.n + " 题");
-    var line = [it.titleZh, it.groupZh, meta].filter(Boolean).join(" / ");
-    return '<a class="hit-set-row ' + cls + '" href="' + examHref(page, { set: it.set, task: sp.from, end: sp.end }) + '">' +
-      '<span class="hit-set-num">' + esc(String(it.set || 1).padStart(2, "0")) + "</span>" +
-      '<div class="hit-set-info"><h4>' + esc(main) + "</h4><p>" + esc(line) + "</p></div>" +
-      '<span class="hit-set-st">' + st + '</span><span class="hit-row-arrow" aria-hidden="true">↗</span></a>';
+  function libBody(skill, meta, keep, records) {
+    var rows = keep.some(function (x) { return x.g.cells; });
+    return '<div class="' + (rows ? "hit-lib-rows" : "hit-lib-grid") + '">' + keep.map(function (x) {
+      return (rows ? rowHTML : cardHTML)(skill, meta, x.g, x.i, records);
+    }).join("") + "</div>";
   }
-
-  var TABS = {
-    reading: [
-      { key: "complete_words", en: "Complete the Words", zh: "单词填空", type: "complete_words", meta: "10 空" },
-      { key: "daily_life", en: "Read in Daily Life", zh: "生活阅读", type: "daily_life", meta: "2 题" },
-      { key: "academic", en: "Academic Passage", zh: "学术文章", type: "academic", meta: "5 题" }
-    ],
-    listening: [
-      { key: "choose_response", en: "Choose a Response", zh: "听句选回应", type: "choose_response", meta: "12 题" },
-      { key: "conversation", en: "Conversation", zh: "对话", type: "conversation", meta: "5 段对话" },
-      { key: "announcement", en: "Announcement", zh: "通知", type: "announcement", meta: "3 则通知" },
-      { key: "lecture", en: "Academic Talk", zh: "学术讲座", type: "lecture", meta: "4 题" }
-    ],
-    writing: [
-      { key: "sentence", en: "Build a Sentence", zh: "句子构建", type: "sentence", meta: "10 句" },
-      { key: "email", en: "Write an Email", zh: "邮件写作", type: "email", meta: "1 封邮件" },
-      { key: "discussion", en: "Academic Discussion", zh: "学术讨论", type: "discussion", meta: "1 篇讨论" }
-    ],
-    speaking: [
-      { key: "repeat", en: "Listen and Repeat", zh: "听力复述", type: "repeat", meta: "7 句" },
-      { key: "interview", en: "Take an Interview", zh: "模拟面试", type: "interview", meta: "4 题" }
-    ]
-  };
-
-  function groupsFromPapers(skill, papers) {
-    return (TABS[skill] || []).map(function (tab) {
-      var items = [];
-      papers.forEach(function (paper, i) {
-        if (!paper || !paper.tasks) return;
-        var set = Number(paper.set || i + 1);
-        var idxs = [];
-        paper.tasks.forEach(function (t, ti) {
-          if (t.type === tab.type) idxs.push(ti);
-        });
-        if (!idxs.length) return;
-        var t0 = paper.tasks[idxs[0]];
-        var item = {
-          set: set,
-          task: idxs[0],
-          end: idxs[idxs.length - 1],
-          title: t0.title || tab.en,
-          titleZh: t0.titleZh || tab.zh,
-          meta: tab.meta || (idxs.length + " items")
-        };
-        // ponytail: grouped listen types are a set, not the first clip's title
-        if (tab.type === "choose_response" || tab.type === "conversation" ||
-            tab.type === "announcement" || tab.type === "sentence") {
-          item.title = "Set " + set;
-          item.titleZh = "第 " + set + " 套";
-        }
-        items.push(item);
+  function filterHTML(groups) {
+    var filters = LIB_FILTERS.filter(function (f) {
+      return f.key !== "hot" || groups.some(function (g) { return g.hot; });
+    });
+    return '<div class="hit-filter" role="group" aria-label="题目筛选">' + filters.map(function (f) {
+      return '<button type="button" data-filter="' + f.key + '"' +
+        (libView.filter === f.key ? ' class="is-on" aria-pressed="true"' : ' aria-pressed="false"') + ">" + f.zh + "</button>";
+    }).join("") + "</div>";
+  }
+  function panelHTML(skill, meta, groups, records) {
+    var keep = libKept(skill, groups, records);
+    var body = keep.length ? libBody(skill, meta, keep, records) :
+      '<div class="hit-empty"><b>这个筛选下没有题目</b><p>切回「全部」看看其他题。</p></div>';
+    return '<div class="hit-lib-panelhead"><h2 lang="en">' + esc(meta.head || meta.en) + "</h2>" + filterHTML(groups) + "</div>" + body;
+  }
+  // 搜索跨该科目全部题型：题目名只记得住中文或英文，不该先逼用户猜题型
+  function libSearchHTML(skill, query, records) {
+    var t = query.trim().toLocaleLowerCase();
+    var parts = [];
+    var total = 0;
+    (LIB[skill] || []).forEach(function (meta) {
+      var keep = libKept(skill, libGroups(skill, meta.type), records, function (g) {
+        return [g.title, g.zh, g.code].join(" ").toLocaleLowerCase().indexOf(t) >= 0;
       });
-      return { key: tab.key, en: tab.en, zh: tab.zh, items: items };
-    }).filter(function (g) { return g.items.length; });
+      if (!keep.length) return;
+      total += keep.length;
+      parts.push('<h2 class="hit-lib-searchtype">' + esc(meta.zh) + '<span lang="en">' + esc(meta.en) + "</span></h2>" +
+        libBody(skill, meta, keep, records));
+    });
+    var body = total ? parts.join("") :
+      '<div class="hit-empty"><b>题库里没有「' + esc(query.trim()) + '」</b><p>换个关键词，或清空搜索框浏览全部题目。</p>' +
+      '<button type="button" class="hit-go" data-clear>清空搜索</button></div>';
+    return '<div class="hit-lib-panelhead"><h2>搜索「' + esc(query.trim()) + '」<span class="hit-lib-count">命中 ' +
+      total + " 组</span></h2>" + filterHTML(libCatalog[skill] || []) + "</div>" + body;
   }
-
-  function bindLab(skill, page, host) {
-    var groups = CAT[skill] || [];
-    var tab = "all";
-    var status = "all";
-    var query = "";
-    var paintedGroups = null;
-    host.innerHTML = '<div class="hit-library">' +
-      '<aside class="hit-sidebar"><h2>练习科目</h2><nav aria-label="练习科目">' + SUBJECTS.map(function (s) {
-        return '<a href="' + s.href + '"' + (s.skill === skill ? ' aria-current="page"' : '') +
-          '><span><strong>' + s.zh + '</strong><small lang="en">' + s.skill.charAt(0).toUpperCase() + s.skill.slice(1) +
-          '</small></span><span aria-hidden="true">↗</span></a>';
-      }).join("") + '</nav><p>先选科目，再选题型。<br>交卷后查看答案与解析。</p><a class="hit-back" href="practice.html">← 返回真题题库</a></aside>' +
-      '<section class="hit-library-results" aria-label="' + SKILL_ZH[skill] + '练习">' +
-      '<div class="hit-row"><h2>' + SKILL_ZH[skill] + ' <small lang="en">' + skill.charAt(0).toUpperCase() + skill.slice(1) + '</small></h2></div>' +
-      '<div class="hit-tabs" data-lab-tabs role="group" aria-label="筛选题型"></div>' +
-      '<form class="hit-search" role="search"><label>搜索题目<input type="search" name="query" autocomplete="off" placeholder="输入中文或英文题目名称"></label>' +
-      '<label>练习进度<select name="status"><option value="all">全部进度</option><option value="todo">未开始</option><option value="progress">进行中</option><option value="done">已完成</option></select></label></form>' +
-      '<div class="hit-list-summary"><span data-lab-count role="status" aria-live="polite"></span><button type="button" class="hit-out" data-reset>重置筛选</button></div>' +
-      '<div class="hit-list-columns" aria-hidden="true"><span>套号</span><span>练习内容</span><span>进度</span><span></span></div>' +
-      '<div class="hit-set-list" data-lab-list></div></section></div>';
-    var loads = [];
-    for (var n = 1; n <= 10; n++) {
-      loads.push(fetch("library/toefl/set-" + n + "-" + skill + ".json", { cache: "no-store" })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .catch(function () { return null; }));
+  function segHTML(skill) {
+    return (LIB[skill] || []).map(function (m, i) {
+      return '<button type="button" role="tab" data-type="' + m.type + '">' +
+        '<span class="hit-lib-segnum">' + (i < 9 ? "0" : "") + (i + 1) + "</span>" +
+        '<span class="hit-lib-segname"><strong lang="en">' + esc(m.en) + "</strong><small>" + esc(m.zh) + "</small></span></button>";
+    }).join("");
+  }
+  function paintLib() {
+    if (!libHost) return;
+    var skill = libView.skill;
+    var types = LIB[skill] || [];
+    if (!libView.type || !types.some(function (m) { return m.type === libView.type; })) libView.type = types[0].type;
+    var meta = libMeta(skill, libView.type);
+    libHost.querySelectorAll("[data-skill]").forEach(function (b) {
+      var on = b.getAttribute("data-skill") === skill;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-selected", String(on));
+    });
+    libHost.querySelectorAll("[data-type]").forEach(function (b) {
+      var on = b.getAttribute("data-type") === libView.type && !libView.query.trim();
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-selected", String(on));
+    });
+    var panel = libHost.querySelector(".hit-lib-panel");
+    var hc = LIB_HEAD[skill];
+    libHost.querySelector(".hit-lib-head").innerHTML = '<p class="hit-kicker">' + hc.kicker + "</p><h1>" +
+      hc.zh + '</h1><p class="hit-lead">' + hc.lead + "</p>";
+    var searching = !!libView.query.trim();
+    panel.setAttribute("aria-label", searching ? "搜索结果" : meta.zh);
+    if (!libCatalog[skill]) {
+      panel.innerHTML = '<p class="hit-lib-note">正在载入题库目录…</p>';
+      return;
     }
-    Promise.all(loads).then(function (papers) {
-      var A = w.YYSD_APP;
-      var apply = function (stockSets) {
-        var filtered = papers.slice();
-        if (stockSets && stockSets.length) {
-          filtered = papers.map(function (p, i) {
-            var set = Number((p && p.set) || i + 1);
-            return stockSets.indexOf(set) >= 0 ? p : null;
-          });
-        }
-        var live = groupsFromPapers(skill, filtered);
-        if (live.length) {
-          groups = live;
-          if (!groups.some(function (g) { return g.key === tab; })) tab = "all";
-        }
-        paint();
-      };
-      if (A && A.api) {
-        A.api("/api/tiku/catalog").then(function (d) {
-          apply(d.catalog && d.catalog.stock && d.catalog.stock.sets);
-        }).catch(function () { apply(null); });
-      } else apply(null);
-    });
-    function paint() {
-      var tabHost = host.querySelector("[data-lab-tabs]");
-      if (paintedGroups !== groups) {
-        var focused = tabHost.contains(document.activeElement) ? document.activeElement.getAttribute("data-tab") : null;
-        var tabs = [{ key: "all", zh: "全部题型" }].concat(groups);
-        tabHost.innerHTML = tabs.map(function (g) {
-          return '<button type="button" data-tab="' + esc(g.key) + '">' + esc(g.zh) + '</button>';
-        }).join("");
-        paintedGroups = groups;
-        if (focused) (tabHost.querySelector('[data-tab="' + focused + '"]') || tabHost.querySelector("button")).focus();
-      }
-      tabHost.querySelectorAll("[data-tab]").forEach(function (button) {
-        var active = button.getAttribute("data-tab") === tab;
-        button.classList.toggle("is-on", active);
-        button.setAttribute("aria-pressed", String(active));
-      });
-      var items = [];
-      groups.forEach(function (g) {
-        if (tab !== "all" && tab !== g.key) return;
-        (g.items || []).forEach(function (it) { items.push(Object.assign({}, it, { groupZh: g.zh })); });
-      });
-      var records = doneMap();
-      items = filterLabItems(items, skill, status, query, records);
-      host.querySelector("[data-lab-count]").textContent = "共 " + items.length + " 组练习";
-      host.querySelector("[data-lab-list]").innerHTML = items.length ? items.map(function (it) {
-        return rowHTML(skill, page, it, records);
-      }).join("") : '<div class="hit-empty"><b>没有符合条件的练习</b><p>试试其他关键词，或清除筛选查看全部题目。</p><button type="button" class="hit-go" data-reset>清除筛选</button></div>';
-    }
-    host.addEventListener("click", function (ev) {
-      var t = ev.target.closest("[data-tab]");
-      if (t) {
-        tab = t.getAttribute("data-tab");
-        paint();
-        host.querySelector('[data-tab="' + tab + '"]').focus();
-      }
-      if (ev.target.closest("[data-reset]")) {
-        tab = "all"; status = "all"; query = "";
-        host.querySelector('[name="query"]').value = "";
-        host.querySelector('[name="status"]').value = "all";
-        paint();
-        host.querySelector('[name="query"]').focus();
-      }
-    });
-    host.querySelector("form").addEventListener("submit", function (ev) { ev.preventDefault(); });
-    host.querySelector('[name="query"]').addEventListener("input", function (ev) { query = ev.target.value; paint(); });
-    host.querySelector('[name="status"]').addEventListener("change", function (ev) { status = ev.target.value; paint(); });
-    paint();
+    libView.records = doneMap();
+    panel.innerHTML = searching ? libSearchHTML(skill, libView.query, libView.records) :
+      panelHTML(skill, meta, libGroups(skill, libView.type), libView.records);
   }
-
-  function skillProgress(skill, total) {
-    var d = doneMap();
-    var n = 0;
-    Object.keys(d).forEach(function (k) {
-      if (k.indexOf(skill + "|") !== 0) return;
-      if (!/^\d+$/.test(k.split("|")[1] || "")) return; // 免费题库记录不进练习进度
-      n++;
-    });
-    return { n: n, total: total, pct: total ? Math.min(100, Math.round(n / total * 100)) : 0 };
+  function loadCatalog(skill) {
+    if (libCatalog[skill]) { paintLib(); return Promise.resolve(libCatalog[skill]); }
+    return fetch("library/toefl/bank-catalog-" + skill + ".json", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        libCatalog[skill] = (d && d.groups) || [];
+        paintLib();
+        return libCatalog[skill];
+      })
+      .catch(function () {
+        libCatalog[skill] = [];
+        paintLib();
+        return [];
+      });
   }
-
   function paintBankPapers(host, papers) {
     if (!papers || !papers.length) return;
-    var box = document.createElement("div");
-    box.innerHTML = '<h2 style="margin:1.4rem 0 .5rem">老师组卷</h2><div class="hit-set-list">' +
+    host.querySelector(".hit-lib-extra").innerHTML = '<h2 class="hit-minor-heading">老师组卷</h2><div class="hit-set-list">' +
       papers.map(function (p) {
         return '<a class="hit-set-row" href="bank.html?id=' + encodeURIComponent(p.id) + '"><div class="hit-set-info"><h4>' +
-          (p.title || p.id) + "</h4><p>" + (p.makerName ? p.makerName + " · " : "") + "练习</p></div></a>";
+          esc(p.title || p.id) + "</h4><p>" + esc((p.makerName ? p.makerName + " · " : "") + "练习") + "</p></div></a>";
       }).join("") + "</div>";
-    host.appendChild(box);
   }
-
+  function clearQuery() {
+    libView.query = "";
+    var el = libHost && libHost.querySelector('[name="query"]');
+    if (el) el.value = "";
+  }
   function paintPractice(host) {
-    host.innerHTML = '<div class="hit-subject-grid">' + SUBJECTS.map(function (s) {
-      var p = skillProgress(s.skill, s.total);
-      return '<a class="hit-subject" href="' + s.href + '">' +
-        '<div class="hit-subject-head"><span class="hit-subject-icon ' + s.cls + '" aria-hidden="true"></span>' +
-        "<div><h3>" + s.zh + "</h3><span class=\"hit-sub\">" + s.chips.length + " 个模块</span></div></div>" +
-        '<div class="hit-chips">' + s.chips.map(function (c) { return '<span class="hit-chip">' + c + "</span>"; }).join("") + "</div>" +
-        '<div class="hit-prog"><div class="hit-prog-bar"><i style="width:' + p.pct + '%"></i></div>' +
-        "<span>" + p.pct + "%</span></div></a>";
-    }).join("") + "</div>";
+    libHost = host;
+    var q = new URLSearchParams(location.search).get("skill");
+    if (LIB_SKILLS.indexOf(q) >= 0) libView.skill = q;
+    host.innerHTML = '<section class="hit-lib">' +
+      '<div class="hit-lib-head"></div>' +
+      '<nav class="hit-lib-skills" role="tablist" aria-label="科目">' + LIB_SKILLS.map(function (s) {
+        return '<button type="button" role="tab" data-skill="' + s + '">' + SKILL_ZH[s] +
+          '<small lang="en">' + s.toUpperCase() + "</small></button>";
+      }).join("") + "</nav>" +
+      '<div class="hit-lib-seg" role="tablist" aria-label="题型">' + segHTML(libView.skill) + "</div>" +
+      '<form class="hit-search" role="search"><label>搜索题目<input type="search" name="query" autocomplete="off" placeholder="输入中文或英文题目名称"></label></form>' +
+      '<div class="hit-lib-panel" role="tabpanel"></div>' +
+      '<div class="hit-lib-extra"></div></section>';
+    host.addEventListener("click", function (ev) {
+      var sk = ev.target.closest("[data-skill]");
+      if (sk) {
+        libView.skill = sk.getAttribute("data-skill");
+        libView.type = "";
+        clearQuery();
+        libHost.querySelector(".hit-lib-seg").innerHTML = segHTML(libView.skill);
+        try {
+          var q = new URLSearchParams(location.search);
+          q.set("skill", libView.skill);
+          history.replaceState(null, "", "?" + q);
+        } catch (e) {}
+        loadCatalog(libView.skill);
+        return;
+      }
+      var tp = ev.target.closest("[data-type]");
+      if (tp) {
+        libView.type = tp.getAttribute("data-type");
+        paintLib();
+        return;
+      }
+      var ft = ev.target.closest("[data-filter]");
+      if (ft) {
+        libView.filter = ft.getAttribute("data-filter");
+        paintLib();
+        return;
+      }
+      if (ev.target.closest("[data-clear]")) {
+        clearQuery();
+        paintLib();
+      }
+    });
+    host.addEventListener("submit", function (ev) { ev.preventDefault(); });
+    host.addEventListener("input", function (ev) {
+      if (ev.target.name !== "query") return;
+      libView.query = ev.target.value;
+      paintLib();
+    });
+    paintLib();
+    loadCatalog(libView.skill);
     var A = w.YYSD_APP;
     if (A && A.api) {
       A.api("/api/tiku/catalog?kind=practice").then(function (d) {
@@ -452,7 +406,7 @@
       recs.push({
         at: rec.at || 0,
         skill: SKILL_ZH[parts[0]] || parts[0] || "—",
-        set: parts[1] || "1",
+        set: String(parts[1] || "1").replace(/^set-/, ""),
         pct: rec.total ? Math.round((Number(rec.score) || 0) / rec.total * 100) + "%" : (rec.ok === false ? "—" : "ok")
       });
     });
@@ -649,12 +603,8 @@
     doneMap: doneMap,
     isDone: isDone,
     markDone: markDone,
-    resultOf: resultOf,
-    bindLab: bindLab,
-    examHref: examHref,
     paintPractice: paintPractice,
     paintProfile: paintProfile,
-    paintHome: paintHome,
-    CAT: CAT
+    paintHome: paintHome
   };
 })(window);

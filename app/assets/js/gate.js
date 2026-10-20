@@ -8,13 +8,18 @@
   function isDesktop() {
     return !!(w.yysdDesktop && w.yysdDesktop.device);
   }
+  function isAppHost() {
+    var h = (w.location && w.location.hostname) || "";
+    return h.indexOf("app.") === 0;
+  }
   function tikuHome() {
     var h = (w.location && w.location.hostname) || "";
     return (h === "localhost" || h === "127.0.0.1") ? "/tiku/" : "https://tiku.youyisida.com/";
   }
   function allowed() {
     try { if (new URLSearchParams(w.location.search).get("preview") === "1") return true; } catch (e) {}
-    return isDesktop() || isLocal();
+    // app 域名只给桌面端；官网 /app/ 挂载后由 auth.js 管登录态，不再弹回下载页
+    return isDesktop() || isLocal() || !isAppHost();
   }
   function block() {
     if (allowed()) return true;

@@ -43,51 +43,7 @@
     if (!access || access.staff) return { locked: false };
     var st = (access.packages || {})[id];
     if (st && st.on) return { locked: false };
-    var reason = st ? st.reason : "none";
-    var text = reason === "scheduled" ? "定时开启" :
-      reason === "expired" ? "已到期" :
-      reason === "off" ? "已停用" : "未开通";
-    return { locked: true, reason: reason, text: text };
-  }
-
-  function lockChipHTML(lock) {
-    return lock.locked ? ' <span class="hit-mode-badge">' + lock.text + "</span>" : "";
-  }
-
-  function lockMsg(lock, title) {
-    // 统一口径：学生不需要区分原因，动作都是找老师开通
-    return "未开通考前冲刺包服务，请联系老师开通";
-  }
-
-  function onListClick(ev) {
-    var el = ev.target.closest("[data-lock]");
-    if (!el) return;
-    ev.preventDefault();
-    var note = document.getElementById("mock-note");
-    if (note) {
-      var lock = lockInfoOf(el.getAttribute("data-pkg"));
-      note.textContent = lock.locked ? lockMsg(lock, el.getAttribute("data-lock")) :
-        "「" + el.getAttribute("data-lock") + "」暂时不能进入。";
-    }
-  }
-
-  function formLabel(p, packId) {
-    var m = /Form\s*(\d+)/i.exec(p.title || "");
-    if (m) return "Form " + m[1];
-    if (p.id === packId) return "Form 1";
-    var n = /-s(\d+)$/.exec(p.id);
-    return n ? "Form " + n[1] : "口语";
-  }
-
-  function speakingForms(packId, list) {
-    list = list || yysd().TOEFL_SPEAKING || [];
-    return list.filter(function (p) {
-      return p.id === packId || p.id.indexOf(packId + "-s") === 0;
-    }).slice().sort(function (a, b) {
-      if (a.id === packId) return -1;
-      if (b.id === packId) return 1;
-      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-    });
+    return { locked: true, reason: st ? st.reason : "none" };
   }
 
   function confirmHref(kind, id, skill) {
@@ -111,7 +67,7 @@
     location.href = examRoot() + page + "?id=" + encodeURIComponent(id) + "&mode=mock&from=app";
   }
 
-  /* 开始前服务端硬校验（锁态 UI 只是引导；被绕过后这里仍会拦） */
+  /* 开始前服务端硬校验（卡面只渲染已开通的卷；被绕过后这里仍会拦） */
   function startGuard(packageId, go) {
     var A = w.YYSD_APP;
     if (!A || !A.api) { go(); return; }
@@ -125,86 +81,112 @@
     });
   }
 
-  function doorHTML() {
-    return '<h1>考前冲刺包</h1>' +
-      '<p class="hit-lead">按包开通。整套四科连考，或只考一科。考场仍是 ETS 界面。</p>' +
-      '<div class="hit-mode-grid">' +
-        '<a class="hit-mode practice" href="mock.html?kind=full">' +
-          '<span class="hit-kick">Full Pack</span><h3>整套包</h3>' +
-          "<p>阅读、听力、写作、口语，中途无休息。</p>" +
-          '<span class="hit-cta">选整套<span class="arr">→</span></span></a>' +
-        '<a class="hit-mode mock" href="mock.html?kind=single">' +
-          '<span class="hit-kick">Single Skill</span><h3>单科包</h3>' +
-          "<p>只考日期套卷里的一科。</p>" +
-          '<span class="hit-cta">选单科<span class="arr">→</span></span></a>' +
-      "</div>";
+  /* ---- 便当盒：wofo 式卡片，卡面只有「TOEFL Mock N」+ 全科模考 + 四格只考X ---- */
+  var SLOTS = [
+    { key: "reading", label: "只考阅读", list: "TOEFL_READING" },
+    { key: "listening", label: "只考听力", list: "TOEFL_LISTENING" },
+    { key: "speaking", label: "只考口语", list: "TOEFL_SPEAKING" },
+    { key: "writing", label: "只考写作", list: "TOEFL_WRITING" }
+  ];
+  var PER_PAGE = 10;
+  var page = 1;
+  var packs = [];
+  var draw = function () {};
+
+  function previewOn() {
+    return new URLSearchParams(location.search).get("preview") === "1";
   }
 
-  function mockRow(p, href) {
-    var lock = lockInfoOf(p.id);
-    return '<a class="hit-mock-row' + (lock.locked ? " is-locked" : "") + '" href="' + href + '"' +
-      (lock.locked ? ' data-lock="' + esc(p.title || p.id) + '" data-pkg="' + esc(p.id || "") + '"' : "") + ">" +
-      '<div class="hit-mock-info"><h4>' + (p.title || p.id) + lockChipHTML(lock) + "</h4>" +
-      "<p>" + (p.desc || "阅读 + 听力 + 口语 + 写作") + "</p>" +
-      '<div class="hit-chips"><span class="hit-chip">' + (p.id || "") + "</span>" +
-      '<span class="hit-chip">' + (p.duration || "-") + " 分钟</span></div></div>" +
-      '<span class="btn-start' + (lock.locked ? " is-lock" : "") + '">' + (lock.locked ? "未开通" : "开始") + "</span></a>";
-  }
-
-  function listHead(title, en, leadText) {
-    return "<h1>" + title + "</h1>" +
-      '<p class="hit-lead">' + leadText + "</p>" +
-      '<p class="hit-status is-warn" id="mock-note"></p>' +
-      '<a class="hit-back" href="mock.html">← 返回考前冲刺包</a>';
-  }
-
-  function fullListHTML(extra, stock) {
-    var papers = (yysd().TOEFL_FULL || []).filter(function (p) {
+  function fullPapers(stock) {
+    return (yysd().TOEFL_FULL || []).filter(function (p) {
       if (!stock || !stock.mocks || !stock.mocks.length) return true;
       return stock.mocks.indexOf(p.id) >= 0;
     });
-    extra = extra || [];
-    var rows = papers.map(function (p) {
-      return mockRow(p, confirmHref("full", p.id));
-    }).concat(extra.map(function (p) {
-      return mockRow(p, "bank.html?id=" + encodeURIComponent(p.id));
-    })).join("");
-    return listHead("整套包", "Full mock", "按包开通。阅读 → 听力 → 写作 → 口语。") +
-      '<div class="hit-mock-list">' + rows + "</div>";
   }
 
-  function singleListHTML(extra, stock) {
-    var papers = (yysd().TOEFL_FULL || []).filter(function (p) {
-      if (!stock || !stock.mocks || !stock.mocks.length) return true;
-      return stock.mocks.indexOf(p.id) >= 0;
+  /* 编号按全量清单算，再按权限过滤 —— 不同学生看到的同一张卷卷号一致，会跳号 */
+  function buildList(stock, papers) {
+    var out = fullPapers(stock).map(function (p) {
+      return {
+        id: p.id,
+        made: false,
+        skills: SLOTS.filter(function (s) { return !!skillPaper(s.list, p.id); })
+          .map(function (s) { return s.key; }),
+        href: function (skill) { return confirmHref(skill ? "single" : "full", p.id, skill); }
+      };
     });
-    extra = extra || [];
-    var rows = papers.map(function (p, pi) {
-      var lock = lockInfoOf(p.id);
-      var skills = SKILLS.map(function (s) {
-        var meta = skillPaper(s.list, p.id);
-        if (!meta) return "";
-        return '<a href="' + confirmHref("single", p.id, s.key) + '">' + s.label + "</a>";
-      }).join("");
-      var forms = speakingForms(p.id).map(function (sp) {
-        return '<a href="' + confirmHref("single", sp.id, "speaking") + '">口语 ' + formLabel(sp, p.id) + "</a>";
-      }).join("");
-      return '<div class="hit-mock-row' + (lock.locked ? " is-locked" : "") + '"' +
-        (lock.locked ? ' data-lock="' + esc(p.title || p.id) + '" data-pkg="' + esc(p.id || "") + '"' : "") + ">" +
-        '<div class="hit-mock-thumb" aria-hidden="true">' + String(pi + 1).padStart(2, "0") + "</div>" +
-        '<div class="hit-mock-info"><h4>' + (p.title || p.id) + lockChipHTML(lock) + "</h4>" +
-        '<p>' + (p.id || "") + "</p>" +
-        '<div class="hit-skills">' + skills + forms + "</div></div></div>";
-    }).concat(extra.map(function (p) {
-      var lock = lockInfoOf(p.id);
-      return '<a class="hit-mock-row' + (lock.locked ? " is-locked" : "") + '" href="bank.html?id=' + encodeURIComponent(p.id) + '"' +
-        (lock.locked ? ' data-lock="' + esc(p.title || p.id) + '" data-pkg="' + esc(p.id || "") + '"' : "") + ">" +
-        '<div class="hit-mock-thumb" aria-hidden="true">1</div>' +
-        '<div class="hit-mock-info"><h4>' + (p.title || p.id) + lockChipHTML(lock) + "</h4>" +
-        "<p>单项 · " + (p.makerName || "") + "</p></div></a>";
-    })).join("");
-    return listHead("单科包", "Single skill", "按包开通。先选套卷，再选科目。") +
-      '<div class="hit-mock-list">' + rows + "</div>";
+    (papers || []).forEach(function (p) {
+      if (p.kind === "practice") return;
+      out.push({
+        id: p.id,
+        made: true,
+        skills: SLOTS.map(function (s) { return s.key; }).filter(function (k) {
+          return (p.blocks || []).some(function (b) { return b.skill === k; });
+        }),
+        href: function (skill) {
+          return "bank.html?id=" + encodeURIComponent(p.id) +
+            (skill ? "&skill=" + encodeURIComponent(skill) : "");
+        }
+      });
+    });
+    return out.map(function (p, i) { p.no = i + 1; return p; });
+  }
+
+  function visiblePacks() {
+    return packs.filter(function (p) {
+      return previewOn() || !access || access.staff || !lockInfoOf(p.id).locked;
+    });
+  }
+
+  function mockCardHTML(p) {
+    var skills = SLOTS.filter(function (s) { return p.skills.indexOf(s.key) >= 0; }).map(function (s) {
+      return '<a href="' + s2(p.href(s.key)) + '">' + s.label + "</a>";
+    }).join("");
+    return '<div class="hit-mock-card">' +
+      '<div class="hit-mock-id"><b>TOEFL Mock ' + p.no + "</b>" +
+      "<span>真题模考 · 自动评分</span></div>" +
+      '<a class="hit-mock-main" href="' + s2(p.href("")) + '">' +
+      (p.skills.length === 1 ? "开始模考" : "全科模考") + "</a>" +
+      '<div class="hit-mock-skill">' + skills + "</div></div>";
+  }
+
+  function s2(v) { return esc(v); }
+
+  function pagerHTML(total) {
+    if (total <= PER_PAGE) return "";
+    var pages = Math.ceil(total / PER_PAGE);
+    function btn(label, n, on, off) {
+      return '<button type="button" data-page="' + n + '"' + (on ? ' class="is-on"' : "") +
+        (off ? " disabled" : "") + ">" + label + "</button>";
+    }
+    var html = btn("&lt;", page - 1, false, page === 1);
+    for (var n = 1; n <= pages; n++) html += btn(String(n), n, n === page, false);
+    return '<div class="hit-mock-pager">' + html + btn("&gt;", page + 1, false, page === pages) + "</div>";
+  }
+
+  function mockListHTML() {
+    var visible = visiblePacks();
+    var last = Math.max(1, Math.ceil(visible.length / PER_PAGE));
+    if (page > last) page = last;
+    var shown = visible.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+    return "<h1>考前冲刺包</h1>" + '<div class="hit-mock-cards">' +
+      (shown.length ? shown.map(mockCardHTML).join("") :
+        '<div class="hit-empty"><b>这里还没有下发给你的卷子</b><p>联系老师开通考前冲刺包。</p></div>') +
+      "</div>" + pagerHTML(visible.length);
+  }
+
+  function onPageClick(ev) {
+    var b = ev.target.closest("[data-page]");
+    if (!b || b.disabled) return;
+    page = Number(b.getAttribute("data-page"));
+    draw();
+  }
+
+  function titleOf(id, skill) {
+    var p = packs.filter(function (x) { return x.id === id; })[0];
+    if (!p) return "模考";
+    var slot = SLOTS.filter(function (s) { return s.key === skill; })[0];
+    return "TOEFL Mock " + p.no + (slot ? " · " + slot.label : "");
   }
 
   function confirmHTML(kind, id, skill) {
@@ -212,21 +194,20 @@
     var speak = skill === "speaking" ? skillPaper("TOEFL_SPEAKING", id) : null;
     var spec = SKILLS.filter(function (s) { return s.key === skill; })[0];
     var single = spec ? skillPaper(spec.list, id) : speak;
-    var title = (kind === "full" ? pack : single) ? ((kind === "full" ? pack : single).title) : id;
     var mins = kind === "full" ? (pack && pack.duration) : (single && single.duration);
-    var back = "mock.html?kind=" + encodeURIComponent(kind);
+    var back = "mock.html";
     var rules = kind === "full"
       ? "<li>阅读 → 听力 → 写作 → 口语，无安排休息，科与科之间不能返回。</li>" +
         "<li>按各科官方时限连考，约 " + (mins || "—") + " 分钟。</li>" +
         "<li>切换页面或离开窗口则整场作废，四科均不记分。</li>"
-      : "<li>只考 " + (spec ? spec.label : "口语") + " 一科，时限约 " + (mins || "—") + " 分钟。</li>" +
+      : "<li>只考" + (spec ? spec.label : "口语") + "一科，时限约 " + (mins || "—") + " 分钟。</li>" +
         "<li>切换页面或离开窗口则本场作废，不记分。</li>" +
         "<li>开始后不能返回题目列表。</li>";
     if (!pack && kind === "full") return '<p class="hit-status">找不到这套题。</p><a class="hit-back" href="mock.html">← 返回</a>';
     if (kind === "single" && !single) return '<p class="hit-status">找不到这一科。</p><a class="hit-back" href="' + back + '">← 返回</a>';
     return '<h1>开始前确认</h1>' +
       '<a class="hit-back" href="' + back + '">← 返回列表</a>' +
-      '<div class="hit-confirm"><h2>' + title + "</h2><ul>" + rules + "</ul>" +
+      '<div class="hit-confirm"><h2 id="mock-title">' + esc(titleOf(id, kind === "full" ? "" : skill)) + "</h2><ul>" + rules + "</ul>" +
       '<p class="hit-status is-warn" id="mock-err"></p>' +
       '<button type="button" class="hit-go" id="mock-go">开始模考</button></div>';
   }
@@ -243,6 +224,18 @@
     };
   }
 
+  function loadPacks(done) {
+    var catP = (w.YYSD_APP && w.YYSD_APP.api)
+      ? w.YYSD_APP.api("/api/tiku/catalog").then(function (d) { return (d && d.catalog) || {}; })
+        .catch(function () { return {}; })
+      : Promise.resolve({});
+    return Promise.all([fetchAccess(), catP]).then(function (xs) {
+      var cat = xs[1] || {};
+      packs = buildList(cat.stock, cat.papers);
+      if (done) done();
+    });
+  }
+
   function paint(host) {
     var qs = new URLSearchParams(location.search);
     var kind = qs.get("kind") || "";
@@ -251,33 +244,21 @@
     if (id && (kind === "full" || kind === "single")) {
       host.innerHTML = confirmHTML(kind, id, skill);
       bindConfirm(kind, id, skill);
-      fetchAccess();
-      return "mock";
-    }
-    if (kind === "full" || kind === "single") {
-      var paintList = function (extra, stock) {
-        host.innerHTML = kind === "full" ? fullListHTML(extra, stock) : singleListHTML(extra, stock);
-      };
-      paintList();
-      host.onclick = onListClick;
-      var catP = (w.YYSD_APP && w.YYSD_APP.api)
-        ? w.YYSD_APP.api("/api/tiku/catalog?kind=" + encodeURIComponent(kind))
-          .then(function (d) { return (d && d.catalog) || {}; })
-          .catch(function () { return {}; })
-        : Promise.resolve({});
-      Promise.all([fetchAccess(), catP]).then(function (xs) {
-        var cat = xs[1] || {};
-        paintList(cat.papers, cat.stock);
+      loadPacks(function () {
+        var t = document.getElementById("mock-title");
+        if (t) t.textContent = titleOf(id, kind === "full" ? "" : skill);
       });
       return "mock";
     }
-    host.innerHTML = doorHTML();
+    draw = function () { host.innerHTML = mockListHTML(); };
+    host.onclick = onPageClick;
+    if (!packs.length) packs = buildList(null, null);
+    draw();
+    loadPacks(draw);
     return "mock";
   }
 
   var api = {
-    speakingForms: speakingForms,
-    formLabel: formLabel,
     paint: paint
   };
   w.YYSD_HIT_MOCK = api;

@@ -51,6 +51,13 @@
       skillEnds: {},
       preview: !!paper.preview
     };
+    // 只考一科：从这一科第一个题块开始
+    if (paper.only) {
+      run.only = paper.only;
+      for (var k = 0; k < run.blocks.length; k++) {
+        if (run.blocks[k].skill === paper.only) { run.i = k; break; }
+      }
+    }
     var mins = paper.skillMinutes || {};
     var now = Date.now();
     Object.keys(mins).forEach(function (s) {
@@ -90,6 +97,8 @@
       return false;
     }
     run.i += 1;
+    // 只考一科时跳过其它科题块，做完这一科就到终点
+    if (run.only) while (run.i < run.blocks.length && run.blocks[run.i].skill !== run.only) run.i += 1;
     save(run);
     if (run.i >= run.blocks.length) {
       sessionStorage.removeItem(KEY);

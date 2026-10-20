@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 "use strict";
+// 真题题库一屏列表引擎：链接形态、进度判定、筛选、版式选择、XSS 转义、单次解析
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -11,159 +12,153 @@ const exportMarker = "  w.YYSD_HIT = {";
 assert.equal(source.split(exportMarker).length, 2, "unique VM injection point");
 const storage = {};
 let reads = 0;
-const window = { localStorage: {
-  getItem: key => { reads++; return storage[key] || null; },
-  setItem: (key, value) => { storage[key] = String(value); }
-} };
+const window = {
+  localStorage: {
+    getItem: key => { reads++; return storage[key] || null; },
+    setItem: (key, value) => { storage[key] = String(value); }
+  },
+  URLSearchParams: URLSearchParams
+};
+const ctx = { window, URLSearchParams };
+// 进度键的真实来源：先跑 toefl-lab.js，再用它给 hit-shell.js
+vm.runInNewContext(fs.readFileSync(path.join(ROOT, "assets/js/toefl-lab.js"), "utf8"), ctx,
+  { filename: "assets/js/toefl-lab.js", timeout: 1000 });
+assert.ok(window.YYSD_TOEFL_LAB, "item-state store loaded");
 vm.runInNewContext(source.replace(exportMarker,
-  "  w.__hitSwiss = { filterLabItems: filterLabItems, rowHTML: rowHTML, groupsFromPapers: groupsFromPapers };\n" + exportMarker),
-  { window }, { filename: sourcePath, timeout: 1000 });
-const { filterLabItems, rowHTML, groupsFromPapers } = window.__hitSwiss;
+  "  w.__lib = { cardHTML: cardHTML, rowHTML: rowHTML, panelHTML: panelHTML, itemHref: itemHref," +
+  " libSearchHTML: libSearchHTML, cat: libCatalog," +
+  " libStateOf: libStateOf, doneInSpan: doneInSpan, libView: libView, LIB: LIB };\n" + exportMarker),
+  ctx, { filename: sourcePath, timeout: 1000 });
+const { cardHTML, rowHTML, panelHTML, itemHref, libSearchHTML, cat, libStateOf, doneInSpan, libView, LIB } = window.__lib;
 const hit = window.YYSD_HIT;
-const keys = {
-  reading: ["complete_words", "daily_life", "academic"],
-  listening: ["choose_response", "conversation", "announcement", "lecture"],
-  speaking: ["repeat", "interview"],
-  writing: ["sentence", "email", "discussion"]
-};
-const papersBySkill = {};
-const groupsBySkill = {};
-function checkLink(skill, item) {
-  const html = rowHTML(skill, skill + ".html", item);
-  const href = html.match(/ href="([^"]+)"/);
-  assert.ok(href, "row link exists");
-  const url = new URL(href[1], "https://example.test/app/");
+
+function params(href, skill) {
+  const url = new URL(href, "https://example.test/app/");
   assert.equal(url.pathname, "/app/" + skill + ".html");
-  assert.deepEqual(Object.fromEntries(url.searchParams), {
-    set: String(item.set || 1), task: String(item.task == null ? 0 : Number(item.task)),
-    mode: "practice", end: String(item.end == null ? (item.task == null ? 0 : Number(item.task)) : Number(item.end))
-  });
-  return html;
+  return Object.fromEntries(url.searchParams);
 }
-let paperCount = 0;
-Object.entries(keys).forEach(([skill, types]) => {
-  const papers = Array.from({ length: 10 }, (_, i) => JSON.parse(fs.readFileSync(
-    path.join(ROOT, "app/library/toefl/set-" + (i + 1) + "-" + skill + ".json"), "utf8")));
-  paperCount += papers.length;
-  const groups = groupsFromPapers(skill, papers);
-  papersBySkill[skill] = papers;
-  groupsBySkill[skill] = groups;
-  assert.deepEqual(Array.from(groups, g => g.key), types, skill + " real groups");
-  groups.forEach(group => {
-    const matching = papers.filter(p => p.tasks.some(t => t.type === group.key));
-    assert.equal(group.items.length, matching.length, skill + "/" + group.key);
-    group.items.forEach((item, i) => {
-      const paper = matching[i];
-      const indices = paper.tasks.flatMap((t, ti) => t.type === group.key ? [ti] : []);
-      assert.equal(item.set, Number(paper.set));
-      assert.equal(item.task, indices[0]);
-      assert.equal(item.end, indices[indices.length - 1]);
-      const grouped = ["choose_response", "conversation", "announcement", "sentence"].includes(group.key);
-      assert.equal(item.title, grouped ? "Set " + item.set : (paper.tasks[item.task].title || group.en));
-      assert.equal(item.titleZh, grouped ? "第 " + item.set + " 套" : (paper.tasks[item.task].titleZh || group.zh));
-      checkLink(skill, item);
-    });
+assert.equal(itemHref("reading", "bank-rap", 4, 4), "reading.html?id=bank-rap&mode=practice&task=4");
+assert.equal(params(itemHref("listening", "bank-cr", 7, 12), "listening").taskEnd, "12");
+assert.deepEqual(params(itemHref("writing", 'b"a&nk', 0, 9), "writing"),
+  { id: 'b"a&nk', mode: "practice", task: "0", taskEnd: "9" });
+
+const card = { type: "academic", paperId: "bank-rap", code: "R-RAP1", sort: 3, task: 2, end: 2, n: 5, title: "Tigers", zh: "老虎" };
+const row = { type: "conversation", paperId: "bank-lcn", code: "L-CV1", task: 0, end: 2, n: 6,
+  cells: [{ task: 0, end: 0, label: "C01" }, { task: 1, end: 1, label: "C02" }, { task: 2, end: 2, label: "C03" }] };
+const meta = { type: "academic", en: "Academic Passage", head: "Read an Academic Passage", zh: "学术文章", idx: "set" };
+const dailyMeta = { type: "daily_life", en: "Read in Daily Life", zh: "生活阅读", idx: "set", count: 1 };
+const rowMeta = { type: "conversation", en: "Conversation", zh: "对话", idx: "set", prog: 1 };
+const speakingMeta = LIB.speaking[0];
+
+// 进度：按 task..end 全算才算已完成，跨界不串科
+assert.equal(doneInSpan("reading", card.paperId, card.task, card.end, {}), 0);
+assert.equal(libStateOf("reading", card, {}).cls, "todo");
+const one = {};
+one["reading|bank-rap|2"] = { at: 1 };
+assert.equal(libStateOf("reading", Object.assign({}, card, { end: 4 }), one).cls, "mid");
+assert.equal(libStateOf("reading", card, one).cls, "done");
+assert.equal(libStateOf("listening", card, one).cls, "todo", "same task number, other skill");
+
+// 卡面照它：序号 + 标题 + 状态；阅读不显题数也不显中文行
+const c0 = cardHTML("reading", meta, card, 0, {});
+assert.match(c0, /hit-lib-card is-todo/);
+assert.ok(c0.includes("未开始") && c0.includes("<span class=\"hit-lib-idx\">Set 3</span>"), "idx 取数据里的编号，不是渲染位次");
+assert.doesNotMatch(c0, /hit-lib-n|hit-lib-sub|题|老虎/, "阅读卡只英文标题，无题数无中文行");
+assert.ok(c0.includes('href="reading.html?id=bank-rap&mode=practice&task=2"'), "card link");
+assert.equal(cardHTML("reading", meta, card, 41, {}).includes("Set 3"), true, "filtered position must not renumber");
+assert.ok(cardHTML("reading", dailyMeta, Object.assign({}, card, { n: 2 }), 0, {}).includes('<span class="hit-lib-n" lang="en">2 questions</span>'));
+assert.ok(cardHTML("reading", dailyMeta, Object.assign({}, card, { n: 1 }), 0, {}).includes("1 question<"));
+const s0 = cardHTML("speaking", speakingMeta, { type: "repeat", paperId: "bank-lr", code: "S-LRP7", sort: 7, task: 0, end: 6, n: 7, title: "Gym", zh: "听后跟读" }, 0, {});
+assert.ok(s0.includes('<span class="hit-lib-idx">#7</span>') && s0.includes('lang="en">Gym</h3>') && s0.includes('<p class="hit-lib-sub">听后跟读</p>'), "口语 #N + 英文标题 + 第三行题型中文名");
+assert.ok(cardHTML("speaking", speakingMeta, { type: "repeat", paperId: "bank-lr", sort: 7, task: 0, end: 0, n: 1, title: "" }, 0, {}).includes("Listen and Repeat"), "缺标题兜底用题型英文名");
+
+const r0 = rowHTML("listening", rowMeta, row, 3, one);
+assert.match(r0, /hit-lib-row is-todo/);
+assert.ok(r0.includes("完成 0/3") && r0.includes("Set 4"));
+assert.doesNotMatch(r0, /hit-lib-title/, "行式不显标题");
+assert.equal((r0.match(/hit-lib-num\b/g) || []).length, 3, "one cell per question");
+const rDone = rowHTML("listening", rowMeta, row, 0, {
+  "listening|bank-lcn|0": { at: 1 }, "listening|bank-lcn|1": { at: 1 }, "listening|bank-lcn|2": { at: 1 } });
+assert.match(rDone, /hit-lib-row is-done/);
+assert.ok(rDone.includes("完成 3/3"));
+// 写作组句行显状态而不是完成数（照它）
+const bsMeta = { type: "sentence", en: "Build a Sentence", zh: "句子构建", idx: "set" };
+assert.ok(rowHTML("writing", bsMeta, { type: "sentence", paperId: "bank-bs", sort: 1, task: 0, end: 1,
+  cells: [{ task: 0, end: 0, label: "1" }, { task: 1, end: 1, label: "2" }] }, 0, one).includes("未开始"));
+
+// 筛选：todo 去掉已完成；高频按钮只在该题型真有打标时出现；版式由数据定（cells → 行式）
+libView.filter = "all";
+const all = panelHTML("reading", meta, [card, Object.assign({}, card, { code: "R-RAP4", sort: 4, task: 3, end: 3 })], {});
+assert.match(all, /hit-lib-grid/, "cards without cells");
+assert.ok(all.includes('<h2 lang="en">Read an Academic Passage</h2>'), "面板标题用它的 head 文案");
+assert.doesNotMatch(all, /组 · 共|已筛出|高频/, "没有统计行，也没打标时不给高频按钮");
+assert.match(panelHTML("listening", rowMeta, [row], {}), /hit-lib-rows/, "rows with cells");
+assert.match(panelHTML("reading", meta, [Object.assign({}, card, { hot: 2 })], {}), /高频/);
+libView.filter = "hot";
+assert.match(panelHTML("reading", meta, [card], one), /这个筛选下没有题目/);
+libView.filter = "todo";
+assert.equal(panelHTML("reading", meta, [Object.assign({}, card, { end: 2 })], one).includes("is-todo"), false, "todo 隐藏已完成");
+libView.filter = "all";
+
+// 搜索：跨该科目全部题型，英文标题 / 中文标题 / 题号都能命中，且与筛选叠加
+cat.reading = [card, Object.assign({}, card, { code: "R-RAP4", sort: 4, task: 3, end: 3, title: "好莱坞黄金时代" }),
+  { type: "complete_words", paperId: "bank-cw", code: "R-CW9", sort: 9, task: 40, end: 41, n: 2, title: "Career Fair" }];
+cat.listening = [row];
+const sEn = libSearchHTML("reading", "tigers", {});
+assert.match(sEn, /hit-lib-searchtype/, "命中结果按题型分节");
+assert.equal((sEn.match(/hit-lib-card/g) || []).length, 1, "只渲染命中的那组");
+assert.ok(sEn.includes("命中 1 组") && sEn.includes('href="reading.html?id=bank-rap&mode=practice&task=2"'), "英文标题命中");
+assert.doesNotMatch(sEn, /高频|组 · 共/, "搜索头不给统计行，也没打标时不给高频");
+assert.ok(libSearchHTML("reading", "好莱坞", {}).includes("Set 4"), "中文标题也命中，序号仍取目录 sort");
+assert.ok(libSearchHTML("reading", "r-cw9", {}).includes("Career Fair"), "题号也命中");
+const sRow = libSearchHTML("listening", "l-cv1", {});
+assert.match(sRow, /hit-lib-rows/, "行式题型命中后仍是行式");
+assert.ok(sRow.includes("C02"), "题号格渲染");
+libView.filter = "todo";
+const sDone = libSearchHTML("reading", "r-rap1", one);
+assert.ok(sDone.includes("命中 0 组") && sDone.includes("data-clear"), "未做筛选叠在搜索上，空结果给清空按钮");
+libView.filter = "all";
+const sNone = libSearchHTML("reading", "  <b>zz ", {});
+assert.ok(sNone.includes("题库里没有「&lt;b&gt;zz」") && sNone.includes("搜索「&lt;b&gt;zz」"), "关键词回显也转义");
+assert.doesNotMatch(sNone, /「<b>/, "关键词里的标签不会漏成真 DOM");
+cat.reading = []; cat.listening = [];
+
+// XSS：标题、中文行、cells 标签、高频火苗全部转义
+const hostile = { type: "x", paperId: 'p"><svg>', task: 0, end: 0, n: 1, title: '<img src=x onerror="boom">&', hot: 1 };
+const hostileCard = Object.assign({}, hostile, { zh: '<b>中</b>' });
+const html = cardHTML("reading", { type: "x", en: '<i>E</i>', zh: '<b>中</b>', idx: "set" }, hostile, 0, {}) +
+  cardHTML("speaking", speakingMeta, hostileCard, 0, {}) +
+  rowHTML("reading", { type: "x", en: "x", zh: '<b>中</b>', idx: "set" },
+    { type: "x", paperId: "ok", task: 0, end: 0, n: 1, title: "<script>bad</script>", cells: [{ task: 0, end: 0, label: '"><svg>' }] }, 0, {});
+assert.ok(html.includes("&lt;img src=x onerror=&quot;boom&quot;&gt;&amp;"));
+assert.ok(html.includes("<p class=\"hit-lib-sub\">&lt;b&gt;中&lt;/b&gt;</p>"), "中文行也转义");
+assert.ok(html.includes('title="&quot;&gt;&lt;svg&gt;"'));
+assert.doesNotMatch(html, /<(?:img|svg|b|i|script)>/);
+assert.ok(html.includes('role="img" title="高频题">🔥</span>'), "hot chip 一行一火");
+assert.ok(cardHTML("reading", meta, Object.assign({}, hostile, { hot: 3 }), 0, {}).includes('title="超高频题">🔥🔥</span>'), "两级高频");
+
+// 一次面板只解析一遍进度表
+storage["yysd:toefl-item-state"] = JSON.stringify(Object.fromEntries(
+  Array.from({ length: 1000 }, (_, i) => ["reading|bank-x|" + i, { at: 1 }])));
+const catalog = Array.from({ length: 60 }, (_, i) => ({ type: "academic", paperId: "bank-x", code: "X" + i, task: i, end: i, n: 1, title: "X" + i }));
+reads = 0;
+panelHTML("reading", meta, catalog, hit.doneMap());
+assert.equal(reads, 1, "one completion-record parse per paint");
+
+// 四科题型表与目录里的 type 必须对得上，否则 segmented 点了是空的
+const catDir = path.join(ROOT, "app/library/toefl");
+Object.keys(LIB).forEach(skill => {
+  const groups = JSON.parse(fs.readFileSync(path.join(catDir, "bank-catalog-" + skill + ".json"), "utf8")).groups;
+  const declared = LIB[skill].map(m => m.type);
+  const actual = Array.from(new Set(groups.map(g => g.type))).sort();
+  assert.equal(declared.slice().sort().join(","), actual.join(","), skill + " 题型表 = 目录 type");
+  declared.forEach(t => assert.ok(groups.some(g => g.type === t), skill + "/" + t + " 有题"));
+  if (skill !== "listening") groups.forEach(g => {
+    assert.ok(g.sort > 0, skill + "/" + g.type + " 有序号，卡面不能靠渲染位次");
+    assert.ok(!g.cells || g.cells.length > 1, skill + "/" + g.type + " 行式必是多题组");
+    if (!g.cells) assert.ok(g.title && g.title !== LIB[skill].find(m => m.type === g.type).en, skill + "/" + g.type + " 卡面有真标题（不是题型名）");
+    // 只有画第三行的题型，目录 zh 才是题型名；阅读/听力的 zh 是文章中文标题，不参与比对
+    if (g.zh && LIB[skill].find(m => m.type === g.type).sub) assert.equal(g.zh, LIB[skill].find(m => m.type === g.type).zh, skill + "/" + g.type + " 卡面中文行 = segmented 标签，同一屏不能两个名字");
   });
-  assert.equal(groupsFromPapers(skill, [null, {}, { tasks: [] }]).length, 0);
 });
-assert.equal(groupsFromPapers("unknown", papersBySkill.reading).length, 0);
-const repeat = groupsBySkill.speaking.find(g => g.key === "repeat");
-const interview = groupsBySkill.speaking.find(g => g.key === "interview");
-assert.deepEqual([repeat.items[0].task, repeat.items[0].end], [0, 6]);
-assert.deepEqual([interview.items[0].task, interview.items[0].end], [7, 10]);
-const items = Array.from(repeat.items.slice(0, 3), it => ({ ...it, groupZh: repeat.zh }));
-hit.markDone("speaking", items[1].task + 1, { set: items[1].set });
-for (let task = items[2].task; task <= items[2].end; task++) hit.markDone("speaking", task, { set: items[2].set });
-// Records outside the span or in another skill must not change its status.
-hit.markDone("speaking", items[0].end + 1, { set: items[0].set });
-hit.markDone("reading", items[0].task, { set: items[0].set });
-Object.entries({ all: items, todo: [items[0]], progress: [items[1]], done: [items[2]] }).forEach(([status, expected]) => {
-  assert.deepEqual(Array.from(filterLabItems(items, "speaking", status, "")), expected, status);
-});
-const first = items[0];
-[first.title.toUpperCase(), "  " + first.title.toLowerCase() + "  ", first.titleZh, repeat.zh].forEach(query => {
-  assert.deepEqual(Array.from(filterLabItems([first], "speaking", "todo", query)), [first], query);
-});
-assert.equal(filterLabItems(items, "speaking", "all", "不存在的题目 / no such title").length, 0);
-assert.equal(filterLabItems([first], "speaking", "done", first.titleZh).length, 0);
-const iv = { ...interview.items[0], groupZh: interview.zh };
-assert.deepEqual(Array.from(filterLabItems([iv], "speaking", "progress", " TIME MANAGEMENT ")), [iv]);
-assert.deepEqual(Array.from(filterLabItems([iv], "speaking", "progress", "模拟面试")), [iv]);
-["未开始", "进行中 1/7", "已完成"].forEach((status, i) => {
-  assert.ok(checkLink("speaking", items[i]).includes('<span class="hit-set-st">' + status + '</span>'));
-});
-assert.match(rowHTML("speaking", "speaking.html", items[1]), /hit-set-row is-mid/);
-assert.match(rowHTML("speaking", "speaking.html", items[2]), /hit-set-row is-done/);
-assert.ok(checkLink("speaking", iv).includes("进行中 1/4"));
-for (let task = iv.task; task <= iv.end; task++) hit.markDone("speaking", task, { set: iv.set });
-assert.deepEqual(Array.from(filterLabItems([iv], "speaking", "done", "时间管理")), [iv]);
-const single = groupsBySkill.reading[0].items[1];
-assert.deepEqual(Array.from(filterLabItems([single], "reading", "todo", "")), [single]);
-hit.markDone("reading", single.task, { set: single.set });
-assert.equal(filterLabItems([single], "reading", "progress", "").length, 0);
-assert.deepEqual(Array.from(filterLabItems([single], "reading", "done", "")), [single]);
-const hostile = {
-  set: '\"><svg>&', task: 0, end: 0, title: '<img src=x onerror="boom">&',
-  titleZh: '中文"<&>', groupZh: '<svg>"&', meta: '<b>&"'
-};
-const escaped = checkLink("reading", hostile);
-assert.ok(escaped.includes('<h4>&lt;img src=x onerror=&quot;boom&quot;&gt;&amp;</h4>'));
-assert.ok(escaped.includes('<p>中文&quot;&lt;&amp;&gt; / &lt;svg&gt;&quot;&amp; / &lt;b&gt;&amp;&quot;</p>'));
-assert.ok(escaped.includes('<span class="hit-set-num">&quot;&gt;&lt;svg&gt;&amp;</span>'));
-assert.doesNotMatch(escaped, /<(?:img|svg|b)>?/);
-assert.ok(checkLink("reading", { task: 0 }).includes('<h4>第 1 套</h4><p>1 题</p>'));
-assert.equal(hit.examHref("reading.html", { task: 0 }), "reading.html?set=1&task=0&mode=practice");
-
-// Execute the actual stock-filter block, not a second implementation or a DOM mock.
-const stockStart = source.indexOf("        var filtered = papers.slice();");
-const stockEnd = source.indexOf("        var live = groupsFromPapers(skill, filtered);", stockStart);
-assert.ok(stockStart >= 0 && stockEnd > stockStart, "stock filter source boundaries");
-const stockFilter = vm.runInNewContext("(function (papers, stockSets) {\n" +
-  source.slice(stockStart, stockEnd) + "\nreturn filtered;\n})", {}, { timeout: 1000 });
-Object.keys(keys).forEach(skill => {
-  const papers = papersBySkill[skill];
-  const filtered = stockFilter(papers, [2, 5]);
-  assert.deepEqual(Array.from(filtered, p => p ? Number(p.set) : null), [null, 2, null, null, 5, null, null, null, null, null]);
-  groupsFromPapers(skill, filtered).forEach(g => assert.deepEqual(Array.from(g.items, it => it.set), [2, 5]));
-  [null, []].forEach(stock => assert.deepEqual(Array.from(stockFilter(papers, stock)), papers));
-  assert.equal(groupsFromPapers(skill, stockFilter(papers, [99])).length, 0);
-});
-const reordered = [papersBySkill.speaking[4], null, papersBySkill.speaking[1]];
-assert.deepEqual(Array.from(stockFilter(reordered, [2]), p => p ? Number(p.set) : null), [null, null, 2]);
-const noSet = { ...papersBySkill.speaking[1] };
-delete noSet.set;
-const indexed = stockFilter([null, noSet], [2]);
-assert.equal(indexed[1], noSet, "stock fallback preserves original paper index");
-groupsFromPapers("speaking", indexed).forEach(g => assert.equal(g.items[0].set, 2));
-
-// ponytail: source-only focus invariants; actual async focus/keyboard checks belong in a browser.
-const paintStart = source.indexOf("    function paint() {");
-const paintEnd = source.indexOf('    host.addEventListener("click"', paintStart);
-assert.ok(paintStart >= 0 && paintEnd > paintStart);
-const paint = source.slice(paintStart, paintEnd);
-assert.match(source, /var paintedGroups = null;/);
-const rebuild = paint.match(/if \(paintedGroups !== groups\) \{([\s\S]*?)\n      \}/);
-assert.ok(rebuild, "tabs rebuild only when groups identity changes");
-assert.equal((paint.match(/tabHost\.innerHTML\s*=/g) || []).length, 1);
-assert.match(rebuild[1], /tabHost\.innerHTML = tabs\.map/);
-assert.match(rebuild[1], /var focused = tabHost\.contains\(document\.activeElement\) \? document\.activeElement\.getAttribute\("data-tab"\) : null;/);
-assert.match(rebuild[1], /paintedGroups = groups;/);
-assert.ok(rebuild[1].includes(`if (focused) (tabHost.querySelector('[data-tab="' + focused + '"]') || tabHost.querySelector("button")).focus();`));
-assert.match(paint, /\}\s*tabHost\.querySelectorAll\("\[data-tab\]"\)\.forEach\(function \(button\) \{/);
-assert.match(paint, /var active = button\.getAttribute\("data-tab"\) === tab;/);
-assert.match(paint, /button\.classList\.toggle\("is-on", active\);/);
-assert.match(paint, /button\.setAttribute\("aria-pressed", String\(active\)\);/);
-assert.match(source, /A\.api\("\/api\/tiku\/catalog"\)\.then\(function \(d\) \{\s*apply\(d\.catalog && d\.catalog\.stock && d\.catalog\.stock\.sets\);/);
-assert.match(source, /var live = groupsFromPapers\(skill, filtered\);[\s\S]*?groups = live;[\s\S]*?\n        paint\(\);/);
-storage["yysd:app-toefl-done"] = JSON.stringify(Object.fromEntries(
-  Array.from({ length: 1000 }, (_, i) => ["reading|benchmark-" + i + "|0", { at: 1 }])));
-reads = 0;
-const snapshot = hit.doneMap();
-const allItems = groupsBySkill.speaking.flatMap(g => Array.from(g.items, it => ({ ...it, groupZh: g.zh })));
-const filteredItems = filterLabItems(allItems, "speaking", "all", "", snapshot);
-filteredItems.forEach(it => rowHTML("speaking", "speaking.html", it, snapshot));
-assert.equal(reads, 1, "one completion-record parse per list paint");
-reads = 0;
-filterLabItems(allItems, "speaking", "all", "");
-assert.equal(reads, 1, "filter alone reads once, not per task");
-console.log("ok hit-swiss-check: status/search/escaping/links; " + paperCount + " real papers; stock filtering; focus invariants source-only; one snapshot with 1000 records");
+console.log("ok hit-lib-check: links/span-state/filters/search/layout/escaping/one-parse; 4 skills match bank-catalog");

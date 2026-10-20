@@ -36,10 +36,21 @@
   }
 
   function startPack(id, mode) {
-    var pack = { id: id, mode: mode, sections: {}, voided: false };
+    var pack = { id: id, mode: mode, sections: {}, voided: false, sid: Date.now() };
     save(pack);
+    useSid(pack.sid);
     try { sessionStorage.removeItem("yysd:toefl-hw:" + id); } catch (e) {}
     return pack;
+  }
+
+  // 一场模考四科共用一个 sid，成绩单才把四科算作同一场
+  function useSid(sid) {
+    try { sessionStorage.setItem("yysd:toefl-sid", String(sid)); } catch (e) {}
+  }
+
+  function currentSid() {
+    if (!isFull()) return 0;
+    try { return Number(sessionStorage.getItem("yysd:toefl-sid")) || 0; } catch (e) { return 0; }
   }
 
   function nextSkill(skill) {
@@ -86,12 +97,8 @@
   }
 
   function labHref(skill) {
-    return ({
-      reading: "reading-lab.html",
-      listening: "listening-lab.html",
-      writing: "writing-lab.html",
-      speaking: "speaking-lab.html"
-    })[skill] || "home.html";
+    return ["reading", "listening", "writing", "speaking"].indexOf(skill) >= 0
+      ? "practice.html?skill=" + skill : "home.html";
   }
 
   function listBack(skill, opts) {
@@ -159,6 +166,8 @@
       go(introHref(id, mode));
       return false;
     }
+    if (!pack.sid) { pack.sid = Date.now(); save(pack); }
+    useSid(pack.sid);
     if (pack.voided) {
       go(introHref(id, mode));
       return false;
@@ -195,20 +204,35 @@
     return paperFile(skill, "set-" + setN);
   }
 
-  function handoffApp(skill, paper, payload) {
-    if (!fromApp() || isFull()) return false;
+  function stashReview(skill, paper, payload) {
     payload = payload || {};
     payload.skill = skill;
     payload.paper = paper;
     payload.set = (paper && paper.id) || payload.set || "";
+    if (!payload.sid) payload.sid = currentSid();
+    try { sessionStorage.setItem("yysd:app-review", JSON.stringify(payload)); } catch (e) {}
+    return payload;
+  }
+
+  function reviewHref(skill) {
     var preview = false;
     try {
       preview = typeof location !== "undefined" && new URLSearchParams(location.search).get("preview") === "1";
     } catch (e0) {}
-    try { sessionStorage.setItem("yysd:app-review", JSON.stringify(payload)); } catch (e) {}
     var href = (onAppHost() ? "" : "app/") + "review.html?skill=" + encodeURIComponent(skill);
     if (preview) href += "&preview=1";
-    go(href);
+    return href;
+  }
+
+  /* 复盘页只有 sessionStorage 里这一份答卷，整场其余科目由页面自己按 sid 从模考历史重建 */
+  function reviewGo(skill, paper, payload) {
+    stashReview(skill, paper, payload);
+    go(reviewHref(skill));
+  }
+
+  function handoffApp(skill, paper, payload) {
+    if (!fromApp() || isFull()) return false;
+    reviewGo(skill, paper, payload);
     return true;
   }
 
@@ -306,6 +330,7 @@
   var api = {
     ORDER: ORDER,
     isFull: isFull,
+    currentSid: currentSid,
     load: load,
     startPack: startPack,
     nextSkill: nextSkill,
@@ -323,6 +348,9 @@
     paperURL: paperURL,
     paperFile: paperFile,
     handoffApp: handoffApp,
+    reviewGo: reviewGo,
+    reviewHref: reviewHref,
+    stashReview: stashReview,
     restCopy: restCopy,
     fillRest: fillRest,
     dressVoidUI: dressVoidUI,

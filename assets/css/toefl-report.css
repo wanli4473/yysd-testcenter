@@ -1,0 +1,265 @@
+/* TOEFL 成绩单 / 复盘内容层。色值 1:1 取自 wofo.cc 实测 computed style。
+   只作用于内容层，考试壳的 chrome 仍归 toefl-exam.css。 */
+
+:root {
+  --tf-card-cur-edge: #9094dd;
+  --tf-card-best-edge: #f0975f;
+  --tf-card-radius: 12px;
+  --tf-card-pad: 14px 18px 16px;
+
+  --tf-box-cur: #dfe0f5;
+  --tf-box-best: #fbe3d4;
+  --tf-box-radius: 10px;
+
+  --tf-ink: #1f1f1f;
+  --tf-head-ink: #3a3637;
+  --tf-gauge-track: #d9d9d9;
+  --tf-gauge-fill: #7d82e8;
+  --tf-gauge-fill-best: #ef7f4e;
+
+  --tf-good: #1b8f33;
+  --tf-bad: #c62828;
+  --tf-dash: #696969;
+
+  --tf-note-bg: #fff8dc;
+  --tf-note-edge: #e0b94d;
+  --tf-note-ink: #6d4c00;
+  --tf-badge-ok-bg: #ffd54f;
+  --tf-badge-bad-bg: #d84315;
+  --tf-explain-title: #9a6d1a;
+}
+
+/* ---------- 成绩单双卡 ---------- */
+
+.tf-report {
+  width: min(832px, 100%);
+  margin: 0 auto;
+  padding: 24px 0 8px;
+  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", sans-serif;
+  color: var(--tf-head-ink);
+}
+
+.tf-card {
+  border: 1px solid var(--tf-card-cur-edge);
+  border-radius: var(--tf-card-radius);
+  padding: var(--tf-card-pad);
+  background: #fff;
+}
+.tf-card + .tf-card { margin-top: 14px; }
+.tf-card--best { border-color: var(--tf-card-best-edge); }
+
+.tf-card-title {
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e2df;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+/* MyBest 卡：标题与说明同行，分割线必须横跨整卡 */
+.tf-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e2df;
+}
+.tf-card-head .tf-card-title { margin: 0; padding: 0; border: 0; font-style: italic; }
+.tf-card-sub { font-size: 13px; color: #6b6866; }
+
+.tf-grid {
+  display: grid;
+  grid-template-columns: 150px repeat(4, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+.tf-col { text-align: center; }
+
+.tf-col-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+.tf-col-label svg { width: 17px; height: 17px; }
+
+.tf-box {
+  margin-top: 8px;
+  padding: 14px 4px;
+  border-radius: var(--tf-box-radius);
+  background: var(--tf-box-cur);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tf-ink);
+}
+.tf-card--best .tf-box { background: var(--tf-box-best); }
+.tf-box small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 400;
+  color: #6b6866;
+}
+
+.tf-meta {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #4a4746;
+}
+
+/* 官方没有 raw→scaled 对照表，本站档位按正确率分档估算，必须如实标注 */
+.tf-est {
+  margin: 12px 2px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #6b6866;
+}
+
+/* 半环仪表盘：轨道 + 进度，pathLength=100 让 dasharray 直接当百分比用 */
+.tf-gauge { position: relative; width: 132px; margin: 0 auto; }
+.tf-gauge svg { width: 100%; height: auto; display: block; }
+.tf-gauge .arc-fill { stroke: var(--tf-gauge-fill); transition: stroke-dasharray 0.9s; }
+.tf-card--best .tf-gauge .arc-fill { stroke: var(--tf-gauge-fill-best); }
+.tf-gauge-value {
+  position: absolute;
+  left: 0; right: 0; bottom: 4px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tf-ink);
+}
+
+/* ---------- 复盘：CW 三态 + 逐空解析 ---------- */
+
+.tf-cloze { font-size: 15.68px; line-height: 1.6; color: #000; }
+.tf-cloze .tf-blank { white-space: nowrap; }
+.tf-cloze .tf-stem { white-space: normal; }
+
+/* 每缺一个字母一条短横：宽度 = n × 1.3ch，虚线由底纹画出 */
+.tf-blank-dash {
+  display: inline-block;
+  width: calc(var(--n) * 1.3ch);
+  height: 1em;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--tf-bad) 0, var(--tf-bad) 1ch,
+    transparent 0, transparent 1.3ch
+  );
+  background-position: 0 100%;
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  vertical-align: baseline;
+}
+
+.tf-given { font-weight: 600; }
+.tf-filled-ok  { font-weight: 600; color: var(--tf-good); }
+.tf-filled-bad { font-weight: 600; color: var(--tf-bad); }
+.tf-answer {
+  margin-left: 2px;
+  font-weight: 600;
+  color: var(--tf-good);
+}
+
+.tf-legend { margin: 12px 0; font-size: 13px; color: #4a4746; }
+.tf-legend b { font-weight: 600; }
+.tf-legend .ok { color: var(--tf-good); font-weight: 600; }
+.tf-legend .bad { color: var(--tf-bad); font-weight: 600; }
+
+.tf-explain {
+  margin-top: 16px;
+  padding: 14px 34px 14px 16px;
+  background: var(--tf-note-bg);
+  color: #333;
+}
+.tf-explain h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tf-explain-title);
+}
+.tf-explain ol { margin: 0; padding-left: 20px; }
+.tf-explain li { margin-bottom: 8px; line-height: 1.55; }
+
+/* ---------- 复盘：选项逐条解析 ---------- */
+
+.tf-opt { padding: 0 0 12px; }
+.tf-opt-line { display: flex; align-items: flex-start; gap: 8px; }
+.tf-opt-text { font-size: 15px; line-height: 1.5; }
+.tf-opt.is-key .tf-opt-text { color: var(--tf-good); font-weight: 700; }
+.tf-opt.is-pick .tf-opt-text { color: var(--tf-bad); }
+
+.tf-tag { font-size: 12px; font-weight: 600; margin-left: 6px; }
+.tf-tag--key { color: var(--tf-good); }
+.tf-tag--pick { color: var(--tf-bad); }
+
+.tf-note {
+  margin: 6px 0 0;
+  padding: 10px 14px;
+  background: var(--tf-note-bg);
+  border-left: 3px solid var(--tf-note-edge);
+  color: var(--tf-note-ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.tf-opt.is-pick .tf-note { color: var(--tf-bad); }
+
+.tf-badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+.tf-badge--ok  { background: var(--tf-badge-ok-bg);  color: var(--tf-note-ink); }
+.tf-badge--bad { background: var(--tf-badge-bad-bg); color: #fff; }
+
+.tf-locate { font-weight: 700; }
+
+/* ---------- 索引表 ---------- */
+
+.tf-index { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tf-index th,
+.tf-index td { padding: 10px 12px; border-bottom: 1px solid #e5e2df; text-align: left; }
+.tf-index thead th {
+  background: #077f83;
+  color: #fff;
+  font-weight: 600;
+  border-bottom: 0;
+}
+.tf-index th:nth-child(1), .tf-index td:nth-child(1) { width: 64px; text-align: center; }
+.tf-index th:nth-child(3), .tf-index td:nth-child(3) { width: 180px; }
+.tf-index tbody tr { cursor: pointer; }
+.tf-index tbody tr:hover { background: #f6f3ec; }
+.tf-index td.is-ok { color: var(--tf-good); font-weight: 600; }
+.tf-index td.is-bad { color: var(--tf-bad); font-weight: 600; }
+.tf-index td.is-skip { color: #8b8784; }
+
+/* ---------- 打印 / 存为 PDF ---------- */
+
+.tf-actions { margin: 18px 2px 0; text-align: right; }
+.tf-actions button {
+  padding: 9px 18px;
+  border: 1px solid #e5e2df;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--tf-ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@media print {
+  body { background: #fff; }
+  .tf-page { width: 100%; padding: 0; min-height: 0; }
+  .tf-actions { display: none; }
+  .tf-card { break-inside: avoid; }
+}

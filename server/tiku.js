@@ -31,7 +31,21 @@ var TYPE_ZH = {
   repeat: "听力复述",
   interview: "模拟面试"
 };
-var STOCK_MOCKS = ["2025-07-16", "2025-09-02", "2025-09-19"];
+// 冲刺包日期卷 = library/toefl 里四科齐全的同名日期；老师上传即上架，不再硬编码清单
+function stockMocks(repoRoot) {
+  var dir = path.join(repoRoot || path.join(__dirname, ".."), "library", "toefl");
+  var names;
+  try { names = fs.readdirSync(dir); } catch (e) { return []; }
+  var byId = {};
+  names.forEach(function (f) {
+    var m = /^(\d{4}-\d{2}-\d{2})-(reading|listening|writing|speaking)\.json$/.exec(f);
+    if (!m) return;
+    (byId[m[1]] = byId[m[1]] || {})[m[2]] = true;
+  });
+  return Object.keys(byId).filter(function (id) {
+    return SKILLS.every(function (s) { return byId[id][s]; });
+  }).sort();
+}
 
 function nowIso() {
   return new Date().toISOString();
@@ -88,10 +102,43 @@ function isLoopback(ip) {
   return ip === "127.0.0.1" || ip === "::1" || ip === "localhost";
 }
 
+function v4(s) {
+  var p = String(s).split(".");
+  if (p.length !== 4) return null;
+  var n = 0;
+  for (var i = 0; i < 4; i++) {
+    if (!/^\d{1,3}$/.test(p[i]) || +p[i] > 255) return null;
+    n = n * 256 + +p[i];
+  }
+  return n;
+}
+
+/* 条目可是单 IP，也可是 IPv4 网段（CIDR）。宽带重拨会在段内换出口 IP，纯精确匹配会把老师挡在外面。 */
+function ipMatches(ip, entry) {
+  var slash = entry.indexOf("/");
+  if (slash < 0) return ip === entry;
+  var bits = entry.slice(slash + 1);
+  var a = v4(ip), net = v4(entry.slice(0, slash));
+  if (a === null || net === null || !/^\d{1,2}$/.test(bits) || +bits > 32) return false;
+  var mask = +bits === 0 ? 0 : ((-1 << (32 - +bits)) >>> 0);
+  return ((a & mask) >>> 0) === ((net & mask) >>> 0);
+}
+
+// shortcut: IPv6 条目只做精确匹配，不支持前缀；真要放行 IPv6 网段再补解析。
+function validIpEntry(s) {
+  var slash = s.indexOf("/");
+  if (slash < 0) return v4(s) !== null;
+  return v4(s.slice(0, slash)) !== null && /^\d{1,2}$/.test(s.slice(slash + 1)) && +s.slice(slash + 1) <= 32;
+}
+
 function ipAllowed(db, ip) {
   if (isLoopback(ip)) return true;
   if (!ip) return false;
-  return !!db.prepare("SELECT ip FROM tiku_ip_allow WHERE ip = ?").get(ip);
+  var rows = db.prepare("SELECT ip FROM tiku_ip_allow").all();
+  for (var i = 0; i < rows.length; i++) {
+    if (ipMatches(ip, rows[i].ip)) return true;
+  }
+  return false;
 }
 
 function listIps(db) {
@@ -100,7 +147,7 @@ function listIps(db) {
 
 function upsertIp(db, ip, note) {
   ip = clip(ip, 80);
-  if (!ip || isLoopback(ip)) return { error: "无效 IP" };
+  if (!ip || !validIpEntry(ip) || isLoopback(ip)) return { error: "无效 IP 或网段" };
   db.prepare(
     "INSERT INTO tiku_ip_allow (ip, note, created_at) VALUES (?, ?, ?) " +
     "ON CONFLICT(ip) DO UPDATE SET note = excluded.note"
@@ -217,6 +264,17 @@ function taskHay(t) {
   return parts.join(" ").toLowerCase();
 }
 
+// 题干里没有可读小标题时，subject/class/code 里往往才是（邮件题目、讲座篇名）。无空格且带连字符的多半是编号。
+var CODE_LIKE = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/;
+function blockTitle(t, typ) {
+  var fields = ["subject", "class", "code", "title", "titleZh"];
+  for (var i = 0; i < fields.length; i++) {
+    var v = t[fields[i]];
+    if (typeof v === "string" && v.length > 1 && !CODE_LIKE.test(v)) return v;
+  }
+  return TYPE_ZH[typ] || typ;
+}
+
 function blocksFromPaper(paper, meta) {
   var tasks = (paper && paper.tasks) || [];
   var out = [];
@@ -228,7 +286,7 @@ function blocksFromPaper(paper, meta) {
     if (GROUP_TYPES[typ] && !(meta && meta.noGroup)) {
       while (end + 1 < tasks.length && tasks[end + 1].type === typ) end++;
     }
-    var title = clip(t.title || t.titleZh || TYPE_ZH[typ] || typ, 120);
+    var title = clip(blockTitle(t, typ), 120);
     var hay = "";
     var j;
     for (j = i; j <= end; j++) hay += " " + taskHay(tasks[j] || {});
@@ -267,7 +325,7 @@ function buildPool(repoRoot) {
       }));
     });
   }
-  STOCK_MOCKS.forEach(function (id) {
+  stockMocks(repoRoot).forEach(function (id) {
     SKILLS.forEach(function (skill) {
       var file = path.join(repoRoot, "library", "toefl", id + "-" + skill + ".json");
       var paper = readJson(file);
@@ -614,15 +672,17 @@ function catalog(db, kind) {
       var n = Number(String(row.id).slice(7));
       if (n >= 1 && n <= 10 && sets.indexOf(n) < 0) sets.push(n);
     }
-    STOCK_MOCKS.forEach(function (id) {
-      if (row.id === "hq-" + id && mocks.indexOf(id) < 0) mocks.push(id);
-    });
+    var hm = /^hq-(\d{4}-\d{2}-\d{2})$/.exec(String(row.id));
+    if (hm && mocks.indexOf(hm[1]) < 0) mocks.push(hm[1]);
     if (kind && live.kind !== kind) return;
     if (String(row.id).indexOf("hq-set-") === 0) return;
     if (String(row.id).indexOf("hq-20") === 0) return;
     papers.push(publicPaper(row, live));
   });
-  return { papers: papers, stock: { sets: sets.sort(function (a, b) { return a - b; }), mocks: mocks } };
+  return {
+    papers: papers,
+    stock: { sets: sets.sort(function (a, b) { return a - b; }), mocks: mocks.sort() }
+  };
 }
 
 function playPaper(db, id) {
@@ -672,11 +732,6 @@ function seedStock(db, repoRoot) {
     1: "Set 1 练习", 2: "Set 2 练习", 3: "Set 3 练习", 4: "Set 4 练习", 5: "Set 5 练习",
     6: "Set 6 练习", 7: "Set 7 练习", 8: "Set 8 练习", 9: "Set 9 练习", 10: "Set 10 练习"
   };
-  var mockTitle = {
-    "2025-07-16": "新托福 7.16 · 完整模考",
-    "2025-09-02": "新托福 9.02 · 完整模考",
-    "2025-09-19": "新托福 9.19 海外线下 · 完整模考"
-  };
   var n;
   for (n = 1; n <= 10; n++) {
     var blocks = [];
@@ -685,12 +740,15 @@ function seedStock(db, repoRoot) {
     });
     upsertSeed(db, "hq-set-" + n, titles[n], "practice", blocks, {});
   }
-  STOCK_MOCKS.forEach(function (id) {
-    var blocks = [];
+  stockMocks(repoRoot).forEach(function (id) {
+    var seedBlocks = [];
     Object.keys(index).forEach(function (bid) {
-      if (index[bid].paperId === id) blocks.push(index[bid]);
+      if (index[bid].paperId === id) seedBlocks.push(index[bid]);
     });
-    upsertSeed(db, "hq-" + id, mockTitle[id], "full", blocks, {
+    var rp = readJson(path.join(repoRoot, "library", "toefl", id + "-reading.json"));
+    var title = clip(String((rp && rp.title) || "").replace(/·\s*阅读$/, "· 完整模考"), 80) ||
+      "新托福 " + id + " · 完整模考";
+    upsertSeed(db, "hq-" + id, title, "full", seedBlocks, {
       reading: 36, listening: 36, writing: 29, speaking: 16
     });
   });
@@ -896,6 +954,14 @@ function selfCheck(repoRoot) {
   db.prepare("INSERT INTO teachers (id, phone, name, can_tiku) VALUES (1,'13800000001','甲',1)").run();
   db.prepare("INSERT INTO teachers (id, phone, name, can_tiku) VALUES (2,'13800000002','乙',1)").run();
   ensureSchema(db);
+  db.prepare("INSERT INTO tiku_ip_allow (ip, note, created_at) VALUES ('36.33.245.0/24','网段','t')").run();
+  db.prepare("INSERT INTO tiku_ip_allow (ip, note, created_at) VALUES ('10.0.0.7','单 IP','t')").run();
+  if (!ipAllowed(db, "36.33.245.222")) throw new Error("cidr should allow");
+  if (ipAllowed(db, "36.33.246.222")) throw new Error("cidr leaks out of /24");
+  if (!ipAllowed(db, "10.0.0.7") || ipAllowed(db, "10.0.0.8")) throw new Error("exact ip");
+  if (!validIpEntry("1.2.3.4") || !validIpEntry("1.2.3.0/24")) throw new Error("valid entry rejected");
+  if (validIpEntry("1.2.3.256") || validIpEntry("1.2.3.0/33") || validIpEntry("::1")) throw new Error("bad entry accepted");
+  if (upsertIp(db, "1.2.3.0/33", "x").error !== "无效 IP 或网段") throw new Error("upsert keeps bad mask");
   var pool = buildPool(repoRoot);
   if (pool.length < 40) throw new Error("pool too small " + pool.length);
   var index = poolIndex(pool);
@@ -939,8 +1005,10 @@ function selfCheck(repoRoot) {
   if (!ipAllowed(db, "8.8.8.8")) throw new Error("allow");
   seedStock(db, repoRoot);
   var cat = catalog(db, "practice");
+  var mockCount = stockMocks(repoRoot).length;
   if (cat.stock.sets.length !== 10) throw new Error("seed sets " + cat.stock.sets);
-  if (cat.stock.mocks.length !== 3) throw new Error("seed mocks");
+  if (cat.stock.mocks.length !== mockCount) throw new Error("seed mocks " + cat.stock.mocks.length + "/" + mockCount);
+  if (mockCount < 22) throw new Error("date mocks on disk " + mockCount);
   if (playPaper(db, created.paper.id).error) throw new Error("in-progress after unpub");
   var pkg = resolvePackage(db, "2025-07-16");
   if (!pkg || pkg.id !== "2025-07-16" || pkg.kind !== "full") throw new Error("resolve date pkg");
@@ -948,7 +1016,7 @@ function selfCheck(repoRoot) {
   if (resolvePackage(db, "hq-set-1")) throw new Error("practice is not a package");
   if (resolvePackage(db, "tp_nope")) throw new Error("missing package");
   var pkgs = listPackages(db);
-  if (pkgs.length !== 3) throw new Error("packages " + pkgs.length);
+  if (pkgs.length !== mockCount) throw new Error("packages " + pkgs.length + "/" + mockCount);
   if (normPackageId("hq-2025-09-02") !== "2025-09-02") throw new Error("normPackageId");
   db.close();
 }
@@ -957,7 +1025,7 @@ module.exports = {
   KINDS: KINDS,
   SKILLS: SKILLS,
   SKILL_ZH: SKILL_ZH,
-  STOCK_MOCKS: STOCK_MOCKS,
+  stockMocks: stockMocks,
   ensureSchema: ensureSchema,
   buildPool: buildPool,
   blockDetail: blockDetail,

@@ -123,7 +123,8 @@
   }
 
   function labOf(skill) {
-    return ({ reading: "reading-lab.html", listening: "listening-lab.html", writing: "writing-lab.html", speaking: "speaking-lab.html" })[skill] || "home.html";
+    return ["reading", "listening", "writing", "speaking"].indexOf(skill) >= 0
+      ? "practice.html?skill=" + skill : "home.html";
   }
   function isPreview() { return qs().get("preview") === "1"; }
   function tikuHome() {

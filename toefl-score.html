@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOEFL 成绩单</title>
+<link rel="stylesheet" href="assets/css/toefl-report.css?v=20261018tf3">
+<style>
+  body { margin: 0; background: #c8c8c8; }
+  .tf-page { width: min(1024px, 100%); margin: 0 auto; background: #fff; min-height: 100vh; padding: 0 16px 40px; }
+</style>
+</head>
+<body>
+<div class="tf-page">
+  <div class="tf-report" id="report"></div>
+  <p class="tf-actions"><button type="button" id="print-btn">打印 / 存为 PDF</button></p>
+</div>
+
+<script src="assets/js/toefl-lab.js?v=20261020lib2"></script>
+<script>
+(function () {
+  var ICONS = {
+    Reading: "M232,48H160a40,40,0,0,0-32,16A40,40,0,0,0,96,48H24a8,8,0,0,0-8,8V200a8,8,0,0,0,8,8H96a24,24,0,0,1,24,24,8,8,0,0,0,16,0,24,24,0,0,1,24-24h72a8,8,0,0,0,8-8V56A8,8,0,0,0,232,48ZM96,192H32V64H96a24,24,0,0,1,24,24V200A39.81,39.81,0,0,0,96,192Zm128,0H160a39.81,39.81,0,0,0-24,8V88a24,24,0,0,1,24-24h64Z",
+    Listening: "M201.89,54.66A103.43,103.43,0,0,0,128.79,24H128A104,104,0,0,0,24,128v56a24,24,0,0,0,24,24H64a24,24,0,0,0,24-24V144a24,24,0,0,0-24-24H40.36A88,88,0,0,1,128,40h.67a87.71,87.71,0,0,1,87,80H192a24,24,0,0,0-24,24v40a24,24,0,0,0,24,24h16a24,24,0,0,0,24-24V128A103.41,103.41,0,0,0,201.89,54.66ZM64,136a8,8,0,0,1,8,8v40a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V136Zm152,48a8,8,0,0,1-8,8H192a8,8,0,0,1-8-8V144a8,8,0,0,1,8-8h24Z",
+    Writing: "M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z",
+    Speaking: "M128,176a48.05,48.05,0,0,0,48-48V64a48,48,0,0,0-96,0v64A48.05,48.05,0,0,0,128,176ZM96,64a32,32,0,0,1,64,0v64a32,32,0,0,1-64,0Zm40,143.6V240a8,8,0,0,1-16,0V207.6A80.11,80.11,0,0,1,48,128a8,8,0,0,1,16,0,64,64,0,0,0,128,0,8,8,0,0,1,16,0A80.11,80.11,0,0,1,136,207.6Z"
+  };
+  var SECTIONS = ["Reading", "Listening", "Writing", "Speaking"];
+
+  function icon(name) {
+    return '<svg viewBox="0 0 256 256" width="17" height="17" fill="currentColor" aria-hidden="true">'
+         + '<path d="' + ICONS[name] + '"></path></svg>';
+  }
+
+  /* pathLength=100 让 dasharray 直接当百分比，无需算弧长 */
+  function gauge(pct, value) {
+    var p = Math.max(0, Math.min(100, pct || 0));
+    return '<div class="tf-gauge"><svg viewBox="0 0 100 54">'
+         + '<path d="M 9 50 A 41 41 0 0 1 91 50" fill="none" stroke="#d9d9d9" stroke-width="9" pathLength="100"></path>'
+         + '<path class="arc-fill" d="M 9 50 A 41 41 0 0 1 91 50" fill="none" stroke-width="9" pathLength="100"'
+         + ' stroke-dasharray="' + p + ' 100"></path></svg>'
+         + '<div class="tf-gauge-value">' + fmt(value) + '</div></div>';
+  }
+
+  function fmt(v) { return v == null ? "--" : (typeof v === "number" ? v.toFixed(1) : v); }
+
+  function col(section, entry, best) {
+    var box = '<div class="tf-box">' + (entry.band == null ? "--" : entry.band.toFixed(1) + " of 6")
+            + (best && entry.date ? '<small>' + entry.date + '</small>' : '') + '</div>';
+    var meta;
+    if (entry.band == null) {
+      meta = '<div class="tf-meta">' + (best ? '&nbsp;' : 'Not attempted') + '</div>';
+    } else if (best) {
+      meta = '<div class="tf-meta">&nbsp;</div>';
+    } else {
+      meta = '<div class="tf-meta"><b>' + entry.correct + '</b> correct · <b>' + entry.wrong
+           + '</b> wrong · <b>' + entry.blank + '</b> unanswered</div>';
+    }
+    return '<div class="tf-col"><div class="tf-col-label">' + icon(section) + " " + section
+         + "</div>" + box + meta + "</div>";
+  }
+
+  function render(data) {
+    var overall = data.overall;
+    var html = '<div class="tf-card"><p class="tf-card-title">Test Date: ' + data.testDate + '</p>'
+             + '<div class="tf-grid">'
+             + '<div class="tf-col"><div class="tf-col-label">Overall Score</div>' + gauge(overall.pct, overall.value) + '</div>'
+             + SECTIONS.map(function (s) { return col(s, data.current[s], false); }).join("")
+             + '</div></div>';
+
+    html += '<div class="tf-card tf-card--best"><div class="tf-card-head">'
+          + '<h3 class="tf-card-title">MyBest&reg; Scores</h3>'
+          + '<span class="tf-card-sub">Your highest section scores from all valid test dates, as of '
+          + data.testDate + '</span></div><div class="tf-grid">'
+          + '<div class="tf-col"><div class="tf-col-label">Overall Score</div>' + gauge(overall.bestPct, overall.bestValue) + '</div>'
+          + SECTIONS.map(function (s) { return col(s, data.best[s], true); }).join("")
+          + '</div></div>';
+
+    html += '<p class="tf-est">* 本成绩单为模考预估分：官方未公布答题数与分数的对照表，'
+          + '档位按本套题正确率折算，仅供练习参考，不代表真实考试成绩。</p>';
+    if (data.empty) html += '<p class="tf-est">还没有模考记录：先完成一套阅读或听力模考，交卷后成绩单会自动累计 MyBest。</p>';
+
+    document.getElementById("report").innerHTML = html;
+  }
+
+  var SKILL_OF = { Reading: "reading", Listening: "listening", Writing: "writing", Speaking: "speaking" };
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  function dateStr(ms) {
+    var d = new Date(ms);
+    return MONTHS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+  }
+
+  function mean05(list) {
+    if (!list.length) return null;
+    var sum = 0;
+    list.forEach(function (v) { sum += v; });
+    return Math.round(sum / list.length * 2) / 2;
+  }
+
+  /* 全部来自模考历史：当前场 = 同一次交卷会话（sid），MyBest = 各科历史最高档 */
+  function buildData(LAB) {
+    var all = LAB.attempts();
+    var sid = Number(new URLSearchParams(location.search).get("sid")) || 0;
+    var sitting = all.filter(function (a) { return a.sid === sid; });
+    if (!sitting.length && all.length) {
+      sid = all[all.length - 1].sid;
+      sitting = all.filter(function (a) { return a.sid === sid; });
+    }
+    var best = LAB.bestAttempts();
+    var cur = {}, top = {}, bands = [], tops = [], dates = [];
+    SECTIONS.forEach(function (s) {
+      var k = SKILL_OF[s];
+      var hit = sitting.filter(function (a) { return a.skill === k; })[0];
+      cur[s] = hit ? { band: hit.band, correct: hit.correct, wrong: hit.wrong, blank: hit.blank } : { band: null };
+      if (hit) { bands.push(hit.band); dates.push(hit.at); }
+      var b = best[k];
+      top[s] = b ? { band: b.band, date: dateStr(b.at) } : { band: null };
+      if (b) tops.push(b.band);
+    });
+    var value = mean05(bands), bestValue = mean05(tops);
+    return {
+      testDate: dates.length ? dateStr(Math.max.apply(null, dates)) : dateStr(Date.now()),
+      overall: {
+        pct: value == null ? 0 : value / 6 * 100, value: value,
+        bestPct: bestValue == null ? 0 : bestValue / 6 * 100, bestValue: bestValue
+      },
+      current: cur, best: top, empty: !all.length
+    };
+  }
+
+  window.TF_REPORT = { render: render, ICONS: ICONS, SECTIONS: SECTIONS, buildData: buildData };
+  var LAB = window.YYSD_TOEFL_LAB || { attempts: function () { return []; }, bestAttempts: function () { return {}; } };
+  render(buildData(LAB));
+  document.getElementById("print-btn").onclick = function () { window.print(); };
+})();
+</script>
+</body>
+</html>

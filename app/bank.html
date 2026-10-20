@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>组卷</title>
-  <link rel="stylesheet" href="assets/css/hit.css?v=20261015swiss1">
+  <link rel="stylesheet" href="assets/css/hit.css?v=20261020lib7">
   <link rel="stylesheet" href="assets/css/access.css?v=20261015swiss1">
-  <script src="assets/js/gate.js?v=20261015back1"></script>
+  <script src="assets/js/gate.js?v=20261020gate1"></script>
   <script src="assets/js/auth.js?v=20261013tiku1"></script>
-  <script src="assets/js/hit-shell.js?v=20261015swiss1"></script>
-  <script src="assets/js/tiku-run.js?v=20261016exam1"></script>
+  <script src="assets/js/hit-shell.js?v=20261020lib4"></script>
+  <script src="assets/js/tiku-run.js?v=20261020run2"></script>
   <script src="assets/js/access.js?v=20261014kl1"></script>
 </head>
 <body class="hit">
@@ -79,15 +79,18 @@
             bindPvBack();
             document.getElementById("go").onclick = function () {
               var btn = this;
+              var only = qs.get("skill") || "";
               btn.disabled = true;
               examStart(p.id).then(function () {
                 // ponytail: 日期卷数据在官网根，整套交给模考确认链+考场引擎（app 播放器读不到这些卷）
                 if (first.source === "date" && first.paperId) {
-                  location.href = "mock.html?kind=full&id=" + encodeURIComponent(first.paperId);
+                  location.href = only
+                    ? "mock.html?kind=single&id=" + encodeURIComponent(first.paperId) + "&skill=" + encodeURIComponent(only)
+                    : "mock.html?kind=full&id=" + encodeURIComponent(first.paperId);
                   return;
                 }
-                var run = YYSD_TIKU_RUN.start({ id: p.id, title: p.title, kind: p.kind, blocks: p.blocks, skillMinutes: p.skillMinutes, preview: preview });
-                location.href = YYSD_TIKU_RUN.href(0, run);
+                var run = YYSD_TIKU_RUN.start({ id: p.id, title: p.title, kind: p.kind, blocks: p.blocks, skillMinutes: p.skillMinutes, preview: preview, only: only });
+                location.href = YYSD_TIKU_RUN.href(run.i, run);
               }).catch(function (e) {
                 btn.disabled = false;
                 document.getElementById("lead").textContent = (e && e.message) || "暂时不能开始";
