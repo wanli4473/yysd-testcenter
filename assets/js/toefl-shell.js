@@ -151,13 +151,16 @@
   function hwKey(id) { return "yysd:toefl-hw:" + id; }
 
   function hwDone(id) {
-    if (!id || typeof sessionStorage === "undefined") return false;
-    try { return sessionStorage.getItem(hwKey(id)) === "1"; } catch (e) { return false; }
+    if (!id) return false;
+    try { if (typeof localStorage !== "undefined" && localStorage.getItem(hwKey(id)) === "1") return true; } catch (e) {}
+    try { if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(hwKey(id)) === "1") return true; } catch (e2) {}
+    return false;
   }
 
   function markHw(id) {
-    if (!id || typeof sessionStorage === "undefined") return;
-    try { sessionStorage.setItem(hwKey(id), "1"); } catch (e) {}
+    if (!id) return;
+    try { if (typeof localStorage !== "undefined") localStorage.setItem(hwKey(id), "1"); } catch (e) {}
+    try { if (typeof sessionStorage !== "undefined") sessionStorage.setItem(hwKey(id), "1"); } catch (e2) {}
   }
 
   // ponytail: RMS bands match the official 3-zone meter; swap for AGC if laptops clip
@@ -206,7 +209,16 @@
     var box = $("ets-pause");
     if (box) box.classList.toggle("is-on", paused);
     document.querySelectorAll("audio").forEach(function (a) {
-      if (paused) a.pause();
+      if (paused) {
+        if (!a.paused && !a.ended) a.setAttribute("data-resume", "1");
+        a.pause();
+        return;
+      }
+      if (a.getAttribute("data-resume") === "1") {
+        a.removeAttribute("data-resume");
+        var p = a.play();
+        if (p && p.catch) p.catch(function () {});
+      }
     });
   }
 
@@ -370,7 +382,16 @@
       (document.querySelector(".ets-frame") || document.body).appendChild(box);
     }
     box.classList.remove("hidden");
-    $("ets-gate-go").onclick = function () { if (onView) onView(); };
+    var gateGo = $("ets-gate-go");
+    if (gateGo) {
+      gateGo.disabled = false;
+      gateGo.onclick = function () {
+        if (gateGo.disabled) return;
+        gateGo.disabled = true;
+        gateGo.onclick = null;
+        if (onView) onView();
+      };
+    }
   }
 
   // ponytail: confirmExit 与 confirmSubmit 共用 #ets-exit 浮层，每次全量写文案防止上一次的残留
@@ -404,8 +425,16 @@
     if (yes) yes.textContent = "Submit";
     if (no) no.textContent = "Cancel";
     box.classList.add("is-on");
-    if (yes) yes.onclick = function () { box.classList.remove("is-on"); if (onYes) onYes(); };
-    if (no) no.onclick = function () { box.classList.remove("is-on"); };
+    if (yes) {
+      yes.disabled = false;
+      yes.onclick = function () {
+        if (yes.disabled) return;
+        yes.disabled = true;
+        box.classList.remove("is-on");
+        if (onYes) onYes();
+      };
+    }
+    if (no) no.onclick = function () { box.classList.remove("is-on"); if (yes) yes.disabled = false; };
   }
 
   function showFail(msg, backHref) {
@@ -514,6 +543,7 @@
     paint();
 
     var oldNext = next && next.onclick;
+    var begun = false;
     if (next) {
       next.onclick = function () {
         var scr = queue[i];
@@ -522,6 +552,8 @@
           paint();
           return;
         }
+        if (begun) return;
+        begun = true;
         if (opts.isFull && opts.skill === "reading") markHw(opts.id);
         stopMic();
         intro.classList.add("hidden");
@@ -597,6 +629,10 @@
     levelOf: levelOf,
     hwKey: hwKey,
     leaving: function () { return leaving; },
-    markLeaving: markLeaving
+    markLeaving: markLeaving,
+    directing: function () {
+      var intro = $("ets-intro");
+      return !!(intro && !intro.classList.contains("hidden"));
+    }
   };
 })(window);

@@ -8,9 +8,9 @@
   <script src="assets/js/gate.js?v=20261020gate1"></script>
   <script src="assets/js/auth.js?v=20261015prev1"></script>
   <script src="assets/js/hit-shell.js?v=20261020lib4"></script>
-  <script src="assets/js/play.js?v=20261020lib2"></script>
+  <script src="assets/js/play.js?v=20261022fix1"></script>
   <script src="assets/js/reading.js?v=20261018rev3"></script>
-  <script src="assets/js/toefl-speaking.js?v=20261009iv1"></script>
+  <script src="assets/js/toefl-speaking.js?v=20261022fix1"></script>
   <script src="../assets/js/toefl-lab.js?v=20261020lib2"></script>
 </head>
 <body class="hit rev-shell">
@@ -51,6 +51,13 @@
       var rows = [];
       if (!att || !att.paper) {
         document.getElementById("score").textContent = "没有本次作答记录。";
+        var lost = document.createElement("p");
+        lost.innerHTML = '<a class="hit-back" id="rev-lost" href="' + esc(P.backHref(skill)) + '">返回</a>';
+        document.getElementById("score").insertAdjacentElement("afterend", lost);
+        document.getElementById("rev-lost").addEventListener("click", function (e) {
+          e.preventDefault();
+          P.goBack(skill);
+        });
         return;
       }
 

@@ -53,10 +53,16 @@
       });
   }
   function saveAttempt(payload) {
-    sessionStorage.setItem(KEY, JSON.stringify(payload));
+    var raw = "";
+    try { raw = JSON.stringify(payload); } catch (e) { return; }
+    try { sessionStorage.setItem(KEY, raw); } catch (e2) {}
+    try { if (typeof localStorage !== "undefined") localStorage.setItem(KEY, raw); } catch (e3) {}
   }
   function readAttempt() {
-    try { return JSON.parse(sessionStorage.getItem(KEY) || "null"); } catch (e) { return null; }
+    var raw = null;
+    try { raw = sessionStorage.getItem(KEY); } catch (e) {}
+    if (!raw) { try { raw = localStorage.getItem(KEY); } catch (e2) {} }
+    try { return JSON.parse(raw || "null"); } catch (e3) { return null; }
   }
   function finish(skill, rec) {
     rec = rec || {};

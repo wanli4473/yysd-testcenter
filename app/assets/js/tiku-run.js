@@ -4,11 +4,32 @@
   var KEY = "yysd:tiku-run";
   var PAGES = { reading: "reading.html", listening: "listening.html", writing: "writing.html", speaking: "speaking.html" };
 
+  function readStore(store) {
+    if (!store || typeof store.getItem !== "function") return null;
+    try { return store.getItem(KEY); } catch (e) { return null; }
+  }
+  function writeStore(store, raw) {
+    if (!store || typeof store.setItem !== "function") return;
+    try { store.setItem(KEY, raw); } catch (e) {}
+  }
+  function dropStore(store) {
+    if (!store || typeof store.removeItem !== "function") return;
+    try { store.removeItem(KEY); } catch (e) {}
+  }
   function load() {
-    try { return JSON.parse(sessionStorage.getItem(KEY) || "null"); } catch (e) { return null; }
+    var raw = readStore(typeof localStorage !== "undefined" ? localStorage : null);
+    if (!raw) raw = readStore(typeof sessionStorage !== "undefined" ? sessionStorage : null);
+    try { return JSON.parse(raw || "null"); } catch (e) { return null; }
   }
   function save(run) {
-    sessionStorage.setItem(KEY, JSON.stringify(run));
+    if (run) run.savedAt = Date.now();
+    var raw = JSON.stringify(run);
+    writeStore(typeof localStorage !== "undefined" ? localStorage : null, raw);
+    writeStore(typeof sessionStorage !== "undefined" ? sessionStorage : null, raw);
+  }
+  function clearRun() {
+    dropStore(typeof localStorage !== "undefined" ? localStorage : null);
+    dropStore(typeof sessionStorage !== "undefined" ? sessionStorage : null);
   }
   function examRoot() {
     return (typeof location !== "undefined" && location.pathname.indexOf("/app/") >= 0) ? "../" : "";
@@ -101,7 +122,7 @@
     if (run.only) while (run.i < run.blocks.length && run.blocks[run.i].skill !== run.only) run.i += 1;
     save(run);
     if (run.i >= run.blocks.length) {
-      sessionStorage.removeItem(KEY);
+      clearRun();
       location.replace(doneHref(run));
       return true;
     }
@@ -120,7 +141,7 @@
       run.i = next;
       save(run);
       if (run.i >= run.blocks.length) {
-        sessionStorage.removeItem(KEY);
+        clearRun();
         location.replace(doneHref(run));
         return;
       }

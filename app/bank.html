@@ -9,8 +9,8 @@
   <script src="assets/js/gate.js?v=20261020gate1"></script>
   <script src="assets/js/auth.js?v=20261013tiku1"></script>
   <script src="assets/js/hit-shell.js?v=20261020lib4"></script>
-  <script src="assets/js/tiku-run.js?v=20261020run2"></script>
-  <script src="assets/js/access.js?v=20261014kl1"></script>
+  <script src="assets/js/tiku-run.js?v=20261022fix1"></script>
+  <script src="assets/js/access.js?v=20261022fix1"></script>
 </head>
 <body class="hit">
   <main class="hit-main">
@@ -80,6 +80,18 @@
             document.getElementById("go").onclick = function () {
               var btn = this;
               var only = qs.get("skill") || "";
+              var existing = YYSD_TIKU_RUN.load();
+              var open = existing && existing.kind !== "practice" && existing.i < (existing.blocks || []).length;
+              var same = open && existing.id === p.id && (!only || existing.only === only);
+              if (same) {
+                location.href = YYSD_TIKU_RUN.href(existing.i, existing);
+                return;
+              }
+              if (open && btn.getAttribute("data-confirm") !== "1") {
+                btn.setAttribute("data-confirm", "1");
+                document.getElementById("lead").textContent = "有一套题还没做完。再点一次「开始」会离开那一套，从这一套重新开始。";
+                return;
+              }
               btn.disabled = true;
               examStart(p.id).then(function () {
                 // ponytail: 日期卷数据在官网根，整套交给模考确认链+考场引擎（app 播放器读不到这些卷）
@@ -98,7 +110,9 @@
             };
             return;
           }
-          YYSD_TIKU_RUN.start({ id: p.id, title: p.title, kind: "practice", blocks: p.blocks, preview: preview });
+          var curRun = YYSD_TIKU_RUN.load();
+          var mockOpen = curRun && curRun.kind !== "practice" && curRun.i < (curRun.blocks || []).length;
+          if (!mockOpen) YYSD_TIKU_RUN.start({ id: p.id, title: p.title, kind: "practice", blocks: p.blocks, preview: preview });
           var drawBlocks = function () {
             document.getElementById("list").innerHTML =
               '<a class="hit-back" href="' + (preview ? "#" : "practice.html") + '" id="pv-back">← 返回练习</a>' +

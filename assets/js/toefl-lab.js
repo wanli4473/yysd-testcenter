@@ -150,6 +150,7 @@
       if (idx < 0) return;
       var k = resultKey(skill, paperId, idx);
       if (!map[k]) map[k] = { items: [], at: Date.now() };
+      if (!Array.isArray(map[k].items)) map[k].items = [];
       map[k].items = map[k].items.filter(function (x) { return String(x.no) !== String(d.id); });
       map[k].items.push({ no: d.id, ok: !!d.ok, ua: d.ua || "", expect: d.expect || "" });
       map[k].at = Date.now();
