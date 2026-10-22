@@ -23,34 +23,107 @@
   }
 
   function storeKey(id) { return "yysd:toefl-full:" + id; }
+  function runKey(id, skill) { return "yysd:toefl-run:" + id + ":" + skill; }
+  function sidKey() { return "yysd:toefl-sid"; }
+
+  function readStore(store, key) {
+    if (!store || typeof store.getItem !== "function") return null;
+    try { return store.getItem(key); } catch (e) { return null; }
+  }
+
+  function writeStore(store, key, val) {
+    if (!store || typeof store.setItem !== "function") return;
+    try { store.setItem(key, val); } catch (e) {}
+  }
+
+  function dropStore(store, key) {
+    if (!store || typeof store.removeItem !== "function") return;
+    try { store.removeItem(key); } catch (e) {}
+  }
+
+  function parsePack(raw) {
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+  }
+
+  /* localStorage 跨刷新、关页再进；sessionStorage 留给同一标签。两边都写，读较新的一份。 */
+  function storageGet(key) {
+    var local = parsePack(readStore(typeof localStorage !== "undefined" ? localStorage : null, key));
+    var sess = parsePack(readStore(typeof sessionStorage !== "undefined" ? sessionStorage : null, key));
+    if (!local) return sess;
+    if (!sess) return local;
+    var ta = Number(local.savedAt || local.sid) || 0;
+    var tb = Number(sess.savedAt || sess.sid) || 0;
+    return tb > ta ? sess : local;
+  }
+
+  function storageSet(key, obj) {
+    var raw = JSON.stringify(obj);
+    writeStore(typeof localStorage !== "undefined" ? localStorage : null, key, raw);
+    writeStore(typeof sessionStorage !== "undefined" ? sessionStorage : null, key, raw);
+  }
+
+  function storageDel(key) {
+    dropStore(typeof localStorage !== "undefined" ? localStorage : null, key);
+    dropStore(typeof sessionStorage !== "undefined" ? sessionStorage : null, key);
+  }
 
   function load(id) {
-    if (typeof sessionStorage === "undefined") return null;
-    try { return JSON.parse(sessionStorage.getItem(storeKey(id)) || "null"); }
-    catch (e) { return null; }
+    var pack = storageGet(storeKey(id));
+    if (!pack) return null;
+    /* 旧版离开窗口会把整场标作废并清空。自习不再作废：清掉标记，已保存的科目留下。 */
+    if (pack.voided) {
+      pack.voided = false;
+      save(pack);
+    }
+    return pack;
   }
 
   function save(pack) {
-    if (typeof sessionStorage === "undefined" || !pack) return;
-    sessionStorage.setItem(storeKey(pack.id), JSON.stringify(pack));
+    if (!pack) return;
+    pack.savedAt = Date.now();
+    storageSet(storeKey(pack.id), pack);
+  }
+
+  function clearRun(id, skill) {
+    if (!id) return;
+    if (skill) { storageDel(runKey(id, skill)); return; }
+    ORDER.forEach(function (s) { storageDel(runKey(id, s)); });
+  }
+
+  function saveRun(id, skill, snap) {
+    if (!id || !skill || !snap) return;
+    snap.savedAt = Date.now();
+    storageSet(runKey(id, skill), snap);
+  }
+
+  function loadRun(id, skill) {
+    if (!id || !skill) return null;
+    return storageGet(runKey(id, skill));
   }
 
   function startPack(id, mode) {
-    var pack = { id: id, mode: mode, sections: {}, voided: false, sid: Date.now() };
+    var pack = { id: id, mode: mode, sections: {}, sid: Date.now() };
+    clearRun(id);
     save(pack);
     useSid(pack.sid);
     try { sessionStorage.removeItem("yysd:toefl-hw:" + id); } catch (e) {}
+    try { if (typeof localStorage !== "undefined") localStorage.removeItem("yysd:toefl-hw:" + id); } catch (e2) {}
     return pack;
   }
 
   // 一场模考四科共用一个 sid，成绩单才把四科算作同一场
   function useSid(sid) {
-    try { sessionStorage.setItem("yysd:toefl-sid", String(sid)); } catch (e) {}
+    var raw = JSON.stringify({ sid: sid, savedAt: Date.now() });
+    writeStore(typeof localStorage !== "undefined" ? localStorage : null, sidKey(), raw);
+    writeStore(typeof sessionStorage !== "undefined" ? sessionStorage : null, sidKey(), raw);
   }
 
   function currentSid() {
     if (!isFull()) return 0;
-    try { return Number(sessionStorage.getItem("yysd:toefl-sid")) || 0; } catch (e) { return 0; }
+    var row = storageGet(sidKey());
+    if (row && typeof row === "object") return Number(row.sid) || 0;
+    return Number(row) || 0;
   }
 
   function nextSkill(skill) {
@@ -132,13 +205,23 @@
     return href;
   }
 
+  function withContext(href) {
+    href = withFrom(href);
+    try {
+      if (typeof location !== "undefined" && new URLSearchParams(location.search).get("preview") === "1" && href.indexOf("preview=") < 0) {
+        href += "&preview=1";
+      }
+    } catch (e) {}
+    return href;
+  }
+
   function skillHref(id, mode, skill) {
-    return withFrom(PAGES[skill] + "?id=" + encodeURIComponent(id) + "&mode=" + encodeURIComponent(mode) + "&full=1");
+    return withContext(PAGES[skill] + "?id=" + encodeURIComponent(id) + "&mode=" + encodeURIComponent(mode) + "&full=1");
   }
 
   function introHref(id, mode) {
     var q = "toefl-full.html?id=" + encodeURIComponent(id);
-    return withFrom(mode ? q + "&mode=" + encodeURIComponent(mode) : q);
+    return withContext(mode ? q + "&mode=" + encodeURIComponent(mode) : q);
   }
 
   function resultsHref(id, mode) {
@@ -151,7 +234,7 @@
   }
 
   function firstIncomplete(pack) {
-    if (!pack || pack.voided) return "";
+    if (!pack) return "";
     var i;
     for (i = 0; i < ORDER.length; i++) {
       if (!pack.sections || !pack.sections[ORDER[i]]) return ORDER[i];
@@ -168,10 +251,6 @@
     }
     if (!pack.sid) { pack.sid = Date.now(); save(pack); }
     useSid(pack.sid);
-    if (pack.voided) {
-      go(introHref(id, mode));
-      return false;
-    }
     var need = firstIncomplete(pack);
     if (!need) {
       go(resultsHref(id, mode));
@@ -210,17 +289,24 @@
     payload.paper = paper;
     payload.set = (paper && paper.id) || payload.set || "";
     if (!payload.sid) payload.sid = currentSid();
-    try { sessionStorage.setItem("yysd:app-review", JSON.stringify(payload)); } catch (e) {}
+    var raw = "";
+    try { raw = JSON.stringify(payload); } catch (e) { raw = ""; }
+    if (raw) {
+      writeStore(typeof sessionStorage !== "undefined" ? sessionStorage : null, "yysd:app-review", raw);
+      writeStore(typeof localStorage !== "undefined" ? localStorage : null, "yysd:app-review", raw);
+    }
     return payload;
   }
 
   function reviewHref(skill) {
-    var preview = false;
-    try {
-      preview = typeof location !== "undefined" && new URLSearchParams(location.search).get("preview") === "1";
-    } catch (e0) {}
     var href = (onAppHost() ? "" : "app/") + "review.html?skill=" + encodeURIComponent(skill);
-    if (preview) href += "&preview=1";
+    try {
+      var qs = new URLSearchParams(location.search);
+      ["preview", "bank", "bi", "from"].forEach(function (k) {
+        var v = qs.get(k);
+        if (v && href.indexOf(k + "=") < 0) href += "&" + k + "=" + encodeURIComponent(v);
+      });
+    } catch (e0) {}
     return href;
   }
 
@@ -246,16 +332,18 @@
     if (!rest) return;
     var h = rest.querySelector("h1, h2");
     var p = rest.querySelector("p");
-    var go = document.getElementById("rest-go");
+    var cont = document.getElementById("rest-go");
     if (h) h.textContent = "End of " + label(skill) + " Section";
     var copy = rest.querySelector("#rest-copy") || p;
     if (copy) copy.textContent = restCopy(skill);
     var acts = rest.querySelector("#rest-acts");
     if (acts) acts.textContent = "";
     var goNext = function () { go(nextHref(id, mode, skill)); };
-    if (go) {
-      go.textContent = "Continue";
-      go.onclick = goNext;
+    if (cont) {
+      cont.classList.remove("hidden");
+      cont.disabled = false;
+      cont.textContent = "Continue";
+      cont.onclick = goNext;
     }
     var next = document.getElementById("next-btn");
     if (next) {
@@ -268,18 +356,7 @@
     if (back) back.classList.add("hidden");
   }
 
-  function dressVoidUI() {
-    var box = document.getElementById("void-lock");
-    if (!box) return;
-    var h = box.querySelector("h2");
-    var p = box.querySelector("p");
-    var exit = box.querySelector("a");
-    if (h) h.textContent = "This complete test has been stopped";
-    if (p) p.textContent = "Leaving the test window voids this mock test. No section is scored.";
-    if (exit) exit.setAttribute("href", listBack());
-  }
-
-  /* 作废/退出 = 本场结束：上报完成，宽限不再允许续考（best-effort，失败不影响流程） */
+  /* 交卷/主动退出 = 本场结束：上报完成，宽限不再允许续考（best-effort，失败不影响流程） */
   function examDone(id) {
     try {
       var A = w.YYSD_AUTH;
@@ -288,27 +365,27 @@
     } catch (e) {}
   }
 
-  function markVoid(id) {
-    var pack = load(id);
-    if (pack) { pack.voided = true; pack.sections = {}; save(pack); }
-    examDone(id);
-  }
-
   function quitPack(id) {
     examDone(id);
-    if (typeof sessionStorage === "undefined") return;
-    try { sessionStorage.removeItem(storeKey(id)); } catch (e) {}
+    clearRun(id);
+    storageDel(storeKey(id));
     try { sessionStorage.removeItem("yysd:toefl-hw:" + id); } catch (e) {}
+    try { if (typeof localStorage !== "undefined") localStorage.removeItem("yysd:toefl-hw:" + id); } catch (e2) {}
   }
 
-  function voidRestartHref(id, skill) {
-    if (isFull() || fromApp()) {
-      var kind = isFull() ? "full" : "single";
-      var href = mockHubHref(kind) + "&id=" + encodeURIComponent(id);
-      if (kind === "single" && skill) href += "&skill=" + encodeURIComponent(skill);
-      return href;
+  /* 同一套未做完就接着考，不覆盖进度。做完或没有记录才新开一场。 */
+  function resumeOrStart(id, mode) {
+    var pack = load(id);
+    var skill = "";
+    if (pack && (!pack.mode || pack.mode === mode)) skill = firstIncomplete(pack);
+    if (!skill) {
+      startPack(id, mode);
+      skill = "reading";
+    } else {
+      if (!pack.sid) { pack.sid = Date.now(); save(pack); }
+      useSid(pack.sid);
     }
-    return introHref(id, "mock");
+    return skillHref(id, mode, skill);
   }
 
   function compactScore(r) {
@@ -353,10 +430,11 @@
     stashReview: stashReview,
     restCopy: restCopy,
     fillRest: fillRest,
-    dressVoidUI: dressVoidUI,
-    markVoid: markVoid,
     quitPack: quitPack,
-    voidRestartHref: voidRestartHref,
+    resumeOrStart: resumeOrStart,
+    saveRun: saveRun,
+    loadRun: loadRun,
+    clearRun: clearRun,
     compactScore: compactScore,
     compactWriting: compactWriting
   };

@@ -52,13 +52,20 @@
   }
 
   function startFull(id) {
-    try {
-      sessionStorage.setItem("yysd:toefl-full:" + id, JSON.stringify({
-        id: id, mode: "mock", sections: {}, voided: false
-      }));
-      sessionStorage.removeItem("yysd:toefl-hw:" + id);
-    } catch (e) {}
-    location.href = examRoot() + "toefl-reading.html?id=" + encodeURIComponent(id) + "&mode=mock&full=1&from=app";
+    var F = w.YYSD_TOEFL_FULL;
+    var href;
+    if (F && F.resumeOrStart) href = F.resumeOrStart(id, "mock");
+    else {
+      try {
+        sessionStorage.setItem("yysd:toefl-full:" + id, JSON.stringify({
+          id: id, mode: "mock", sections: {}, sid: Date.now()
+        }));
+        sessionStorage.removeItem("yysd:toefl-hw:" + id);
+      } catch (e) {}
+      href = "toefl-reading.html?id=" + encodeURIComponent(id) + "&mode=mock&full=1";
+    }
+    if (href.indexOf("from=") < 0) href += "&from=app";
+    location.href = examRoot() + href;
   }
 
   function startSingle(id, skill) {
@@ -199,10 +206,10 @@
     var rules = kind === "full"
       ? "<li>阅读 → 听力 → 写作 → 口语，无安排休息，科与科之间不能返回。</li>" +
         "<li>按各科官方时限连考，约 " + (mins || "—") + " 分钟。</li>" +
-        "<li>切换页面或离开窗口则整场作废，四科均不记分。</li>"
+        "<li>可以离开窗口或刷新，进度会保留，再进来从上次的位置继续。</li>"
       : "<li>只考" + (spec ? spec.label : "口语") + "一科，时限约 " + (mins || "—") + " 分钟。</li>" +
-        "<li>切换页面或离开窗口则本场作废，不记分。</li>" +
-        "<li>开始后不能返回题目列表。</li>";
+        "<li>可以离开窗口或刷新，进度会保留。</li>" +
+        "<li>主动退出后，这一场不再记分。</li>";
     if (!pack && kind === "full") return '<p class="hit-status">找不到这套题。</p><a class="hit-back" href="mock.html">← 返回</a>';
     if (kind === "single" && !single) return '<p class="hit-status">找不到这一科。</p><a class="hit-back" href="' + back + '">← 返回</a>';
     return '<h1>开始前确认</h1>' +

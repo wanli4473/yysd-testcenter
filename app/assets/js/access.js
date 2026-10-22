@@ -147,7 +147,7 @@
       if (w.__yysdCut) return;
       fetchAccess().then(function (next) {
         if (w.__yysdCut) return;
-        if (!next.on) {
+        if (!next.on && next.reason !== "error") {
           cut(next.reason === "expired" ? "expired" : "off", onCut);
           return;
         }
@@ -160,7 +160,7 @@
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState !== "visible" || w.__yysdCut) return;
       fetchAccess().then(function (next) {
-        if (!next.on && !w.__yysdCut) {
+        if (!next.on && next.reason !== "error" && !w.__yysdCut) {
           cut(next.reason === "expired" ? "expired" : "off", onCut);
         }
       });

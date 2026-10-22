@@ -101,12 +101,12 @@
       clip.onloadedmetadata = null;
       clip.onseeked = null;
       if (poll) { clearInterval(poll); poll = null; }
-      if (fire) onEnded();
+      if (fire) onEnded(fire === "fail");
     }
     var from = task.fromSec != null ? Number(task.fromSec) : 0;
     var to = task.toSec != null ? Number(task.toSec) : null;
     clip.onended = function () { finish(true); };
-    clip.onerror = function () { finish(true); };
+    clip.onerror = function () { finish("fail"); };
     function armEnd() {
       if (to == null) return;
       function hitEnd() { return clip.currentTime + 0.05 >= from && clip.currentTime >= to; }
@@ -116,7 +116,7 @@
     function go() {
       function playNow() {
         armEnd();
-        clip.play().catch(function () { finish(true); });
+        clip.play().catch(function () { finish("fail"); });
       }
       if (clip.readyState < 1) {
         clip.onloadedmetadata = go;

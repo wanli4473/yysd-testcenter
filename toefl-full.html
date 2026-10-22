@@ -6,11 +6,11 @@
   <title>TOEFL Complete Test</title>
   <script src="assets/js/tenant-boot.js?v=20261013perm1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261020gate1">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261022fix1">
   <script src="assets/js/config.js?v=20261020full22"></script>
   <script src="assets/js/kl-mocks.js?v=20261014kl1"></script>
   <script src="assets/js/auth.js?v=20261015prev2"></script>
-  <script src="assets/js/toefl-full.js?v=20261020lib2"></script>
+  <script src="assets/js/toefl-full.js?v=20261022fix1"></script>
 </head>
 <body class="exam-ets">
 <div class="ets-frame">
@@ -30,7 +30,7 @@
     <p>网考顺序固定，四科一次完成，<b>无安排休息</b>。离开某一科后不能返回。</p>
     <p class="sample" style="max-width:640px;margin:16px auto;text-align:left">
       练习：科内可回看、重听、重录；科与科之间可暂停，计时不跑。<br>
-      模考：按各科官方时限连考；切换页面或离开窗口则整场作废，四科均不记分。<br>
+      模考：按各科官方时限连考。可以离开窗口或刷新，进度会保留，回来后从上次的位置继续。<br>
       阅读、听力当场给出 1–6 预估。写组句自动对错，两篇作文只对照范文。口语不自动估分，提交后请先导出录音。
     </p>
     <p id="start-wrap"></p>
@@ -72,13 +72,12 @@
       }
 
       function start(m) {
-        F.startPack(paperId, m);
-        location.replace(F.skillHref(paperId, m, "reading"));
+        location.replace(F.resumeOrStart(paperId, m));
       }
 
       if (view === "done") {
         var pack = F.load(paperId);
-        if (!pack || pack.voided) { location.replace(F.introHref(paperId, mode)); return; }
+        if (!pack) { location.replace(F.introHref(paperId, mode)); return; }
         if (mode === "mock" && A && A.api) {
           // 完成上报：关掉模考包的关停宽限（best-effort，失败不影响看成绩）
           A.api("/api/toefl/exam-done", { method: "POST", body: { packageId: paperId } }).catch(function () {});

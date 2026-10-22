@@ -6,14 +6,14 @@
   <title>TOEFL Listening</title>
   <script src="assets/js/tenant-boot.js?v=20261013perm1"></script>
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261020gate1">
+  <link rel="stylesheet" href="assets/css/toefl-exam.css?v=20261022fix1">
   <script src="assets/js/config.js?v=20261020full22"></script>
   <script src="assets/js/kl-mocks.js?v=20261014kl1"></script>
   <script src="assets/js/auth.js?v=20261015prev2"></script>
   <script src="assets/js/toefl-reading.js?v=20261018cw1"></script>
-  <script src="assets/js/toefl-full.js?v=20261020lib2"></script>
-  <script src="assets/js/toefl-lab.js?v=20261020lib2"></script>
-  <script src="assets/js/toefl-shell.js?v=20261020gate1"></script>
+  <script src="assets/js/toefl-full.js?v=20261022fix1"></script>
+  <script src="assets/js/toefl-lab.js?v=20261022fix1"></script>
+  <script src="assets/js/toefl-shell.js?v=20261022fix1"></script>
 </head>
 <body class="exam-ets ets-booting">
 <div class="ets-frame">
@@ -42,6 +42,10 @@
 
   <section id="exam" class="exam-body hidden">
     <p class="exam-title" id="instruction"></p>
+    <p id="listen-audio-fail" class="ets-audio-fail hidden">
+      <span id="listen-audio-fail-msg">The recording did not play.</span>
+      <button type="button" class="btn" id="listen-retry">Retry</button>
+    </p>
     <div id="listen-stage" class="ets-listen-stage hidden">
       <img id="listen-scene" class="ets-scene hidden" alt="">
       <div class="ets-person" id="listen-person" aria-hidden="true"></div>
@@ -64,6 +68,7 @@
     <h2>Time Remaining</h2>
     <p id="rest-copy">You have completed this module. You cannot return to these questions. Select Continue to go on.</p>
     <p id="rest-acts"></p>
+    <p><button class="btn" type="button" id="rest-go">Continue</button></p>
   </section>
 
   <section id="done" class="result hidden">
@@ -97,17 +102,6 @@
       </div>
     </div>
   </div>
-  <div id="void-lock">
-    <div>
-      <h2>This mock test has been stopped</h2>
-      <p>Leaving the test window voids this mock test. It cannot be continued and will not be scored.</p>
-      <div class="void-acts">
-        <a class="btn btn-ghost" href="zone.html?zone=toefl&amp;s=listening">Return</a>
-        <button class="btn" type="button" id="void-restart">Begin again</button>
-      </div>
-    </div>
-  </div>
-
   <div id="help-box" class="hidden">
     <div>
       <h2>Help</h2>
@@ -158,13 +152,15 @@
       var played = {};
       var heard = {};
       var remain = 0;
+      var started = false;
       var hideTime = false;
       var tick = null;
       var view = "exam";
       var moduleN = 1;
       var pendingNext = 0;
-      var voided = false;
-      var lockOn = false;
+      var submitted = false;
+      var deferLeave = false;
+      var audioBroken = {};
 
       var clock = document.getElementById("clock");
       var exam = document.getElementById("exam");
@@ -215,11 +211,45 @@
         if (!scr || !scr.q) return;
         var picked = opts.querySelector("input:checked");
         answers[scr.q.id] = picked ? picked.value : (answers[scr.q.id] || "");
+        persistRun();
       }
 
       function filled(no) {
         return String(answers[no] || "").trim() !== "";
       }
+
+      function runScope() {
+        return [mode, taskQ || "", taskEndQ || "", typeQ || ""].join("|");
+      }
+      function persistRun() {
+        if (!started || submitted || !paper || !F || !F.saveRun || !paperId) return;
+        if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.leaving()) return;
+        F.saveRun(paperId, "listening", {
+          scope: runScope(),
+          si: si,
+          moduleN: moduleN,
+          remain: remain,
+          answers: answers,
+          seen: seen,
+          heard: heard
+        });
+      }
+      function restoreRun() {
+        if (!F || !F.loadRun || !paperId) return false;
+        var snap = F.loadRun(paperId, "listening");
+        if (!snap || snap.scope !== runScope()) return false;
+        if (snap.answers) answers = snap.answers;
+        if (snap.seen) seen = snap.seen;
+        if (snap.heard) heard = snap.heard;
+        if (typeof snap.moduleN === "number") moduleN = snap.moduleN;
+        if (typeof snap.remain === "number") remain = snap.remain;
+        if (typeof snap.si === "number" && screens[snap.si]) {
+          si = snap.si;
+          return true;
+        }
+        return false;
+      }
+      window.addEventListener("pagehide", function () { harvest(); persistRun(); });
 
       function setNav(on) {
         [nextBtn, hideBtn, helpBtn].forEach(function (b) { if (b) b.disabled = !on; });
@@ -245,17 +275,39 @@
         }
       }
 
+      function hideAudioFail() {
+        var box = document.getElementById("listen-audio-fail");
+        if (box) box.classList.add("hidden");
+      }
+      function audioPlaying() {
+        return !!(clip && clip.currentSrc && !clip.paused && !clip.ended && !clip.error);
+      }
+      function onAudioFail(key) {
+        deferLeave = false;
+        if (!audioBroken[key]) audioBroken[key] = 1;
+        var box = document.getElementById("listen-audio-fail");
+        var msg = document.getElementById("listen-audio-fail-msg");
+        if (msg) msg.textContent = "The recording did not play. Retry, or select Next to continue.";
+        if (box) box.classList.remove("hidden");
+        nextBtn.disabled = false;
+        var scr = screens[si];
+        if (!scr || !scr.task || T.taskKey(scr.task) !== key || heard[key]) return;
+        heard[key] = 1;
+        renderExam();
+      }
       function bindAudio(task) {
         var key = T.taskKey(task);
+        if (!task || !task.audio) { onAudioFail(key); return; }
         if (clip.getAttribute("data-src") !== task.audio) {
           clip.pause();
           clip.src = task.audio;
           clip.setAttribute("data-src", task.audio);
         }
-        if (played[key]) return;
+        if (played[key] || audioBroken[key]) return;
         var p = clip.play();
-        if (p && p.then) p.then(function () { played[key] = 1; }).catch(function () {});
-        else played[key] = 1;
+        if (p && p.then) {
+          p.then(function () { played[key] = 1; hideAudioFail(); }).catch(function () { onAudioFail(key); });
+        } else played[key] = 1;
       }
 
       function waiting(task) {
@@ -268,8 +320,26 @@
         var key = T.taskKey(scr.task);
         played[key] = 1;
         heard[key] = 1;
+        if (deferLeave) { deferLeave = false; harvest(); leaveModule(); return; }
         if (view === "exam" && T.hideQsUntilHeard(scr.task)) renderExam();
       });
+      clip.addEventListener("error", function () {
+        if (!clip.getAttribute("data-src")) return;
+        var scr = screens[si];
+        if (!scr || !scr.task) return;
+        onAudioFail(T.taskKey(scr.task));
+      });
+      document.getElementById("listen-retry").onclick = function () {
+        var scr = screens[si];
+        if (!scr || !scr.task) return;
+        var key = T.taskKey(scr.task);
+        delete audioBroken[key];
+        delete played[key];
+        clip.removeAttribute("data-src");
+        try { clip.pause(); clip.removeAttribute("src"); } catch (e) {}
+        hideAudioFail();
+        bindAudio(scr.task);
+      };
 
       function renderExam() {
         var scr = screens[si];
@@ -281,7 +351,8 @@
         document.getElementById("instruction").textContent = "";
         document.getElementById("q-range").textContent = "Listening | " + Lab.qLabel(screens, scr);
         nextBtn.textContent = "Next";
-        nextBtn.disabled = wait;
+        nextBtn.disabled = wait && !audioBroken[T.taskKey(scr.task)];
+        if (!audioBroken[T.taskKey(scr.task)]) hideAudioFail();
         listenStage.classList.toggle("hidden", !wait);
         document.querySelector(".listen-card").classList.toggle("hidden", wait);
         if (wait) {
@@ -317,6 +388,12 @@
             show(rest);
             setNav(true);
             nextBtn.textContent = "Continue";
+            var cont = document.getElementById("rest-go");
+            if (cont) {
+              cont.classList.remove("hidden");
+              cont.disabled = false;
+              cont.onclick = function () { startModule(pendingNext); };
+            }
             return;
           }
           startModule(next);
@@ -340,10 +417,13 @@
       }
 
       function finish() {
+        if (submitted) return;
+        submitted = true;
         clearInterval(tick);
-        lockOn = false;
-        clip.pause();
+        deferLeave = false;
+        try { clip.pause(); } catch (e) {}
         harvest();
+        if (F && F.clearRun) F.clearRun(paperId, "listening");
         if (Lab) Lab.markSessionDone("listening", paperId, paper, taskQ, taskEndQ, typeQ);
         var r = T.scorePaper(Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ, typeQ) : paper, answers);
         if (Lab && Lab.saveScore) Lab.saveScore("listening", paperId, paper, r.detail);
@@ -351,7 +431,7 @@
         if (F && F.isFull()) {
           var act = F.afterSection("listening", paperId, mode, F.compactScore(r));
           if (act === "go") return;
-          if (act === "rest") { F.fillRest("listening", paperId, mode); view = "rest"; show(rest); return; }
+          if (act === "rest") { view = "rest"; show(rest); F.fillRest("listening", paperId, mode); return; }
         }
         var scored = Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ, typeQ) : paper;
         // wofo: 交卷先停在「生成成绩单」屏，点 View 才进成绩+解析合一页
@@ -373,43 +453,6 @@
         if (si === screens.indexOf(last[last.length - 1])) leaveModule();
         else { si += 1; renderExam(); }
       };
-      document.getElementById("void-restart").onclick = function () {
-        if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.markLeaving) YYSD_TOEFL_SHELL.markLeaving();
-        location.replace((F && F.voidRestartHref) ? F.voidRestartHref(paperId, "listening") : "toefl-listening.html?id=" + encodeURIComponent(paperId) + "&mode=mock");
-      };
-
-      function triggerVoid() {
-        if (voided || !lockOn || (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.leaving())) return;
-        voided = true;
-        lockOn = false;
-        clearInterval(tick);
-        clip.pause();
-        if (F && F.isFull()) F.markVoid(paperId);
-        document.getElementById("void-lock").classList.add("is-visible");
-      }
-
-      function bindLock() {
-        lockOn = true;
-        if (F && F.isFull()) F.dressVoidUI();
-        var armed = false;
-        setTimeout(function () { armed = true; }, 2500);
-        document.addEventListener("visibilitychange", function () {
-          if (armed && document.hidden) triggerVoid();
-        });
-        window.addEventListener("blur", function () {
-          if (!armed) return;
-          setTimeout(function () {
-            if (!document.hasFocus()) triggerVoid();
-          }, 400);
-        });
-        window.addEventListener("pagehide", function () { if (armed) triggerVoid(); });
-        window.addEventListener("beforeunload", function (e) {
-          if (!lockOn || voided || (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.leaving())) return;
-          e.preventDefault();
-          e.returnValue = "";
-        });
-      }
-
       fetch(meta.file, { cache: "no-store" })
         .then(function (r) { if (!r.ok) throw new Error("Unable to load this test"); return r.json(); })
         .then(function (p) {
@@ -420,19 +463,30 @@
           document.title = (p.title || "TOEFL Listening") + (mode === "mock" ? " · 模考" : " · 练习");
           document.getElementById("mode-tag").textContent = mode === "mock" ? "Mock" : "Practice";
           function goStart() {
-            startModule(Lab ? Lab.firstModule(screens) : 1);
+            started = true;
             if (qJump && Lab) {
+              startModule(Lab ? Lab.firstModule(screens) : 1);
               si = Lab.screenIndexForQ(screens, qJump);
               renderExam();
+            } else if (!restoreRun()) {
+              startModule(Lab ? Lab.firstModule(screens) : 1);
+            } else {
+              renderExam();
+              showClock();
             }
-            if (mode === "mock") bindLock();
             if (remain > 0) {
               tick = setInterval(function () {
                 if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.paused()) return;
+                if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.directing()) return;
                 if (remain <= 0) return;
                 remain -= 1;
                 showClock();
-                if (remain <= 0) { harvest(); leaveModule(); }
+                persistRun();
+                if (remain <= 0) {
+                  harvest();
+                  if (audioPlaying()) { deferLeave = true; return; }
+                  leaveModule();
+                }
               }, 1000);
             } else showClock();
           }
