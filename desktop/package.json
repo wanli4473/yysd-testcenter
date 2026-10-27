@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --mac dmg zip --universal",
+    "dist": "electron-builder --mac zip --universal",
     "dist:win": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win nsis --x64"
   },
   "devDependencies": {
@@ -28,7 +28,7 @@
       "gatekeeperAssess": false,
       "category": "public.app-category.education",
       "artifactName": "YouYiSiDa-mac-${version}.${ext}",
-      "target": [{ "target": "dmg", "arch": ["universal"] }, { "target": "zip", "arch": ["universal"] }]
+      "target": [{ "target": "zip", "arch": ["universal"] }]
     },
     "win": {
       "icon": "build/icon.png",
