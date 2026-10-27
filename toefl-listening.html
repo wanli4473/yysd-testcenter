@@ -13,7 +13,7 @@
   <script src="assets/js/toefl-reading.js?v=20261024daily1"></script>
   <script src="assets/js/tiku-run.js?v=20261027exam1"></script>
   <script src="assets/js/toefl-full.js?v=20261027exam1"></script>
-  <script src="assets/js/toefl-lab.js?v=20261027exam1"></script>
+  <script src="assets/js/toefl-lab.js?v=20261027exam2"></script>
   <script src="assets/js/toefl-sync.js?v=20261027exam1"></script>
   <script src="assets/js/hit-trace.js?v=20261027exam1"></script>
   <script src="assets/js/toefl-shell.js?v=20261027exam1"></script>
@@ -198,7 +198,7 @@
       }
 
       function showClock() {
-        clock.textContent = hideTime ? "" : fmt(remain);
+        clock.textContent = hideTime || remain <= 0 ? "" : fmt(remain);
       }
 
       /* 官方听力：音频播完一题一限时（20 秒，讲座 30 秒），归 0 自动跳下一题 */
@@ -222,8 +222,9 @@
         return !scr.task.audio || !!heard[k] || !!audioFailed[k];
       }
       function qLimit(scr) {
-        var n = Lab.limitSec(scr.type);
-        if (scr.type !== "lecture") return n;
+        var typ = (scr && scr.type) || (scr && scr.task && scr.task.type);
+        var n = Lab.limitSec(typ);
+        if (typ !== "lecture") return n;
         var first = screens.find(function (s) {
           return s.type === "lecture" && T.taskKey(s.task) === T.taskKey(scr.task);
         });
@@ -409,7 +410,6 @@
         if (first < 0) { askFinish(); return; }
         si = first;
         renderExam();
-        showClock();
       }
 
       function paintRest(kind, next) {
@@ -468,26 +468,33 @@
         clip.pause();
         harvest();
         // 交卷即清计时，下次「再做一遍」从满时间重新开始
-        if (Lab) screens.forEach(function (s) { Lab.dropLeft(qKey(s)); });
-        if (Lab) Lab.markSessionDone("listening", paperId, paper, taskQ, taskEndQ, typeQ);
+        var att = null;
+        try {
+          if (Lab) screens.forEach(function (s) { Lab.dropLeft(qKey(s)); });
+          if (Lab) Lab.markSessionDone("listening", paperId, paper, taskQ, taskEndQ, typeQ);
+        } catch (e0) {}
         var scored = Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ, typeQ) : paper;
         var r = T.scorePaper(scored, answers);
-        if (Lab && Lab.saveScore) Lab.saveScore("listening", paperId, scored, r.detail);
-        var att = Lab && Lab.logAttempt ? Lab.logAttempt("listening", paperId, (paper && paper.title) || paperId, r) : null;
-        if (window.YYSD_TOEFL_SYNC) YYSD_TOEFL_SYNC.fromScore("listening", paperId, scored, r.detail, { band: r.band, sid: att && att.sid });
+        try {
+          if (Lab && Lab.saveScore) Lab.saveScore("listening", paperId, scored, r.detail);
+          att = Lab && Lab.logAttempt ? Lab.logAttempt("listening", paperId, (paper && paper.title) || paperId, r) : null;
+          if (window.YYSD_TOEFL_SYNC) YYSD_TOEFL_SYNC.fromScore("listening", paperId, scored, r.detail, { band: r.band, sid: att && att.sid });
+        } catch (e1) {}
         if (F && F.isFull()) {
           var act = F.afterSection("listening", paperId, mode, F.compactScore(r));
           if (act === "go") return;
           if (act === "rest") { view = "rest"; show(rest); F.fillRest("listening", paperId, mode); return; }
         }
         // wofo: 交卷先停在「生成成绩单」屏，点 View 才进成绩+解析合一页
-        YYSD_TOEFL_SHELL.reportGate(function () {
+        var goReview = function () {
           F.reviewGo("listening", scored, {
             tasks: (scored.tasks || []).map(function (_, i) { return i; }),
             answers: answers, score: r.score, total: r.total, wrong: r.wrong,
             sid: att && att.sid
           });
-        });
+        };
+        if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.reportGate) YYSD_TOEFL_SHELL.reportGate(goReview);
+        else goReview();
       }
 
       nextBtn.onclick = function () {

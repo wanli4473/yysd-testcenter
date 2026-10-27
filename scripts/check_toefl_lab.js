@@ -50,4 +50,7 @@ var L = labCtx.YYSD_TOEFL_LAB;
 if (L.limitSec("choose_response") !== 20 || L.limitSec("lecture") !== 30) throw new Error("listening limits");
 if (L.leftOf("x", 20) !== 20) throw new Error("leftOf empty starts full");
 if (L.mockRemain("listening") !== 29 * 60) throw new Error("mockRemain listening");
+var paper = { tasks: [{ type: "choose_response", questions: [{ id: 1 }] }] };
+L.markSessionDone("listening", "set-6", paper, 0, 0);
+L.saveScore("listening", "set-6", paper, [{ id: 1, ok: true, ua: "A", expect: "A" }]);
 console.log("ok toefl-lab-check", items.length, "cards", dups, "repeated speaking titles split per form");
