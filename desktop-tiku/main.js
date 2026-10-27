@@ -8,6 +8,10 @@ var path = require("path");
 var { execFileSync, spawn } = require("child_process");
 
 app.setName("优益思达题库中心");
+// Electron 33 / Chromium 130 still draws a site permission bubble for
+// getUserMedia even after setPermissionRequestHandler grants `media`.
+// Fake UI accepts that bubble; macOS TCC is handled in allowMic().
+app.commandLine.appendSwitch("use-fake-ui-for-media-stream");
 var START_URL = process.env.YYSD_URL || "https://tiku.youyisida.com/?v=20261015prev1";
 var splashWin = null;
 var siteWin = null;
@@ -295,17 +299,52 @@ function createWindow() {
   });
 }
 
+function isMicPermission(permission, details) {
+  if (permission === "microphone" || permission === "audioCapture") return true;
+  if (permission === "media") {
+    if (!details) return true;
+    if (details.mediaType === "audio") return true;
+    var types = details.mediaTypes || details.mediaTypesRequested;
+    if (!types || !types.length) return true;
+    return types.indexOf("audio") >= 0;
+  }
+  return !!(details && (details.mediaType === "audio" ||
+    (details.mediaTypes && details.mediaTypes.indexOf("audio") >= 0)));
+}
+
+function grantOsMic(callback) {
+  if (process.platform === "darwin" && systemPreferences.askForMediaAccess) {
+    var status = systemPreferences.getMediaAccessStatus
+      ? systemPreferences.getMediaAccessStatus("microphone")
+      : "not-determined";
+    if (status === "granted") {
+      callback(true);
+      return;
+    }
+    if (status === "denied" || status === "restricted") {
+      callback(false);
+      return;
+    }
+    systemPreferences.askForMediaAccess("microphone").then(function (ok) {
+      callback(!!ok);
+    }).catch(function () { callback(false); });
+    return;
+  }
+  callback(true);
+}
+
 function allowMic() {
-  session.defaultSession.setPermissionRequestHandler(function (_wc, permission, callback) {
-    callback(permission === "media" || permission === "microphone");
+  session.defaultSession.setPermissionRequestHandler(function (_wc, permission, callback, details) {
+    if (isMicPermission(permission, details)) {
+      grantOsMic(callback);
+      return;
+    }
+    callback(false);
   });
   if (session.defaultSession.setPermissionCheckHandler) {
-    session.defaultSession.setPermissionCheckHandler(function (_wc, permission) {
-      return permission === "media" || permission === "microphone";
+    session.defaultSession.setPermissionCheckHandler(function (_wc, permission, _origin, details) {
+      return isMicPermission(permission, details);
     });
-  }
-  if (process.platform === "darwin" && systemPreferences.askForMediaAccess) {
-    systemPreferences.askForMediaAccess("microphone").catch(function () {});
   }
 }
 

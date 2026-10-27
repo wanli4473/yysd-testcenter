@@ -1,11 +1,11 @@
 {
   "name": "youyisida",
-  "version": "1.0.17",
+  "version": "1.0.20",
   "private": true,
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --mac dmg zip --universal",
+    "dist": "electron-builder --mac zip --universal",
     "dist:win": "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ electron-builder --win nsis --x64"
   },
   "devDependencies": {
@@ -18,6 +18,8 @@
     "mac": {
       "icon": "build/icon.png",
       "identity": null,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
         "CFBundleDisplayName": "优益思达国际课程中心",
         "CFBundleName": "优益思达国际课程中心",
@@ -25,7 +27,8 @@
       },
       "gatekeeperAssess": false,
       "category": "public.app-category.education",
-      "target": [{ "target": "dmg", "arch": ["universal"] }]
+      "artifactName": "YouYiSiDa-mac-${version}.${ext}",
+      "target": [{ "target": "zip", "arch": ["universal"] }]
     },
     "win": {
       "icon": "build/icon.png",
