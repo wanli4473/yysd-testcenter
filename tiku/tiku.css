@@ -85,6 +85,10 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 
 /* ——— 工作台双栏 ——— */
 .bench { display: grid; grid-template-columns: minmax(0, 1fr) 25rem; gap: 1.3rem; align-items: start; }
+.grant-page { display: grid; gap: 1.3rem; }
+.grant-boards { margin: 0 0 .2rem; }
+.grant-bench { grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem); }
+.grant-bench .sheet { position: static; }
 .card { min-width: 0; background: var(--card); border: 1px solid var(--line); border-top-color: var(--ink); }
 .pool-pane { padding: 1.1rem 1.2rem 1.2rem; }
 .sheet { position: sticky; top: 1rem; padding: 1.2rem 1.3rem 1.3rem; }
@@ -213,14 +217,6 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .f input:focus, .f select:focus { border-color: var(--accent-text); }
 .minis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem .7rem; margin-bottom: 1rem; }
 
-/* 授权台账标题复用。 */
-.picked-head {
-  display: flex; justify-content: space-between; align-items: center; gap: .5rem;
-  padding: .5rem .8rem; border-bottom: 1px solid var(--line-soft); background: var(--soft);
-  font-size: .76rem; color: var(--muted);
-}
-.picked-head > span:last-child { flex-shrink: 0; }
-
 /* 操作行 */
 .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--line-soft); }
 .btn {
@@ -287,17 +283,31 @@ input:disabled, select:disabled, textarea:disabled { color: var(--muted); backgr
 .g-row:last-child { border-bottom: 0; }
 .g-row:hover, .g-row:focus-within { background: var(--soft); }
 .g-row input[type="checkbox"] { accent-color: var(--accent-text); width: 1rem; height: 1rem; flex: 0 0 auto; }
-.g-row .g-who { flex: 1; min-width: 0; font-size: .9rem; overflow-wrap: anywhere; }
+.g-row .g-who { flex: 1; min-width: 0; font-size: .9rem; }
 .g-row .g-who i { font-style: normal; color: var(--muted); font-size: .78rem; margin-left: .35rem; }
 .g-row .st { flex: 0 0 auto; }
-.ledger { margin-top: 1rem; border-top: 1px solid var(--line-soft); padding-top: .8rem; display: grid; gap: .35rem; }
-.ledger .row2 { display: flex; align-items: center; gap: .6rem; font-size: .86rem; padding: .3rem 0; flex-wrap: wrap; }
-.ledger .row2 .who2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.scope-list { max-height: 14rem; margin-bottom: .4rem; }
-.lg-chips { display: flex; flex-wrap: wrap; gap: .3rem .5rem; justify-content: flex-end; min-width: 0; }
-.lg-item { display: inline-flex; align-items: center; gap: .3rem; max-width: 100%; }
-.lg-item .pill { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
-.lg-item .sm { flex-shrink: 0; }
+.scope-groups { display: grid; gap: .7rem; }
+.scope-group { border: 1px solid var(--line-soft); background: var(--paper); }
+.scope-head {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .35rem .7rem; background: var(--soft); border-bottom: 1px solid var(--line-soft);
+  font-size: .8rem; color: var(--muted);
+}
+.scope-group .g-list { max-height: 12rem; border: 0; }
+.scope-empty { margin: .6rem .8rem; font-size: .82rem; }
+.grant-window { margin-top: .9rem; }
+.ledger-card { padding: 1.2rem 1.3rem 1.3rem; }
+.lg-list { display: grid; gap: 0; border-top: 1px solid var(--line-soft); }
+.lg-person { padding: .75rem 0; border-bottom: 1px solid var(--line-soft); }
+.lg-person:last-child { border-bottom: 0; }
+.lg-who { font-size: .95rem; font-weight: 600; margin-bottom: .15rem; }
+.lg-who i { font-style: normal; font-weight: 400; color: var(--muted); font-size: .8rem; margin-left: .4rem; }
+.lg-line {
+  display: flex; align-items: center; gap: .6rem;
+  min-height: 40px; padding: .15rem 0;
+}
+.lg-title { flex: 1; min-width: 0; font-size: .88rem; }
+.lg-empty { margin: .4rem 0 0; }
 .hint { font-size: .8rem; color: var(--muted); margin: .8rem 0 0; padding: .6rem .8rem; background: var(--soft); border-left: 2px solid var(--line); }
 
 /* ——— toast（原 #msg 重用） ——— */
@@ -328,7 +338,7 @@ input:disabled, select:disabled, textarea:disabled { color: var(--muted); backgr
 
 /* 放在基础 .sheet 之后，避免窄屏的 static 被 sticky 覆盖。 */
 @media (max-width: 960px) {
-  .bench { grid-template-columns: minmax(0, 1fr); }
+  .bench, .grant-bench { grid-template-columns: minmax(0, 1fr); }
   .sheet { position: static; }
 }
 @media (max-width: 600px) {
@@ -338,17 +348,16 @@ input:disabled, select:disabled, textarea:disabled { color: var(--muted); backgr
   .top .who { flex: 1; min-width: 0; }
   .tabs { gap: 0; justify-content: space-between; margin-bottom: 1rem; }
   .tabs button { padding-inline: .5rem; }
-  .pool-pane, .sheet { padding: 1rem .75rem; }
+  .pool-pane, .sheet, .ledger-card { padding: 1rem .75rem; }
   .filters .q { flex-basis: 100%; }
   .filters select { flex: 1 1 40%; min-width: 0; max-width: 100%; }
   .filters input, .filters select, .f input, .f select { font-size: 16px; }
   .filters .q::placeholder { font-size: .82rem; }
   .minis:has(input[type="datetime-local"]) { grid-template-columns: minmax(0, 1fr); }
-  .picked-head { padding-inline: .5rem; }
   .paper-row { padding-inline: .5rem; }
   .sm { min-height: 44px; }
   .g-row .g-who i { display: block; margin-left: 0; }
-  .lg-chips { justify-content: flex-start; }
+  .lg-line { flex-wrap: wrap; }
   .auth-card { padding: 1.5rem 1.2rem; }
 }
 @media (prefers-reduced-motion: reduce) {

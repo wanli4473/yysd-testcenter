@@ -69,11 +69,12 @@ function packageState(grant, start, nowMs) {
 }
 
 function loadGrantRows(db, scopes, orgId) {
+  var sql = "SELECT g.*, u.display_name, u.phone FROM toefl_grants g JOIN users u ON u.id = g.user_id WHERE ";
+  if (!scopes || !scopes.length) {
+    return db.prepare(sql + "u.org_id = ? ORDER BY g.updated_at DESC").all(orgId);
+  }
   var marks = scopes.map(function () { return "?"; }).join(",");
-  var stmt = db.prepare(
-    "SELECT g.*, u.display_name, u.phone FROM toefl_grants g JOIN users u ON u.id = g.user_id " +
-    "WHERE g.scope IN (" + marks + ") AND u.org_id = ? ORDER BY g.updated_at DESC"
-  );
+  var stmt = db.prepare(sql + "g.scope IN (" + marks + ") AND u.org_id = ? ORDER BY g.updated_at DESC");
   return stmt.all.apply(stmt, scopes.concat([orgId]));
 }
 
@@ -238,9 +239,13 @@ function mountRoutes(app, deps) {
     res.json({ ok: true, packages: deps.tiku.listPackages(db) });
   });
 
-  // 管理员端：当前授权台账（含状态，前端不用自己算时间）。scope= 或 scopes= 逗号批量
+  // 管理员端：当前授权台账（含状态，前端不用自己算时间）。scope= 或 scopes= 逗号批量；* / all = 本机构全部
   app.get("/api/admin/grants", deps.adminAuthMiddleware, function (req, res) {
-    var rs = resolveScopes(splitScopes(req.query.scopes != null ? req.query.scopes : req.query.scope));
+    var raw = req.query.scopes != null ? req.query.scopes : req.query.scope;
+    if (raw === "*" || raw === "all") {
+      return res.json({ ok: true, grants: grantLedger(req, []) });
+    }
+    var rs = resolveScopes(splitScopes(raw));
     if (rs.error) return res.status(400).json({ error: rs.error });
     res.json({ ok: true, grants: grantLedger(req, rs.scopes) });
   });
@@ -311,6 +316,10 @@ function selfCheck() {
   eq(row.status, "off", "upsert switches status");
   eq(db.prepare("SELECT COUNT(*) c FROM toefl_grants").get().c, 1, "one row per user×scope");
   eq(loadGrantRows(db, ["practice"], 1).length, 1, "ledger query keeps stmt this");
+  db.prepare("INSERT INTO toefl_grants (user_id, scope, status, created_at, updated_at) VALUES (1,'package:a','on','z','z')").run();
+  eq(loadGrantRows(db, [], 1).length, 2, "empty scopes loads all org grants");
+  eq(loadGrantRows(db, null, 1).length, 2, "null scopes loads all org grants");
+  eq(loadGrantRows(db, ["package:a"], 1).length, 1, "scoped ledger still filters");
 
   db.prepare("INSERT INTO toefl_exam_starts (user_id, package_id, started_at, finished_at) VALUES (1,'pkg-a','x',NULL)").run();
   db.prepare("INSERT INTO toefl_exam_starts (user_id, package_id, started_at, finished_at) VALUES (1,'pkg-a','y',NULL) " +

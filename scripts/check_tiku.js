@@ -212,7 +212,18 @@ if (gateApp.indexOf('preview') < 0) throw new Error("app gate preview");
 if (gateApp.indexOf("tikuHome") < 0) throw new Error("app gate tikuHome");
 if (/if\s*\(\s*!pkgs\s*\)\s*jobs\.push/.test(ui)) throw new Error("packages must refetch on 开通");
 if (ui.indexOf("data-refresh") < 0) throw new Error("tab refresh");
-if (ui.indexOf("class=\"bench\"") < 0) throw new Error("merged bench");
+if (ui.indexOf("class=\"bench") < 0) throw new Error("merged bench");
+if (ui.indexOf("grant-page") < 0 || ui.indexOf("data-ggrp") < 0 || ui.indexOf("lg-q") < 0 || ui.indexOf("updateGrantSummary") < 0) {
+  throw new Error("grant stacked ledger");
+}
+if (ui.indexOf("data-gboard") < 0 || ui.indexOf("AI口语/写作批改") < 0 || ui.indexOf("考前冲刺包") < 0) {
+  throw new Error("grant boards must stay independent");
+}
+var access = fs.readFileSync(path.join(__dirname, "..", "server/toefl-access.js"), "utf8");
+if (access.indexOf('raw === "*"') < 0) throw new Error("grants API missing all-scopes");
+if (ui.indexOf('scopes=" + encodeURIComponent("*")') < 0) throw new Error("ledger fetches all grants");
+if (/var grantSel = \{ practice: true \}/.test(ui)) throw new Error("grantSel should start empty");
+if (ui.indexOf("授权台账（所选对象）") >= 0) throw new Error("ledger should not sit inside the object sheet");
 var html = fs.readFileSync(path.join(__dirname, "..", "tiku/index.html"), "utf8");
 if (html.indexOf('id="refresh"') < 0) throw new Error("refresh button");
 var gate = fs.readFileSync(path.join(__dirname, "..", "tiku/gate.js"), "utf8");

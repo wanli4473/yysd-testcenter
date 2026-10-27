@@ -36,12 +36,20 @@
   var reviewRequests = [];
   var pkgs = null;
   var stuList = null;
-  var grantSel = { practice: true };
+  var grantSel = {};
+  var grantBoard = "practice";
+  var GRANT_BOARDS = [
+    { id: "practice", label: "真题题库" },
+    { id: "ai", label: "AI口语/写作批改" },
+    { id: "mock", label: "考前冲刺包" }
+  ];
   var stuSel = {};
   var stuQ = "";
+  var ledgerQ = "";
   var gwStart = "";
   var gwExp = "";
   var ledger = [];
+  var isDemo = false;
   var toastTimer = 0;
 
   function token() {
@@ -592,14 +600,86 @@
     if (st.reason === "off") return "已停用";
     return "";
   }
+  function boardOfScope(scope) {
+    if (scope === "practice") return "practice";
+    if (String(scope || "").indexOf("package:") === 0) return "mock";
+    if (String(scope || "").indexOf("ai") === 0) return "ai";
+    return "other";
+  }
+  function boardLabel(id) {
+    var b = GRANT_BOARDS.filter(function (x) { return x.id === id; })[0];
+    return b ? b.label : id;
+  }
   function checkedScopes() {
-    return Object.keys(grantSel).filter(function (k) { return grantSel[k]; });
+    return Object.keys(grantSel).filter(function (k) {
+      return grantSel[k] && boardOfScope(k) === grantBoard;
+    });
+  }
+  function selectedStudentIds() {
+    return Object.keys(stuSel).map(Number).filter(Boolean);
+  }
+  function grantActionLabel(nStu, nSc, action) {
+    var verb = action === "off" ? "停用" : "开通 / 更新";
+    if (!nStu || !nSc) return verb + "选中";
+    return verb + " " + nStu + " 人 × " + nSc + " 个对象";
   }
   function scopeTitle(scope) {
     if (scope === "practice") return "真题题库";
-    var id = scope.slice("package:".length);
+    var id = String(scope || "").indexOf("package:") === 0 ? scope.slice("package:".length) : scope;
     var p = (pkgs || []).filter(function (x) { return x.id === id; })[0];
     return p ? p.title : id;
+  }
+  function scopeKind(scope) {
+    if (scope === "practice") return "practice";
+    var id = String(scope || "").slice("package:".length);
+    var p = (pkgs || []).filter(function (x) { return x.id === id; })[0];
+    if (p && p.kind === "single") return "single";
+    if (p) return "full";
+    return "other";
+  }
+  function scopeSortKey(scope) {
+    var k = scopeKind(scope);
+    return k === "practice" ? 0 : k === "full" ? 1 : k === "single" ? 2 : 3;
+  }
+  function groupScopes(kind) {
+    if (kind === "practice") return ["practice"];
+    return (pkgs || []).filter(function (p) {
+      return kind === "single" ? p.kind === "single" : p.kind !== "single";
+    }).map(function (p) { return "package:" + p.id; });
+  }
+  function groupAllOn(kind) {
+    var list = groupScopes(kind);
+    return list.length > 0 && list.every(function (sc) { return grantSel[sc]; });
+  }
+  function toggleGroup(kind, on) {
+    groupScopes(kind).forEach(function (sc) {
+      if (on) grantSel[sc] = 1;
+      else delete grantSel[sc];
+    });
+  }
+  function ledgerPeople(rows) {
+    var byUser = {};
+    var order = [];
+    (rows || []).forEach(function (r) {
+      var u = byUser[r.userId];
+      if (!u) {
+        u = byUser[r.userId] = { userId: r.userId, name: r.name || "", phone: r.phone || "", items: [] };
+        order.push(u);
+      }
+      u.items.push(r);
+    });
+    order.forEach(function (u) {
+      u.items.sort(function (a, b) {
+        var d = scopeSortKey(a.scope) - scopeSortKey(b.scope);
+        if (d) return d;
+        return scopeTitle(a.scope).localeCompare(scopeTitle(b.scope), "zh");
+      });
+    });
+    order.sort(function (a, b) {
+      var d = String(a.name || "").localeCompare(String(b.name || ""), "zh");
+      return d || String(a.phone || "").localeCompare(String(b.phone || ""));
+    });
+    return order;
   }
   function stuFiltered() {
     var q = stuQ.toLowerCase();
@@ -607,92 +687,191 @@
       return !q || ((s.displayName || "") + " " + s.phone).toLowerCase().indexOf(q) >= 0;
     });
   }
+  function boardLedger() {
+    return (ledger || []).filter(function (r) { return boardOfScope(r.scope) === grantBoard; });
+  }
+  function ledgerFiltered() {
+    var q = ledgerQ.toLowerCase();
+    return ledgerPeople(boardLedger()).filter(function (u) {
+      return !q || ((u.name || "") + " " + (u.phone || "")).toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  function paintScopeRow(scope, title, note) {
+    return '<label class="g-row">' +
+      '<input type="checkbox" data-gscope="' + esc(scope) + '"' + (grantSel[scope] ? " checked" : "") + ">" +
+      '<span class="g-who">' + esc(title) + (note ? "<i>" + esc(note) + "</i>" : "") + "</span>" +
+    "</label>";
+  }
+  function paintScopeGroup(title, kind, rowsHtml) {
+    var list = groupScopes(kind);
+    var allOn = groupAllOn(kind);
+    return '<div class="scope-group">' +
+      '<div class="scope-head"><span>' + esc(title) +
+        (list.length ? " · " + list.length : "") + "</span>" +
+        (list.length
+          ? '<button type="button" class="sm" data-ggrp="' + esc(kind) + '">' + (allOn ? "清空本类" : "全选本类") + "</button>"
+          : "") +
+      "</div>" +
+      (rowsHtml || '<p class="muted scope-empty">暂无上架</p>') +
+    "</div>";
+  }
+  function paintLedgerPerson(u) {
+    return '<article class="lg-person" data-lg="' + esc(u.userId) + '">' +
+      '<div class="lg-who">' + esc(u.name || u.phone || ("#" + u.userId)) +
+        (u.name && u.phone ? "<i>" + esc(u.phone) + "</i>" : "") +
+      "</div>" +
+      u.items.map(function (it) {
+        var on = it.state && it.state.on;
+        return '<div class="lg-line">' +
+          '<span class="lg-title">' + esc(scopeTitle(it.scope)) + "</span>" +
+          '<span class="pill ' + (on ? "live" : "unpublished") + '">' + esc(grantStateText(it.state)) + "</span>" +
+          (on
+            ? '<button type="button" class="sm danger" data-grev="' + esc(it.userId) + "|" + esc(it.scope) + '">收回</button>'
+            : "") +
+        "</div>";
+      }).join("") +
+    "</article>";
+  }
+  function boardHint() {
+    if (grantBoard === "practice") return "开通后学生可进真题题库整区。停用后立即拦截。";
+    if (grantBoard === "mock") return "每位勾选的学生 × 每个勾选的包，一次生效。关停或到期时，已开考的学生 24 小时内可考完本场。";
+    return "AI 口语/写作批改的开通还没接到题库中心，先在原来的权限页处理。";
+  }
+  function paintGrantObjects() {
+    if (grantBoard === "practice") {
+      return {
+        note: "整区一把开",
+        canGrant: true,
+        hint: boardHint(),
+        body: '<div class="g-list">' + paintScopeRow("practice", "真题题库", "整个练习区") + "</div>"
+      };
+    }
+    if (grantBoard === "mock") {
+      var fullPkgs = (pkgs || []).filter(function (p) { return p.kind !== "single"; });
+      var singlePkgs = (pkgs || []).filter(function (p) { return p.kind === "single"; });
+      var fullHtml = fullPkgs.length
+        ? '<div class="g-list">' + fullPkgs.map(function (p) {
+          return paintScopeRow("package:" + p.id, p.title, "整套包");
+        }).join("") + "</div>"
+        : "";
+      var singleHtml = singlePkgs.length
+        ? '<div class="g-list">' + singlePkgs.map(function (p) {
+          return paintScopeRow("package:" + p.id, p.title, "单科包");
+        }).join("") + "</div>"
+        : "";
+      return {
+        note: "已选 " + checkedScopes().length + " 个 · 整套和单科可一起勾",
+        canGrant: true,
+        hint: boardHint(),
+        body: '<div class="scope-groups">' +
+          paintScopeGroup("整套", "full", fullHtml) +
+          paintScopeGroup("单科", "single", singleHtml) +
+        "</div>"
+      };
+    }
+    return {
+      note: "独立板块，接口未接",
+      canGrant: false,
+      hint: boardHint(),
+      body: '<div class="empty"><b>这一块先不在这里开</b><p>真题题库和考前冲刺包用旁边两个板块。AI 批改仍走原来的权限页。</p></div>'
+    };
+  }
   function paintGrant() {
     var main = document.getElementById("main");
+    if (!main) return;
     if (!pkgs) {
       main.innerHTML = '<div class="card pool-pane"><div class="skel skel-row"></div><div class="skel skel-row"></div><div class="skel skel-row"></div></div>';
       return;
     }
-    var m = checkedScopes().length;
-    var byUser = {};
-    ledger.forEach(function (r) {
-      var u = byUser[r.userId] || (byUser[r.userId] = { name: r.name, phone: r.phone, items: [] });
-      u.items.push(r);
-    });
+    var nStu = selectedStudentIds().length;
+    var nSc = checkedScopes().length;
     var students = stuFiltered();
+    var people = ledgerFiltered();
+    var peopleAll = ledgerPeople(boardLedger());
+    var byUser = {};
+    peopleAll.forEach(function (u) { byUser[u.userId] = u; });
+    var objectPane = paintGrantObjects();
     main.innerHTML =
-      '<div class="bench">' +
-        '<section class="card pool-pane">' +
-          '<div class="pane-title"><h2>学生</h2><span class="n">共 ' + (stuList || []).length + " 人 · 已选对象 " + m + ' 个</span></div>' +
+      '<div class="grant-page">' +
+        '<nav class="tabs grant-boards" aria-label="开通板块">' +
+          GRANT_BOARDS.map(function (b) {
+            return '<button type="button" class="' + (grantBoard === b.id ? "is-on" : "") + '" data-gboard="' + esc(b.id) + '">' + esc(b.label) + "</button>";
+          }).join("") +
+        "</nav>" +
+        '<div class="bench grant-bench">' +
+          '<section class="card pool-pane">' +
+            '<div class="pane-title"><h2>学生</h2><span class="n">共 ' + (stuList || []).length + " 人 · 已选 " + nStu + " 人</span></div>" +
+            '<div class="filters">' +
+              '<input id="g-q" class="q" value="' + esc(stuQ) + '" placeholder="搜姓名 / 手机号">' +
+              '<button type="button" class="sm" id="g-all">全选当前</button>' +
+              '<button type="button" class="sm" id="g-none">清空</button>' +
+            "</div>" +
+            (students.length
+              ? '<div class="g-list stu-list">' + students.map(function (s) {
+                var items = (byUser[s.id] || { items: [] }).items;
+                var n = items.filter(function (it) { return it.state && it.state.on; }).length;
+                return '<label class="g-row">' +
+                  '<input type="checkbox" data-gsel="' + esc(s.id) + '"' + (stuSel[s.id] ? " checked" : "") + ">" +
+                  '<span class="g-who">' + esc(s.displayName || "（未命名）") + "<i>" + esc(s.phone) + "</i></span>" +
+                  (nSc ? '<span class="pill ' + (n === nSc ? "live" : "unpublished") + '">已开 ' + n + "/" + nSc + "</span>" : "") +
+                "</label>";
+              }).join("") + "</div>"
+              : '<div class="empty"><b>没有符合的学生</b></div>') +
+          "</section>" +
+          '<section class="card sheet">' +
+            '<div class="pane-title"><h2>' + esc(boardLabel(grantBoard)) + '</h2><span class="n">' + esc(objectPane.note) + "</span></div>" +
+            objectPane.body +
+            (objectPane.canGrant
+              ? '<div class="minis grant-window">' +
+                '<label class="f"><span>开始（可空 = 立即）</span><input type="datetime-local" id="g-start" value="' + esc(gwStart) + '"></label>' +
+                '<label class="f"><span>到期（可空 = 不过期）</span><input type="datetime-local" id="g-exp" value="' + esc(gwExp) + '"></label>' +
+              "</div>" +
+              '<div class="actions">' +
+                '<button type="button" class="btn primary" id="g-on">' + esc(grantActionLabel(nStu, nSc, "on")) + "</button>" +
+                '<button type="button" class="btn danger" id="g-off">' + esc(grantActionLabel(nStu, nSc, "off")) + "</button>" +
+              "</div>" +
+              '<p class="hint">' + esc(objectPane.hint) + "</p>"
+              : "") +
+          "</section>" +
+        "</div>" +
+        '<section class="card ledger-card">' +
+          '<div class="pane-title"><h2>授权台账</h2><span class="n">' +
+            (ledgerQ ? "显示 " + people.length + " / " + peopleAll.length + " 人" : "共 " + peopleAll.length + " 人") +
+          "</span></div>" +
           '<div class="filters">' +
-            '<input id="g-q" class="q" value="' + esc(stuQ) + '" placeholder="搜姓名 / 手机号">' +
-            '<button type="button" class="sm" id="g-all">全选当前</button>' +
-            '<button type="button" class="sm" id="g-none">清空</button>' +
+            '<input id="lg-q" class="q" value="' + esc(ledgerQ) + '" placeholder="搜姓名 / 手机号">' +
           "</div>" +
-          (students.length
-            ? '<div class="g-list">' + students.map(function (s) {
-              var items = (byUser[s.id] || { items: [] }).items;
-              var n = items.filter(function (it) { return it.state && it.state.on; }).length;
-              return '<label class="g-row">' +
-                '<input type="checkbox" data-gsel="' + esc(s.id) + '"' + (stuSel[s.id] ? " checked" : "") + ">" +
-                '<span class="g-who">' + esc(s.displayName || "（未命名）") + "<i>" + esc(s.phone) + "</i></span>" +
-                (m ? '<span class="pill ' + (n === m ? "live" : "unpublished") + '">已开 ' + n + "/" + m + "</span>" : "") +
-              "</label>";
-            }).join("") + "</div>"
-            : '<div class="empty"><b>没有符合的学生</b></div>') +
+          (people.length
+            ? '<div class="lg-list">' + people.map(paintLedgerPerson).join("") + "</div>"
+            : '<p class="muted lg-empty">' + (peopleAll.length ? "没有符合的记录。" : "还没有给任何人开通过。") + "</p>") +
         "</section>" +
-        '<section class="card sheet">' +
-          '<div class="pane-title"><h2>开通对象</h2><span class="n">勾几个，一次就开通几个</span></div>' +
-          '<div class="g-list scope-list">' +
-            '<label class="g-row">' +
-              '<input type="checkbox" data-gscope="practice"' + (grantSel.practice ? " checked" : "") + ">" +
-              '<span class="g-who">真题题库<i>整个练习区</i></span>' +
-            "</label>" +
-            pkgs.map(function (p) {
-              var sc = "package:" + p.id;
-              return '<label class="g-row">' +
-                '<input type="checkbox" data-gscope="' + esc(sc) + '"' + (grantSel[sc] ? " checked" : "") + ">" +
-                '<span class="g-who">' + esc(p.title) + "<i>" + (p.kind === "single" ? "单科包" : "整套包") + "</i></span>" +
-              "</label>";
-            }).join("") +
-          "</div>" +
-          '<div class="minis" style="margin-top:.8rem">' +
-            '<label class="f"><span>开始（可空 = 立即）</span><input type="datetime-local" id="g-start" value="' + esc(gwStart) + '"></label>' +
-            '<label class="f"><span>到期（可空 = 不过期）</span><input type="datetime-local" id="g-exp" value="' + esc(gwExp) + '"></label>' +
-          "</div>" +
-          '<div class="actions" style="margin-top:.6rem">' +
-            '<button type="button" class="btn primary" id="g-on">开通 / 更新选中</button>' +
-            '<button type="button" class="btn danger" id="g-off">停用选中</button>' +
-          "</div>" +
-          '<p class="hint">批量规则：每位勾选的学生 × 每个勾选的对象，一次全部生效（共用上面的开始/到期时间）。模考关停或到期时，已开考的学生 24 小时内可考完本场；练习区停用后立即拦截。</p>' +
-          '<div class="ledger">' +
-            '<div class="picked-head"><span>授权台账（所选对象）</span><span>' + ledger.length + " 条</span></div>" +
-            (Object.keys(byUser).length
-              ? Object.keys(byUser).map(function (uid) {
-                var u = byUser[uid];
-                return '<div class="row2"><span class="who2">' + esc(u.name || u.phone || ("#" + uid)) +
-                  (u.name && u.phone ? ' <span class="muted">' + esc(u.phone) + "</span>" : "") + "</span>" +
-                  '<span class="lg-chips">' + u.items.map(function (it) {
-                    var on = it.state && it.state.on;
-                    return '<span class="lg-item"><span class="pill ' + (on ? "live" : "unpublished") + '">' +
-                      esc(scopeTitle(it.scope)) + " · " + esc(grantStateText(it.state)) + "</span>" +
-                      (on ? '<button type="button" class="sm danger" data-grev="' + esc(it.userId) + "|" + esc(it.scope) + '">收回</button>' : "") +
-                      "</span>";
-                  }).join("") + "</span></div>";
-              }).join("")
-              : '<p class="muted" style="margin:.4rem 0 0">所选对象还没给任何人开过。</p>') +
-          "</div>" +
-        "</section></div>";
+      "</div>";
   }
 
+  function updateGrantSummary() {
+    var nStu = selectedStudentIds().length;
+    var nSc = checkedScopes().length;
+    var stuN = document.querySelector(".grant-bench .pool-pane .pane-title .n");
+    if (stuN) stuN.textContent = "共 " + (stuList || []).length + " 人 · 已选 " + nStu + " 人";
+    var scN = document.querySelector(".grant-bench .sheet .pane-title .n");
+    if (scN) {
+      scN.textContent = grantBoard === "mock"
+        ? ("已选 " + nSc + " 个 · 整套和单科可一起勾")
+        : grantBoard === "practice" ? "整区一把开" : "独立板块，接口未接";
+    }
+    var on = document.getElementById("g-on");
+    var off = document.getElementById("g-off");
+    if (on) on.textContent = grantActionLabel(nStu, nSc, "on");
+    if (off) off.textContent = grantActionLabel(nStu, nSc, "off");
+  }
   function refreshLedger() {
-    var scopes = checkedScopes();
-    if (!scopes.length) { ledger = []; paint(); return Promise.resolve(); }
-    return api("/api/admin/grants?scopes=" + encodeURIComponent(scopes.join(",")))
+    if (isDemo) { paint(); return Promise.resolve(); }
+    return api("/api/admin/grants?scopes=" + encodeURIComponent("*"))
       .then(function (d) { ledger = d.grants || []; paint(); })
       .catch(function (e) { msg(e.message); ledger = []; paint(); });
   }
   function ensureGrant() {
+    if (isDemo) { paint(); return Promise.resolve(); }
     // 每次进开通都重拉包列表，刚上架的完整/单项模考才会出现
     var jobs = [api("/api/toefl/packages").then(function (d) { pkgs = d.packages || []; })];
     if (!stuList) jobs.push(api("/api/admin/students").then(function (d) { stuList = d.students || []; }));
@@ -703,6 +882,7 @@
   function submitGrants(action, ids, onlyScope) {
     var scopes = onlyScope ? [onlyScope] : checkedScopes();
     if (!scopes.length) { msg("先勾选右边的开通对象"); return; }
+    if (isDemo) { msg("演示页不写回服务器"); return; }
     var body = { scopes: scopes, studentIds: ids, action: action };
     if (action !== "off") {
       body.startAt = gwStart ? new Date(gwStart).toISOString() : "";
@@ -818,13 +998,51 @@
     assert.strictEqual(paused + revoked + aborted, 3);
     URL.revokeObjectURL = revoke;
     delete global.document;
+    pkgs = [{ id: "a", title: "整套A", kind: "full" }, { id: "b", title: "阅读专项", kind: "single" }];
+    grantSel = {};
+    grantBoard = "practice";
+    assert.strictEqual(boardOfScope("practice"), "practice");
+    assert.strictEqual(boardOfScope("package:a"), "mock");
+    assert.deepStrictEqual(checkedScopes(), []);
+    grantSel.practice = 1;
+    grantSel["package:a"] = 1;
+    assert.deepStrictEqual(checkedScopes(), ["practice"]);
+    grantBoard = "mock";
+    assert.deepStrictEqual(checkedScopes(), ["package:a"]);
+    grantBoard = "practice";
+    grantSel = {};
+    assert.deepStrictEqual(checkedScopes(), []);
+    assert.strictEqual(grantActionLabel(0, 0, "on"), "开通 / 更新选中");
+    assert.strictEqual(grantActionLabel(2, 3, "on"), "开通 / 更新 2 人 × 3 个对象");
+    assert.strictEqual(grantActionLabel(2, 3, "off"), "停用 2 人 × 3 个对象");
+    assert.strictEqual(scopeTitle("practice"), "真题题库");
+    assert.strictEqual(scopeTitle("package:a"), "整套A");
+    assert.strictEqual(scopeTitle("package:missing"), "missing");
+    assert.strictEqual(grantStateText({ on: true }), "已开通");
+    assert.strictEqual(grantStateText({ on: false, reason: "off" }), "已停用");
+    assert.deepStrictEqual(groupScopes("full"), ["package:a"]);
+    assert.deepStrictEqual(groupScopes("single"), ["package:b"]);
+    toggleGroup("full", true);
+    assert.ok(groupAllOn("full"));
+    assert.ok(!groupAllOn("single"));
+    var people = ledgerPeople([
+      { userId: 2, name: "李四", phone: "2", scope: "practice", state: { on: true } },
+      { userId: 1, name: "张三", phone: "1", scope: "package:b", state: { on: true } },
+      { userId: 1, name: "张三", phone: "1", scope: "practice", state: { on: true } }
+    ]);
+    assert.strictEqual(people.length, 2);
+    var zhang = people.filter(function (u) { return u.name === "张三"; })[0];
+    assert.ok(zhang);
+    assert.strictEqual(zhang.items[0].scope, "practice");
+    assert.strictEqual(zhang.items[1].scope, "package:b");
+    grantSel = {};
     console.log("ok prediction-ui-review-check");
     return;
   }
 
   /* ——— 事件 ——— */
   document.addEventListener("click", function (ev) {
-    var t = ev.target.closest("[data-tab],[data-bpv],[data-inspect],[data-sub],[data-off],[data-ok],[data-no],[data-pv],[data-grev],[data-refresh],#review-retry,#review-export,#g-on,#g-off,#g-all,#g-none,#refresh,#out");
+    var t = ev.target.closest("[data-tab],[data-bpv],[data-inspect],[data-sub],[data-off],[data-ok],[data-no],[data-pv],[data-grev],[data-ggrp],[data-gboard],[data-refresh],#review-retry,#review-export,#g-on,#g-off,#g-all,#g-none,#refresh,#out");
     if (!t) return;
     if (t.id === "refresh" || t.getAttribute("data-refresh")) { refreshNow(); return; }
     if (t.id === "out") {
@@ -860,8 +1078,21 @@
         .catch(function (e) { msg(e.message); });
       return;
     }
+    var gboard = t.getAttribute("data-gboard");
+    if (gboard) {
+      grantBoard = gboard;
+      ledgerQ = "";
+      paintGrant();
+      return;
+    }
     if (t.id === "g-all") { stuFiltered().forEach(function (s) { stuSel[s.id] = 1; }); paintGrant(); return; }
     if (t.id === "g-none") { stuSel = {}; paintGrant(); return; }
+    var ggrp = t.getAttribute("data-ggrp");
+    if (ggrp) {
+      toggleGroup(ggrp, !groupAllOn(ggrp));
+      paintGrant();
+      return;
+    }
     var grev = t.getAttribute("data-grev");
     if (grev) {
       var gp = String(grev).split("|");
@@ -869,7 +1100,7 @@
       return;
     }
     if (t.id === "g-on" || t.id === "g-off") {
-      var gids = Object.keys(stuSel).map(Number).filter(Boolean);
+      var gids = selectedStudentIds();
       if (!gids.length) { msg("先在左边勾选学生"); return; }
       var gsc = checkedScopes();
       if (!gsc.length) { msg("先勾选右边的开通对象"); return; }
@@ -919,7 +1150,8 @@
     else if (ev.target.getAttribute && ev.target.getAttribute("data-gscope") != null) {
       var gsc2 = ev.target.getAttribute("data-gscope");
       if (ev.target.checked) grantSel[gsc2] = 1; else delete grantSel[gsc2];
-      refreshLedger(); return;
+      paintGrant();
+      return;
     }
     else if (id === "g-start") { gwStart = ev.target.value; return; }
     else if (id === "g-exp") { gwExp = ev.target.value; return; }
@@ -928,6 +1160,7 @@
       if (gsel) {
         var gid = Number(gsel);
         if (ev.target.checked) stuSel[gid] = 1; else delete stuSel[gid];
+        updateGrantSummary();
       }
     }
   });
@@ -940,17 +1173,32 @@
   document.addEventListener("input", function (ev) {
     if (ev.target.id === "f-q") { F.q = ev.target.value.toLowerCase(); updatePoolList(); }
     else if (ev.target.id === "g-q") { stuQ = ev.target.value; filterStuRows(); }
+    else if (ev.target.id === "lg-q") { ledgerQ = ev.target.value; filterLedgerRows(); }
   });
 
   w.addEventListener("pagehide", clearReview);
 
   function filterStuRows() {
     var q = stuQ.toLowerCase();
-    document.querySelectorAll(".g-row").forEach(function (row) {
+    document.querySelectorAll(".stu-list .g-row").forEach(function (row) {
       var who = row.querySelector(".g-who");
       var hit = !q || (who ? who.textContent : "").toLowerCase().indexOf(q) >= 0;
       row.classList.toggle("hidden", !hit);
     });
+  }
+  function filterLedgerRows() {
+    var q = ledgerQ.toLowerCase();
+    var n = 0;
+    var total = 0;
+    document.querySelectorAll(".lg-person").forEach(function (row) {
+      var who = row.querySelector(".lg-who");
+      var hit = !q || (who ? who.textContent : "").toLowerCase().indexOf(q) >= 0;
+      row.classList.toggle("hidden", !hit);
+      total += 1;
+      if (hit) n += 1;
+    });
+    var count = document.querySelector(".ledger-card .pane-title .n");
+    if (count) count.textContent = q ? ("显示 " + n + " / " + total + " 人") : ("共 " + total + " 人");
   }
 
   document.getElementById("login-form").onsubmit = function (ev) {
@@ -996,8 +1244,27 @@
       { id: "tp_demo1", title: "十月冲刺模考 A 卷", kind: "full", status: "live", owner: "teacher", skillMinutes: { reading: 35, listening: 36, writing: 29, speaking: 16 }, blocks: [pool[0], pool[4], pool[7], pool[10]], updatedAt: "2026-10-13T10:24:00" },
       { id: "tp_demo2", title: "阅读专项 · 学术文章", kind: "single", status: "draft", owner: "teacher", skillMinutes: {}, blocks: [pool[2], pool[3]], updatedAt: "2026-10-12T18:02:00" }
     ];
+    isDemo = true;
+    pkgs = [
+      { id: "tp_demo1", title: "十月冲刺模考 A 卷", kind: "full" },
+      { id: "tp_demo3", title: "十一月整套冲刺", kind: "full" },
+      { id: "tp_demo2", title: "阅读专项 · 学术文章", kind: "single" }
+    ];
+    stuList = [
+      { id: 1, displayName: "张三", phone: "13800000001" },
+      { id: 2, displayName: "李四", phone: "13900000002" },
+      { id: 3, displayName: "馨馨", phone: "13700000003" }
+    ];
+    ledger = [
+      { userId: 1, name: "张三", phone: "138****0001", scope: "practice", state: { on: true } },
+      { userId: 1, name: "张三", phone: "138****0001", scope: "package:tp_demo1", state: { on: true, expireAt: "2026-11-01T00:00:00.000Z" } },
+      { userId: 2, name: "李四", phone: "139****0002", scope: "practice", state: { on: false, reason: "off" } },
+      { userId: 3, name: "馨馨", phone: "137****0003", scope: "package:tp_demo2", state: { on: false, reason: "scheduled", startAt: "2026-11-01T00:00:00.000Z" } }
+    ];
     var dt = (w.location.search.match(/(?:\?|&)tab=(pool|mine|grant)(?:&|$)/) || [])[1];
     if (dt) tab = dt;
+    var dbd = (w.location.search.match(/(?:\?|&)board=(practice|ai|mock)(?:&|$)/) || [])[1];
+    if (dbd) grantBoard = dbd;
     show("app");
     paint();
     return;
