@@ -8,7 +8,7 @@ var path = require("path");
 var { execFileSync, spawn } = require("child_process");
 
 app.setName("优益思达题库中心");
-var START_URL = process.env.YYSD_URL || "https://tiku.youyisida.com/?v=20261015prev1";
+var START_URL = process.env.YYSD_URL || "https://tiku.youyisida.com/?v=20261027grant1";
 var splashWin = null;
 var siteWin = null;
 var shown = false;
