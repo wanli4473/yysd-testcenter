@@ -164,4 +164,11 @@ Object.keys(LIB).forEach(skill => {
     if (g.zh && LIB[skill].find(m => m.type === g.type).sub) assert.equal(g.zh, LIB[skill].find(m => m.type === g.type).zh, skill + "/" + g.type + " 卡面中文行 = segmented 标签，同一屏不能两个名字");
   });
 });
+["practice.html", "home.html", "profile.html", "review.html", "free.html"].forEach(function (name) {
+  var html = fs.readFileSync(path.join(ROOT, "app", name), "utf8");
+  assert.match(html, /toefl-lab\.js\?v=20261027exam2/, name + " 与考场共用同一份 lab");
+});
+var exam = fs.readFileSync(path.join(ROOT, "toefl-listening.html"), "utf8");
+assert.match(exam, /toefl-lab\.js\?v=20261027exam2/, "听力考场 lab 版本");
+assert.match(exam, /armQuestionClock/, "听力考场是现在的新托福系统");
 console.log("ok hit-lib-check: links/span-state/filters/search/layout/escaping/one-parse; 4 skills match bank-catalog");
