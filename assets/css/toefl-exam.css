@@ -13,13 +13,13 @@ body.exam-ets .ets-frame {
   box-shadow: 0 0 0 1px #bdbdbd;
 }
 body.exam-ets .ets-bar {
-  height: 54px;
-  background: #077f83;
+  height: 50px;
+  background: #394251;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 4px 0 12px;
+  padding: 0 10px;
   gap: 8px;
 }
 body.exam-ets .ets-bar-left,
@@ -45,24 +45,28 @@ body.exam-ets .ets-bar b {
   font-weight: 500;
   color: #fff;
 }
+/* 2026 顶栏左边是 Pause Test，科目标题在 .ets-sub */
+body.exam-ets .ets-bar:has(#exit-btn) .ets-wordmark,
+body.exam-ets .ets-bar:has(#exit-btn) .ets-split,
+body.exam-ets .ets-bar:has(#exit-btn) .ets-bar-left > b { display: none; }
 body.exam-ets #mode-tag { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 body.exam-ets .ets-bar button {
-  height: 46px;
-  min-width: 62px;
-  background-color: #434244;
-  background-image: linear-gradient(#585858, #434244);
-  border: 1px solid #9a9a9a;
+  height: 36px;
+  min-width: 72px;
+  background: #596271;
+  border: 0;
   color: #fff;
-  border-radius: 3px;
-  padding: 2px 10px 3px;
+  border-radius: 12px;
+  padding: 2px 12px 3px;
   cursor: pointer;
   font-size: 11px;
   line-height: 1.1;
+  white-space: nowrap;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 2px;
 }
 body.exam-ets .ets-bar button::before {
   content: "";
@@ -73,22 +77,19 @@ body.exam-ets .ets-bar button::before {
   mask: var(--ets-ico) center / contain no-repeat;
 }
 body.exam-ets #vol-btn { --ets-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M3 9v6h4l5 5V4L7 9H3zm11.5 3a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 14.5 12z'/%3E%3C/svg%3E"); }
-body.exam-ets #exit-btn { --ets-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M10 4H5v16h5v-2H7V6h3V4zm2.4 3.4L11 8.8 13.2 11H9v2h4.2L11 15.2l1.4 1.4L17 12z'/%3E%3C/svg%3E"); }
+body.exam-ets #exit-btn { min-width: 88px; --ets-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M6 5h4v14H6zm8 0h4v14h-4z'/%3E%3C/svg%3E"); }
+body.exam-ets #leave-btn { min-width: 88px; --ets-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 19h6v2H4a2 2 0 01-2-2V5c0-1.1.9-2 2-2h6v2H4v14z'/%3E%3C/svg%3E"); }
 body.exam-ets #help-btn { --ets-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm1.1-6.5l-.9.9A2.2 2.2 0 0012 13h-1v-.5c0-.8.3-1.5 1-2l1.2-1.2a1.5 1.5 0 10-2.4-1.6H8.5a3.5 3.5 0 116.6 1.8z'/%3E%3C/svg%3E"); }
 body.exam-ets #review-btn { --ets-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z'/%3E%3C/svg%3E"); }
 body.exam-ets #back-btn { --ets-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M15.4 5.4L14 4l-8 8 8 8 1.4-1.4L8.8 12z'/%3E%3C/svg%3E"); }
 body.exam-ets #next-btn { --ets-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M8.6 5.4L10 4l8 8-8 8-1.4-1.4L15.2 12z'/%3E%3C/svg%3E"); }
-body.exam-ets .ets-bar button:hover { background-image: linear-gradient(#676767, #525154); }
+body.exam-ets .ets-bar button:hover { background: #677183; }
 body.exam-ets .ets-bar button:disabled { opacity: 0.35; cursor: default; }
-body.exam-ets .ets-bar #next-btn,
-body.exam-ets .ets-bar #back-btn {
-  background-color: #305481;
-  background-image: linear-gradient(#3b69a0, #305481);
-  border-color: #89a4c6;
-  color: #fff;
+body.exam-ets .ets-bar #next-btn {
+  background: #fff;
+  color: #394251;
 }
-body.exam-ets .ets-bar #next-btn:hover,
-body.exam-ets .ets-bar #back-btn:hover { background-image: linear-gradient(#4173b0, #355e90); }
+body.exam-ets .ets-bar #next-btn:hover { background: #f3f4f6; }
 body.exam-ets .ets-clock {
   min-width: 52px;
   text-align: right;
@@ -97,7 +98,7 @@ body.exam-ets .ets-clock {
   color: #fff;
 }
 body.exam-ets .ets-sub {
-  height: 36px;
+  height: 29px;
   background: #fff;
   border-bottom: 1px solid #e8e8e8;
   display: flex;
@@ -122,10 +123,22 @@ body.exam-ets .ets-sub #hide-time {
   height: auto;
   background: transparent;
   border: 0;
-  color: #4b5563;
+  color: #394251;
   padding: 0;
   border-radius: 0;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+body.exam-ets .ets-sub #hide-time::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 5c5.5 0 9.5 4.5 10.5 7-1 2.5-5 7-10.5 7S2.5 14.5 1.5 12C2.5 9.5 6.5 5 12 5zm0 3.5A3.5 3.5 0 1012 15a3.5 3.5 0 000-6.5z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 5c5.5 0 9.5 4.5 10.5 7-1 2.5-5 7-10.5 7S2.5 14.5 1.5 12C2.5 9.5 6.5 5 12 5zm0 3.5A3.5 3.5 0 1012 15a3.5 3.5 0 000-6.5z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 body.exam-ets .ets-dir-table {
   width: 100%;
@@ -240,6 +253,50 @@ body.exam-ets .ets-big-clock {
   font-size: 42px;
   font-variant-numeric: tabular-nums;
 }
+body.exam-ets .ets-response {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  width: min(420px, 90%);
+}
+body.exam-ets .ets-response.is-on { display: block; }
+body.exam-ets .ets-response-hat {
+  background: #596271;
+  color: #fff;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  border-radius: 8px 8px 0 0;
+}
+body.exam-ets .ets-response-body {
+  background: #fff;
+  border: 1px solid #c5c9d0;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #394251;
+}
+body.exam-ets .ets-response-mic {
+  width: 26px;
+  height: 26px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 0014 0h-2zm-5 8a1 1 0 011 1v1h-2v-1a1 1 0 011-1z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 0014 0h-2zm-5 8a1 1 0 011 1v1h-2v-1a1 1 0 011-1z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+body.exam-ets .ets-response-clock {
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+body.exam-ets .ets-speak-stage { position: relative; }
 body.exam-ets .ets-scene {
   width: min(560px, 92vw);
   height: 280px;
@@ -289,11 +346,25 @@ body.exam-ets .ets-vol-pop {
   z-index: 40;
   background: #fff;
   border: 1px solid #c5c9d0;
-  padding: 12px 14px;
-  width: 220px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-top: 0;
+  padding: 10px 12px 12px;
+  width: 240px;
 }
+body.exam-ets .ets-vol-meter {
+  display: flex;
+  gap: 2px;
+  height: 28px;
+  align-items: flex-end;
+  margin: 0 0 8px;
+}
+body.exam-ets .ets-vol-meter i {
+  flex: 1;
+  background: #d7dde4;
+  min-height: 4px;
+}
+body.exam-ets .ets-vol-meter i.is-on { background: #394251; }
 body.exam-ets .ets-vol-pop input { width: 100%; }
+body.exam-ets .ets-vol-pop label { display: block; margin: 0 0 6px; font-size: 13px; }
 body.exam-ets #ets-pause {
   position: fixed;
   inset: 0;
@@ -312,7 +383,24 @@ body.exam-ets #ets-pause > div {
 }
 body.exam-ets #ets-pause h2 { margin: 0 0 10px; font-size: 20px; }
 body.exam-ets #ets-pause p { margin: 0 0 18px; color: #4b5563; }
+body.exam-ets #ets-pause .btn,
+body.exam-ets .ets-exit-acts .btn {
+  height: 36px;
+  min-width: 88px;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+body.exam-ets #ets-resume { background: #fff; color: #394251; border: 1px solid #c5c9d0; }
+body.exam-ets #ets-pause-exit { background: #596271; }
 body.exam-ets.ets-booting .ets-sub { display: none !important; }
+body.exam-ets.ets-playing #exit-btn,
+body.exam-ets.ets-playing #help-btn,
+body.exam-ets.ets-playing #next-btn,
+body.exam-ets.ets-playing #review-btn,
+body.exam-ets.ets-playing #back-btn,
+body.exam-ets.ets-playing #hide-time,
+body.exam-ets.ets-playing .ets-sub-time { display: none !important; }
 body.exam-ets .exam-body {
   padding: 16px 16px 24px;
   min-height: calc(100vh - 84px);
@@ -326,7 +414,7 @@ body.exam-ets .exam-title {
 body.exam-ets .exam-body.is-cw .ets-hl-bar { display: none; }
 body.exam-ets .exam-body.is-cw .exam-title {
   text-align: center;
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 600;
   color: #414042;
   margin: 28px 16px 36px;
@@ -373,43 +461,52 @@ body.exam-ets .ets-hl-pop button:last-child { border-right: 0; }
 body.exam-ets .ets-hl-pop button:hover { background: #4c5769; }
 body.exam-ets .ets-hl-pop button.hidden { display: none; }
 body.exam-ets .blank {
+  --cw: 1.2ch;
   display: inline-flex;
   align-items: baseline;
   margin: 0 1px;
 }
 body.exam-ets .blank-pre { font-weight: 500; }
-/* CW：一个空 = 一个 input，「一字母一横线」是底纹画出来的（1:1 照 wofo.cc） */
+body.exam-ets .blank-done { display: none; }
+body.exam-ets .blank.is-full .blank-pre,
+body.exam-ets .blank.is-full .blank-track { display: none; }
+body.exam-ets .blank.is-full .blank-done { display: inline; cursor: text; }
+/* CW：一格一字母、格宽固定（--cw 要容得下 m/w）。字母宽度 ≠ 定宽轨道，正是「填完还多出一格」的根因 */
+body.exam-ets .blank-track {
+  position: relative;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--cw);
+  align-items: baseline;
+  line-height: 1.25;
+  background: #d7d7d7;
+  padding: 0 2px;
+}
+body.exam-ets .blank-track i {
+  font-style: normal;
+  text-align: center;
+  padding-bottom: 2px;
+  /* 短横比格子窄 3px，否则相邻格的横线连成一条，看不出「一字母一横」 */
+  background: linear-gradient(#8a8a8a, #8a8a8a) left bottom / calc(100% - 3px) 2px no-repeat;
+}
+/* 考场里不要蓝色圆角焦点框；焦点只加深格线 */
+body.exam-ets .blank-track:focus-within i { background-image: linear-gradient(#1f1f1f, #1f1f1f); }
 body.exam-ets .blank input {
-  width: calc(var(--n) * 1.3ch);
-  margin: 0 1px;
+  position: absolute;
+  inset: 0;
   padding: 0;
   border: 0;
   border-radius: 0;
-  background-color: transparent;
-  background-image: repeating-linear-gradient(
-    90deg,
-    #696969 0, #696969 1ch,
-    transparent 1ch, transparent 1.3ch
-  );
-  background-position: 0 100%;
-  background-size: 100% 1px;
-  background-repeat: no-repeat;
+  background: transparent;
   font: inherit;
-  color: inherit;
-  height: 1.25em;
-  line-height: 1.25;
-  letter-spacing: 0.12em;
+  /* 等宽步进补到 --cw：光标严格落在格边界；文字透明，可见字母由格子镜像出来 */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: calc(var(--cw) - 1ch);
+  color: transparent;
+  caret-color: #1f1f1f;
 }
-/* 考场里不要蓝色圆角焦点框；焦点用加深加粗的底纹横线表达 */
-body.exam-ets .blank input:focus {
-  outline: 0;
-  background-image: repeating-linear-gradient(
-    90deg,
-    #1f1f1f 0, #1f1f1f 1ch,
-    transparent 1ch, transparent 1.3ch
-  );
-  background-size: 100% 2px;
-}
+body.exam-ets .blank input:focus { outline: 0; }
+body.exam-ets .blank input::selection { background: rgba(31, 31, 31, 0.18); }
 body.exam-ets mark.vocab-hl {
   background: #ffe566;
   color: inherit;
@@ -431,22 +528,25 @@ body.exam-ets .opt input { margin-top: 4px; flex: 0 0 auto; }
 body.exam-ets .opt b { font-weight: 600; min-width: 1.2em; }
 body.exam-ets .opt:hover { color: #111; }
 body.exam-ets .insert {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: 2px solid #394251;
-  background: #fff;
-  border-radius: 2px;
+  display: inline;
+  border: 0;
+  background: transparent;
   padding: 0;
-  margin: 0 6px 0 0;
+  margin: 0 2px;
   cursor: pointer;
-  font-size: 12px;
+  font: inherit;
   font-weight: 700;
-  vertical-align: middle;
+  color: #1b1b1b;
+  vertical-align: baseline;
 }
-body.exam-ets .insert.is-on { background: #ffe566; border-color: #c4a000; }
+body.exam-ets .insert.is-on { background: #fff3b0; }
+body.exam-ets .insert-sent {
+  margin: 0 0 12px;
+  color: #0f6e6e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
 body.exam-ets .review {
   max-width: 760px;
   background: #fff;
@@ -489,7 +589,30 @@ body.exam-ets .btn {
   cursor: pointer;
 }
 body.exam-ets .btn-ghost { background: transparent; color: #fff; border: 1px solid #fff; }
-body.exam-ets #help-box,
+body.exam-ets #help-box {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #c8c8c8;
+  display: none;
+  padding: 0;
+  overflow: auto;
+}
+body.exam-ets #help-box:not(.hidden) { display: block; }
+body.exam-ets #help-box > .ets-help,
+body.exam-ets #help-box > div {
+  width: min(1024px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  background: #fff;
+  border: 0;
+  padding: 28px 32px 40px;
+  color: #1b1b1b;
+  box-shadow: 0 0 0 1px #bdbdbd;
+}
+body.exam-ets .ets-help h2 { margin: 0 0 18px; font-size: 22px; font-weight: 700; }
+body.exam-ets .ets-help h3 { margin: 22px 0 8px; font-size: 16px; font-weight: 700; }
+body.exam-ets .ets-help p { margin: 0 0 10px; line-height: 1.55; }
 body.exam-ets #void-lock {
   position: fixed;
   inset: 0;
@@ -500,7 +623,6 @@ body.exam-ets #void-lock {
   justify-content: center;
   padding: 24px;
 }
-body.exam-ets #help-box:not(.hidden),
 body.exam-ets #void-lock.is-visible { display: flex; }
 body.exam-ets #void-lock {
   z-index: 100000;
@@ -508,13 +630,12 @@ body.exam-ets #void-lock {
   color: #fff;
   text-align: center;
 }
-body.exam-ets #help-box > div,
 body.exam-ets #void-lock > div {
   width: min(560px, 100%);
-  background: #fff;
-  border: 1px solid #c5c9d0;
+  background: transparent;
+  border: 0;
   padding: 20px 22px;
-  color: #1b1b1b;
+  color: #fff;
 }
 body.exam-ets #void-lock > div { background: transparent; border: 0; color: #fff; }
 body.exam-ets #mode-tag { font-size: 12px; color: #cbd5e1; }
@@ -637,6 +758,52 @@ body.exam-ets .dl-card--poster { border-color: #0f3d5e; }
 body.exam-ets .dl-card--poster h2 { background: #0f3d5e; color: #fff; padding: 16px; }
 body.exam-ets .dl-card--schedule h2 { background: #134e4a; color: #fff; padding: 16px; }
 body.exam-ets .dl-card--course h2 { background: #1e3a5f; color: #fff; padding: 16px; }
+body.exam-ets .dl-mail { border-bottom: 1px solid #c5c9d0; background: #f3f4f6; }
+body.exam-ets .dl-mail-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+  padding: 6px 16px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+body.exam-ets .dl-mail-row:first-child { border-top: 0; }
+body.exam-ets .dl-mail-row b { color: #6b7280; font-weight: 600; font-size: 12px; }
+body.exam-ets .dl-card--email .dl-body { padding: 14px 16px 16px; }
+body.exam-ets .dl-who {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px 8px;
+}
+body.exam-ets .dl-who i {
+  width: 32px;
+  height: 32px;
+  background: #596271;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 13px/1 Helvetica, Arial, sans-serif;
+  font-style: normal;
+  flex: 0 0 auto;
+}
+body.exam-ets .dl-who b { display: block; font-size: 14px; }
+body.exam-ets .dl-who span { color: #6b7280; font-size: 12px; }
+body.exam-ets .dl-chat { padding: 8px 16px 16px; }
+body.exam-ets .dl-msg { margin: 0 0 12px; }
+body.exam-ets .dl-msg-h { display: flex; gap: 8px; align-items: baseline; }
+body.exam-ets .dl-msg-h span { color: #6b7280; font-size: 12px; }
+body.exam-ets .dl-msg p { margin: 4px 0 0; white-space: pre-wrap; }
+body.exam-ets .dl-card--notice .dl-kicker {
+  background: #394251;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 11px;
+  padding: 8px 16px;
+}
+body.exam-ets .dl-card--notice h2 { padding: 14px 16px 8px; }
 
 body.exam-ets .sc-context { margin: 0 0 14px; color: #374151; }
 body.exam-ets .sc-response { font-size: 18px; line-height: 2.1; margin: 0 0 18px; }
@@ -673,7 +840,18 @@ body.exam-ets .write-split {
 body.exam-ets .write-split .exam-card + .exam-card { border-left: 1px solid #c5c9d0; }
 body.exam-ets .write-prompt ul { margin: 8px 0 16px; padding-left: 18px; }
 body.exam-ets .write-meta { color: #4b5563; font-size: 13px; }
+body.exam-ets .write-head { margin: 0 0 10px; }
+body.exam-ets .write-field {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 7px 0;
+  border-bottom: 1px solid #e8e8e8;
+  font-size: 14px;
+}
+body.exam-ets .write-field b { min-width: 4.6em; font-weight: 700; }
 body.exam-ets .write-compose { display: flex; flex-direction: column; min-height: 420px; }
+body.exam-ets .write-compose #disc-posts { margin: 0 0 12px; }
 body.exam-ets .write-tools {
   display: flex;
   flex-wrap: wrap;
@@ -729,7 +907,7 @@ body.exam-ets .review audio { display: block; width: 100%; margin: 0 0 8px; }
   body.exam-ets .exam-split,
   body.exam-ets .write-split { grid-template-columns: 1fr; }
   body.exam-ets .exam-card + .exam-card { border-left: 0; border-top: 1px solid #c5c9d0; }
-  body.exam-ets .ets-bar { flex-wrap: wrap; height: auto; padding: 8px 10px; }
+  body.exam-ets .ets-bar { flex-wrap: wrap; height: auto; min-height: 50px; padding: 8px 10px; }
   body.exam-ets .dl-fields--3,
   body.exam-ets .dl-fields--4,
   body.exam-ets .dl-cols { grid-template-columns: 1fr; }

@@ -150,6 +150,7 @@
       if (idx < 0) return;
       var k = resultKey(skill, paperId, idx);
       if (!map[k]) map[k] = { items: [], at: Date.now() };
+      if (!Array.isArray(map[k].items)) map[k].items = [];
       map[k].items = map[k].items.filter(function (x) { return String(x.no) !== String(d.id); });
       map[k].items.push({ no: d.id, ok: !!d.ok, ua: d.ua || "", expect: d.expect || "" });
       map[k].at = Date.now();
@@ -342,6 +343,53 @@
     return 0;
   }
 
+  /* hanginthere.cn 的每题限时口径；阅读区它只给正计时，所以这里不给秒数 */
+  var LIMITS = {
+    choose_response: 20, conversation: 20, announcement: 20, lecture: 30,
+    email: 420, discussion: 600, sentence: 410
+  };
+  var MOCK_MIN = { reading: 30, listening: 29, writing: 23, speaking: 8 };
+  var CLOCK_KEY = "yysd:toefl-clock";
+  function limitSec(type) { return LIMITS[type] || 0; }
+  function clockMap() {
+    try { return parse(w.localStorage.getItem(CLOCK_KEY) || "{}", {}) || {}; } catch (e) { return {}; }
+  }
+  function clampLeft(saved, total) {
+    var v = Number(saved);
+    return Number.isFinite(v) ? Math.min(total, Math.max(0, Math.floor(v))) : total;
+  }
+  /* 剩余秒按题存盘：刷新或退出再回来接着走，限时不能被一次 F5 绕过 */
+  function leftOf(key, total) { return clampLeft(clockMap()[key], total); }
+  function elapsedOf(key) {
+    var v = Number(clockMap()[key]);
+    return Number.isFinite(v) && v > 0 ? Math.floor(v) : 0;
+  }
+  function saveLeft(key, left) {
+    try {
+      var map = clockMap();
+      map[key] = Math.max(0, Math.floor(left));
+      w.localStorage.setItem(CLOCK_KEY, JSON.stringify(map));
+    } catch (e) {}
+  }
+  function dropLeft(key) {
+    try {
+      var map = clockMap();
+      delete map[key];
+      w.localStorage.setItem(CLOCK_KEY, JSON.stringify(map));
+    } catch (e) {}
+  }
+  function mockRemain(skill, type) {
+    if (type) {
+      var lim = limitSec(type);
+      if (lim) return lim;
+    }
+    if (w.YYSD_TIKU_RUN && typeof YYSD_TIKU_RUN.clockSec === "function") {
+      return YYSD_TIKU_RUN.clockSec(skill);
+    }
+    var min = MOCK_MIN[skill];
+    return min ? min * 60 : 0;
+  }
+
   var paintFav = null;
   function bindBar(ctx) {
     var taskBtn = document.getElementById("fav-task-btn");
@@ -425,6 +473,7 @@
     isDone: isDone,
     isFavCard: isFavCard,
     markSessionDone: markSessionDone,
+    findTaskIndex: findTaskIndex,
     saveScore: saveScore,
     logAttempt: logAttempt,
     attempts: attempts,
@@ -442,6 +491,13 @@
     qLabel: qLabel,
     nextModule: nextModule,
     screenIndexForQ: screenIndexForQ,
+    limitSec: limitSec,
+    leftOf: leftOf,
+    elapsedOf: elapsedOf,
+    saveLeft: saveLeft,
+    dropLeft: dropLeft,
+    clampLeft: clampLeft,
+    mockRemain: mockRemain,
     bindBar: bindBar,
     get paintFav() { return paintFav; }
   };

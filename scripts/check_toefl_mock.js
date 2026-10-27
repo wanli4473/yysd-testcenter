@@ -121,8 +121,8 @@ var run = trSb.YYSD_TIKU_RUN.start({
   only: "listening"
 });
 assert.strictEqual(run.i, 2, "只考听力：从听力第一个题块开始");
-assert.strictEqual(trSb.YYSD_TIKU_RUN.advance("listening", null), true, "听力做完即结束");
-assert.ok(jumps[jumps.length - 1].indexOf("done=1") >= 0, "结束走交卷回跳");
+assert.strictEqual(trSb.YYSD_TIKU_RUN.advance("listening", null), false, "最后一块交给成绩单，不回列表");
+assert.strictEqual(trSb.YYSD_TIKU_RUN.load(), null, "结束后清掉组卷");
 
 assert.strictEqual(F.mockHubHref("full"), "app/mock.html?kind=full");
 assert.ok(F.skillHref("2025-07-04", "mock", "reading").indexOf("full=1") >= 0);

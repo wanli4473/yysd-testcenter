@@ -216,17 +216,39 @@
 
   function reviewHref(skill) {
     var preview = false;
+    var mode = "";
+    var bank = "";
     try {
-      preview = typeof location !== "undefined" && new URLSearchParams(location.search).get("preview") === "1";
+      var q = new URLSearchParams(location.search);
+      preview = q.get("preview") === "1";
+      mode = q.get("mode") || "";
+      bank = q.get("bank") || "";
     } catch (e0) {}
     var href = (onAppHost() ? "" : "app/") + "review.html?skill=" + encodeURIComponent(skill);
     if (preview) href += "&preview=1";
+    if (mode) href += "&mode=" + encodeURIComponent(mode);
+    if (bank) href += "&bank=" + encodeURIComponent(bank);
     return href;
   }
 
   /* 复盘页只有 sessionStorage 里这一份答卷，整场其余科目由页面自己按 sid 从模考历史重建 */
   function reviewGo(skill, paper, payload) {
     stashReview(skill, paper, payload);
+    var bank = "";
+    try { bank = new URLSearchParams(location.search).get("bank") || ""; } catch (e) {}
+    // 组卷：同科直接下一块；换科先官方休息屏；最后一块出成绩单+解析
+    if (bank && w.YYSD_TIKU_RUN) {
+      var nxt = w.YYSD_TIKU_RUN.peek && w.YYSD_TIKU_RUN.peek(bank);
+      if (nxt && !nxt.end && nxt.block && nxt.block.skill !== skill) {
+        if (fillRest(skill, "", "", function () {
+          w.YYSD_TIKU_RUN.advance(skill, payload, bank);
+        }, nxt.block.skill)) return;
+      }
+      var run = w.YYSD_TIKU_RUN.load && w.YYSD_TIKU_RUN.load();
+      var last = !!(nxt && nxt.end && run && run.kind !== "practice" && !run.preview);
+      if (w.YYSD_TIKU_RUN.advance(skill, payload, bank)) return;
+      if (last) examDone(bank);
+    }
     go(reviewHref(skill));
   }
 
@@ -236,26 +258,36 @@
     return true;
   }
 
-  function restCopy(skill) {
+  function restCopy(skill, next) {
     return "You have finished the " + label(skill) + " section. You cannot return. The next section is " +
-      label(nextSkill(skill)) + ". Select Continue when you are ready.";
+      label(next || nextSkill(skill)) + ". Select Continue when you are ready.";
   }
 
-  function fillRest(skill, id, mode) {
+  function fillRest(skill, id, mode, onContinue, nextName) {
     var rest = document.getElementById("rest");
-    if (!rest) return;
+    if (!rest) return false;
+    ["exam", "review", "done"].forEach(function (pane) {
+      var n = document.getElementById(pane);
+      if (n) n.classList.add("hidden");
+    });
+    var intro = document.getElementById("ets-intro");
+    if (intro) intro.classList.add("hidden");
+    rest.classList.remove("hidden");
+    document.body.classList.remove("ets-gate-on", "ets-results");
+    var gate = document.getElementById("ets-gate");
+    if (gate) gate.classList.add("hidden");
     var h = rest.querySelector("h1, h2");
     var p = rest.querySelector("p");
-    var go = document.getElementById("rest-go");
+    var goBtn = document.getElementById("rest-go");
     if (h) h.textContent = "End of " + label(skill) + " Section";
     var copy = rest.querySelector("#rest-copy") || p;
-    if (copy) copy.textContent = restCopy(skill);
+    if (copy) copy.textContent = restCopy(skill, nextName);
     var acts = rest.querySelector("#rest-acts");
     if (acts) acts.textContent = "";
-    var goNext = function () { go(nextHref(id, mode, skill)); };
-    if (go) {
-      go.textContent = "Continue";
-      go.onclick = goNext;
+    var goNext = typeof onContinue === "function" ? onContinue : function () { go(nextHref(id, mode, skill)); };
+    if (goBtn) {
+      goBtn.textContent = "Continue";
+      goBtn.onclick = goNext;
     }
     var next = document.getElementById("next-btn");
     if (next) {
@@ -264,8 +296,12 @@
       next.textContent = "Continue";
       next.onclick = goNext;
     }
+    // 这一屏只有 Continue 能用；调用方必须在 show() 之后再 fillRest，否则会被 setNav 关掉
+    var rev = document.getElementById("review-btn");
+    if (rev) rev.disabled = true;
     var back = document.getElementById("back-btn");
     if (back) back.classList.add("hidden");
+    return true;
   }
 
   function dressVoidUI() {

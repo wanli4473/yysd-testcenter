@@ -31,4 +31,26 @@ var clipped = screens.filter(function (s) {
 if (clipped.length !== 7) throw new Error("clip speaking repeat group");
 var genericHot = items.some(function (i) { return i.hot && /^choose a response$/i.test(i.title); });
 if (genericHot) throw new Error("generic titles must not be hot");
+var labSrc = fs.readFileSync(path.join(ROOT, "assets/js/toefl-lab.js"), "utf8");
+["function leftOf", "function saveLeft", "function dropLeft", "function limitSec", "function mockRemain"].forEach(function (fn) {
+  if (labSrc.indexOf(fn) < 0) throw new Error("toefl-lab missing " + fn);
+});
+var listen = fs.readFileSync(path.join(ROOT, "toefl-listening.html"), "utf8");
+if (listen.indexOf("armQuestionClock") < 0 || listen.indexOf("Lab.leftOf") < 0) {
+  throw new Error("listening must keep per-question countdown");
+}
+if (listen.indexOf("confirmSubmit") < 0 || listen.indexOf("leave-btn") < 0) {
+  throw new Error("listening must keep Submit confirm + Exit Test");
+}
+var vm = require("vm");
+var labCtx = { localStorage: { getItem: function () { return null; }, setItem: function () {} } };
+labCtx.window = labCtx;
+vm.runInNewContext(labSrc, labCtx);
+var L = labCtx.YYSD_TOEFL_LAB;
+if (L.limitSec("choose_response") !== 20 || L.limitSec("lecture") !== 30) throw new Error("listening limits");
+if (L.leftOf("x", 20) !== 20) throw new Error("leftOf empty starts full");
+if (L.mockRemain("listening") !== 29 * 60) throw new Error("mockRemain listening");
+var paper = { tasks: [{ type: "choose_response", questions: [{ id: 1 }] }] };
+L.markSessionDone("listening", "set-6", paper, 0, 0);
+L.saveScore("listening", "set-6", paper, [{ id: 1, ok: true, ua: "A", expect: "A" }]);
 console.log("ok toefl-lab-check", items.length, "cards", dups, "repeated speaking titles split per form");

@@ -70,6 +70,38 @@
         "</tbody></table>" +
         "<p>Select <b>Begin</b> to go on.</p>"
     },
+    help: {
+      reading:
+        "<h3>Testing Tools</h3>" +
+        "<p>Use <b>Next</b> and <b>Back</b> to move between questions in this module. You may skip questions and return to them later if time remains.</p>" +
+        "<p>Use <b>Review</b> to see which questions you have answered. From Review, you may go only to questions you have already seen.</p>" +
+        "<p><b>Hide Time</b> hides the clock; the clock does not stop. <b>Help</b> does not stop the clock. <b>Volume</b> adjusts the headset volume. <b>Pause Test</b> pauses the test.</p>" +
+        "<h3>Reading the Passage</h3>" +
+        "<p>Select text in the passage to highlight it. Vocabulary questions highlight the word in the passage.</p>" +
+        "<p>Insert questions show <b>[A] [B] [C] [D]</b> in the passage. Select an option on the right, or select a location in the passage.</p>" +
+        "<h3>Section Directions</h3>" +
+        "<p>You cannot return to Module 1 after you begin Module 2.</p>",
+      listening:
+        "<h3>Testing Tools</h3>" +
+        "<p>Use <b>Next</b> to move to the next question. You cannot return to a question. <b>Volume</b> stays available while audio plays.</p>" +
+        "<p><b>Hide Time</b> hides the clock; the clock does not stop. <b>Help</b> does not stop the clock.</p>" +
+        "<h3>Section Directions</h3>" +
+        "<p>Choose a Response shows the options with the clip. Conversations, announcements, and lectures play first; questions appear after the recording ends.</p>" +
+        "<p>The audio plays once and cannot be replayed. You cannot return to Module 1 after you begin Module 2.</p>",
+      writing:
+        "<h3>Testing Tools</h3>" +
+        "<p>Use <b>Cut</b>, <b>Copy</b>, <b>Paste</b>, <b>Undo</b>, and <b>Redo</b> while you write. <b>Hide Word Count</b> hides the counter.</p>" +
+        "<p><b>Hide Time</b> hides the clock; the clock does not stop. <b>Help</b> does not stop the clock.</p>" +
+        "<h3>Section Directions</h3>" +
+        "<p>Sentence Construction: drag a word into a blank, or tap a word to fill the next blank. Tap a filled blank to return the word.</p>" +
+        "<p>You cannot return to an earlier writing task after you leave it.</p>",
+      speaking:
+        "<h3>Testing Tools</h3>" +
+        "<p><b>Volume</b> stays available while audio plays. <b>Help</b> does not stop the clock.</p>" +
+        "<h3>Section Directions</h3>" +
+        "<p>Listen and Repeat: one sentence, 3 seconds to think, a beep, then time to speak. The sample sentence stays hidden. You record once.</p>" +
+        "<p>Interview: the question is not printed. After the prompt you have 45 seconds to speak. You record once.</p>"
+    },
     listening: {
       title: "Listening Section",
       html:
@@ -124,8 +156,16 @@
 
   function gateTask(type, resume) {
     var copy = TASK[type];
+    var run = "";
+    try { run = new URLSearchParams(location.search).get("bank") || ""; } catch (e) {}
+    if (run && !seenTask[type]) {
+      try { if (sessionStorage.getItem("yysd:toefl-task:" + run + ":" + type) === "1") seenTask[type] = 1; } catch (e) {}
+    }
     if (!copy || seenTask[type]) return false;
     seenTask[type] = 1;
+    if (run) {
+      try { sessionStorage.setItem("yysd:toefl-task:" + run + ":" + type, "1"); } catch (e) {}
+    }
     var intro = $("ets-intro");
     var next = $("next-btn");
     if (!intro || !next) return false;
@@ -160,6 +200,21 @@
     try { sessionStorage.setItem(hwKey(id), "1"); } catch (e) {}
   }
 
+  // ponytail: sprint L&R is one bank block per reload; key the speaking hw flag to bank, not paperId
+  function speakHwId(opts) {
+    var bank = "";
+    try { bank = new URLSearchParams(location.search).get("bank") || ""; } catch (e) {}
+    return bank || (opts && opts.id) || "speaking";
+  }
+
+  function rememberMic() {
+    try { return sessionStorage.getItem("yysd:toefl-mic-ok") === "1"; } catch (e) { return false; }
+  }
+
+  function markMic() {
+    try { sessionStorage.setItem("yysd:toefl-mic-ok", "1"); } catch (e) {}
+  }
+
   // ponytail: RMS bands match the official 3-zone meter; swap for AGC if laptops clip
   function levelOf(rms) {
     if (rms < 0.02) return 0;
@@ -169,6 +224,32 @@
 
   function applyVol() {
     document.querySelectorAll("audio").forEach(function (a) { a.volume = vol; });
+    paintVolMeter();
+  }
+
+  function paintVolMeter() {
+    var box = $("ets-vol-meter");
+    if (!box) return;
+    if (!box.childElementCount) {
+      var i;
+      for (i = 0; i < 16; i++) box.appendChild(document.createElement("i"));
+    }
+    var n = Math.round(vol * box.childElementCount);
+    Array.prototype.forEach.call(box.children, function (el, i) {
+      el.className = i < n ? "is-on" : "";
+    });
+  }
+
+  function bindHelp(skill) {
+    var box = $("help-box");
+    var btn = $("help-btn");
+    if (!box) return;
+    var html = (COPY.help && COPY.help[skill]) || COPY.help.reading;
+    box.innerHTML = '<div class="ets-help"><h2>Help</h2>' + html +
+      '<p><button class="btn" type="button" id="help-close">Return</button></p></div>';
+    var close = $("help-close");
+    if (close) close.onclick = function () { box.classList.add("hidden"); };
+    if (btn) btn.onclick = function () { box.classList.toggle("hidden"); };
   }
 
   function playTone() {
@@ -208,6 +289,12 @@
     document.querySelectorAll("audio").forEach(function (a) {
       if (paused) a.pause();
     });
+    if (w.YYSD_TIKU_RUN && YYSD_TIKU_RUN.holdClock) YYSD_TIKU_RUN.holdClock(paused);
+  }
+
+  /* 官方：音频播放中只留 Volume */
+  function playLock(on) {
+    document.body.classList.toggle("ets-playing", !!on);
   }
 
   function ensureMicCtx() {
@@ -220,17 +307,29 @@
     return micCtx;
   }
 
-  function stopMic() {
+  function liveMic() {
+    if (!micStream) return null;
+    var track = micStream.getAudioTracks()[0];
+    if (!track || track.readyState === "ended") {
+      micStream = null;
+      return null;
+    }
+    return micStream;
+  }
+
+  function hushMic() {
+    // ponytail: leave AudioContext open — closing it while a MediaStreamSource
+    // is still wired crashes the Chromium renderer on Electron/macOS
     if (micRaf) cancelAnimationFrame(micRaf);
     micRaf = 0;
+  }
+
+  function stopMic() {
+    hushMic();
     micPending = null;
     if (micStream) {
       micStream.getTracks().forEach(function (t) { t.stop(); });
       micStream = null;
-    }
-    if (micCtx) {
-      try { micCtx.close(); } catch (e) {}
-      micCtx = null;
     }
   }
 
@@ -246,13 +345,39 @@
     });
   }
 
-  function askMic() {
+  function desktopMic() {
+    var d = w.yysdDesktop;
+    if (!d || typeof d.mic !== "function") return Promise.resolve(true);
+    return Promise.resolve().then(d.mic).then(function (ok) {
+      return ok !== false;
+    }, function () { return true; });
+  }
+
+  var micOpened = false;
+
+  function askMic(force) {
+    var live = liveMic();
+    if (live) return Promise.resolve(live);
+    if (micPending) return micPending;
+    // A failed open used to be retried on the next item, and each retry showed the dialog again.
+    if (micOpened && !force) return Promise.reject(new Error("no-mic"));
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       return Promise.reject(new Error("no-mic"));
     }
-    return navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true }
+    micOpened = true;
+    micPending = desktopMic().then(function (ok) {
+      if (!ok) throw new Error("no-mic");
+      return navigator.mediaDevices.getUserMedia({ audio: true });
+    }).then(function (stream) {
+      micPending = null;
+      micStream = stream;
+      markMic();
+      return stream;
+    }, function (err) {
+      micPending = null;
+      throw err;
     });
+    return micPending;
   }
 
   function startMicListen(msg) {
@@ -299,11 +424,16 @@
       if (ctx.state === "suspended") ctx.resume().then(tick).catch(tick);
       else tick();
     }
-    if (micStream) {
-      hook(micStream);
+    var live = liveMic();
+    if (live) {
+      hook(live);
       return;
     }
-    (micPending || askMic()).then(function (stream) {
+    if (!micPending) {
+      if (msg) msg.textContent = "Microphone permission is required for Speaking. You may Continue and allow it later.";
+      return;
+    }
+    micPending.then(function (stream) {
       micStream = stream;
       hook(stream);
     }).catch(function () {
@@ -320,9 +450,7 @@
     if (next) next.disabled = false;
     if (!rec) return;
     rec.onclick = function () {
-      ensureMicCtx();
-      micPending = askMic();
-      micPending.then(function (stream) { if (!micStream) micStream = stream; }).catch(function () {
+      askMic(true).then(function (stream) { if (!micStream) micStream = stream; }).catch(function () {
         if (msg) msg.textContent = "Microphone permission is required for Speaking. You may Continue and allow it later.";
       });
       var n = 3;
@@ -354,8 +482,22 @@
     if (on && pop) pop.classList.add("hidden");
   }
 
-  /* wofo: 交卷后先停在「生成成绩单」屏，点 View 才把答卷交给复盘页 */
+  /* 成绩单闸门只在一场考完时出现；组卷中途同科/换科都跳过 */
   function reportGate(onView) {
+    // 只有模考保留这一屏；真题题库（mode=practice）交卷直接进对错复盘
+    var m = "";
+    var bank = "";
+    try {
+      var q = new URLSearchParams(location.search);
+      m = q.get("mode") || "";
+      bank = q.get("bank") || "";
+    } catch (e) {}
+    if (m !== "mock") { if (onView) onView(); return; }
+    var R = w.YYSD_TIKU_RUN;
+    if (bank && R && R.peek) {
+      var n = R.peek(bank);
+      if (n && !n.end) { if (onView) onView(); return; }
+    }
     examMode(false);
     document.body.classList.add("ets-gate-on");
     var next = $("next-btn");
@@ -392,17 +534,18 @@
     if (no) no.onclick = function () { box.classList.remove("is-on"); };
   }
 
-  function confirmSubmit(msg, onYes) {
+  function confirmSubmit(msg, onYes, lab) {
+    lab = lab || {};
     var box = $("ets-exit");
     if (!box) { if (onYes) onYes(); return; }
     var h = box.querySelector("h2");
     var p = box.querySelector("p");
     var yes = $("ets-exit-yes");
     var no = $("ets-exit-no");
-    if (h) h.textContent = "Submit Section";
+    if (h) h.textContent = lab.title || "Submit Section";
     if (p) p.textContent = msg;
-    if (yes) yes.textContent = "Submit";
-    if (no) no.textContent = "Cancel";
+    if (yes) yes.textContent = lab.yes || "Submit";
+    if (no) no.textContent = lab.no || "Cancel";
     box.classList.add("is-on");
     if (yes) yes.onclick = function () { box.classList.remove("is-on"); if (onYes) onYes(); };
     if (no) no.onclick = function () { box.classList.remove("is-on"); };
@@ -431,33 +574,47 @@
 
   function markLeaving() { leaving = true; }
 
+  function leaveTest(opts) {
+    var F = w.YYSD_TOEFL_FULL;
+    var mock = !!(opts.isFull || opts.mode === "mock");
+    confirmExit(function () {
+      markLeaving();
+      var preview = false;
+      try { preview = new URLSearchParams(location.search).get("preview") === "1"; } catch (e) {}
+      if (preview) {
+        try { w.close(); } catch (e2) {}
+        if (w.closed) return;
+      }
+      if (mock && F && F.quitPack && opts.id) F.quitPack(opts.id);
+      var href = "home.html";
+      if (F && F.listBack) href = F.listBack(opts.skill, { mock: mock });
+      location.href = href;
+    }, mock);
+  }
+
   function bindExit(opts) {
     var exitBtn = $("exit-btn");
-    if (!exitBtn) return;
-    exitBtn.classList.remove("hidden");
-    exitBtn.onclick = function () {
-      var F = w.YYSD_TOEFL_FULL;
-      var mock = !!(opts.isFull || opts.mode === "mock");
-      confirmExit(function () {
-        markLeaving();
-        var preview = false;
-        try { preview = new URLSearchParams(location.search).get("preview") === "1"; } catch (e) {}
-        if (preview) {
-          try { w.close(); } catch (e2) {}
-          if (w.closed) return;
-        }
-        if (mock && F && F.quitPack && opts.id) F.quitPack(opts.id);
-        var href = "home.html";
-        if (F && F.listBack) href = F.listBack(opts.skill, { mock: mock });
-        location.href = href;
-      }, mock);
-    };
+    if (exitBtn) {
+      exitBtn.classList.remove("hidden");
+      exitBtn.textContent = "Pause Test";
+      // ponytail: 顶栏只暂停；离场走暂停层 Exit。墙钟由 holdClock 冻 skillEnds。
+      exitBtn.onclick = function () { setPaused(true); };
+    }
+    var leaveBar = $("leave-btn");
+    if (leaveBar) {
+      leaveBar.classList.remove("hidden");
+      leaveBar.textContent = "Exit Test";
+      leaveBar.onclick = function () { leaveTest(opts); };
+    }
+    var leave = $("ets-pause-exit");
+    if (leave) leave.onclick = function () { leaveTest(opts); };
   }
 
   function boot(opts) {
     opts = opts || {};
     ready = opts.onReady;
     bindExit(opts);
+    bindHelp(opts.skill);
     var titleEl = $("set-title");
     if (titleEl) {
       var label = opts.title || "";
@@ -474,12 +631,15 @@
       queue.push(COPY.general, COPY.hardware, COPY.volume, COPY.microphone);
     } else if (!opts.isFull && opts.skill === "listening") {
       queue.push(COPY.volume);
-    } else if (!opts.isFull && opts.skill === "speaking") {
+    } else if (!opts.isFull && opts.skill === "speaking" && !hwDone(speakHwId(opts))) {
       queue.push(COPY.volume, COPY.microphone);
     }
-    if (COPY[opts.skill]) queue.push(COPY[opts.skill]);
+    if (COPY[opts.skill] && !(opts.skill === "speaking" && hwDone(speakHwId(opts)))) {
+      queue.push(COPY[opts.skill]);
+    }
     if (!queue.length) {
       examMode(true);
+      if (opts.skill === "speaking" && rememberMic()) askMic().catch(function () {});
       if (ready) ready();
       return;
     }
@@ -499,7 +659,7 @@
     function paint() {
       var scr = queue[i];
       if (!scr || !intro) return;
-      stopMic();
+      hushMic();
       intro.innerHTML = "<h2>" + scr.title + "</h2>" + scr.html;
       if (next) {
         next.disabled = false;
@@ -523,7 +683,8 @@
           return;
         }
         if (opts.isFull && opts.skill === "reading") markHw(opts.id);
-        stopMic();
+        if (!opts.isFull && opts.skill === "speaking") markHw(speakHwId(opts));
+        hushMic();
         intro.classList.add("hidden");
         next.onclick = oldNext;
         examMode(true);
@@ -533,18 +694,28 @@
   }
 
   function bindChrome() {
+    bindExit({});
     var resume = $("ets-resume");
     if (resume) resume.onclick = function () { setPaused(false); };
     var volBtn = $("vol-btn");
     var pop = $("ets-vol");
     var slider = $("ets-vol-range");
     if (volBtn && pop && slider) {
+      if (!$("ets-vol-meter")) {
+        var meter = document.createElement("div");
+        meter.id = "ets-vol-meter";
+        meter.className = "ets-vol-meter";
+        meter.setAttribute("aria-hidden", "true");
+        pop.insertBefore(meter, pop.firstChild);
+      }
+      paintVolMeter();
       volBtn.onclick = function () {
         var on = pop.classList.toggle("hidden") === false;
         if (on) {
           var r = volBtn.getBoundingClientRect();
-          pop.style.top = r.bottom + 8 + "px";
-          pop.style.left = Math.max(8, r.right - 220) + "px";
+          pop.style.top = (r.bottom) + "px";
+          pop.style.left = Math.max(8, r.right - pop.offsetWidth) + "px";
+          paintVolMeter();
         }
       };
       slider.oninput = function () {
@@ -587,15 +758,19 @@
     gateTask: gateTask,
     renderReview: renderReview,
     paused: function () { return paused; },
+    playLock: playLock,
     applyVol: applyVol,
     playBeep: playBeep,
     playTone: playTone,
     confirmExit: confirmExit,
     confirmSubmit: confirmSubmit,
+    bindHelp: bindHelp,
     reportGate: reportGate,
     showFail: showFail,
     levelOf: levelOf,
     hwKey: hwKey,
+    askMic: askMic,
+    liveMic: liveMic,
     leaving: function () { return leaving; },
     markLeaving: markLeaving
   };
