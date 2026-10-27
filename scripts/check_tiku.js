@@ -216,6 +216,9 @@ if (ui.indexOf("class=\"bench") < 0) throw new Error("merged bench");
 if (ui.indexOf("grant-page") < 0 || ui.indexOf("data-ggrp") < 0 || ui.indexOf("lg-q") < 0 || ui.indexOf("updateGrantSummary") < 0) {
   throw new Error("grant stacked ledger");
 }
+if (ui.indexOf("data-gboard") < 0 || ui.indexOf("AI口语/写作批改") < 0 || ui.indexOf("考前冲刺包") < 0) {
+  throw new Error("grant boards must stay independent");
+}
 var access = fs.readFileSync(path.join(__dirname, "..", "server/toefl-access.js"), "utf8");
 if (access.indexOf('raw === "*"') < 0) throw new Error("grants API missing all-scopes");
 if (ui.indexOf('scopes=" + encodeURIComponent("*")') < 0) throw new Error("ledger fetches all grants");

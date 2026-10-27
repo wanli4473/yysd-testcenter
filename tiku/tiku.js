@@ -37,6 +37,12 @@
   var pkgs = null;
   var stuList = null;
   var grantSel = {};
+  var grantBoard = "practice";
+  var GRANT_BOARDS = [
+    { id: "practice", label: "真题题库" },
+    { id: "ai", label: "AI口语/写作批改" },
+    { id: "mock", label: "考前冲刺包" }
+  ];
   var stuSel = {};
   var stuQ = "";
   var ledgerQ = "";
@@ -594,8 +600,20 @@
     if (st.reason === "off") return "已停用";
     return "";
   }
+  function boardOfScope(scope) {
+    if (scope === "practice") return "practice";
+    if (String(scope || "").indexOf("package:") === 0) return "mock";
+    if (String(scope || "").indexOf("ai") === 0) return "ai";
+    return "other";
+  }
+  function boardLabel(id) {
+    var b = GRANT_BOARDS.filter(function (x) { return x.id === id; })[0];
+    return b ? b.label : id;
+  }
   function checkedScopes() {
-    return Object.keys(grantSel).filter(function (k) { return grantSel[k]; });
+    return Object.keys(grantSel).filter(function (k) {
+      return grantSel[k] && boardOfScope(k) === grantBoard;
+    });
   }
   function selectedStudentIds() {
     return Object.keys(stuSel).map(Number).filter(Boolean);
@@ -669,9 +687,12 @@
       return !q || ((s.displayName || "") + " " + s.phone).toLowerCase().indexOf(q) >= 0;
     });
   }
+  function boardLedger() {
+    return (ledger || []).filter(function (r) { return boardOfScope(r.scope) === grantBoard; });
+  }
   function ledgerFiltered() {
     var q = ledgerQ.toLowerCase();
-    return ledgerPeople(ledger).filter(function (u) {
+    return ledgerPeople(boardLedger()).filter(function (u) {
       return !q || ((u.name || "") + " " + (u.phone || "")).toLowerCase().indexOf(q) >= 0;
     });
   }
@@ -711,6 +732,50 @@
       }).join("") +
     "</article>";
   }
+  function boardHint() {
+    if (grantBoard === "practice") return "开通后学生可进真题题库整区。停用后立即拦截。";
+    if (grantBoard === "mock") return "每位勾选的学生 × 每个勾选的包，一次生效。关停或到期时，已开考的学生 24 小时内可考完本场。";
+    return "AI 口语/写作批改的开通还没接到题库中心，先在原来的权限页处理。";
+  }
+  function paintGrantObjects() {
+    if (grantBoard === "practice") {
+      return {
+        note: "整区一把开",
+        canGrant: true,
+        hint: boardHint(),
+        body: '<div class="g-list">' + paintScopeRow("practice", "真题题库", "整个练习区") + "</div>"
+      };
+    }
+    if (grantBoard === "mock") {
+      var fullPkgs = (pkgs || []).filter(function (p) { return p.kind !== "single"; });
+      var singlePkgs = (pkgs || []).filter(function (p) { return p.kind === "single"; });
+      var fullHtml = fullPkgs.length
+        ? '<div class="g-list">' + fullPkgs.map(function (p) {
+          return paintScopeRow("package:" + p.id, p.title, "整套包");
+        }).join("") + "</div>"
+        : "";
+      var singleHtml = singlePkgs.length
+        ? '<div class="g-list">' + singlePkgs.map(function (p) {
+          return paintScopeRow("package:" + p.id, p.title, "单科包");
+        }).join("") + "</div>"
+        : "";
+      return {
+        note: "已选 " + checkedScopes().length + " 个 · 整套和单科可一起勾",
+        canGrant: true,
+        hint: boardHint(),
+        body: '<div class="scope-groups">' +
+          paintScopeGroup("整套", "full", fullHtml) +
+          paintScopeGroup("单科", "single", singleHtml) +
+        "</div>"
+      };
+    }
+    return {
+      note: "独立板块，接口未接",
+      canGrant: false,
+      hint: boardHint(),
+      body: '<div class="empty"><b>这一块先不在这里开</b><p>真题题库和考前冲刺包用旁边两个板块。AI 批改仍走原来的权限页。</p></div>'
+    };
+  }
   function paintGrant() {
     var main = document.getElementById("main");
     if (!main) return;
@@ -722,22 +787,17 @@
     var nSc = checkedScopes().length;
     var students = stuFiltered();
     var people = ledgerFiltered();
-    var peopleAll = ledgerPeople(ledger);
-    var fullPkgs = (pkgs || []).filter(function (p) { return p.kind !== "single"; });
-    var singlePkgs = (pkgs || []).filter(function (p) { return p.kind === "single"; });
-    var practiceHtml = '<div class="g-list">' + paintScopeRow("practice", "真题题库", "整个练习区") + "</div>";
-    var fullHtml = fullPkgs.length
-      ? '<div class="g-list">' + fullPkgs.map(function (p) {
-        return paintScopeRow("package:" + p.id, p.title, "整套包");
-      }).join("") + "</div>"
-      : "";
-    var singleHtml = singlePkgs.length
-      ? '<div class="g-list">' + singlePkgs.map(function (p) {
-        return paintScopeRow("package:" + p.id, p.title, "单科包");
-      }).join("") + "</div>"
-      : "";
+    var peopleAll = ledgerPeople(boardLedger());
+    var byUser = {};
+    peopleAll.forEach(function (u) { byUser[u.userId] = u; });
+    var objectPane = paintGrantObjects();
     main.innerHTML =
       '<div class="grant-page">' +
+        '<nav class="tabs grant-boards" aria-label="开通板块">' +
+          GRANT_BOARDS.map(function (b) {
+            return '<button type="button" class="' + (grantBoard === b.id ? "is-on" : "") + '" data-gboard="' + esc(b.id) + '">' + esc(b.label) + "</button>";
+          }).join("") +
+        "</nav>" +
         '<div class="bench grant-bench">' +
           '<section class="card pool-pane">' +
             '<div class="pane-title"><h2>学生</h2><span class="n">共 ' + (stuList || []).length + " 人 · 已选 " + nStu + " 人</span></div>" +
@@ -748,29 +808,30 @@
             "</div>" +
             (students.length
               ? '<div class="g-list stu-list">' + students.map(function (s) {
+                var items = (byUser[s.id] || { items: [] }).items;
+                var n = items.filter(function (it) { return it.state && it.state.on; }).length;
                 return '<label class="g-row">' +
                   '<input type="checkbox" data-gsel="' + esc(s.id) + '"' + (stuSel[s.id] ? " checked" : "") + ">" +
                   '<span class="g-who">' + esc(s.displayName || "（未命名）") + "<i>" + esc(s.phone) + "</i></span>" +
+                  (nSc ? '<span class="pill ' + (n === nSc ? "live" : "unpublished") + '">已开 ' + n + "/" + nSc + "</span>" : "") +
                 "</label>";
               }).join("") + "</div>"
               : '<div class="empty"><b>没有符合的学生</b></div>') +
           "</section>" +
           '<section class="card sheet">' +
-            '<div class="pane-title"><h2>开通对象</h2><span class="n">已选 ' + nSc + " 个 · 可跨类勾选</span></div>" +
-            '<div class="scope-groups">' +
-              paintScopeGroup("练习区", "practice", practiceHtml) +
-              paintScopeGroup("整套", "full", fullHtml) +
-              paintScopeGroup("单科", "single", singleHtml) +
-            "</div>" +
-            '<div class="minis grant-window">' +
-              '<label class="f"><span>开始（可空 = 立即）</span><input type="datetime-local" id="g-start" value="' + esc(gwStart) + '"></label>' +
-              '<label class="f"><span>到期（可空 = 不过期）</span><input type="datetime-local" id="g-exp" value="' + esc(gwExp) + '"></label>' +
-            "</div>" +
-            '<div class="actions">' +
-              '<button type="button" class="btn primary" id="g-on">' + esc(grantActionLabel(nStu, nSc, "on")) + "</button>" +
-              '<button type="button" class="btn danger" id="g-off">' + esc(grantActionLabel(nStu, nSc, "off")) + "</button>" +
-            "</div>" +
-            '<p class="hint">每位勾选的学生 × 每个勾选的对象，一次全部生效，共用上面的开始/到期。模考关停或到期时，已开考的学生 24 小时内可考完本场；练习区停用后立即拦截。</p>' +
+            '<div class="pane-title"><h2>' + esc(boardLabel(grantBoard)) + '</h2><span class="n">' + esc(objectPane.note) + "</span></div>" +
+            objectPane.body +
+            (objectPane.canGrant
+              ? '<div class="minis grant-window">' +
+                '<label class="f"><span>开始（可空 = 立即）</span><input type="datetime-local" id="g-start" value="' + esc(gwStart) + '"></label>' +
+                '<label class="f"><span>到期（可空 = 不过期）</span><input type="datetime-local" id="g-exp" value="' + esc(gwExp) + '"></label>' +
+              "</div>" +
+              '<div class="actions">' +
+                '<button type="button" class="btn primary" id="g-on">' + esc(grantActionLabel(nStu, nSc, "on")) + "</button>" +
+                '<button type="button" class="btn danger" id="g-off">' + esc(grantActionLabel(nStu, nSc, "off")) + "</button>" +
+              "</div>" +
+              '<p class="hint">' + esc(objectPane.hint) + "</p>"
+              : "") +
           "</section>" +
         "</div>" +
         '<section class="card ledger-card">' +
@@ -793,7 +854,11 @@
     var stuN = document.querySelector(".grant-bench .pool-pane .pane-title .n");
     if (stuN) stuN.textContent = "共 " + (stuList || []).length + " 人 · 已选 " + nStu + " 人";
     var scN = document.querySelector(".grant-bench .sheet .pane-title .n");
-    if (scN) scN.textContent = "已选 " + nSc + " 个 · 可跨类勾选";
+    if (scN) {
+      scN.textContent = grantBoard === "mock"
+        ? ("已选 " + nSc + " 个 · 整套和单科可一起勾")
+        : grantBoard === "practice" ? "整区一把开" : "独立板块，接口未接";
+    }
     var on = document.getElementById("g-on");
     var off = document.getElementById("g-off");
     if (on) on.textContent = grantActionLabel(nStu, nSc, "on");
@@ -935,6 +1000,17 @@
     delete global.document;
     pkgs = [{ id: "a", title: "整套A", kind: "full" }, { id: "b", title: "阅读专项", kind: "single" }];
     grantSel = {};
+    grantBoard = "practice";
+    assert.strictEqual(boardOfScope("practice"), "practice");
+    assert.strictEqual(boardOfScope("package:a"), "mock");
+    assert.deepStrictEqual(checkedScopes(), []);
+    grantSel.practice = 1;
+    grantSel["package:a"] = 1;
+    assert.deepStrictEqual(checkedScopes(), ["practice"]);
+    grantBoard = "mock";
+    assert.deepStrictEqual(checkedScopes(), ["package:a"]);
+    grantBoard = "practice";
+    grantSel = {};
     assert.deepStrictEqual(checkedScopes(), []);
     assert.strictEqual(grantActionLabel(0, 0, "on"), "开通 / 更新选中");
     assert.strictEqual(grantActionLabel(2, 3, "on"), "开通 / 更新 2 人 × 3 个对象");
@@ -966,7 +1042,7 @@
 
   /* ——— 事件 ——— */
   document.addEventListener("click", function (ev) {
-    var t = ev.target.closest("[data-tab],[data-bpv],[data-inspect],[data-sub],[data-off],[data-ok],[data-no],[data-pv],[data-grev],[data-ggrp],[data-refresh],#review-retry,#review-export,#g-on,#g-off,#g-all,#g-none,#refresh,#out");
+    var t = ev.target.closest("[data-tab],[data-bpv],[data-inspect],[data-sub],[data-off],[data-ok],[data-no],[data-pv],[data-grev],[data-ggrp],[data-gboard],[data-refresh],#review-retry,#review-export,#g-on,#g-off,#g-all,#g-none,#refresh,#out");
     if (!t) return;
     if (t.id === "refresh" || t.getAttribute("data-refresh")) { refreshNow(); return; }
     if (t.id === "out") {
@@ -1000,6 +1076,13 @@
       api("/api/tiku/papers/" + sub + "/submit", { method: "POST", body: {} })
         .then(function () { msg("已上架", true); return reload(); })
         .catch(function (e) { msg(e.message); });
+      return;
+    }
+    var gboard = t.getAttribute("data-gboard");
+    if (gboard) {
+      grantBoard = gboard;
+      ledgerQ = "";
+      paintGrant();
       return;
     }
     if (t.id === "g-all") { stuFiltered().forEach(function (s) { stuSel[s.id] = 1; }); paintGrant(); return; }
@@ -1180,6 +1263,8 @@
     ];
     var dt = (w.location.search.match(/(?:\?|&)tab=(pool|mine|grant)(?:&|$)/) || [])[1];
     if (dt) tab = dt;
+    var dbd = (w.location.search.match(/(?:\?|&)board=(practice|ai|mock)(?:&|$)/) || [])[1];
+    if (dbd) grantBoard = dbd;
     show("app");
     paint();
     return;
