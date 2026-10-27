@@ -204,6 +204,42 @@
     return paperFile(skill, "set-" + setN);
   }
 
+  /* 线上 /library/toefl 卷 JSON 曾整批 404；本仓是公开的，回源 GitHub raw 先让考场能开。 */
+  var PAPER_RAW = "https://raw.githubusercontent.com/wanli4473/yysd-testcenter/main/";
+
+  function paperRel(file) {
+    var s = String(file || "").replace(/^\.\//, "");
+    if (!s) return "";
+    try {
+      if (/^https?:\/\//i.test(s)) {
+        var base = typeof location !== "undefined" ? location.href : "https://youyisida.com/";
+        s = new URL(s, base).pathname.replace(/^\//, "");
+      }
+    } catch (e) {}
+    return s.replace(/^\//, "");
+  }
+
+  function getPaperJSON(url) {
+    return fetch(url, { cache: "no-store" }).then(function (r) {
+      var ct = "";
+      try { ct = ((r.headers && r.headers.get && r.headers.get("content-type")) || "").toLowerCase(); }
+      catch (e0) {}
+      if (!r.ok || ct.indexOf("html") >= 0) throw new Error("Unable to load this test");
+      return r.json();
+    });
+  }
+
+  function fetchPaper(file) {
+    var rel = paperRel(file);
+    if (!rel) return Promise.reject(new Error("Unable to load this test"));
+    return getPaperJSON(rel).catch(function () {
+      return getPaperJSON(PAPER_RAW + rel);
+    }).catch(function () {
+      if (rel.indexOf("app/") === 0) throw new Error("Unable to load this test");
+      return getPaperJSON(PAPER_RAW + "app/" + rel);
+    });
+  }
+
   function stashReview(skill, paper, payload) {
     payload = payload || {};
     payload.skill = skill;
@@ -347,6 +383,7 @@
     afterSection: afterSection,
     paperURL: paperURL,
     paperFile: paperFile,
+    fetchPaper: fetchPaper,
     handoffApp: handoffApp,
     reviewGo: reviewGo,
     reviewHref: reviewHref,

@@ -185,12 +185,66 @@ assert.ok(/yysd_auth=1/.test(authCookieSandbox("?id=2025-07-04&mode=practice&pre
 assert.ok(/yysd_auth=1/.test(authCookieSandbox("?id=2025-07-04&mode=practice", { "yysd:auth:token": "tok" })),
   "logged-in exam must write yysd_auth during script eval");
 
+assert.strictEqual(typeof F.fetchPaper, "function", "exam pages need fetchPaper");
+assert.strictEqual(F.paperFile("reading", "2025-07-04"), "library/toefl/2025-07-04-reading.json");
+assert.strictEqual(F.paperFile("reading", "set-1"), "app/library/toefl/set-1-reading.json");
+["reading", "listening", "writing", "speaking"].forEach(function (skill) {
+  var html = fs.readFileSync(path.join(__dirname, "../toefl-" + skill + ".html"), "utf8");
+  assert.ok(html.indexOf("F.fetchPaper") >= 0, skill + " exam must call fetchPaper");
+  assert.ok(html.indexOf("toefl-full.js?v=20261027lib1") >= 0, skill + " exam must cache-bust toefl-full.js");
+});
+assert.ok(play.indexOf("F.fetchPaper") >= 0, "play.js must reuse fetchPaper");
+
+var paperFallback = (function testFetchPaperFallback() {
+  var orig = global.fetch;
+  var hits = [];
+  function reply(ok, ct, body) {
+    return Promise.resolve({
+      ok: ok,
+      headers: { get: function () { return ct; } },
+      json: function () { return body != null ? Promise.resolve(body) : Promise.reject(new Error("no json")); }
+    });
+  }
+  global.fetch = function (url) {
+    hits.push(String(url));
+    if (url.indexOf("raw.githubusercontent.com") >= 0 && url.indexOf("2025-07-04-reading.json") >= 0) {
+      return reply(true, "text/plain", { id: "2025-07-04", title: "ok" });
+    }
+    if (url.indexOf("raw.githubusercontent.com") >= 0 && url.indexOf("app/library/toefl/set-1-reading.json") >= 0) {
+      return reply(true, "application/json", { id: "set-1", title: "hit" });
+    }
+    return reply(true, "text/html", null);
+  };
+  return F.fetchPaper("library/toefl/2025-07-04-reading.json").then(function (p) {
+    assert.strictEqual(p.id, "2025-07-04");
+    assert.ok(hits[0].indexOf("raw.githubusercontent.com") < 0, "try local first");
+    assert.ok(hits.some(function (u) { return /raw\.githubusercontent\.com\/wanli4473\/yysd-testcenter\/main\/library\/toefl\/2025-07-04-reading\.json/.test(u); }),
+      "date paper falls back to GitHub raw");
+    hits.length = 0;
+    return F.fetchPaper("library/toefl/set-1-reading.json");
+  }).then(function (p) {
+    assert.strictEqual(p.id, "set-1");
+    assert.ok(hits.some(function (u) { return u.indexOf("app/library/toefl/set-1-reading.json") >= 0; }),
+      "HIT set on app host retries app/ prefix on GitHub");
+    global.fetch = orig;
+  }).catch(function (err) {
+    global.fetch = orig;
+    throw err;
+  });
+})();
+
 ["reading", "listening", "writing", "speaking"].forEach(function (skill) {
   var page = fs.readFileSync(path.join(__dirname, "../app/" + skill + ".html"), "utf8");
   assert.ok(page.indexOf("toefl-" + skill + ".html?") >= 0, "app/" + skill + ".html 只做跳转，考场仍在根域");
 });
-assert.ok(/assets\/js\/play\.js\?v=/.test(fs.readFileSync(path.join(__dirname, "../app/review.html"), "utf8")),
+var reviewHtml = fs.readFileSync(path.join(__dirname, "../app/review.html"), "utf8");
+assert.ok(/assets\/js\/play\.js\?v=/.test(reviewHtml),
   "play.js 必须带版本号（旧缓存 = dead Submit buttons）");
+assert.ok(reviewHtml.indexOf("toefl-full.js?v=20261027lib1") >= 0, "review must load fetchPaper");
+assert.ok(reviewHtml.indexOf("loadReviewPaper") >= 0, "review other-section fetch must use fallback");
+var ship = fs.readFileSync(path.join(__dirname, "ship_toefl_live.sh"), "utf8");
+assert.ok(!/rsync[^\n]*--delete/.test(ship), "ship_toefl_live.sh must not rsync --delete");
+assert.ok(ship.indexOf("8.159.129.88") >= 0, "ship target is current ECS");
 
 // 版式：wofo 式双列便当盒 + 圆角卡皮肤；退成整行列表或瑞士直角皮肤算回归
 var libCss = fs.readFileSync(path.join(__dirname, "../app/assets/css/hit.css"), "utf8");
@@ -201,4 +255,9 @@ assert.ok(/\.hit-mock-card\s*\{[^}]*border-radius:\s*12px/.test(libCss), "卡片
 assert.ok(/\.hit-mock-pager/.test(libCss), "分页条有样式");
 
 require("./check_toefl_paper").checkLive();
-Promise.all([locked, mixed]).then(function () { console.log("ok toefl mock picker"); });
+Promise.all([locked, mixed, paperFallback]).then(function () {
+  console.log("ok toefl mock picker");
+}).catch(function (err) {
+  console.error(err);
+  process.exit(1);
+});

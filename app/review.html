@@ -8,7 +8,8 @@
   <script src="assets/js/gate.js?v=20261020gate1"></script>
   <script src="assets/js/auth.js?v=20261015prev1"></script>
   <script src="assets/js/hit-shell.js?v=20261020lib4"></script>
-  <script src="assets/js/play.js?v=20261020lib2"></script>
+  <script src="../assets/js/toefl-full.js?v=20261027lib1"></script>
+  <script src="assets/js/play.js?v=20261027lib1"></script>
   <script src="assets/js/reading.js?v=20261018rev3"></script>
   <script src="assets/js/toefl-speaking.js?v=20261009iv1"></script>
   <script src="../assets/js/toefl-lab.js?v=20261020lib2"></script>
@@ -44,6 +45,11 @@
       var T = window.YYSD_TOEFL;
       var S = window.YYSD_TOEFL_SPEAK;
       var LAB = window.YYSD_TOEFL_LAB;
+      var F = window.YYSD_TOEFL_FULL;
+      function loadReviewPaper(rel) {
+        if (F && F.fetchPaper) return F.fetchPaper(rel);
+        return fetch(rel, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; });
+      }
       var skill = new URLSearchParams(location.search).get("skill") || "reading";
       if (!P.isPreview() && !YYSD_HIT.mount(skill)) return;
       var att = P.readAttempt();
@@ -133,8 +139,7 @@
         var rec = sit[s] || {};
         var pid = rec.paperId || rec.set;
         if (!pid) { cb(); return; }
-        fetch("library/toefl/" + encodeURIComponent(pid) + "-" + s + ".json", { cache: "no-store" })
-          .then(function (r) { return r.ok ? r.json() : null; })
+        loadReviewPaper("library/toefl/" + encodeURIComponent(pid) + "-" + s + ".json")
           .then(function (paper) {
             if (!paper || !paper.tasks) { cb(); return; }
             skill = s;
@@ -213,8 +218,7 @@
         if (sw) sw.hidden = false;
       }
       if (skill === "speaking" && att.paper.id) {
-        fetch("library/toefl/" + att.paper.id + "-speaking.json", { cache: "no-store" })
-          .then(function (r) { return r.ok ? r.json() : null; })
+        loadReviewPaper("library/toefl/" + att.paper.id + "-speaking.json")
           .then(function (live) {
             if (live && live.tasks) {
               var byId = {};

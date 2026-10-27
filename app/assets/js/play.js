@@ -42,15 +42,20 @@
     var url = id
       ? "library/toefl/" + encodeURIComponent(id) + "-" + skill + ".json"
       : "library/toefl/set-" + setId() + "-" + skill + ".json";
-    return fetch(url, { cache: "no-store" })
-      .then(function (r) {
-        if (!r.ok) throw new Error("题库未加载");
-        return r.json();
-      })
-      .catch(function (err) {
-        showLoadError(skill);
-        throw err;
-      });
+    var F = w.YYSD_TOEFL_FULL;
+    var load = F && F.fetchPaper
+      ? F.fetchPaper(url)
+      : fetch(url, { cache: "no-store" }).then(function (r) {
+          var ct = "";
+          try { ct = ((r.headers && r.headers.get && r.headers.get("content-type")) || "").toLowerCase(); }
+          catch (e0) {}
+          if (!r.ok || ct.indexOf("html") >= 0) throw new Error("题库未加载");
+          return r.json();
+        });
+    return load.catch(function (err) {
+      showLoadError(skill);
+      throw err;
+    });
   }
   function saveAttempt(payload) {
     sessionStorage.setItem(KEY, JSON.stringify(payload));
