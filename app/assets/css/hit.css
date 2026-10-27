@@ -37,7 +37,8 @@
 }
 * { box-sizing: border-box; }
 html, body { min-height: 100%; margin: 0; }
-body.hit { font-family: var(--hit-serif); background: var(--hit-bg); color: var(--hit-ink); -webkit-font-smoothing: antialiased; line-height: 1.6; font-variant-numeric: tabular-nums; }
+/* tabular-nums stays off the root: Windows DirectWrite will not fall back to YaHei for CJK when the feature is on, so Chinese (开始做题) paints blank. Digit-only nodes opt in. */
+body.hit { font-family: var(--hit-serif); background: var(--hit-bg); color: var(--hit-ink); -webkit-font-smoothing: antialiased; line-height: 1.6; }
 [hidden] { display: none !important; }
 a { color: inherit; text-decoration: none; }
 button, input, select { font: inherit; border-radius: 0; }
@@ -113,7 +114,7 @@ a.hit-tile:hover, a.hit-mode:hover, a.hit-subject:hover { background: var(--hit-
 .hit-set-row, .hit-mock-row { background: var(--hit-card); border-bottom: 1px solid var(--hit-line); padding: 20px 15px; display: flex; align-items: center; gap: 20px; }
 a.hit-set-row:hover, a.hit-mock-row:hover { background: var(--hit-pill); }
 a.hit-set-row:hover h4, a.hit-mock-row:hover h4, a.hit-set-row:hover .hit-row-arrow { color: var(--hit-gold-dark); }
-.hit-set-num, .hit-mock-thumb { width: 48px; color: var(--hit-muted); font-size: 20px; font-weight: 400; letter-spacing: -.03em; flex-shrink: 0; }
+.hit-set-num, .hit-mock-thumb { width: 48px; color: var(--hit-muted); font-size: 20px; font-weight: 400; letter-spacing: -.03em; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .hit-set-info, .hit-mock-info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .hit-set-info h4, .hit-mock-info h4 { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 500; letter-spacing: -.01em; }
 .hit-set-info h4 small { display: block; font-size: 12px; font-weight: 400; color: var(--hit-muted); }
@@ -185,7 +186,7 @@ a.hit-set-row:hover h4, a.hit-mock-row:hover h4, a.hit-set-row:hover .hit-row-ar
 .hit-profile-links a:hover { color: var(--hit-gold-dark); }
 .hit-profile-links small { display: block; color: var(--hit-muted); font-size: 11px; }
 .hit-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; border-bottom: 1px solid var(--hit-line); padding: 28px 0; }
-.hit-stat strong { display: block; font-size: 34px; font-weight: 500; letter-spacing: -.04em; }
+.hit-stat strong { display: block; font-size: 34px; font-weight: 500; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .hit-stat span { font-size: 11px; color: var(--hit-muted); }
 .hit-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .hit-table th { text-align: left; padding: 12px 8px; font-size: 11px; font-weight: 400; color: var(--hit-muted); background: var(--hit-pill); }
@@ -377,7 +378,7 @@ a.hit-set-row:hover h4, a.hit-mock-row:hover h4, a.hit-set-row:hover .hit-row-ar
 .hit-lib-seg button { display: flex; align-items: baseline; gap: 12px; min-height: 62px; padding: 14px 16px; border: 0; background: var(--hit-bg); color: var(--hit-muted); text-align: left; }
 .hit-lib-seg button:hover { background: var(--hit-pill); color: var(--hit-ink); }
 .hit-lib-seg button.is-on { background: var(--hit-ink); color: #fff; }
-.hit-lib-segnum { font-size: 20px; font-weight: 400; letter-spacing: -.04em; }
+.hit-lib-segnum { font-size: 20px; font-weight: 400; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .hit-lib-segname strong { display: block; font-size: 14px; font-weight: 500; letter-spacing: -.01em; }
 .hit-lib-segname small { display: block; margin-top: 3px; font-size: 11px; opacity: .7; }
 .hit-lib .hit-search { grid-template-columns: minmax(0, 1fr); margin-top: 22px; }
@@ -406,9 +407,12 @@ a.hit-set-row:hover h4, a.hit-mock-row:hover h4, a.hit-set-row:hover .hit-row-ar
 .hit-lib-row { padding: 14px 0 16px; border-bottom: 1px solid var(--hit-line); }
 .hit-lib-row .hit-lib-foot { margin-top: 4px; }
 .hit-lib-row .hit-lib-nums { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.hit-lib-num { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--hit-line-strong); font-size: 11px; font-weight: 550; }
+.hit-lib-num { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--hit-line-strong); font-size: 11px; font-weight: 550; font-variant-numeric: tabular-nums; }
 .hit-lib-num:hover { border-color: var(--hit-gold-dark); color: var(--hit-gold-dark); }
 .hit-lib-num.is-done { background: var(--hit-ink); border-color: var(--hit-ink); color: #fff; }
+.hit-lib-row .hit-lib-hot { margin-left: 0; }
+.hit-lib-start { margin-left: auto; flex: none; font-size: 13px; font-weight: 600; font-variant-numeric: normal; letter-spacing: 0; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.hit-lib-start:hover { color: var(--hit-gold-dark); }
 .hit-lib-extra { margin-top: 40px; }
 .hit-lib-extra .hit-minor-heading { display: block; }
 .hit-lib-extra h2 { font-size: 13px; font-weight: 550; margin: 0 0 6px; padding-bottom: 10px; border-bottom: 1px solid var(--hit-ink); }

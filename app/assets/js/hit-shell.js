@@ -192,6 +192,11 @@
       (meta.sub ? '<p class="hit-lib-sub">' + esc(g.zh || meta.zh) + "</p>" : "") +
       '<div class="hit-lib-foot">' + stateLabel(st) + "</div></a>";
   }
+  // 题号格只进这一道。一整套（task..end）要单独的入口，否则 Windows 同学只能一题一题点。
+  function setStartHTML(skill, g) {
+    if (!(Number(g.end) > Number(g.task))) return "";
+    return '<a class="hit-lib-start" href="' + itemHref(skill, g.paperId, g.task, g.end) + '">开始做题</a>';
+  }
   function rowHTML(skill, meta, g, i, records) {
     var cells = g.cells || [];
     var d = records || doneMap();
@@ -204,7 +209,8 @@
     }).join("");
     var st = libStateOf(skill, g, records);
     return '<div class="hit-lib-row is-' + st.cls + '">' +
-      '<div class="hit-lib-meta"><span class="hit-lib-idx">' + idxLabel(meta, g, i) + "</span>" + hotChip(g) + "</div>" +
+      '<div class="hit-lib-meta"><span class="hit-lib-idx">' + idxLabel(meta, g, i) + "</span>" + hotChip(g) +
+      setStartHTML(skill, g) + "</div>" +
       '<div class="hit-lib-foot">' + (meta.prog ? "完成 " + st.done + "/" + st.total : stateLabel(st)) + "</div>" +
       '<div class="hit-lib-nums">' + nums + "</div></div>";
   }

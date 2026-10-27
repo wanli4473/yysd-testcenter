@@ -77,6 +77,8 @@ assert.match(r0, /hit-lib-row is-todo/);
 assert.ok(r0.includes("完成 0/3") && r0.includes("Set 4"));
 assert.doesNotMatch(r0, /hit-lib-title/, "行式不显标题");
 assert.equal((r0.match(/hit-lib-num\b/g) || []).length, 3, "one cell per question");
+assert.ok(r0.includes('class="hit-lib-start"') && r0.includes(">开始做题</a>"), "整套入口在套题行右侧");
+assert.ok(r0.includes('href="listening.html?id=bank-lcn&mode=practice&task=0&taskEnd=2"'), "开始做题覆盖 task..end，不是单题");
 const rDone = rowHTML("listening", rowMeta, row, 0, {
   "listening|bank-lcn|0": { at: 1 }, "listening|bank-lcn|1": { at: 1 }, "listening|bank-lcn|2": { at: 1 } });
 assert.match(rDone, /hit-lib-row is-done/);
@@ -135,6 +137,7 @@ assert.ok(html.includes("<p class=\"hit-lib-sub\">&lt;b&gt;中&lt;/b&gt;</p>"), 
 assert.ok(html.includes('title="&quot;&gt;&lt;svg&gt;"'));
 assert.doesNotMatch(html, /<(?:img|svg|b|i|script)>/);
 assert.ok(html.includes('role="img" title="高频题">🔥</span>'), "hot chip 一行一火");
+assert.doesNotMatch(html, /开始做题/, "只有跨越多题的套才给整套入口");
 assert.ok(cardHTML("reading", meta, Object.assign({}, hostile, { hot: 3 }), 0, {}).includes('title="超高频题">🔥🔥</span>'), "两级高频");
 
 // 一次面板只解析一遍进度表
