@@ -13,6 +13,7 @@
   <script src="assets/js/toefl-writing.js?v=20261016exam1"></script>
   <script src="assets/js/toefl-full.js?v=20261020lib2"></script>
   <script src="assets/js/toefl-lab.js?v=20261020lib2"></script>
+  <script src="assets/js/toefl-sync.js?v=20261027rec1"></script>
   <script src="assets/js/toefl-shell.js?v=20261020gate1"></script>
 </head>
 <body class="exam-ets ets-booting">
@@ -454,6 +455,7 @@
         if (Lab) Lab.markSessionDone("writing", paperId, paper, taskQ, taskEndQ);
         var r = W.scorePaper(Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ) : paper, answers);
         if (Lab && Lab.saveScore) Lab.saveScore("writing", paperId, paper, r.detail);
+        if (window.YYSD_TOEFL_SYNC) YYSD_TOEFL_SYNC.fromScore("writing", paperId, paper, r.detail, {});
         if (F && F.isFull()) {
           var act = F.afterSection("writing", paperId, mode, F.compactWriting(r));
           if (act === "go") return;

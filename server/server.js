@@ -20,6 +20,7 @@ const teacherPreview = require("./teacher-preview");
 const seatMod = require("./seat");
 const tiku = require("./tiku");
 const toeflAccess = require("./toefl-access");
+const toeflRecords = require("./toefl-records");
 
 const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -4814,7 +4815,20 @@ tiku.mountRoutes(app, {
   teacherAuthMiddleware: teacherAuthMiddleware,
   platformAuthMiddleware: platformAuthMiddleware,
   isAdminPhone: isAdminPhone,
-  isOrgAdminReq: isOrgAdminReq
+  isOrgAdminReq: isOrgAdminReq,
+  canManageStudent: teacherCanManageStudent,
+  listManagedStudentIds: allowedStudentIdsForTeacher,
+  listStudentsByOrg: function (orgId) {
+    return (orgStmts.listStudentsByOrg.all(orgId) || []).filter(function (row) {
+      return !teacherPreview.isPreviewUser(row);
+    });
+  },
+  maskPhone: maskPhone
+});
+toeflRecords.mountStudentRoutes(app, {
+  db: db,
+  dataDir: dataDir,
+  authMiddleware: authMiddleware
 });
 
 vocabChallenge.mountRoutes(app, {
@@ -4882,6 +4896,7 @@ if (require.main === module) {
   vocabChallenge.selfCheck();
   tiku.selfCheck(path.join(__dirname, ".."));
   toeflAccess.selfCheck();
+  toeflRecords.selfCheck();
   try {
     teacherPreview.selfCheck(db, stmts, vocabChallenge);
   } catch (e) {

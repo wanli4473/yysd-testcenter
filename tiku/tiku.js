@@ -1,4 +1,4 @@
-/* 题库中心教师站 - 题目审阅 / 已有试卷 / 开通（管理员） */
+/* 题库中心教师站 - 题目审阅 / 已有试卷 / 学生做题记录 / 开通（管理员） */
 (function (w) {
   "use strict";
   var API = (w.location.hostname === "localhost" || w.location.hostname === "127.0.0.1")
@@ -42,6 +42,19 @@
   var gwStart = "";
   var gwExp = "";
   var ledger = [];
+  var recStudents = null;
+  var recStudent = null;
+  var recRows = [];
+  var recQ = "";
+  var recRange = "all";
+  var recKind = "";
+  var recSkill = "reading";
+  var recType = "";
+  var recOpenKey = "";
+  var recHistId = 0;
+  var recAudioUrl = "";
+  var REC_SKILLS = ["reading", "listening", "speaking", "writing"];
+  var isDemo = false;
   var toastTimer = 0;
 
   function token() {
@@ -729,8 +742,304 @@
     if (prev) try { prev.focus(); } catch (e) {}
   }
 
+  function recFmt(iso) {
+    if (!iso) return "还没练过";
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso).slice(0, 16);
+      var m = d.getMonth() + 1;
+      var day = d.getDate();
+      var hh = d.getHours();
+      var mm = d.getMinutes();
+      return (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day + " " +
+        (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
+    } catch (e) { return String(iso).slice(0, 16); }
+  }
+  function recMeta(s) {
+    var last = s.lastAt ? recFmt(s.lastAt) : "还没练过";
+    return last + " · 已练 " + (s.practiceCount || 0) + " 题 · 模考 " + (s.mockCount || 0) + " 场";
+  }
+  function recFilterRange(rows, range) {
+    if (!range || range === "all") return rows || [];
+    var days = range === "7" ? 7 : 30;
+    var cut = new Date(Date.now() - days * 86400000).toISOString();
+    return (rows || []).filter(function (r) { return String(r.submittedAt || "") >= cut; });
+  }
+  function recLatestMap(rows) {
+    var map = {};
+    (rows || []).forEach(function (r) {
+      var k = r.itemKey;
+      if (!map[k]) map[k] = [];
+      map[k].push(r);
+    });
+    Object.keys(map).forEach(function (k) {
+      map[k].sort(function (a, b) {
+        return String(b.submittedAt || "").localeCompare(String(a.submittedAt || "")) || ((b.id || 0) - (a.id || 0));
+      });
+    });
+    return map;
+  }
+  function recMockSessions(rows) {
+    var map = {};
+    (rows || []).forEach(function (r) {
+      var k = String(r.packageId || "") + "|" + String(r.sid || "");
+      if (!map[k]) map[k] = { key: k, packageId: r.packageId, sid: r.sid, title: r.title || r.packageId, submittedAt: r.submittedAt, sections: {} };
+      if (!map[k].sections[r.skill]) map[k].sections[r.skill] = [];
+      map[k].sections[r.skill].push(r);
+      if (r.submittedAt > map[k].submittedAt) {
+        map[k].submittedAt = r.submittedAt;
+        if (r.title) map[k].title = r.title;
+      }
+    });
+    return Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) {
+      return String(b.submittedAt || "").localeCompare(String(a.submittedAt || ""));
+    });
+  }
+  function recScoreText(r) {
+    if (!r) return "—";
+    if (r.skill === "speaking") return r.recorded || r.hasAudio ? "已录音" : "未录";
+    if (r.score != null && r.total != null) return r.score + " / " + r.total;
+    if (r.ok || r.wrong) return (r.ok || 0) + " 对 / " + ((r.ok || 0) + (r.wrong || 0));
+    return "已交卷";
+  }
+  function recRevokeAudio() {
+    if (recAudioUrl) {
+      try { URL.revokeObjectURL(recAudioUrl); } catch (e) {}
+      recAudioUrl = "";
+    }
+  }
+  function recFindOpen(rows) {
+    var list = rows || [];
+    if (recHistId) {
+      for (var i = 0; i < list.length; i++) if (Number(list[i].id) === Number(recHistId)) return list[i];
+    }
+    return list[0] || null;
+  }
+  function recPaintSheet(hist) {
+    var host = document.getElementById("rec-sheet");
+    if (!host) return;
+    recRevokeAudio();
+    var open = recFindOpen(hist);
+    if (!open) {
+      host.innerHTML = '<div class="pane-title"><h2>作答</h2></div><div class="empty"><b>选择一条记录</b><p>先看对错，点开再看作答。</p></div>';
+      return;
+    }
+    var older = (hist || []).map(function (r) {
+      return '<option value="' + r.id + '"' + (Number(r.id) === Number(open.id) ? " selected" : "") + ">" +
+        esc(recFmt(r.submittedAt)) + (r === hist[0] ? " · 最近" : "") + "</option>";
+    }).join("");
+    var items = open.items || [];
+    var itemHtml = items.length ? items.map(function (it) {
+      var mark = it.ok === true ? "对" : it.ok === false ? "错" : "—";
+      return '<li><b>第 ' + esc(String(it.no == null ? "" : it.no)) + " 题 · " + mark + "</b>" +
+        (it.stem ? "<p class=\"rec-stem\">" + esc(it.stem) + "</p>" : "") +
+        "<p>学生作答：" + esc(it.ua || "未作答") + "</p>" +
+        (it.expect ? "<p>正确答案：" + esc(it.expect) + "</p>" : "") +
+        (it.words != null ? "<p class=\"muted\">" + esc(String(it.words)) + " 词</p>" : "") +
+        "</li>";
+    }).join("") : "<p class=\"teacher-empty-row\">没有小题明细</p>";
+    var img = open.image ? mediaPath(open.image) : "";
+    host.innerHTML =
+      '<div class="pane-title"><h2>' + esc(open.title || "作答") + "</h2><span class=\"n\">" + esc(recScoreText(open)) + "</span></div>" +
+      (hist.length > 1 ? '<label class="rec-hist">历史<select id="rec-hist" aria-label="历史次数">' + older + "</select></label>" : "") +
+      '<p class="rec-when">' + esc(recFmt(open.submittedAt)) + " · " + esc(SKILL_ZH[open.skill] || open.skill) +
+        (open.taskType ? " · " + esc(TYPE_ZH[open.taskType] || open.taskType) : "") + "</p>" +
+      (open.stem ? '<p class="rec-stem">' + esc(open.stem) + "</p>" : "") +
+      (img ? '<p class="rec-fig"><img src="' + esc(img) + '" alt=""></p>' : "") +
+      (open.skill === "speaking"
+        ? '<audio data-rec-audio controls hidden></audio><p class="muted" data-rec-audio-miss hidden>已录，音频未传到云。</p>' +
+          (open.hasAudio || open.recorded ? "" : "<p class=\"muted\">这题没有录音。</p>")
+        : "") +
+      "<ul class=\"rec-items\">" + itemHtml + "</ul>";
+    if (open.skill === "speaking" && open.hasAudio && open.id && !isDemo) recLoadAudio(open.id, host);
+  }
+  function recLoadAudio(id, host) {
+    fetch(API + "/api/tiku/records/" + id + "/audio", {
+      headers: { Authorization: token() ? "Bearer " + token() : "", "X-Tenant-Slug": "yysd" },
+      cache: "no-store"
+    }).then(function (r) {
+      if (!r.ok) throw new Error("没有录音");
+      return r.blob();
+    }).then(function (blob) {
+      recAudioUrl = URL.createObjectURL(blob);
+      var a = host.querySelector("[data-rec-audio]");
+      if (a) { a.src = recAudioUrl; a.hidden = false; }
+    }).catch(function () {
+      var miss = host.querySelector("[data-rec-audio-miss]");
+      if (miss) miss.hidden = false;
+    });
+  }
+  function recPracticeRows(rows) {
+    var map = recLatestMap(rows.filter(function (r) { return r.kind === "practice"; }));
+    var types = TYPES[recSkill] || [];
+    var wantType = recType || types[0] || "";
+    var keys = Object.keys(map).filter(function (k) {
+      var r = map[k][0];
+      return r.skill === recSkill && (!wantType || r.taskType === wantType);
+    });
+    keys.sort(function (a, b) {
+      return String(map[b][0].submittedAt || "").localeCompare(String(map[a][0].submittedAt || ""));
+    });
+    return keys.map(function (k) { return { key: k, hist: map[k] }; });
+  }
+  function paintRecRoster() {
+    var list = (recStudents || []).slice().sort(function (a, b) {
+      var ta = a.lastAt || "";
+      var tb = b.lastAt || "";
+      if (ta !== tb) return tb.localeCompare(ta);
+      return String(a.displayName || a.phone || "").localeCompare(String(b.displayName || b.phone || ""), "zh");
+    });
+    var q = recQ.toLowerCase();
+    var rows = list.map(function (s) {
+      return '<button type="button" class="g-row rec-stu" data-rec-stu="' + s.id + '">' +
+        '<span class="g-who">' + esc(s.displayName || "未命名") +
+          (s.phone ? "<i>" + esc(s.phone) + "</i>" : "") + "</span>" +
+        '<span class="rec-meta">' + esc(recMeta(s)) + "</span></button>";
+    }).join("");
+    document.getElementById("main").innerHTML =
+      '<div class="records-page"><section class="card pool-pane">' +
+        '<div class="pane-title"><h2>学生做题记录</h2><span class="n">共 ' + list.length + " 人</span></div>" +
+        '<div class="filters"><input class="q" id="rec-q" type="search" placeholder="搜索姓名或手机号" value="' + esc(recQ) + '"></div>' +
+        '<p class="pool-meta">点进一个人看真题题库和考前冲刺包。没练过的也会出现。</p>' +
+        '<div class="g-list rec-list" id="rec-list">' +
+          (rows || '<div class="empty"><b>名下还没有学生</b></div>') +
+        "</div></section></div>";
+    if (q) filterRecRows();
+  }
+  function filterRecRows() {
+    var q = recQ.toLowerCase();
+    document.querySelectorAll("#rec-list .rec-stu").forEach(function (row) {
+      var hit = !q || (row.textContent || "").toLowerCase().indexOf(q) >= 0;
+      row.classList.toggle("hidden", !hit);
+    });
+  }
+  function paintRecStudent() {
+    var s = recStudent || {};
+    var rows = recFilterRange(recRows, recRange);
+    var kind = recKind || "practice";
+    var skillBtns = REC_SKILLS.map(function (sk) {
+      return '<button type="button" class="' + (recSkill === sk ? "is-on" : "") + '" data-rec-skill="' + sk + '">' +
+        esc(SKILL_ZH[sk]) + "</button>";
+    }).join("");
+    var types = TYPES[recSkill] || [];
+    if (!recType && types[0]) recType = types[0];
+    var typeBtns = types.map(function (tp) {
+      return '<button type="button" class="' + (recType === tp ? "is-on" : "") + '" data-rec-type="' + tp + '">' +
+        esc(TYPE_ZH[tp] || tp) + "</button>";
+    }).join("");
+    var listHtml;
+    var openHist = [];
+    if (kind === "mock") {
+      var sessions = recMockSessions(rows.filter(function (r) { return r.kind === "mock"; }));
+      if (!sessions.length) {
+        listHtml = '<div class="empty"><b>这段时间没有模考</b><p>交卷后马上出现。</p></div>';
+      } else {
+        listHtml = sessions.map(function (sess) {
+          var secs = REC_SKILLS.map(function (sk) {
+            var pack = sess.sections[sk] || [];
+            var top = pack[0];
+            var on = recOpenKey === (sess.key + "|" + sk);
+            if (on) openHist = pack;
+            return '<button type="button" class="rec-sec' + (on ? " is-on" : "") + '" data-rec-open="' +
+              esc(sess.key + "|" + sk) + '"' + (top ? "" : " disabled") + ">" +
+              esc(SKILL_ZH[sk]) + "<small>" + esc(top ? recScoreText(top) : "未考") + "</small></button>";
+          }).join("");
+          return '<article class="rec-sess"><header><b>' + esc(sess.title || sess.packageId) +
+            "</b><span>" + esc(recFmt(sess.submittedAt)) + "</span></header><div class=\"rec-secs\">" + secs + "</div></article>";
+        }).join("");
+      }
+    } else {
+      var items = recPracticeRows(rows);
+      if (!items.length) {
+        listHtml = '<div class="empty"><b>这科这题型还没有记录</b><p>换一科或放宽时间再看。</p></div>';
+      } else {
+        listHtml = items.map(function (it) {
+          var r = it.hist[0];
+          var on = recOpenKey === it.key;
+          if (on) openHist = it.hist;
+          return '<button type="button" class="g-row rec-item' + (on ? " is-on" : "") + '" data-rec-open="' + esc(it.key) + '">' +
+            "<span class=\"g-who\">" + esc(r.title || r.paperId) +
+              (it.hist.length > 1 ? "<i>" + it.hist.length + " 次</i>" : "") + "</span>" +
+            '<span class="rec-meta">' + esc(recScoreText(r)) + " · " + esc(recFmt(r.submittedAt)) + "</span></button>";
+        }).join("");
+      }
+    }
+    document.getElementById("main").innerHTML =
+      '<div class="records-page">' +
+        '<div class="pane-title"><button type="button" class="link-btn" data-rec-back="1">返回名单</button>' +
+          "<h2>" + esc(s.displayName || "学生") + "</h2><span class=\"n\">" + esc(recMeta(s)) + "</span></div>" +
+        '<div class="filters"><label class="rec-range">时间 <select id="rec-range" aria-label="时间范围">' +
+          '<option value="all"' + (recRange === "all" ? " selected" : "") + ">全部</option>" +
+          '<option value="7"' + (recRange === "7" ? " selected" : "") + ">近 7 天</option>" +
+          '<option value="30"' + (recRange === "30" ? " selected" : "") + ">近 30 天</option>" +
+        "</select></label></div>" +
+        '<div class="tabs grant-boards" role="tablist">' +
+          '<button type="button" class="' + (kind === "practice" ? "is-on" : "") + '" data-rec-kind="practice">真题题库</button>' +
+          '<button type="button" class="' + (kind === "mock" ? "is-on" : "") + '" data-rec-kind="mock">考前冲刺包</button>' +
+        "</div>" +
+        '<div class="bench rec-bench"><section class="card pool-pane">' +
+          (kind === "practice" ? '<div class="rec-chips" role="tablist" aria-label="科目">' + skillBtns + "</div>" +
+            '<div class="rec-chips rec-types" role="tablist" aria-label="题型">' + typeBtns + "</div>" : "") +
+          '<div class="g-list rec-list">' + listHtml + "</div></section>" +
+          '<section class="card sheet" id="rec-sheet"></section></div></div>';
+    if (!recOpenKey && kind === "practice") {
+      var first = recPracticeRows(rows)[0];
+      if (first) recOpenKey = first.key;
+      openHist = first ? first.hist : [];
+    }
+    recPaintSheet(openHist);
+  }
+  function paintRecords() {
+    if (!recStudent) paintRecRoster();
+    else paintRecStudent();
+  }
+  function loadRecRoster() {
+    if (isDemo) {
+      recStudents = recStudents || [
+        { id: 1, displayName: "李四", phone: "138****0001", lastAt: "2026-10-26T08:12:00.000Z", practiceCount: 2, mockCount: 1 },
+        { id: 2, displayName: "王五", phone: "138****0002", lastAt: "", practiceCount: 0, mockCount: 0 }
+      ];
+      return Promise.resolve();
+    }
+    return api("/api/tiku/records/students").then(function (d) {
+      recStudents = d.students || [];
+    });
+  }
+  function demoRecRows() {
+    return [
+      { id: 11, kind: "practice", itemKey: "practice|reading|set-1|0", skill: "reading", paperId: "set-1", taskType: "complete_words", taskIndex: 0, sid: "s2", title: "Set 1 · 单词填空", stem: "The archaeopteryx ___", submittedAt: "2026-10-26T08:12:00.000Z", score: 8, total: 10, ok: 8, wrong: 2, items: [{ no: 1, ok: true, ua: "flew", expect: "flew", stem: "The bird ___" }, { no: 2, ok: false, ua: "swim", expect: "swam", stem: "It ___ across" }] },
+      { id: 10, kind: "practice", itemKey: "practice|reading|set-1|0", skill: "reading", paperId: "set-1", taskType: "complete_words", taskIndex: 0, sid: "s1", title: "Set 1 · 单词填空", stem: "The archaeopteryx ___", submittedAt: "2026-10-20T08:00:00.000Z", score: 6, total: 10, ok: 6, wrong: 4, items: [{ no: 1, ok: false, ua: "fly", expect: "flew", stem: "The bird ___" }] },
+      { id: 12, kind: "practice", itemKey: "practice|speaking|set-1|0", skill: "speaking", paperId: "set-1", taskType: "repeat", taskIndex: 0, sid: "s3", title: "Set 1 · 听力复述", stem: "Listen and repeat.", submittedAt: "2026-10-25T09:00:00.000Z", recorded: true, hasAudio: false, items: [{ no: 1, ok: true, ua: "recorded", expect: "recorded" }] },
+      { id: 13, kind: "practice", itemKey: "practice|writing|bank-we|0", skill: "writing", paperId: "bank-we", taskType: "email", taskIndex: 0, sid: "s4", title: "给教授写邮件", stem: "Write an email to your professor.", submittedAt: "2026-10-24T10:00:00.000Z", items: [{ no: 1, ok: null, ua: "Dear Professor, I would like to ask for an extension.", expect: "", words: 11 }] },
+      { id: 21, kind: "mock", itemKey: "mock|2025-07-16|reading|0", skill: "reading", packageId: "2025-07-16", paperId: "2025-07-16", taskType: "academic", taskIndex: 0, sid: "m1", title: "2025-07-16", stem: "Academic passage", submittedAt: "2026-10-26T07:00:00.000Z", score: 18, total: 20, items: [{ no: 1, ok: true, ua: "B", expect: "B", stem: "The author mentions X in order to" }] },
+      { id: 22, kind: "mock", itemKey: "mock|2025-07-16|listening|0", skill: "listening", packageId: "2025-07-16", paperId: "2025-07-16", taskType: "lecture", taskIndex: 0, sid: "m1", title: "2025-07-16", submittedAt: "2026-10-26T07:40:00.000Z", score: 15, total: 20, items: [{ no: 1, ok: false, ua: "A", expect: "C", stem: "Why does the professor mention glaciers?" }] }
+    ];
+  }
+  function loadRecStudent(id) {
+    if (isDemo) {
+      recStudent = (recStudents || []).filter(function (s) { return Number(s.id) === Number(id); })[0] || { id: id, displayName: "学生" };
+      recRows = Number(id) === 1 ? demoRecRows() : [];
+      if (!recKind) recKind = recRows.length ? (recRows[0].kind === "mock" && recRows[0].submittedAt >= (recRows[1] && recRows[1].submittedAt || "") ? "practice" : "practice") : "practice";
+      if (!recKind) recKind = "practice";
+      var latest = recRows[0];
+      recRows.forEach(function (r) { if (!latest || r.submittedAt > latest.submittedAt) latest = r; });
+      if (latest) recKind = latest.kind;
+      return Promise.resolve();
+    }
+    var q = recRange && recRange !== "all" ? "?range=" + encodeURIComponent(recRange) : "";
+    return api("/api/tiku/records/students/" + id + q).then(function (d) {
+      recStudent = d.student || { id: id };
+      recRows = d.records || [];
+      if (!recKind) recKind = d.defaultKind || "practice";
+    });
+  }
+  function ensureRecords() {
+    if (recStudent) return loadRecStudent(recStudent.id).then(paintRecords);
+    return loadRecRoster().then(paintRecords);
+  }
+
   function paintTabs() {
-    var tabs = [["pool", "题目审阅"], ["mine", "已有试卷"]];
+    var tabs = [["pool", "题目审阅"], ["mine", "已有试卷"], ["records", "学生做题记录"]];
     if (me && me.canGrant) tabs.push(["grant", "开通"]);
     if (me && me.isAdmin) tabs.push(["review", "审核"]);
     document.getElementById("tabs").innerHTML = tabs.map(function (t) {
@@ -744,10 +1053,15 @@
     if (who) who.textContent = (me.name || me.phone || "") + (me.isAdmin ? " · 总部" : me.canGrant ? " · 管理员" : "");
     if (tab === "pool") paintPool();
     else if (tab === "grant") paintGrant();
+    else if (tab === "records") paintRecords();
     else if (tab === "review") paintList(papers, true);
     else paintList(papers, false);
   }
   function reload() {
+    if (tab === "records") {
+      paintTabs();
+      return ensureRecords();
+    }
     return Promise.all([api("/api/tiku/pool"), api("/api/tiku/papers")]).then(function (xs) {
       pool = xs[0].blocks || [];
       predictionSummary = xs[0].prediction;
@@ -761,7 +1075,7 @@
     var btns = document.querySelectorAll("#refresh,[data-refresh]");
     btns.forEach(function (b) { b.disabled = true; });
     return reload().then(function () {
-      msg("已刷新 · " + pool.length + " 个题块", true);
+      msg(tab === "records" ? "已刷新做题记录" : ("已刷新 · " + pool.length + " 个题块"), true);
     }).catch(function (e) {
       msg(e.message || "刷新失败");
     }).then(function () {
@@ -818,6 +1132,15 @@
     assert.strictEqual(paused + revoked + aborted, 3);
     URL.revokeObjectURL = revoke;
     delete global.document;
+    assert.ok(recMeta({ practiceCount: 2, mockCount: 1, lastAt: "2026-10-26T08:12:00.000Z" }).indexOf("已练 2 题") >= 0);
+    assert.ok(recMeta({ practiceCount: 0, mockCount: 0 }).indexOf("还没练过") >= 0);
+    var recs = demoRecRows();
+    assert.strictEqual(recLatestMap(recs)["practice|reading|set-1|0"].length, 2);
+    assert.strictEqual(recLatestMap(recs)["practice|reading|set-1|0"][0].id, 11);
+    assert.strictEqual(recMockSessions(recs.filter(function (r) { return r.kind === "mock"; })).length, 1);
+    assert.strictEqual(recFilterRange(recs, "all").length, recs.length);
+    var Rec = require("../server/toefl-records");
+    Rec.selfCheck();
     console.log("ok prediction-ui-review-check");
     return;
   }
@@ -841,6 +1164,7 @@
       tab = tabBtn;
       paint();
       if (tab === "grant") ensureGrant();
+      if (tab === "records") ensureRecords();
       return;
     }
     if (t.getAttribute("data-bpv")) {
@@ -923,6 +1247,30 @@
     }
     else if (id === "g-start") { gwStart = ev.target.value; return; }
     else if (id === "g-exp") { gwExp = ev.target.value; return; }
+    else if (id === "rec-range") {
+      recRange = ev.target.value || "all";
+      recOpenKey = "";
+      recHistId = 0;
+      if (recStudent) loadRecStudent(recStudent.id).then(paintRecStudent);
+      return;
+    }
+    else if (id === "rec-hist") {
+      recHistId = Number(ev.target.value) || 0;
+      var hist = [];
+      if (recKind === "mock" && recOpenKey.indexOf("|") >= 0) {
+        var parts = recOpenKey.split("|");
+        var sk = parts.pop();
+        var sessKey = parts.join("|");
+        recMockSessions(recFilterRange(recRows, recRange).filter(function (r) { return r.kind === "mock"; })).forEach(function (sess) {
+          if (sess.key === sessKey) hist = sess.sections[sk] || [];
+        });
+      } else {
+        var map = recLatestMap(recFilterRange(recRows, recRange).filter(function (r) { return r.kind === "practice"; }));
+        hist = map[recOpenKey] || [];
+      }
+      recPaintSheet(hist);
+      return;
+    }
     else {
       var gsel = ev.target.getAttribute && ev.target.getAttribute("data-gsel");
       if (gsel) {
@@ -940,9 +1288,69 @@
   document.addEventListener("input", function (ev) {
     if (ev.target.id === "f-q") { F.q = ev.target.value.toLowerCase(); updatePoolList(); }
     else if (ev.target.id === "g-q") { stuQ = ev.target.value; filterStuRows(); }
+    else if (ev.target.id === "rec-q") { recQ = ev.target.value; filterRecRows(); }
   });
 
-  w.addEventListener("pagehide", clearReview);
+  document.addEventListener("click", function (ev) {
+    var t = ev.target.closest("[data-rec-stu],[data-rec-back],[data-rec-kind],[data-rec-skill],[data-rec-type],[data-rec-open]");
+    if (!t) return;
+    var sid = t.getAttribute("data-rec-stu");
+    if (sid) {
+      recKind = "";
+      recOpenKey = "";
+      recHistId = 0;
+      recType = "";
+      recSkill = "reading";
+      loadRecStudent(sid).then(paintRecStudent).catch(function (e) { msg(e.message); });
+      return;
+    }
+    if (t.getAttribute("data-rec-back")) {
+      recStudent = null;
+      recRows = [];
+      recKind = "";
+      recOpenKey = "";
+      recHistId = 0;
+      recRevokeAudio();
+      paintRecRoster();
+      return;
+    }
+    var kind = t.getAttribute("data-rec-kind");
+    if (kind) {
+      recKind = kind;
+      recOpenKey = "";
+      recHistId = 0;
+      paintRecStudent();
+      return;
+    }
+    var skill = t.getAttribute("data-rec-skill");
+    if (skill) {
+      recSkill = skill;
+      recType = "";
+      recOpenKey = "";
+      recHistId = 0;
+      paintRecStudent();
+      return;
+    }
+    var typ = t.getAttribute("data-rec-type");
+    if (typ) {
+      recType = typ;
+      recOpenKey = "";
+      recHistId = 0;
+      paintRecStudent();
+      return;
+    }
+    var open = t.getAttribute("data-rec-open");
+    if (open) {
+      recOpenKey = open;
+      recHistId = 0;
+      paintRecStudent();
+    }
+  });
+
+  w.addEventListener("pagehide", function () {
+    clearReview();
+    recRevokeAudio();
+  });
 
   function filterStuRows() {
     var q = stuQ.toLowerCase();
@@ -996,10 +1404,12 @@
       { id: "tp_demo1", title: "十月冲刺模考 A 卷", kind: "full", status: "live", owner: "teacher", skillMinutes: { reading: 35, listening: 36, writing: 29, speaking: 16 }, blocks: [pool[0], pool[4], pool[7], pool[10]], updatedAt: "2026-10-13T10:24:00" },
       { id: "tp_demo2", title: "阅读专项 · 学术文章", kind: "single", status: "draft", owner: "teacher", skillMinutes: {}, blocks: [pool[2], pool[3]], updatedAt: "2026-10-12T18:02:00" }
     ];
-    var dt = (w.location.search.match(/(?:\?|&)tab=(pool|mine|grant)(?:&|$)/) || [])[1];
+    isDemo = true;
+    var dt = (w.location.search.match(/(?:\?|&)tab=(pool|mine|grant|records)(?:&|$)/) || [])[1];
     if (dt) tab = dt;
     show("app");
     paint();
+    if (tab === "records") ensureRecords();
     return;
   }
   if (token()) bootApp();

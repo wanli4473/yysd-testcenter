@@ -13,6 +13,7 @@
   <script src="assets/js/toefl-speaking.js?v=20261009iv1"></script>
   <script src="assets/js/toefl-full.js?v=20261020lib2"></script>
   <script src="assets/js/toefl-lab.js?v=20261020lib2"></script>
+  <script src="assets/js/toefl-sync.js?v=20261027rec1"></script>
   <script src="assets/js/toefl-shell.js?v=20261020gate1"></script>
 </head>
 <body class="exam-ets ets-booting">
@@ -437,6 +438,7 @@
           Lab.markSessionDone("speaking", paperId, paper, taskQ, taskEndQ);
           if (Lab.saveSpeakingResults) Lab.saveSpeakingResults("speaking", paperId, paper, screens, recs);
         }
+        if (window.YYSD_TOEFL_SYNC) YYSD_TOEFL_SYNC.fromSpeaking(paperId, paper, screens, recs, {});
         if (F && F.isFull()) {
           var n = 0;
           Object.keys(recs).forEach(function (k) { if (recs[k] && recs[k].blob) n += 1; });

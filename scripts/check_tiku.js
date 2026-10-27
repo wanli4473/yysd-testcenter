@@ -219,7 +219,25 @@ var gate = fs.readFileSync(path.join(__dirname, "..", "tiku/gate.js"), "utf8");
 if (gate.indexOf("injectRefresh") < 0) throw new Error("gate injects refresh");
 var plat = fs.readFileSync(path.join(__dirname, "..", "platform.html"), "utf8");
 if (plat.indexOf("plat-tiku") < 0) throw new Error("platform tiku");
-if (ui.indexOf('[["pool", "题目审阅"], ["mine", "已有试卷"]]') < 0) throw new Error("teacher review tabs");
+if (ui.indexOf('[["pool", "题目审阅"], ["mine", "已有试卷"], ["records", "学生做题记录"]]') < 0) {
+  throw new Error("student records tab after 已有试卷");
+}
+if (ui.indexOf("function paintRecords") < 0 || ui.indexOf("data-rec-stu") < 0 || ui.indexOf("data-rec-kind") < 0) {
+  throw new Error("records board missing");
+}
+if (ui.indexOf("rec-range") < 0 || ui.indexOf("data-rec-skill") < 0 || ui.indexOf("data-rec-type") < 0) {
+  throw new Error("records filters");
+}
+var recJs = fs.readFileSync(path.join(__dirname, "..", "server/toefl-records.js"), "utf8");
+if (recJs.indexOf("toefl_records") < 0 || recJs.indexOf("/api/toefl/records") < 0) throw new Error("records API");
+var recUi = fs.readFileSync(path.join(__dirname, "..", "tiku/index.html"), "utf8");
+if (recUi.indexOf("学生做题记录") < 0) throw new Error("records meta");
+var sync = fs.readFileSync(path.join(__dirname, "..", "assets/js/toefl-sync.js"), "utf8");
+if (sync.indexOf("fromScore") < 0 || sync.indexOf("fromSpeaking") < 0) throw new Error("toefl-sync");
+["toefl-reading.html", "toefl-listening.html", "toefl-writing.html", "toefl-speaking.html"].forEach(function (f) {
+  var html = fs.readFileSync(path.join(__dirname, "..", f), "utf8");
+  if (html.indexOf("toefl-sync.js") < 0) throw new Error(f + " missing sync");
+});
 ["data-add", "function saveBuild", "function paintBuild", "function copyPaper", "data-edit"].forEach(function (s) {
   if (ui.indexOf(s) >= 0) throw new Error("manual builder remains: " + s);
 });

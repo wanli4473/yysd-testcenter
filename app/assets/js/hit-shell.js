@@ -103,6 +103,7 @@
       document.querySelector(".hit-skip").onclick = function (ev) { ev.preventDefault(); main.focus(); };
     }
     document.body.insertAdjacentHTML("beforeend", '<footer class="hit-footer"><span>优益思达国际课程中心</span><span>TOEFL 学习系统</span></footer>');
+    if (w.YYSD_TOEFL_SYNC && w.YYSD_TOEFL_SYNC.flush) w.YYSD_TOEFL_SYNC.flush();
     var out = document.getElementById("hit-out");
     if (out) out.onclick = function () { A.logout(); location.replace("login.html"); };
     var reload = document.getElementById("hit-reload");

@@ -5,6 +5,7 @@
 var crypto = require("crypto");
 var fs = require("fs");
 var path = require("path");
+var toeflRecords = require("./toefl-records");
 
 var KINDS = { practice: 1, full: 1, single: 1 };
 var SKILLS = ["reading", "listening", "writing", "speaking"];
@@ -815,6 +816,88 @@ function mountRoutes(app, deps) {
         canTiku: true
       }
     });
+  });
+
+  function recordsSeeAll(req) {
+    return !!(req.tikuAdmin || (deps.isOrgAdminReq && deps.isOrgAdminReq(req)));
+  }
+  function recordsStudentsFor(req) {
+    var orgId = req.user && req.user.orgId;
+    var rows = (orgId && deps.listStudentsByOrg) ? (deps.listStudentsByOrg(orgId) || []) : [];
+    if (!recordsSeeAll(req) && deps.listManagedStudentIds) {
+      var allowed = deps.listManagedStudentIds(req);
+      if (allowed) {
+        var set = {};
+        allowed.forEach(function (id) { set[id] = 1; });
+        rows = rows.filter(function (r) { return set[r.id]; });
+      }
+    }
+    return rows.map(function (row) {
+      return {
+        id: row.id,
+        displayName: row.display_name || row.displayName || "",
+        phone: deps.maskPhone ? deps.maskPhone(row.phone) : row.phone,
+        lastLoginAt: row.last_login_at || row.lastLoginAt || null
+      };
+    });
+  }
+  function recordsCanSee(req, userId) {
+    if (recordsSeeAll(req)) {
+      var rows = recordsStudentsFor(req);
+      return rows.some(function (s) { return Number(s.id) === Number(userId); });
+    }
+    return !!(deps.canManageStudent && deps.canManageStudent(req, userId));
+  }
+
+  app.get("/api/tiku/records/students", tikuAuth, function (req, res) {
+    toeflRecords.ensureSchema(db);
+    res.json({ ok: true, students: toeflRecords.attachStats(db, recordsStudentsFor(req)) });
+  });
+
+  app.get("/api/tiku/records/students/:userId", tikuAuth, function (req, res) {
+    var userId = Number(req.params.userId);
+    if (!userId) return sendErr(res, 400, "无效的学生");
+    if (!recordsCanSee(req, userId)) return sendErr(res, 403, "该学生未分配给你");
+    toeflRecords.ensureSchema(db);
+    var from = toeflRecords.rangeFrom(req.query.range);
+    if (req.query.from) from = String(req.query.from);
+    var list = toeflRecords.listStudentRecords(db, userId, {
+      kind: req.query.kind,
+      from: from,
+      to: req.query.to,
+      detail: true
+    });
+    var roster = recordsStudentsFor(req).filter(function (s) { return Number(s.id) === userId; })[0] || { id: userId };
+    res.json({
+      ok: true,
+      student: toeflRecords.attachStats(db, [roster])[0],
+      records: list,
+      defaultKind: toeflRecords.pickDefaultKind(list)
+    });
+  });
+
+  app.get("/api/tiku/records/:id/audio", tikuAuth, function (req, res) {
+    var id = Number(req.params.id);
+    if (!id) return sendErr(res, 400, "无效记录");
+    toeflRecords.ensureSchema(db);
+    var row = toeflRecords.getRecord(db, id);
+    if (!row) return sendErr(res, 404, "没有这条记录");
+    if (!recordsCanSee(req, row.user_id)) return sendErr(res, 403, "该学生未分配给你");
+    var file = toeflRecords.audioAbs(path.join(__dirname, "data"), row);
+    if (!file || !fs.existsSync(file)) return sendErr(res, 404, "没有录音");
+    res.setHeader("Content-Type", row.audio_mime || "audio/webm");
+    res.setHeader("Cache-Control", "private, no-store");
+    fs.createReadStream(file).pipe(res);
+  });
+
+  app.get("/api/tiku/records/:id", tikuAuth, function (req, res) {
+    var id = Number(req.params.id);
+    if (!id) return sendErr(res, 400, "无效记录");
+    toeflRecords.ensureSchema(db);
+    var row = toeflRecords.getRecord(db, id);
+    if (!row) return sendErr(res, 404, "没有这条记录");
+    if (!recordsCanSee(req, row.user_id)) return sendErr(res, 403, "该学生未分配给你");
+    res.json({ ok: true, record: toeflRecords.rowView(row, { detail: true }) });
   });
 
   app.get("/api/tiku/pool", tikuAuth, function (req, res) {
