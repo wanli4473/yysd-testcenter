@@ -220,18 +220,61 @@
     return micCtx;
   }
 
-  function stopMic() {
+  function streamLive(stream) {
+    if (!stream || !stream.getAudioTracks) return false;
+    var tracks = stream.getAudioTracks();
+    var i;
+    for (i = 0; i < tracks.length; i++) {
+      if (tracks[i] && tracks[i].readyState === "live") return true;
+    }
+    return false;
+  }
+
+  // ponytail: Mac Chromium re-prompts after track.stop(); keep one live stream for the page
+  function acquireMic() {
+    if (streamLive(micStream)) return Promise.resolve(micStream);
+    if (micPending) return micPending;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return Promise.reject(new Error("no-mic"));
+    }
+    micPending = navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true }
+    }).then(function (stream) {
+      micStream = stream;
+      micPending = null;
+      stream.getAudioTracks().forEach(function (t) {
+        t.addEventListener("ended", function () {
+          if (micStream === stream) micStream = null;
+        });
+      });
+      return stream;
+    }).catch(function (err) {
+      micPending = null;
+      throw err;
+    });
+    return micPending;
+  }
+
+  function stopMicMeter() {
     if (micRaf) cancelAnimationFrame(micRaf);
     micRaf = 0;
+    if (micCtx) {
+      try { micCtx.close(); } catch (e) {}
+      micCtx = null;
+    }
+  }
+
+  function releaseMic() {
+    stopMicMeter();
     micPending = null;
     if (micStream) {
       micStream.getTracks().forEach(function (t) { t.stop(); });
       micStream = null;
     }
-    if (micCtx) {
-      try { micCtx.close(); } catch (e) {}
-      micCtx = null;
-    }
+  }
+
+  function stopMic() {
+    stopMicMeter();
   }
 
   function paintMeter(n) {
@@ -243,15 +286,6 @@
     }
     Array.prototype.forEach.call(box.children, function (el, i) {
       el.className = i < n ? (i < 7 ? "is-quiet" : (i < 15 ? "is-good" : "is-loud")) : "";
-    });
-  }
-
-  function askMic() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      return Promise.reject(new Error("no-mic"));
-    }
-    return navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true }
     });
   }
 
@@ -299,12 +333,7 @@
       if (ctx.state === "suspended") ctx.resume().then(tick).catch(tick);
       else tick();
     }
-    if (micStream) {
-      hook(micStream);
-      return;
-    }
-    (micPending || askMic()).then(function (stream) {
-      micStream = stream;
+    acquireMic().then(function (stream) {
       hook(stream);
     }).catch(function () {
       if (msg) msg.textContent = "Microphone permission is required for Speaking. You may Continue and allow it later.";
@@ -321,8 +350,7 @@
     if (!rec) return;
     rec.onclick = function () {
       ensureMicCtx();
-      micPending = askMic();
-      micPending.then(function (stream) { if (!micStream) micStream = stream; }).catch(function () {
+      acquireMic().catch(function () {
         if (msg) msg.textContent = "Microphone permission is required for Speaking. You may Continue and allow it later.";
       });
       var n = 3;
@@ -499,7 +527,7 @@
     function paint() {
       var scr = queue[i];
       if (!scr || !intro) return;
-      stopMic();
+      stopMicMeter();
       intro.innerHTML = "<h2>" + scr.title + "</h2>" + scr.html;
       if (next) {
         next.disabled = false;
@@ -519,15 +547,22 @@
         var scr = queue[i];
         if (i < queue.length - 1) {
           i += 1;
+          if (scr && scr.id === "microphone") {
+            acquireMic().then(function () { paint(); }, function () { paint(); });
+            return;
+          }
           paint();
           return;
         }
         if (opts.isFull && opts.skill === "reading") markHw(opts.id);
-        stopMic();
-        intro.classList.add("hidden");
-        next.onclick = oldNext;
-        examMode(true);
-        if (ready) ready();
+        stopMicMeter();
+        function beginExam() {
+          intro.classList.add("hidden");
+          next.onclick = oldNext;
+          examMode(true);
+          if (ready) ready();
+        }
+        acquireMic().then(beginExam, beginExam);
       };
     }
   }
@@ -557,6 +592,7 @@
     if (w.MutationObserver) {
       new MutationObserver(applyVol).observe(document.body, { childList: true, subtree: true });
     }
+    w.addEventListener("pagehide", function () { releaseMic(); });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindChrome);
@@ -597,6 +633,9 @@
     levelOf: levelOf,
     hwKey: hwKey,
     leaving: function () { return leaving; },
-    markLeaving: markLeaving
+    markLeaving: markLeaving,
+    acquireMic: acquireMic,
+    releaseMic: releaseMic,
+    micStream: function () { return micStream; }
   };
 })(window);

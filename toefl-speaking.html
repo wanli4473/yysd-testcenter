@@ -13,7 +13,7 @@
   <script src="assets/js/toefl-speaking.js?v=20261009iv1"></script>
   <script src="assets/js/toefl-full.js?v=20261020lib2"></script>
   <script src="assets/js/toefl-lab.js?v=20261020lib2"></script>
-  <script src="assets/js/toefl-shell.js?v=20261020gate1"></script>
+  <script src="assets/js/toefl-shell.js?v=20261027mic1"></script>
 </head>
 <body class="exam-ets ets-booting">
 <div class="ets-frame">
@@ -291,12 +291,20 @@
       }
 
       function stopTracks() {
-        if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+        if (window.YYSD_TOEFL_SHELL && YYSD_TOEFL_SHELL.releaseMic) YYSD_TOEFL_SHELL.releaseMic();
         stream = null;
       }
       function stopRec() {
         if (recTick) { clearInterval(recTick); recTick = null; }
         if (recorder && recorder.state === "recording") recorder.stop();
+      }
+      function acquireMic() {
+        var Sh = window.YYSD_TOEFL_SHELL;
+        if (Sh && Sh.acquireMic) return Sh.acquireMic();
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          return Promise.reject(new Error("no-mic"));
+        }
+        return navigator.mediaDevices.getUserMedia({ audio: true });
       }
       function storeBlob(id, blob, mime) {
         var prev = recs[id];
@@ -304,25 +312,29 @@
         recs[id] = { blob: blob, mime: mime, url: URL.createObjectURL(blob) };
         playback.classList.add("hidden");
       }
+      var recBusy = false;
       function startRec(auto) {
         var scr = screens[si];
         if (!scr) return;
         if (mode === "mock" && recs[scr.task.id] && !auto) return;
         if (recorder && recorder.state === "recording") return;
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          statusEl.textContent = "This browser cannot record audio.";
-          return;
-        }
-        navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+        if (recBusy) return;
+        recBusy = true;
+        acquireMic().then(function (s) {
+          recBusy = false;
           stream = s;
           chunks = [];
           var mime = S.recMime();
-          recorder = mime ? new MediaRecorder(s, { mimeType: mime }) : new MediaRecorder(s);
+          try {
+            recorder = mime ? new MediaRecorder(s, { mimeType: mime }) : new MediaRecorder(s);
+          } catch (err) {
+            statusEl.textContent = "This browser cannot record audio.";
+            return;
+          }
           recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
           recorder.onstop = function () {
             recBtn.textContent = "Record";
             recClock.textContent = "";
-            stopTracks();
             var blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
             if (blob.size) storeBlob(scr.task.id, blob, recorder.mimeType || "audio/webm");
             phase = "done";
@@ -348,6 +360,7 @@
             if (recLeft <= 0) stopRec();
           }, 1000);
         }).catch(function () {
+          recBusy = false;
           statusEl.textContent = "Microphone permission is required.";
         });
       }
@@ -431,7 +444,12 @@
       function finish() {
         clearInterval(tick);
         lockOn = false;
-        stopRec();
+        if (recorder && recorder.state === "recording") {
+          recorder.addEventListener("stop", function () { stopTracks(); });
+          stopRec();
+        } else {
+          stopTracks();
+        }
         clip.pause();
         if (Lab) {
           Lab.markSessionDone("speaking", paperId, paper, taskQ, taskEndQ);
@@ -491,7 +509,12 @@
         voided = true;
         lockOn = false;
         clearInterval(tick);
-        stopRec();
+        if (recorder && recorder.state === "recording") {
+          recorder.addEventListener("stop", function () { stopTracks(); });
+          stopRec();
+        } else {
+          stopTracks();
+        }
         clip.pause();
         if (F && F.isFull()) F.markVoid(paperId);
         document.getElementById("void-lock").classList.add("is-visible");
