@@ -871,11 +871,12 @@
   }
   function recPracticeRows(rows) {
     var map = recLatestMap(rows.filter(function (r) { return r.kind === "practice"; }));
-    var types = TYPES[recSkill] || [];
-    var wantType = recType || types[0] || "";
+    var wantType = recType && recType !== "all" ? recType : "";
     var keys = Object.keys(map).filter(function (k) {
       var r = map[k][0];
-      return r.skill === recSkill && (!wantType || r.taskType === wantType);
+      if (r.skill !== recSkill) return false;
+      if (!wantType) return true;
+      return r.taskType === wantType || !r.taskType;
     });
     keys.sort(function (a, b) {
       return String(map[b][0].submittedAt || "").localeCompare(String(map[a][0].submittedAt || ""));
@@ -922,11 +923,12 @@
         esc(SKILL_ZH[sk]) + "</button>";
     }).join("");
     var types = TYPES[recSkill] || [];
-    if (!recType && types[0]) recType = types[0];
-    var typeBtns = types.map(function (tp) {
-      return '<button type="button" class="' + (recType === tp ? "is-on" : "") + '" data-rec-type="' + tp + '">' +
-        esc(TYPE_ZH[tp] || tp) + "</button>";
-    }).join("");
+    if (!recType) recType = "all";
+    var typeBtns = ['<button type="button" class="' + (recType === "all" ? "is-on" : "") + '" data-rec-type="all">全部</button>']
+      .concat(types.map(function (tp) {
+        return '<button type="button" class="' + (recType === tp ? "is-on" : "") + '" data-rec-type="' + tp + '">' +
+          esc(TYPE_ZH[tp] || tp) + "</button>";
+      })).join("");
     var listHtml;
     var openHist = [];
     if (kind === "mock") {
@@ -1137,6 +1139,11 @@
     var recs = demoRecRows();
     assert.strictEqual(recLatestMap(recs)["practice|reading|set-1|0"].length, 2);
     assert.strictEqual(recLatestMap(recs)["practice|reading|set-1|0"][0].id, 11);
+    recType = "complete_words";
+    recSkill = "reading";
+    assert.strictEqual(recPracticeRows(recs).length, 1);
+    recType = "all";
+    assert.ok(recPracticeRows(recs).length >= 1);
     assert.strictEqual(recMockSessions(recs.filter(function (r) { return r.kind === "mock"; })).length, 1);
     assert.strictEqual(recFilterRange(recs, "all").length, recs.length);
     var Rec = require("../server/toefl-records");

@@ -234,6 +234,7 @@ var recUi = fs.readFileSync(path.join(__dirname, "..", "tiku/index.html"), "utf8
 if (recUi.indexOf("学生做题记录") < 0) throw new Error("records meta");
 var sync = fs.readFileSync(path.join(__dirname, "..", "assets/js/toefl-sync.js"), "utf8");
 if (sync.indexOf("fromScore") < 0 || sync.indexOf("fromSpeaking") < 0) throw new Error("toefl-sync");
+if (sync.indexOf("recordsFromLocalState") < 0 || sync.indexOf("backfill") < 0) throw new Error("toefl-sync backfill");
 ["toefl-reading.html", "toefl-listening.html", "toefl-writing.html", "toefl-speaking.html"].forEach(function (f) {
   var html = fs.readFileSync(path.join(__dirname, "..", f), "utf8");
   if (html.indexOf("toefl-sync.js") < 0) throw new Error(f + " missing sync");
