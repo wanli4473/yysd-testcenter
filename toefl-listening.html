@@ -13,6 +13,7 @@
   <script src="assets/js/toefl-reading.js?v=20261018cw1"></script>
   <script src="assets/js/toefl-full.js?v=20261020lib2"></script>
   <script src="assets/js/toefl-lab.js?v=20261020lib2"></script>
+  <script src="assets/js/toefl-sync.js?v=20261027rec2"></script>
   <script src="assets/js/toefl-shell.js?v=20261020gate1"></script>
 </head>
 <body class="exam-ets ets-booting">
@@ -348,6 +349,9 @@
         var r = T.scorePaper(Lab && labClip ? Lab.slicePaper(paper, taskQ, taskEndQ, typeQ) : paper, answers);
         if (Lab && Lab.saveScore) Lab.saveScore("listening", paperId, paper, r.detail);
         var att = Lab && Lab.logAttempt ? Lab.logAttempt("listening", paperId, (paper && paper.title) || paperId, r) : null;
+        if (window.YYSD_TOEFL_SYNC) {
+          YYSD_TOEFL_SYNC.fromScore("listening", paperId, paper, r.detail, { band: r.band, sid: att && att.sid });
+        }
         if (F && F.isFull()) {
           var act = F.afterSection("listening", paperId, mode, F.compactScore(r));
           if (act === "go") return;

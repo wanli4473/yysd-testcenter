@@ -425,6 +425,7 @@
     isDone: isDone,
     isFavCard: isFavCard,
     markSessionDone: markSessionDone,
+    findTaskIndex: findTaskIndex,
     saveScore: saveScore,
     logAttempt: logAttempt,
     attempts: attempts,
