@@ -243,6 +243,20 @@ window.YYSD_AUTH = (function () {
       "; path=/; max-age=" + (on ? 2592000 : 0) + "; SameSite=Lax" + secure;
   }
 
+  function isPreview() {
+    try { return new URLSearchParams(location.search).get("preview") === "1"; } catch (e) { return false; }
+  }
+
+  /* nginx /library/ 只认 yysd_auth。考场页在 <head> 之后立刻 fetch 卷 JSON，
+     不能等 DOMContentLoaded → bootstrapTenant → guardPage，否则整页都是 Unable to load。
+     preview=1 也会跳过登录，同样要先写 cookie。 */
+  function ensureLibraryCookie() {
+    try {
+      if (isPreview() || getToken() || hasAnySession()) setAuthCookie(true);
+    } catch (e) {}
+  }
+  ensureLibraryCookie();
+
   function hasAnySession() {
     try {
       return !!(localStorage.getItem(TOKEN_KEY) || localStorage.getItem(TEACHER_TOKEN_KEY));
@@ -802,11 +816,15 @@ window.YYSD_AUTH = (function () {
   }
 
   function requireLogin() {
-    try { if (new URLSearchParams(location.search).get("preview") === "1") return true; } catch (e) {}
+    if (isPreview()) {
+      ensureLibraryCookie();
+      return true;
+    }
     if (!getToken()) {
       (window.YYSD_GO || function (h) { location.href = h; })("login.html?next=" + encodeURIComponent(location.pathname + location.search), "scene");
       return false;
     }
+    ensureLibraryCookie();
     return true;
   }
 
@@ -931,12 +949,15 @@ window.YYSD_AUTH = (function () {
 
   function guardPage() {
     if (isPublicPage()) return true;
-    try { if (new URLSearchParams(location.search).get("preview") === "1") return true; } catch (e) {}
+    if (isPreview()) {
+      ensureLibraryCookie();
+      return true;
+    }
     if (!getToken()) {
       location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
       return false;
     }
-    setAuthCookie(true);
+    ensureLibraryCookie();
     return true;
   }
 
@@ -1029,6 +1050,7 @@ window.YYSD_AUTH = (function () {
     apiHtml: apiHtml,
     bindNav: bindNav,
     requireLogin: requireLogin,
+    ensureLibraryCookie: ensureLibraryCookie,
     logout: logout,
     studentHome: studentHome,
     postLoginPath: postLoginPath,

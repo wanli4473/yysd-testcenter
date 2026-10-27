@@ -137,6 +137,54 @@ assert.ok(fs.readFileSync(path.join(__dirname, "../toefl-listening.html"), "utf8
 var play = fs.readFileSync(path.join(__dirname, "../app/assets/js/play.js"), "utf8");
 assert.ok(play.indexOf("showLoadError(") >= 0 && play.indexOf("Unable to load this set") >= 0, "load failure must surface a visible panel");
 
+/* 官网 nginx /library/ 只认 yysd_auth。auth.js 必须在脚本解析时就写 cookie，
+   不能等 DOMContentLoaded，否则 toefl-*.html 的立刻 fetch 会吃到 login.html。 */
+var authSrc = fs.readFileSync(path.join(__dirname, "../assets/js/auth.js"), "utf8");
+assert.ok(authSrc.indexOf("function ensureLibraryCookie") >= 0, "library cookie helper missing");
+assert.ok(authSrc.indexOf("ensureLibraryCookie();") >= 0, "library cookie must run during script eval");
+function authCookieSandbox(search, store) {
+  var cookie = "";
+  var sb = {
+    URLSearchParams: URLSearchParams,
+    encodeURIComponent: encodeURIComponent,
+    Promise: Promise,
+    console: console,
+    localStorage: {
+      getItem: function (k) { return store[k] || null; },
+      setItem: function (k, v) { store[k] = String(v); },
+      removeItem: function (k) { delete store[k]; }
+    },
+    location: {
+      protocol: "https:",
+      hostname: "youyisida.com",
+      pathname: "/toefl-reading.html",
+      search: search,
+      href: "https://youyisida.com/toefl-reading.html" + search,
+      replace: function () {}
+    },
+    document: {
+      cookie: "",
+      addEventListener: function () {},
+      querySelector: function () { return null; },
+      querySelectorAll: function () { return []; },
+      documentElement: { classList: { add: function () {}, remove: function () {} } },
+      body: { classList: { contains: function () { return false; } } },
+      title: ""
+    }
+  };
+  Object.defineProperty(sb.document, "cookie", {
+    get: function () { return cookie; },
+    set: function (v) { cookie = String(v); }
+  });
+  sb.window = sb;
+  vm.runInNewContext(authSrc, sb);
+  return cookie;
+}
+assert.ok(/yysd_auth=1/.test(authCookieSandbox("?id=2025-07-04&mode=practice&preview=1", {})),
+  "preview=1 must write yysd_auth before the exam fetch");
+assert.ok(/yysd_auth=1/.test(authCookieSandbox("?id=2025-07-04&mode=practice", { "yysd:auth:token": "tok" })),
+  "logged-in exam must write yysd_auth during script eval");
+
 ["reading", "listening", "writing", "speaking"].forEach(function (skill) {
   var page = fs.readFileSync(path.join(__dirname, "../app/" + skill + ".html"), "utf8");
   assert.ok(page.indexOf("toefl-" + skill + ".html?") >= 0, "app/" + skill + ".html 只做跳转，考场仍在根域");
