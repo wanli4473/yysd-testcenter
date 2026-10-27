@@ -47,4 +47,57 @@ assert.ok(tikuPkg.indexOf("entitlements.mac.plist") >= 0);
 assert.ok(desktopEnt.indexOf("com.apple.security.device.audio-input") >= 0);
 assert.ok(tikuEnt.indexOf("com.apple.security.device.audio-input") >= 0);
 
-console.log("toefl-mic ok");
+var vm = require("vm");
+var gumCalls = 0;
+var track = {
+  readyState: "live",
+  stop: function () { track.readyState = "ended"; },
+  addEventListener: function () {}
+};
+var fakeStream = {
+  getAudioTracks: function () { return [track]; },
+  getTracks: function () { return [track]; }
+};
+var sandbox = {
+  window: null,
+  AudioContext: function () {},
+  webkitAudioContext: function () {},
+  MutationObserver: null,
+  document: {
+    readyState: "complete",
+    getElementById: function () { return null; },
+    querySelectorAll: function () { return []; },
+    addEventListener: function () {},
+    body: { classList: { toggle: function () {}, add: function () {} } }
+  },
+  navigator: {
+    mediaDevices: {
+      getUserMedia: function () {
+        gumCalls += 1;
+        track.readyState = "live";
+        return Promise.resolve(fakeStream);
+      }
+    }
+  },
+  console: console
+};
+sandbox.window = sandbox;
+sandbox.addEventListener = function () {};
+vm.runInNewContext(shell, sandbox, { filename: "toefl-shell.js" });
+var Mic = sandbox.YYSD_TOEFL_SHELL;
+assert.ok(Mic && Mic.acquireMic, "shell exports acquireMic");
+
+Mic.acquireMic().then(function (a) {
+  return Mic.acquireMic().then(function (b) {
+    assert.strictEqual(a, b, "second acquire must reuse the same stream");
+    assert.strictEqual(gumCalls, 1, "getUserMedia must run once while the track is live");
+    Mic.releaseMic();
+    return Mic.acquireMic();
+  });
+}).then(function () {
+  assert.strictEqual(gumCalls, 2, "only a real release may request the mic again");
+  console.log("toefl-mic ok");
+}).catch(function (err) {
+  console.error(err);
+  process.exit(1);
+});
